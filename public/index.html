@@ -96,12 +96,7 @@
   <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 
-  <!-- Inline config (injected by Vercel edge config or a static build script) -->
-  <script>
-    // These values are PUBLIC — safe to embed (RLS enforces all access)
-    window.SUPABASE_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co";
-    window.SUPABASE_ANON_KEY = "sb_publishable_HkiBzidTPAxdNWuQMa-Lgw_E-sieyPx";
-  </script>
+  <script src="/js/config.js"></script>
 
   <script src="/js/supabase-init.js"></script>
   <script src="/js/auth.js"></script>
@@ -110,30 +105,6 @@
   <script src="/js/markets.js"></script>
   <script src="/js/bet.js"></script>
 
-  <script>
-    (async () => {
-      // Update nav based on auth state
-      const session = await Auth.getSession();
-      if (session) {
-        document.getElementById("nav-auth").classList.add("hidden");
-        document.getElementById("nav-user").classList.remove("hidden");
-      }
-
-      // Init stream (fetches /api/token server-side)
-      const video = document.getElementById("live-video");
-      await Stream.init(video);
-
-      // Init count WebSocket (waits for token from stream.js)
-      Counter.init();
-
-      // Load markets
-      Markets.init();
-
-      // Show toast on successful bet
-      window.addEventListener("bet:placed", () => {
-        Markets.loadMarkets(); // refresh staked amounts
-      });
-    })();
-  </script>
+  <script src="/js/index-init.js"></script>
 </body>
 </html>

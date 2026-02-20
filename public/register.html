@@ -12,7 +12,7 @@
     <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.png" alt="WHITELINEZ" /></a>
     <h1>Create Account</h1>
 
-    <form id="reg-form" onsubmit="handleRegister(event)">
+    <form id="reg-form">
       <div class="field">
         <label for="email">Email</label>
         <input id="email" type="email" autocomplete="email" required />
@@ -36,49 +36,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script>
-    window.SUPABASE_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co";
-    window.SUPABASE_ANON_KEY = "sb_publishable_HkiBzidTPAxdNWuQMa-Lgw_E-sieyPx";
-  </script>
+  <script src="/js/config.js"></script>
   <script src="/js/supabase-init.js"></script>
   <script src="/js/auth.js"></script>
-  <script>
-    Auth.getSession().then(s => {
-      if (s) window.location.href = "/account.html";
-    });
-
-    async function handleRegister(e) {
-      e.preventDefault();
-      const errorEl = document.getElementById("auth-error");
-      const successEl = document.getElementById("auth-success");
-      const btn = document.getElementById("submit-btn");
-
-      errorEl.textContent = "";
-      successEl.textContent = "";
-
-      const pw = document.getElementById("password").value;
-      const confirm = document.getElementById("confirm").value;
-      if (pw !== confirm) {
-        errorEl.textContent = "Passwords do not match";
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = "Creating account...";
-
-      try {
-        await Auth.register(
-          document.getElementById("email").value,
-          pw
-        );
-        successEl.textContent = "Account created! Check your email to confirm, then log in.";
-        btn.textContent = "Done";
-      } catch (err) {
-        errorEl.textContent = err.message || "Registration failed";
-        btn.disabled = false;
-        btn.textContent = "Create Account";
-      }
-    }
-  </script>
+  <script src="/js/register-init.js"></script>
 </body>
 </html>

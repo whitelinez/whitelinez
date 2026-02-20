@@ -13,7 +13,7 @@
     <span class="admin-badge">ADMIN</span>
     <nav>
       <a href="/index.html">Public View</a>
-      <button onclick="Auth.logout()">Logout</button>
+      <button id="btn-logout">Logout</button>
     </nav>
   </header>
 
@@ -39,7 +39,7 @@
     <!-- Round management -->
     <section class="admin-section">
       <h2>Create Round</h2>
-      <form id="round-form" onsubmit="handleCreateRound(event)">
+      <form id="round-form">
         <div class="field-row">
           <div class="field">
             <label for="market-type">Market Type</label>
@@ -77,120 +77,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
-  <script>
-    window.SUPABASE_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co";
-    window.SUPABASE_ANON_KEY = "sb_publishable_HkiBzidTPAxdNWuQMa-Lgw_E-sieyPx";
-  </script>
+  <script src="/js/config.js"></script>
   <script src="/js/supabase-init.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/stream.js"></script>
   <script src="/js/admin-line.js"></script>
-  <script>
-    let adminSession = null;
-
-    async function init() {
-      adminSession = await Auth.requireAdmin("/index.html");
-      if (!adminSession) return;
-
-      // Load first active camera
-      const { data: cameras } = await window.sb
-        .from("cameras")
-        .select("id, name")
-        .eq("is_active", true)
-        .limit(1);
-
-      const cameraId = cameras?.[0]?.id;
-
-      // Init stream
-      const video = document.getElementById("admin-video");
-      await Stream.init(video);
-
-      // Sync canvas size on video load
-      video.addEventListener("loadedmetadata", () => {
-        const canvas = document.getElementById("line-canvas");
-        AdminLine.init(video, canvas, cameraId);
-      });
-    }
-
-    async function handleCreateRound(e) {
-      e.preventDefault();
-      const errorEl = document.getElementById("round-error");
-      const successEl = document.getElementById("round-success");
-      const btn = document.getElementById("round-submit-btn");
-
-      errorEl.textContent = "";
-      successEl.textContent = "";
-      btn.disabled = true;
-
-      const jwt = adminSession?.access_token;
-      if (!jwt) return;
-
-      const marketType = document.getElementById("market-type").value;
-      const threshold = parseInt(document.getElementById("threshold").value, 10);
-      const opensAt = new Date(document.getElementById("opens-at").value).toISOString();
-      const closesAt = new Date(document.getElementById("closes-at").value).toISOString();
-      const endsAt = new Date(document.getElementById("ends-at").value).toISOString();
-
-      const { data: cameras } = await window.sb
-        .from("cameras").select("id").eq("is_active", true).limit(1);
-      const cameraId = cameras?.[0]?.id;
-
-      const markets = marketType === "over_under"
-        ? [
-            { label: `Over ${threshold} vehicles`, outcome_key: "over", odds: 1.90 },
-            { label: `Under ${threshold} vehicles`, outcome_key: "under", odds: 1.90 },
-            { label: `Exactly ${threshold} vehicles`, outcome_key: "exact", odds: 15.00 },
-          ]
-        : [
-            { label: "Cars lead", outcome_key: "car", odds: 2.00 },
-            { label: "Trucks lead", outcome_key: "truck", odds: 3.50 },
-            { label: "Buses lead", outcome_key: "bus", odds: 4.00 },
-            { label: "Motorcycles lead", outcome_key: "motorcycle", odds: 5.00 },
-          ];
-
-      try {
-        const res = await fetch("/api/bets/place", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`,
-          },
-          // Actually call the admin round endpoint directly
-          // (reusing proxy concept)
-        });
-
-        // Direct Railway call via admin endpoint
-        const railwayRes = await fetch(`${window._railwayBase}/admin/rounds`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`,
-          },
-          body: JSON.stringify({
-            camera_id: cameraId,
-            market_type: marketType,
-            params: { threshold, duration_sec: Math.floor((new Date(endsAt) - new Date(opensAt)) / 1000) },
-            opens_at: opensAt,
-            closes_at: closesAt,
-            ends_at: endsAt,
-            markets,
-          }),
-        });
-
-        if (!railwayRes.ok) {
-          const err = await railwayRes.json();
-          throw new Error(err.detail || "Failed to create round");
-        }
-
-        successEl.textContent = "Round created successfully!";
-      } catch (err) {
-        errorEl.textContent = err.message;
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    init();
-  </script>
+  <script src="/js/admin-init.js"></script>
 </body>
 </html>

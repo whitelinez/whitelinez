@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Account — WHITELINEZ</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="dark">
+
+  <header class="site-header">
+    <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.png" alt="WHITELINEZ" /></a>
+    <nav>
+      <a href="/index.html">Live</a>
+      <a href="/account.html" class="active">Account</a>
+      <button onclick="Auth.logout()">Logout</button>
+    </nav>
+  </header>
+
+  <main class="account-main">
+
+    <section class="account-balance-card">
+      <div class="balance-label">Virtual Balance</div>
+      <div id="balance-display" class="balance-value">—</div>
+      <div class="balance-currency">credits</div>
+      <div id="account-ws-status" class="ws-status ws-err">Connecting...</div>
+    </section>
+
+    <section class="account-history">
+      <h2>Bet History</h2>
+      <div id="history-container">
+        <p class="loading">Loading...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    window.SUPABASE_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co";
+    window.SUPABASE_ANON_KEY = "sb_publishable_HkiBzidTPAxdNWuQMa-Lgw_E-sieyPx";
+  </script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    let accountWs = null;
+
+    async function init() {
+      const session = await Auth.requireAuth("/login.html");
+      if (!session) return;
+
+      const jwt = session.access_token;
+
+      // Load balance + history
+      await loadHistory(jwt);
+
+      // Connect account WebSocket
+      connectAccountWs(jwt);
+    }
+
+    async function loadHistory(jwt) {
+      const res = await fetch("/api/bets/history", {
+        headers: { Authorization: `Bearer ${jwt}` }
+      }).catch(() => null);
+
+      // Fall back to Supabase direct if proxy not set up for history
+      const { data, error } = await window.sb
+        .from("bets")
+        .select("*")
+        .order("placed_at", { ascending: false })
+        .limit(50);
+
+      const container = document.getElementById("history-container");
+      if (error || !data?.length) {
+        container.innerHTML = `<p class="muted">No bets yet. <a href="/index.html">Place your first bet!</a></p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Payout</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(b => `
+              <tr class="bet-${b.status}">
+                <td>${new Date(b.placed_at).toLocaleString()}</td>
+                <td>${b.amount.toLocaleString()}</td>
+                <td>${b.potential_payout.toLocaleString()}</td>
+                <td><span class="badge badge-${b.status}">${b.status}</span></td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    function connectAccountWs(jwt) {
+      // The account WS URL is built from the token endpoint
+      fetch("/api/token").then(r => r.json()).then(({ wss_url }) => {
+        const wsUrl = wss_url.replace("/ws/live", "/ws/account");
+        accountWs = new WebSocket(`${wsUrl}?token=${encodeURIComponent(jwt)}`);
+
+        const statusEl = document.getElementById("account-ws-status");
+        const balanceEl = document.getElementById("balance-display");
+
+        accountWs.onopen = () => {
+          if (statusEl) { statusEl.textContent = "Live"; statusEl.className = "ws-status ws-ok"; }
+        };
+
+        accountWs.onmessage = (e) => {
+          const data = JSON.parse(e.data);
+          if (data.type === "balance" && balanceEl) {
+            balanceEl.textContent = data.balance.toLocaleString();
+          }
+          if (data.type === "bet_resolved") {
+            // Refresh history on resolution
+            Auth.getJwt().then(jwt => loadHistory(jwt));
+          }
+        };
+
+        accountWs.onclose = () => {
+          if (statusEl) { statusEl.textContent = "Disconnected"; statusEl.className = "ws-status ws-err"; }
+        };
+      }).catch(console.error);
+    }
+
+    init();
+  </script>
+</body>
+</html>

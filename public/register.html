@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — WHITELINEZ</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="dark auth-page">
+
+  <div class="auth-card">
+    <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.png" alt="WHITELINEZ" /></a>
+    <h1>Create Account</h1>
+
+    <form id="reg-form" onsubmit="handleRegister(event)">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="new-password"
+               minlength="8" required />
+        <small class="hint">Minimum 8 characters</small>
+      </div>
+      <div class="field">
+        <label for="confirm">Confirm Password</label>
+        <input id="confirm" type="password" autocomplete="new-password" required />
+      </div>
+      <p id="auth-error" class="auth-error" role="alert"></p>
+      <p id="auth-success" class="auth-success" role="status"></p>
+      <button type="submit" class="btn-primary btn-full" id="submit-btn">Create Account</button>
+    </form>
+
+    <p class="auth-switch">Already have an account? <a href="/login.html">Sign In</a></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    window.SUPABASE_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co";
+    window.SUPABASE_ANON_KEY = "sb_publishable_HkiBzidTPAxdNWuQMa-Lgw_E-sieyPx";
+  </script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    Auth.getSession().then(s => {
+      if (s) window.location.href = "/account.html";
+    });
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const errorEl = document.getElementById("auth-error");
+      const successEl = document.getElementById("auth-success");
+      const btn = document.getElementById("submit-btn");
+
+      errorEl.textContent = "";
+      successEl.textContent = "";
+
+      const pw = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm").value;
+      if (pw !== confirm) {
+        errorEl.textContent = "Passwords do not match";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Creating account...";
+
+      try {
+        await Auth.register(
+          document.getElementById("email").value,
+          pw
+        );
+        successEl.textContent = "Account created! Check your email to confirm, then log in.";
+        btn.textContent = "Done";
+      } catch (err) {
+        errorEl.textContent = err.message || "Registration failed";
+        btn.disabled = false;
+        btn.textContent = "Create Account";
+      }
+    }
+  </script>
+</body>
+</html>

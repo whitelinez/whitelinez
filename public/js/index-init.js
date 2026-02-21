@@ -5,6 +5,21 @@
     document.getElementById("nav-user").classList.remove("hidden");
   }
 
+  // Play overlay
+  document.getElementById("btn-play")?.addEventListener("click", () => {
+    document.getElementById("live-video")?.play();
+    document.getElementById("play-overlay")?.classList.add("hidden");
+  });
+
+  // Logout
+  document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
+
+  // Bet modal
+  document.getElementById("modal-backdrop")?.addEventListener("click", () => Bet.closeModal());
+  document.getElementById("modal-close")?.addEventListener("click", () => Bet.closeModal());
+  document.getElementById("modal-amount")?.addEventListener("input", () => Bet.updatePayout());
+  document.getElementById("modal-submit")?.addEventListener("click", () => Bet.submit());
+
   const video = document.getElementById("live-video");
   await Stream.init(video);
 

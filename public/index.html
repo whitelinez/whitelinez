@@ -19,7 +19,7 @@
       </span>
       <span id="nav-user" class="hidden">
         <a href="/account.html">My Account</a>
-        <button onclick="Auth.logout()">Logout</button>
+        <button id="btn-logout">Logout</button>
       </span>
     </nav>
   </header>
@@ -31,9 +31,7 @@
       <div class="stream-wrapper">
         <video id="live-video" muted playsinline autoplay></video>
         <div id="play-overlay" class="play-overlay hidden">
-          <button onclick="document.getElementById('live-video').play(); this.parentElement.classList.add('hidden')">
-            ▶ Play
-          </button>
+          <button id="btn-play">▶ Play</button>
         </div>
         <div class="stream-badge">
           <span class="dot live-dot"></span> LIVE — Kingston Traffic
@@ -68,9 +66,9 @@
 
   <!-- Bet modal -->
   <div id="bet-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-backdrop" onclick="Bet.closeModal()"></div>
+    <div class="modal-backdrop" id="modal-backdrop"></div>
     <div class="modal-box">
-      <button class="modal-close" onclick="Bet.closeModal()" aria-label="Close">✕</button>
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
       <h3 id="modal-title">Place Bet</h3>
       <p id="modal-market-label" class="modal-label"></p>
       <div class="modal-row">
@@ -79,15 +77,14 @@
       </div>
       <div class="modal-row">
         <label for="modal-amount">Amount (credits)</label>
-        <input id="modal-amount" type="number" min="1" placeholder="e.g. 100"
-               oninput="Bet.updatePayout()" />
+        <input id="modal-amount" type="number" min="1" placeholder="e.g. 100" />
       </div>
       <div class="modal-row">
         <span>Potential payout</span>
         <strong id="modal-payout"></strong>
       </div>
       <p id="modal-error" class="modal-error" role="alert"></p>
-      <button id="modal-submit" class="btn-primary" onclick="Bet.submit()">Confirm Bet</button>
+      <button id="modal-submit" class="btn-primary">Confirm Bet</button>
     </div>
   </div>
 

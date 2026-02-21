@@ -73,4 +73,6 @@ function connectAccountWs(jwt) {
   }).catch(console.error);
 }
 
+document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
+
 init();

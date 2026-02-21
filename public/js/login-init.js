@@ -1,5 +1,10 @@
+function redirectByRole(session) {
+  const role = session?.user?.app_metadata?.role;
+  window.location.href = role === "admin" ? "/admin.html" : "/account.html";
+}
+
 Auth.getSession().then(s => {
-  if (s) window.location.href = "/account.html";
+  if (s) redirectByRole(s);
 });
 
 document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -11,11 +16,11 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   btn.textContent = "Signing in...";
 
   try {
-    await Auth.login(
+    const { session } = await Auth.login(
       document.getElementById("email").value,
       document.getElementById("password").value
     );
-    window.location.href = "/account.html";
+    redirectByRole(session);
   } catch (err) {
     errorEl.textContent = err.message || "Login failed";
     btn.disabled = false;

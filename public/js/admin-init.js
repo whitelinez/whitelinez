@@ -1,22 +1,18 @@
 /**
- * admin-init.js — Admin round creation with simplified timing,
- * vehicle_count support, live guardrail preview, and historical baseline.
+ * admin-init.js — Admin dashboard: round creation, stats, recent rounds,
+ * guardrail preview, user management, and dual zone editor init.
  */
 
 let adminSession = null;
 
-// ── Guardrail constants (mirror models/round.py) ──────────────────────────────
+// ── Guardrail constants ────────────────────────────────────────────────────────
 const MIN_DURATION_MIN      = 5;
 const MAX_DURATION_MIN      = 480;
-const MIN_ODDS              = 1.20;
 const THRESHOLD_MIN_PER_MIN = 0.5;
 const THRESHOLD_MAX_PER_MIN = 25.0;
-
-// Class-specific rate multipliers (fraction of total zone traffic)
 const CLASS_RATE = { car: 0.50, motorcycle: 0.20, truck: 0.15, bus: 0.10 };
 
-// ── Historical baseline (24/7 data) ───────────────────────────────────────────
-// Keyed by hour-of-day (0-23): { avg, count }
+// ── Historical baseline ────────────────────────────────────────────────────────
 const hourlyBaseline = {};
 let baselineLoaded   = false;
 let baselineLoading  = false;
@@ -25,7 +21,6 @@ async function loadBaseline() {
   if (baselineLoaded || baselineLoading) return;
   baselineLoading = true;
   try {
-    // Pull last 7 days of snapshots; group by hour client-side
     const since = new Date(Date.now() - 7 * 86400_000).toISOString();
     const { data } = await window.sb
       .from("count_snapshots")
@@ -35,8 +30,6 @@ async function loadBaseline() {
       .limit(5000);
 
     if (!data) return;
-
-    // Group by hour-of-day
     const buckets = {};
     for (const row of data) {
       const hour = new Date(row.captured_at).getHours();
@@ -45,10 +38,7 @@ async function loadBaseline() {
       buckets[hour].count += 1;
     }
     for (const h in buckets) {
-      hourlyBaseline[h] = {
-        avg: buckets[h].sum / buckets[h].count,
-        count: buckets[h].count,
-      };
+      hourlyBaseline[h] = { avg: buckets[h].sum / buckets[h].count, count: buckets[h].count };
     }
     baselineLoaded = true;
   } catch (e) {
@@ -59,37 +49,146 @@ async function loadBaseline() {
 }
 
 function getBaselineForHour(dateObj) {
-  const h = dateObj.getHours();
-  return hourlyBaseline[h] ?? null;
+  return hourlyBaseline[dateObj.getHours()] ?? null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function fmtLocal(d) {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
+function fmtLocal(d) { return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
 function fmtDurationMin(min) {
-  if (min >= 60) {
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return m === 0 ? `${h}h` : `${h}h ${m}m`;
-  }
+  if (min >= 60) { const h = Math.floor(min/60); const m = min%60; return m === 0 ? `${h}h` : `${h}h ${m}m`; }
   return `${min}m`;
 }
 
-// ── Compute closes_at / ends_at from form inputs ──────────────────────────────
 function getComputedTimes() {
   const startsVal = document.getElementById("starts-at")?.value;
   const duration  = parseInt(document.getElementById("duration")?.value || "0", 10);
   const cutoff    = parseInt(document.getElementById("bet-cutoff")?.value || "1", 10);
   if (!startsVal || !duration) return null;
-
-  const starts  = new Date(startsVal);
-  const ends    = new Date(starts.getTime() + duration * 60_000);
-  const closes  = new Date(ends.getTime()  - cutoff  * 60_000);
+  const starts = new Date(startsVal);
+  const ends   = new Date(starts.getTime() + duration * 60_000);
+  const closes = new Date(ends.getTime()   - cutoff  * 60_000);
   return { starts, ends, closes, duration, cutoff };
 }
 
-// ── Live preview update ───────────────────────────────────────────────────────
+// ── Live stats ────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    // Fetch latest snapshot
+    const { data: snap } = await window.sb
+      .from("count_snapshots")
+      .select("total")
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const countEl = document.getElementById("stat-count");
+    if (countEl) countEl.textContent = snap?.total ?? "—";
+
+    // Active round
+    const { data: round } = await window.sb
+      .from("bet_rounds")
+      .select("status")
+      .eq("status", "open")
+      .limit(1)
+      .maybeSingle();
+
+    const roundEl = document.getElementById("stat-round");
+    if (roundEl) roundEl.textContent = round ? "OPEN" : "—";
+
+    // Bets placed today
+    const since = new Date(); since.setHours(0,0,0,0);
+    const { count: betCount } = await window.sb
+      .from("bets")
+      .select("id", { count: "exact", head: true })
+      .gte("placed_at", since.toISOString());
+
+    const betsEl = document.getElementById("stat-bets");
+    if (betsEl) betsEl.textContent = betCount ?? "—";
+
+    // WS users from health endpoint (best effort)
+    try {
+      const h = await fetch("/api/health");
+      if (h.ok) {
+        const hData = await h.json();
+        const usersEl = document.getElementById("stat-users");
+        if (usersEl) usersEl.textContent = hData.user_ws_connections ?? "—";
+      }
+    } catch {}
+  } catch (e) {
+    console.warn("[admin-init] Stats load failed:", e);
+  }
+}
+
+// ── Recent rounds ─────────────────────────────────────────────────────────────
+async function loadRecentRounds() {
+  const container = document.getElementById("recent-rounds");
+  if (!container) return;
+
+  try {
+    const { data } = await window.sb
+      .from("bet_rounds")
+      .select("id, status, market_type, opens_at, ends_at")
+      .order("opens_at", { ascending: false })
+      .limit(10);
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<p class="muted" style="font-size:0.85rem">No rounds yet.</p>`;
+      return;
+    }
+
+    container.innerHTML = data.map(r => {
+      const d = new Date(r.opens_at);
+      const timeStr = d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+      const locked = r.status === "locked";
+      return `
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">${r.id.slice(0,8)}…</span>
+            <span class="round-row-meta">
+              <span class="round-badge round-${r.status}">${r.status.toUpperCase()}</span>
+              ${r.market_type.replace(/_/g," ")} · ${timeStr}
+            </span>
+          </div>
+          ${locked ? `<button class="btn-resolve" data-round-id="${r.id}">Resolve</button>` : ""}
+        </div>`;
+    }).join("");
+
+    // Resolve buttons
+    container.querySelectorAll(".btn-resolve").forEach(btn => {
+      btn.addEventListener("click", () => resolveRound(btn.dataset.roundId, btn));
+    });
+
+  } catch (e) {
+    console.warn("[admin-init] Recent rounds load failed:", e);
+  }
+}
+
+async function resolveRound(roundId, btn) {
+  if (!adminSession) return;
+  btn.disabled = true;
+  btn.textContent = "Resolving...";
+  try {
+    const res = await fetch(`/api/admin/rounds`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminSession.access_token}`,
+      },
+      body: JSON.stringify({ round_id: roundId }),
+    });
+    if (res.ok) {
+      loadRecentRounds();
+    } else {
+      btn.textContent = "Error";
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = "Error";
+    btn.disabled = false;
+  }
+}
+
+// ── Preview update ────────────────────────────────────────────────────────────
 async function updatePreview() {
   const marketType   = document.getElementById("market-type")?.value;
   const vehicleClass = document.getElementById("vehicle-class")?.value;
@@ -110,22 +209,19 @@ async function updatePreview() {
   const times = getComputedTimes();
   if (!times) {
     preview?.classList.add("hidden");
-    ctRow && (ctRow.style.display = "none");
-    submitBtn && (submitBtn.disabled = true);
+    if (ctRow) ctRow.style.display = "none";
+    if (submitBtn) submitBtn.disabled = true;
     return;
   }
 
   const { starts, ends, closes, duration } = times;
-
-  // Computed time summary
   if (ctRow) ctRow.style.display = "";
   if (ctCloses) ctCloses.textContent = fmtLocal(closes);
   if (ctEnds)   ctEnds.textContent   = fmtLocal(ends);
 
   preview?.classList.remove("hidden");
-  prevDur && (prevDur.textContent = fmtDurationMin(duration));
+  if (prevDur) prevDur.textContent = fmtDurationMin(duration);
 
-  // Load baseline if not done yet
   await loadBaseline();
   const baseline = getBaselineForHour(starts);
   const avgOccupancy = baseline?.avg ?? null;
@@ -136,63 +232,51 @@ async function updatePreview() {
       : "No historical data yet";
   }
 
-  // Reset
   prevWarn?.classList.add("hidden");
   prevOk?.classList.add("hidden");
-
   const warnings = [];
 
-  // Duration rules
   if (duration < MIN_DURATION_MIN)
     warnings.push(`Too short — minimum is ${MIN_DURATION_MIN} minutes.`);
   if (duration > MAX_DURATION_MIN)
-    warnings.push(`Too long — maximum is ${MAX_DURATION_MIN} minutes (8 hours).`);
+    warnings.push(`Too long — maximum is ${MAX_DURATION_MIN} minutes.`);
 
-  // Threshold rules for over_under and vehicle_count
   if (marketType === "over_under" || marketType === "vehicle_count") {
     prevExpRow?.classList.remove("hidden");
-    const multiplier = marketType === "vehicle_count"
-      ? (CLASS_RATE[vehicleClass] ?? 0.25)
-      : 1.0;
-
+    const multiplier = marketType === "vehicle_count" ? (CLASS_RATE[vehicleClass] ?? 0.25) : 1.0;
     const minThresh = Math.max(1, Math.ceil(duration * THRESHOLD_MIN_PER_MIN * multiplier));
     const maxThresh = Math.max(5, Math.floor(duration * THRESHOLD_MAX_PER_MIN * multiplier));
 
-    // Expected range from baseline
     let expectedText = `${minThresh}–${maxThresh}`;
     if (avgOccupancy !== null) {
-      // Rough estimate: avg occupancy × duration × multiplier
-      // (occupancy is "vehicles in zone at a snapshot", so scale conservatively)
       const est = Math.round(avgOccupancy * duration * multiplier * 0.4);
       expectedText = `~${est} vehicles (valid: ${minThresh}–${maxThresh})`;
     }
-    prevExp && (prevExp.textContent = expectedText);
+    if (prevExp) prevExp.textContent = expectedText;
 
     const typeLabel = marketType === "vehicle_count"
       ? `for ${vehicleClass}s in ${fmtDurationMin(duration)}`
       : `for ${fmtDurationMin(duration)}`;
 
     if (!isNaN(threshold)) {
-      if (threshold < minThresh) {
-        warnings.push(`Threshold ${threshold} is too low ${typeLabel}. Minimum: ${minThresh}. Near-guaranteed "over" win — don't do it!`);
-      } else if (threshold > maxThresh) {
-        warnings.push(`Threshold ${threshold} is extremely high ${typeLabel}. Maximum: ${maxThresh}. Almost impossible to reach.`);
-      }
+      if (threshold < minThresh)
+        warnings.push(`Threshold ${threshold} too low ${typeLabel}. Min: ${minThresh}.`);
+      else if (threshold > maxThresh)
+        warnings.push(`Threshold ${threshold} too high ${typeLabel}. Max: ${maxThresh}.`);
     }
   } else {
     prevExpRow?.classList.add("hidden");
   }
 
-  // Show result
   if (warnings.length) {
     if (prevWarn) {
       prevWarn.innerHTML = warnings.map(w => `<div>⚠ ${w}</div>`).join("");
       prevWarn.classList.remove("hidden");
     }
-    submitBtn && (submitBtn.disabled = true);
+    if (submitBtn) submitBtn.disabled = true;
   } else if (duration >= MIN_DURATION_MIN) {
     prevOk?.classList.remove("hidden");
-    submitBtn && (submitBtn.disabled = false);
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
@@ -206,8 +290,7 @@ function buildMarkets(marketType, vehicleClass, threshold) {
     ];
   }
   if (marketType === "vehicle_count") {
-    const cls = vehicleClass;
-    const label = { car: "cars", truck: "trucks", bus: "buses", motorcycle: "motorcycles" }[cls] ?? cls;
+    const label = { car:"cars", truck:"trucks", bus:"buses", motorcycle:"motorcycles" }[vehicleClass] ?? vehicleClass;
     return [
       { label: `Over ${threshold} ${label}`,    outcome_key: "over",  odds: 1.85 },
       { label: `Under ${threshold} ${label}`,   outcome_key: "under", odds: 1.85 },
@@ -245,9 +328,7 @@ async function handleSubmit(e) {
   if (!times) { errorEl.textContent = "Fill in start time and duration."; btn.disabled = false; return; }
 
   const { starts, ends, closes } = times;
-
-  const { data: cameras } = await window.sb
-    .from("cameras").select("id").eq("is_active", true).limit(1);
+  const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
   const cameraId = cameras?.[0]?.id;
   if (!cameraId) { errorEl.textContent = "No active camera found."; btn.disabled = false; return; }
 
@@ -261,12 +342,9 @@ async function handleSubmit(e) {
   try {
     const res = await fetch("/api/admin/rounds", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
       body: JSON.stringify({
-        camera_id:  cameraId,
+        camera_id: cameraId,
         market_type: marketType,
         params,
         opens_at:  starts.toISOString(),
@@ -276,16 +354,14 @@ async function handleSubmit(e) {
       }),
     });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || "Failed to create round");
-    }
+    if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Failed"); }
 
-    successEl.textContent = "Round created! It auto-opens at the scheduled start time.";
+    successEl.textContent = "Round created! Auto-opens at scheduled time.";
     document.getElementById("round-form").reset();
     document.getElementById("round-preview")?.classList.add("hidden");
     document.getElementById("computed-times").style.display = "none";
     setDefaultTimes();
+    loadRecentRounds();
   } catch (err) {
     errorEl.textContent = err.message;
   } finally {
@@ -293,17 +369,33 @@ async function handleSubmit(e) {
   }
 }
 
-// ── Set default times ─────────────────────────────────────────────────────────
+// ── User management ───────────────────────────────────────────────────────────
+async function handleSetAdmin() {
+  const emailEl = document.getElementById("admin-email-input");
+  const msgEl   = document.getElementById("user-mgmt-msg");
+  const email   = emailEl?.value?.trim();
+  if (!email) return;
+  if (!adminSession?.access_token) return;
+  msgEl.textContent = "Setting...";
+  try {
+    // Use Supabase admin RPC or update user_metadata
+    // This calls an RPC set_admin_by_email if available, otherwise shows a note
+    const { error } = await window.sb.rpc("set_admin_by_email", { p_email: email });
+    if (error) throw error;
+    msgEl.style.color = "var(--green)";
+    msgEl.textContent = `Admin role set for ${email}`;
+  } catch (e) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = e.message || "Failed — ensure set_admin_by_email RPC exists";
+  }
+}
+
+// ── Default times ─────────────────────────────────────────────────────────────
 function setDefaultTimes() {
-  const now    = new Date();
-  now.setSeconds(0, 0);
-  // Default: start 1 minute from now
+  const now = new Date(); now.setSeconds(0, 0);
   const starts = new Date(now.getTime() + 60_000);
-  const toLocal = (d) => {
-    // datetime-local format: YYYY-MM-DDTHH:MM
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
+  const pad = (n) => String(n).padStart(2, "0");
+  const toLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   const el = document.getElementById("starts-at");
   if (el) el.value = toLocal(starts);
 }
@@ -313,46 +405,40 @@ async function init() {
   adminSession = await Auth.requireAdmin("/index.html");
   if (!adminSession) return;
 
-  const { data: cameras } = await window.sb
-    .from("cameras").select("id").eq("is_active", true).limit(1);
+  const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
   const cameraId = cameras?.[0]?.id;
 
-  const video = document.getElementById("admin-video");
+  const video  = document.getElementById("admin-video");
+  const canvas = document.getElementById("line-canvas");
   await Stream.init(video);
 
   video.addEventListener("loadedmetadata", () => {
-    const canvas = document.getElementById("line-canvas");
     AdminLine.init(video, canvas, cameraId);
   });
+  if (video.videoWidth) AdminLine.init(video, canvas, cameraId);
 
-  // Begin baseline data load in background
+  // Load stats + recent rounds
   loadBaseline();
+  loadStats();
+  loadRecentRounds();
+  setInterval(loadStats, 10_000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("btn-logout")
-    ?.addEventListener("click", () => Auth.logout());
+  document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
+  document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
+  document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
 
-  document.getElementById("round-form")
-    ?.addEventListener("submit", handleSubmit);
-
-  // Threshold/vehicle-class field visibility by market type
+  // Market type visibility
   document.getElementById("market-type")?.addEventListener("change", (e) => {
     const type = e.target.value;
-    const threshField  = document.getElementById("threshold-field");
-    const classField   = document.getElementById("vehicle-class-field");
-    const threshLabel  = document.getElementById("threshold-label");
-
-    if (threshField) threshField.style.display = type === "vehicle_type" ? "none" : "";
-    if (classField)  classField.style.display  = type === "vehicle_count" ? "" : "none";
-    if (threshLabel && type === "vehicle_count")
-      threshLabel.textContent = "Threshold (vehicles of that type)";
-    else if (threshLabel)
-      threshLabel.textContent = "Threshold (vehicles)";
+    document.getElementById("threshold-field").style.display  = type === "vehicle_type" ? "none" : "";
+    document.getElementById("vehicle-class-field").style.display = type === "vehicle_count" ? "" : "none";
+    const lbl = document.getElementById("threshold-label");
+    if (lbl) lbl.textContent = type === "vehicle_count" ? "Threshold (vehicles of that type)" : "Threshold (vehicles)";
     updatePreview();
   });
 
-  // Live preview on any change
   ["market-type","vehicle-class","threshold","starts-at","duration","bet-cutoff"].forEach(id => {
     document.getElementById(id)?.addEventListener("input",  updatePreview);
     document.getElementById(id)?.addEventListener("change", updatePreview);

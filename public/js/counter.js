@@ -1,6 +1,7 @@
 /**
  * counter.js — WebSocket consumer for /ws/live.
- * Receives count snapshots and updates the DOM count display.
+ * Fires count:update and round:update events for other modules.
+ * Also updates FloatingCount WS status dot.
  */
 
 const Counter = (() => {
@@ -9,46 +10,15 @@ const Counter = (() => {
   let backoff = 2000;
   const MAX_BACKOFF = 30000;
 
-  const els = {
-    total: null,
-    cars: null,
-    trucks: null,
-    buses: null,
-    motorcycles: null,
-    status: null,
-  };
-
-  function bindElements() {
-    els.total = document.getElementById("count-total");
-    els.cars = document.getElementById("count-cars");
-    els.trucks = document.getElementById("count-trucks");
-    els.buses = document.getElementById("count-buses");
-    els.motorcycles = document.getElementById("count-motorcycles");
-    els.status = document.getElementById("ws-status");
-  }
-
-  function setStatus(text, ok = true) {
-    if (els.status) {
-      els.status.textContent = text;
-      els.status.className = ok ? "ws-status ws-ok" : "ws-status ws-err";
-    }
+  function setStatus(ok) {
+    if (window.FloatingCount) FloatingCount.setStatus(ok);
   }
 
   function update(data) {
-    if (els.total) els.total.textContent = data.total ?? 0;
-    const bd = data.vehicle_breakdown ?? {};
-    if (els.cars) els.cars.textContent = bd.car ?? 0;
-    if (els.trucks) els.trucks.textContent = bd.truck ?? 0;
-    if (els.buses) els.buses.textContent = bd.bus ?? 0;
-    if (els.motorcycles) els.motorcycles.textContent = bd.motorcycle ?? 0;
-
-    // Fire event for markets.js to react to
     window.dispatchEvent(new CustomEvent("count:update", { detail: data }));
   }
 
   async function connect() {
-    // Always fetch a fresh token — the 5-min TTL means a cached token
-    // will be rejected on any reconnect after expiry.
     let token, wssUrl;
     try {
       const res = await fetch("/api/token");
@@ -57,7 +27,7 @@ const Counter = (() => {
       window._wsToken = token;
       window._wssUrl = wssUrl;
     } catch (err) {
-      setStatus("Waiting for token...", false);
+      setStatus(false);
       reconnectTimer = setTimeout(() => {
         backoff = Math.min(backoff * 2, MAX_BACKOFF);
         connect();
@@ -65,11 +35,11 @@ const Counter = (() => {
       return;
     }
 
-    setStatus("Connecting...", false);
+    setStatus(false);
     ws = new WebSocket(`${wssUrl}?token=${encodeURIComponent(token)}`);
 
     ws.onopen = () => {
-      setStatus("Live", true);
+      setStatus(true);
       backoff = 2000;
     };
 
@@ -78,7 +48,6 @@ const Counter = (() => {
         const data = JSON.parse(e.data);
         if (data.type === "count") {
           update(data);
-          // Propagate round info embedded in count messages
           if ("round" in data) {
             window.dispatchEvent(new CustomEvent("round:update", { detail: data.round }));
           }
@@ -88,10 +57,10 @@ const Counter = (() => {
       } catch {}
     };
 
-    ws.onerror = () => setStatus("Error", false);
+    ws.onerror = () => setStatus(false);
 
     ws.onclose = () => {
-      setStatus("Reconnecting...", false);
+      setStatus(false);
       reconnectTimer = setTimeout(() => {
         backoff = Math.min(backoff * 2, MAX_BACKOFF);
         connect();
@@ -100,8 +69,6 @@ const Counter = (() => {
   }
 
   function init() {
-    bindElements();
-    // Wait for stream.js to populate token
     window.addEventListener("load", connect);
     if (window._wsToken) connect();
   }

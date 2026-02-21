@@ -1,15 +1,17 @@
 /**
- * zone-overlay.js — Read-only canvas overlay showing the admin-defined
- * counting zone on the public live stream.
- * - Coordinates are content-relative [0,1] via coord-utils.js
- * - Flashes the zone border green when vehicles cross/enter
+ * zone-overlay.js — Read-only canvas overlay on the public live stream.
+ * Draws:
+ *   - Count zone (yellow) — vehicles crossing this are counted
+ *   - Detect zone (cyan, dashed) — bounding boxes visible only here
+ * Flashes count zone on crossing events.
  */
 
 const ZoneOverlay = (() => {
   let canvas, ctx, video;
-  let currentLine = null;
-  let flashTimer  = null;
-  let isFlashing  = false;
+  let countLine = null;
+  let detectZone = null;
+  let flashTimer = null;
+  let isFlashing = false;
 
   function init(videoEl, canvasEl) {
     video  = videoEl;
@@ -17,13 +19,12 @@ const ZoneOverlay = (() => {
     ctx    = canvas.getContext("2d");
 
     syncSize();
-    window.addEventListener("resize", () => { syncSize(); draw(currentLine); });
+    window.addEventListener("resize", () => { syncSize(); draw(); });
     video.addEventListener("loadedmetadata", () => { syncSize(); loadAndDraw(); });
 
     loadAndDraw();
     setInterval(loadAndDraw, 30_000);
 
-    // Flash zone on crossing events from WS
     window.addEventListener("count:update", (e) => {
       const crossings = e.detail?.new_crossings ?? 0;
       if (crossings > 0) flash();
@@ -40,42 +41,55 @@ const ZoneOverlay = (() => {
     try {
       const { data } = await window.sb
         .from("cameras")
-        .select("count_line")
+        .select("count_line, detect_zone")
         .eq("is_active", true)
         .limit(1)
         .maybeSingle();
-      currentLine = data?.count_line ?? null;
-      draw(currentLine);
+      countLine  = data?.count_line  ?? null;
+      detectZone = data?.detect_zone ?? null;
+      draw();
     } catch (e) {
-      console.warn("[ZoneOverlay] Failed to load zone:", e);
+      console.warn("[ZoneOverlay] Failed to load zones:", e);
     }
   }
 
   function flash() {
     isFlashing = true;
-    draw(currentLine, "#00FF88");   // bright green flash
+    draw();
     clearTimeout(flashTimer);
     flashTimer = setTimeout(() => {
       isFlashing = false;
-      draw(currentLine, "#FFD600"); // back to yellow
+      draw();
     }, 350);
   }
 
-  function draw(line, color = "#FFD600") {
+  function draw() {
     if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!line) return;
 
     const bounds = getContentBounds(video);
     const pt = (rx, ry) => contentToPixel(rx, ry, bounds);
 
-    if (line.x3 !== undefined) {
-      // 4-point polygon zone
+    // Draw detect zone (cyan, always dashed)
+    if (detectZone) {
+      _drawZone(detectZone, "#00BCD4", false, "DETECT ZONE", pt);
+    }
+
+    // Draw count zone (yellow, flashes green on crossing)
+    if (countLine) {
+      const color = isFlashing ? "#00FF88" : "#FFD600";
+      _drawZone(countLine, color, isFlashing, "COUNT ZONE", pt);
+    }
+  }
+
+  function _drawZone(zone, color, flashing, label, pt) {
+    if (zone.x3 !== undefined) {
+      // 4-point polygon
       const pts = [
-        pt(line.x1, line.y1),
-        pt(line.x2, line.y2),
-        pt(line.x3, line.y3),
-        pt(line.x4, line.y4),
+        pt(zone.x1, zone.y1),
+        pt(zone.x2, zone.y2),
+        pt(zone.x3, zone.y3),
+        pt(zone.x4, zone.y4),
       ];
 
       ctx.beginPath();
@@ -83,20 +97,19 @@ const ZoneOverlay = (() => {
       pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
       ctx.closePath();
 
-      // Fill — brighter on flash
-      ctx.fillStyle = isFlashing
+      ctx.fillStyle = flashing
         ? "rgba(0,255,136,0.18)"
-        : "rgba(255,214,0,0.10)";
+        : color === "#00BCD4"
+          ? "rgba(0,188,212,0.08)"
+          : "rgba(255,214,0,0.10)";
       ctx.fill();
 
-      // Border
       ctx.strokeStyle = color;
-      ctx.lineWidth   = isFlashing ? 3 : 2;
-      ctx.setLineDash(isFlashing ? [] : [8, 5]);
+      ctx.lineWidth   = flashing ? 3 : 2;
+      ctx.setLineDash(flashing ? [] : [8, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Corner dots
       pts.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
@@ -104,37 +117,35 @@ const ZoneOverlay = (() => {
         ctx.fill();
       });
 
-      // Label centred in zone
       const cx = pts.reduce((s, p) => s + p.x, 0) / 4;
       const cy = pts.reduce((s, p) => s + p.y, 0) / 4;
-      ctx.font         = "bold 11px sans-serif";
+      ctx.font         = "bold 10px sans-serif";
       ctx.fillStyle    = color + "DD";
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("COUNT ZONE", cx, cy);
+      ctx.fillText(label, cx, cy);
 
-    } else if (line.x1 !== undefined) {
-      // 2-point count line
-      const p1 = pt(line.x1, line.y1);
-      const p2 = pt(line.x2, line.y2);
+    } else if (zone.x1 !== undefined) {
+      // 2-point line
+      const p1 = pt(zone.x1, zone.y1);
+      const p2 = pt(zone.x2, zone.y2);
 
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.strokeStyle = color;
-      ctx.lineWidth   = isFlashing ? 4 : 3;
-      ctx.setLineDash(isFlashing ? [] : [10, 6]);
+      ctx.lineWidth   = flashing ? 4 : 3;
+      ctx.setLineDash(flashing ? [] : [10, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Label
       const mx = (p1.x + p2.x) / 2;
       const my = (p1.y + p2.y) / 2 - 10;
-      ctx.font         = "bold 11px sans-serif";
+      ctx.font         = "bold 10px sans-serif";
       ctx.fillStyle    = color + "DD";
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("COUNT LINE", mx, my);
+      ctx.fillText(label, mx, my);
     }
   }
 

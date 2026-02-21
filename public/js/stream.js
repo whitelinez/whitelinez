@@ -15,9 +15,8 @@ const Stream = (() => {
     window._wsToken = token;
     window._wssUrl = wss_url;
 
-    // Stream proxied through Railway — avoids ipcamlive CORS restriction
-    const streamBase = wss_url.replace(/^wss:\/\//, "https://").replace("/ws/live", "");
-    const streamUrl = `${streamBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`;
+    // Stream proxied through Vercel — avoids ipcamlive CORS restriction
+    const streamUrl = "/api/stream";
 
     if (Hls.isSupported()) {
       hlsInstance = new Hls({

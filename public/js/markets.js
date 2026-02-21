@@ -16,7 +16,7 @@ const Markets = (() => {
         .in("status", ["open", "upcoming"])
         .order("opens_at", { ascending: true })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error || !round) {
         renderNoRound();

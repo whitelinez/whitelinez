@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WHITELINEZ — Live Traffic Betting</title>
+  <title>WHITELINEZ - Live Traffic Betting</title>
   <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body class="dark">
 
-  <!-- Header -->
   <header class="site-header">
     <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" /></a>
     <nav>
@@ -30,8 +29,6 @@
   </header>
 
   <main class="main-grid">
-
-    <!-- Stream panel (left) -->
     <section class="stream-panel">
       <div class="stream-wrapper">
         <video id="live-video" muted playsinline autoplay></video>
@@ -39,61 +36,56 @@
         <canvas id="zone-canvas" class="zone-overlay"></canvas>
 
         <div id="play-overlay" class="play-overlay hidden">
-          <button id="btn-play">▶ Play</button>
+          <button id="btn-play">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 20 12 8 19 8 5"></polygon></svg>
+            Play
+          </button>
         </div>
 
         <div class="stream-badge">
-          <span class="dot live-dot"></span> LIVE — Kingston Traffic
+          <span class="dot live-dot"></span> LIVE - Kingston Traffic
         </div>
 
-        <!-- Floating count widget -->
         <div id="count-widget" class="count-widget">
           <div class="count-widget-total">
-            <span id="cw-total">—</span>
+            <span id="cw-total">-</span>
             <span class="cw-label">vehicles</span>
           </div>
           <div class="count-widget-breakdown">
-            <span class="cw-item">🚗 <strong id="cw-cars">—</strong></span>
-            <span class="cw-item">🚛 <strong id="cw-trucks">—</strong></span>
-            <span class="cw-item">🚐 <strong id="cw-buses">—</strong></span>
-            <span class="cw-item">🏍 <strong id="cw-motos">—</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg><strong id="cw-cars">-</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="12" height="8" rx="1"></rect><path d="M14 12h4l3 3v2h-7z"></path><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg><strong id="cw-trucks">-</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon bus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="11" rx="2"></rect><path d="M3 11h18"></path><circle cx="8" cy="19" r="1.8"></circle><circle cx="16" cy="19" r="1.8"></circle></svg><strong id="cw-buses">-</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon moto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"></circle><circle cx="18" cy="17" r="3"></circle><path d="M6 17l5-6h4l3 6"></path><path d="M12 11l2-3h3"></path></svg><strong id="cw-motos">-</strong></span>
           </div>
           <div id="cw-ws-dot" class="cw-ws-dot cw-ws-err"></div>
         </div>
 
-        <!-- Round timing strip on video -->
         <div id="round-strip" class="round-strip hidden">
           <span id="rs-badge" class="rs-badge">OPEN</span>
-          <span id="rs-timer" class="rs-timer">—</span>
+          <span id="rs-timer" class="rs-timer">-</span>
         </div>
       </div>
     </section>
 
-    <!-- Sidebar (right) -->
     <aside class="sidebar">
-
-      <!-- Tab bar -->
       <div class="sidebar-tabs">
         <button class="tab-btn active" data-tab="markets">Markets</button>
         <button class="tab-btn" data-tab="activity">Activity</button>
         <button class="tab-btn" data-tab="chat">Chat</button>
       </div>
 
-      <!-- Markets tab -->
       <div id="tab-markets" class="tab-content active">
         <div id="markets-container">
           <p class="loading">Loading markets...</p>
         </div>
       </div>
 
-      <!-- Activity tab -->
       <div id="tab-activity" class="tab-content">
         <div id="activity-feed" class="activity-feed">
           <p class="loading">Waiting for activity...</p>
         </div>
       </div>
 
-      <!-- Chat tab -->
       <div id="tab-chat" class="tab-content">
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input-row">
@@ -105,9 +97,11 @@
         </p>
       </div>
 
-      <!-- Bet panel (slides over sidebar content) -->
       <div id="bet-panel" class="bet-panel hidden">
-        <button id="bet-panel-back" class="bet-panel-back">← Back</button>
+        <button id="bet-panel-back" class="bet-panel-back">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back
+        </button>
         <h3 id="bp-title">Exact Count Bet</h3>
         <p id="bp-market-label" class="bp-market-label"></p>
 
@@ -115,10 +109,10 @@
           <label>Vehicle Type</label>
           <div class="bp-pills" id="bp-vehicle-pills">
             <button class="pill active" data-val="">All</button>
-            <button class="pill" data-val="car">🚗 Car</button>
-            <button class="pill" data-val="truck">🚛 Truck</button>
-            <button class="pill" data-val="bus">🚐 Bus</button>
-            <button class="pill" data-val="motorcycle">🏍 Moto</button>
+            <button class="pill" data-val="car"><svg class="vehicle-icon car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg>Car</button>
+            <button class="pill" data-val="truck"><svg class="vehicle-icon truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="12" height="8" rx="1"></rect><path d="M14 12h4l3 3v2h-7z"></path><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg>Truck</button>
+            <button class="pill" data-val="bus"><svg class="vehicle-icon bus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="11" rx="2"></rect><path d="M3 11h18"></path><circle cx="8" cy="19" r="1.8"></circle><circle cx="16" cy="19" r="1.8"></circle></svg>Bus</button>
+            <button class="pill" data-val="motorcycle"><svg class="vehicle-icon moto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"></circle><circle cx="18" cy="17" r="3"></circle><path d="M6 17l5-6h4l3 6"></path><path d="M12 11l2-3h3"></path></svg>Moto</button>
           </div>
         </div>
 
@@ -136,7 +130,7 @@
         <div class="bp-field">
           <label for="bp-count">Exact Count</label>
           <div class="bp-count-row">
-            <button class="btn-count-adj" id="bp-count-minus">−</button>
+            <button class="btn-count-adj" id="bp-count-minus">-</button>
             <input id="bp-count" type="number" min="0" max="999" value="5" />
             <button class="btn-count-adj" id="bp-count-plus">+</button>
           </div>
@@ -149,7 +143,7 @@
 
         <div class="bp-payout-row">
           <span>Payout at 8x</span>
-          <strong id="bp-payout">—</strong>
+          <strong id="bp-payout">-</strong>
         </div>
 
         <p id="bp-error" class="bp-error" role="alert"></p>
@@ -158,7 +152,7 @@
         <div id="bp-active-bet" class="bp-active-bet hidden">
           <div class="bp-active-inner">
             <span class="bp-active-label">Resolving in</span>
-            <strong id="bp-countdown" class="bp-countdown">—</strong>
+            <strong id="bp-countdown" class="bp-countdown">-</strong>
           </div>
         </div>
       </div>
@@ -167,9 +161,7 @@
 
   </main>
 
-  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 
   <script src="/js/config.js"></script>

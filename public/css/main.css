@@ -1,4 +1,5 @@
-/* ── Reset & Base ─────────────────────────────────────────────────── */
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -23,7 +24,7 @@
 body.dark {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: "Manrope", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
@@ -32,7 +33,7 @@ body.dark {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ── Header ───────────────────────────────────────────────────────── */
+/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .site-header {
   display: flex;
   align-items: center;
@@ -97,7 +98,7 @@ a:hover { text-decoration: underline; }
   vertical-align: middle;
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem; }
 
 .btn-primary {
@@ -122,7 +123,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .btn-full { width: 100%; padding: 10px; }
 
-/* ── Main grid ───────────────────────────────────────────────────── */
+/* â”€â”€ Main grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .main-grid {
   display: grid;
   grid-template-columns: 1fr var(--sidebar-w);
@@ -134,7 +135,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .main-grid { grid-template-columns: 1fr; height: auto; overflow: visible; }
 }
 
-/* ── Stream panel ────────────────────────────────────────────────── */
+/* â”€â”€ Stream panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .stream-panel {
   display: flex;
   flex-direction: column;
@@ -215,7 +216,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   50% { opacity: 0.3; }
 }
 
-/* ── Floating count widget ───────────────────────────────────────── */
+/* â”€â”€ Floating count widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .count-widget {
   position: absolute;
   top: 12px;
@@ -288,7 +289,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   100% { opacity: 0; transform: translateY(-40px); }
 }
 
-/* ── Round strip on video ────────────────────────────────────────── */
+/* â”€â”€ Round strip on video â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .round-strip {
   position: absolute;
   bottom: 14px;
@@ -320,7 +321,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Sidebar ──────────────────────────────────────────────────────── */
+/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sidebar {
   background: var(--bg2);
   border-left: 1px solid var(--border);
@@ -330,7 +331,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   position: relative;
 }
 
-/* ── Sidebar tabs ────────────────────────────────────────────────── */
+/* â”€â”€ Sidebar tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sidebar-tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -350,7 +351,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-/* ── Tab content ─────────────────────────────────────────────────── */
+/* â”€â”€ Tab content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tab-content {
   display: none;
   flex: 1;
@@ -359,7 +360,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .tab-content.active { display: flex; flex-direction: column; }
 
-/* ── Markets in sidebar ──────────────────────────────────────────── */
+/* â”€â”€ Markets in sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .no-round { color: var(--muted); text-align: center; padding: 40px 0; }
 .muted { color: var(--muted); }
 
@@ -446,7 +447,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .btn-live-bet:hover { background: rgba(0,188,212,0.1); }
 
-/* ── Bet panel (slides over sidebar) ─────────────────────────────── */
+/* â”€â”€ Bet panel (slides over sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bet-panel {
   position: absolute;
   inset: 0;
@@ -580,7 +581,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .bp-active-label { font-size: 0.8rem; color: var(--muted); }
 .bp-countdown { font-size: 1.5rem; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; }
 
-/* ── Activity feed ───────────────────────────────────────────────── */
+/* â”€â”€ Activity feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .activity-feed {
   display: flex;
   flex-direction: column;
@@ -599,7 +600,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .activity-item strong { color: var(--text); }
 .activity-item .act-time { font-size: 0.72rem; color: var(--muted); float: right; }
 
-/* ── Chat ────────────────────────────────────────────────────────── */
+/* â”€â”€ Chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tab-content#tab-chat {
   padding: 0;
 }
@@ -657,7 +658,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   border-top: 1px solid var(--border);
 }
 
-/* ── Toast ───────────────────────────────────────────────────────── */
+/* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .toast {
   position: fixed;
   bottom: 24px;
@@ -679,7 +680,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .loading { color: var(--muted); font-size: 0.9rem; }
 .hidden  { display: none !important; }
 
-/* ── Skeleton shimmer ────────────────────────────────────────────── */
+/* â”€â”€ Skeleton shimmer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -696,7 +697,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   border-radius: var(--radius);
 }
 
-/* ── Empty state ─────────────────────────────────────────────────── */
+/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -712,7 +713,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .empty-state .empty-state-icon { font-size: 2rem; margin-bottom: 4px; }
 .empty-state span { font-size: 0.78rem; color: var(--muted); opacity: 0.7; }
 
-/* ── Modern nav buttons ──────────────────────────────────────────── */
+/* â”€â”€ Modern nav buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nav-link {
   color: var(--muted);
   font-size: 0.88rem;
@@ -760,7 +761,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   display: block;
 }
 
-/* ── Auth pages ──────────────────────────────────────────────────── */
+/* â”€â”€ Auth pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .auth-page {
   display: flex;
   align-items: center;
@@ -802,7 +803,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .auth-success { color: var(--green); font-size: 0.9rem;  margin-bottom: 8px; }
 .auth-switch  { margin-top: 20px; font-size: 0.88rem; color: var(--muted); text-align: center; }
 
-/* ── Account page ────────────────────────────────────────────────── */
+/* â”€â”€ Account page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .account-main {
   max-width: 900px;
   margin: 32px auto;
@@ -843,7 +844,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .badge-lost      { background: rgba(239,68,68,0.2);   color: var(--red); }
 .badge-cancelled { background: rgba(100,116,139,0.2); color: var(--muted); }
 
-/* ── Admin page ──────────────────────────────────────────────────── */
+/* â”€â”€ Admin page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .admin-grid {
   display: grid;
   grid-template-columns: minmax(0,1fr) minmax(0,1fr);
@@ -987,7 +988,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .btn-resolve:hover { background: rgba(255,214,0,0.2); }
 
-/* ── Computed times summary ──────────────────────────────────────── */
+/* â”€â”€ Computed times summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .computed-times {
   display: flex;
   gap: 20px;
@@ -1000,7 +1001,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .computed-times strong { color: var(--accent); }
 .field-hint { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 
-/* ── Round guardrail preview ──────────────────────────────────────── */
+/* â”€â”€ Round guardrail preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .round-preview {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
@@ -1037,7 +1038,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .user-mgmt-row .field { flex: 1; margin-bottom: 0; }
 .user-mgmt-row .btn-primary { padding: 10px 16px; white-space: nowrap; }
 
-/* ── Mobile (≤640px) ─────────────────────────────────────────────── */
+/* â”€â”€ Mobile (â‰¤640px) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 640px) {
 
   :root { --header-h: 48px; }
@@ -1072,7 +1073,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     border-top: 1px solid var(--border);
   }
 
-  /* ── Count widget — compact pill ── */
+  /* â”€â”€ Count widget â€” compact pill â”€â”€ */
   .count-widget {
     top: 8px;
     left: 8px;
@@ -1103,7 +1104,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     height: 5px;
   }
 
-  /* ── Round strip — smaller ── */
+  /* â”€â”€ Round strip â€” smaller â”€â”€ */
   .round-strip {
     bottom: 8px;
     right: 8px;
@@ -1113,7 +1114,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .rs-badge { font-size: 0.58rem; padding: 1px 5px; }
   .rs-timer { font-size: 0.78rem; }
 
-  /* ── Stream badge ── */
+  /* â”€â”€ Stream badge â”€â”€ */
   .stream-badge {
     top: 8px;
     right: 8px;
@@ -1121,13 +1122,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     padding: 3px 8px;
   }
 
-  /* ── Sidebar tabs ── */
+  /* â”€â”€ Sidebar tabs â”€â”€ */
   .tab-btn { padding: 10px 0; font-size: 0.8rem; }
 
-  /* ── Bet panel ── */
+  /* â”€â”€ Bet panel â”€â”€ */
   .bet-panel { padding: 12px; gap: 10px; }
 
-  /* ── Toast ── */
+  /* â”€â”€ Toast â”€â”€ */
   .toast {
     bottom: 12px;
     right: 12px;
@@ -1137,7 +1138,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     padding: 10px 14px;
   }
 
-  /* ── Header ── */
+  /* â”€â”€ Header â”€â”€ */
   .site-header { padding: 0 14px; }
   .logo img { height: 28px; }
   .site-header nav { gap: 8px; }
@@ -1146,7 +1147,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .nav-icon-btn { width: 32px; height: 32px; }
   .nav-balance { font-size: 0.78rem; padding: 3px 8px; }
 
-  /* ── Empty states on mobile ── */
+  /* â”€â”€ Empty states on mobile â”€â”€ */
   .empty-state { padding: 24px 16px; }
 }
 
@@ -1258,3 +1259,208 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .chat-msg .chat-user { margin-right: 0; }
 .chat-msg .chat-time { margin-left: 0; }
+
+/* Admin mobile optimization */
+@media (max-width: 900px) {
+  .admin-grid {
+    gap: 14px;
+    margin: 14px auto;
+    padding: 0 12px;
+  }
+
+  .admin-col {
+    gap: 14px;
+  }
+
+  .admin-section {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .admin-section h2 {
+    margin-bottom: 10px;
+    font-size: 0.84rem;
+  }
+
+  .admin-hint {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+  }
+
+  .field-row {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .field-row .field {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .admin-line-controls {
+    gap: 8px;
+  }
+
+  .admin-line-controls .btn-primary,
+  .admin-line-controls .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .zone-toggle-group {
+    width: 100%;
+  }
+
+  .zone-toggle {
+    flex: 1;
+    text-align: center;
+  }
+
+  .line-status {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .user-mgmt-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .user-mgmt-row .btn-primary {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .stat-card {
+    padding: 10px;
+  }
+
+  .stat-card .stat-val {
+    font-size: 1.35rem;
+  }
+
+  .round-row {
+    padding: 9px 10px;
+    gap: 6px;
+  }
+
+  .round-row-id {
+    font-size: 0.7rem;
+  }
+
+  .round-row-meta {
+    font-size: 0.78rem;
+  }
+
+  .btn-resolve {
+    width: 100%;
+    padding: 7px 10px;
+    text-align: center;
+  }
+
+  .computed-times {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 420px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Typography + control polish */
+button {
+  letter-spacing: 0.01em;
+}
+
+.btn-primary,
+.btn-bet,
+.btn-nav-register {
+  background: linear-gradient(135deg, #FFD600 0%, #FFC107 100%);
+  border: 1px solid rgba(255, 214, 0, 0.35);
+  box-shadow: 0 8px 20px rgba(255, 193, 7, 0.25);
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-bet:hover,
+.btn-nav-register:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(255, 193, 7, 0.32);
+  filter: brightness(1.03);
+}
+
+.btn-primary:active:not(:disabled),
+.btn-bet:active,
+.btn-nav-register:active {
+  transform: translateY(0);
+}
+
+.btn-secondary,
+.nav-icon-btn,
+.pill,
+.btn-count-adj,
+.btn-live-bet {
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease, color .16s ease;
+}
+
+.btn-secondary:hover,
+.nav-icon-btn:hover,
+.pill:hover,
+.btn-count-adj:hover,
+.btn-live-bet:hover {
+  transform: translateY(-1px);
+}
+
+.btn-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.play-overlay button,
+.bet-panel-back,
+.btn-live-bet,
+.pill,
+.cw-item,
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vehicle-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.vehicle-icon.car { color: #29B6F6; }
+.vehicle-icon.truck { color: #FF7043; }
+.vehicle-icon.bus { color: #AB47BC; }
+.vehicle-icon.moto { color: #FFD600; }
+
+.count-widget-breakdown .cw-item strong {
+  color: var(--text);
+}
+
+.empty-state .empty-state-icon {
+  font-size: 0;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.empty-state .empty-state-icon svg {
+  width: 26px;
+  height: 26px;
+}

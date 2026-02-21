@@ -59,6 +59,26 @@ function fmtDurationMin(min) {
   return `${min}m`;
 }
 
+function isValidCountLine(line) {
+  if (!line || typeof line !== "object") return false;
+  const hasPoly = ["x1","y1","x2","y2","x3","y3","x4","y4"].every((k) => typeof line[k] === "number");
+  const hasLine = ["x1","y1","x2","y2"].every((k) => typeof line[k] === "number");
+  const keys = hasPoly ? ["x1","y1","x2","y2","x3","y3","x4","y4"] : hasLine ? ["x1","y1","x2","y2"] : [];
+  if (!keys.length) return false;
+  return keys.every((k) => line[k] >= 0 && line[k] <= 1);
+}
+
+async function ensureCountZoneSaved(cameraId) {
+  if (!cameraId) return false;
+  const { data, error } = await window.sb
+    .from("cameras")
+    .select("count_line")
+    .eq("id", cameraId)
+    .maybeSingle();
+  if (error) throw error;
+  return isValidCountLine(data?.count_line);
+}
+
 function getComputedTimes() {
   const startsVal = document.getElementById("starts-at")?.value;
   const duration  = parseInt(document.getElementById("duration")?.value || "0", 10);
@@ -452,6 +472,18 @@ async function handleSubmit(e) {
   const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
   const cameraId = cameras?.[0]?.id;
   if (!cameraId) { errorEl.textContent = "No active camera found."; btn.disabled = false; return; }
+  try {
+    const zoneReady = await ensureCountZoneSaved(cameraId);
+    if (!zoneReady) {
+      errorEl.textContent = "Save a valid count area first. Round creation is blocked until count zone is set.";
+      btn.disabled = false;
+      return;
+    }
+  } catch {
+    errorEl.textContent = "Could not validate count area. Try again.";
+    btn.disabled = false;
+    return;
+  }
 
   const markets = buildMarkets(marketType, vehicleClass, threshold);
   const params  = {

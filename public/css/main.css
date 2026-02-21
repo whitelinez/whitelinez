@@ -551,6 +551,19 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .field-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .field-row .field { flex: 1; min-width: 180px; }
 
+/* ── Computed times summary ──────────────────────────────────────── */
+.computed-times {
+  display: flex;
+  gap: 20px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.computed-times strong { color: #FFD600; }
+.field-hint { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
 /* ── Round guardrail preview ──────────────────────────────────────── */
 .round-preview {
   background: rgba(255,255,255,0.04);

@@ -19,10 +19,10 @@
 
   <main class="admin-main">
 
-    <!-- Line draw tool -->
+    <!-- Zone draw tool -->
     <section class="admin-section">
-      <h2>Count Line Editor</h2>
-      <p class="admin-hint">Click 4 points on the live feed to define the counting zone. Vehicles inside this area will be counted by the AI. Click in order: top-left → top-right → bottom-right → bottom-left.</p>
+      <h2>Count Zone Editor</h2>
+      <p class="admin-hint">Click 4 points on the feed (top-left → top-right → bottom-right → bottom-left) to define the counting zone. Only vehicles inside this area are counted. Existing zone loads automatically.</p>
 
       <div class="stream-canvas-wrapper">
         <video id="admin-video" muted playsinline autoplay></video>
@@ -30,8 +30,8 @@
       </div>
 
       <div class="admin-line-controls">
-        <button id="btn-clear-line" class="btn-secondary">Clear Line</button>
-        <button id="btn-save-line" class="btn-primary" disabled>Save Line</button>
+        <button id="btn-clear-line" class="btn-secondary">Clear</button>
+        <button id="btn-save-line" class="btn-primary" disabled>Save Zone</button>
         <span id="line-status" class="line-status"></span>
       </div>
     </section>
@@ -40,39 +40,59 @@
     <section class="admin-section">
       <h2>Create Round</h2>
       <form id="round-form">
+
+        <!-- Row 1: what to bet on -->
         <div class="field-row">
           <div class="field">
-            <label for="market-type">Market Type</label>
+            <label for="market-type">Bet Type</label>
             <select id="market-type">
-              <option value="over_under">Over / Under</option>
-              <option value="vehicle_type">Vehicle Type Leader</option>
+              <option value="over_under">Over / Under — total vehicles</option>
+              <option value="vehicle_count">Count — specific vehicle type</option>
+              <option value="vehicle_type">Type Leader — which type wins</option>
+            </select>
+          </div>
+          <div class="field" id="vehicle-class-field" style="display:none">
+            <label for="vehicle-class">Vehicle Type</label>
+            <select id="vehicle-class">
+              <option value="car">Cars</option>
+              <option value="truck">Trucks</option>
+              <option value="bus">Buses</option>
+              <option value="motorcycle">Motorcycles</option>
             </select>
           </div>
           <div class="field" id="threshold-field">
-            <label for="threshold">Vehicle Threshold</label>
+            <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
             <input id="threshold" type="number" min="1" value="20" />
           </div>
         </div>
+
+        <!-- Row 2: when -->
         <div class="field-row">
           <div class="field">
-            <label for="opens-at">Opens At</label>
-            <input id="opens-at" type="datetime-local" required />
+            <label for="starts-at">Round Starts <small class="muted">(your local time)</small></label>
+            <input id="starts-at" type="datetime-local" required />
           </div>
-          <div class="field">
-            <label for="closes-at">Bets Close At</label>
-            <input id="closes-at" type="datetime-local" required />
+          <div class="field" style="max-width:140px">
+            <label for="duration">Duration (min)</label>
+            <input id="duration" type="number" min="5" max="480" value="10" />
           </div>
-          <div class="field">
-            <label for="ends-at">Round Ends At</label>
-            <input id="ends-at" type="datetime-local" required />
+          <div class="field" style="max-width:160px">
+            <label for="bet-cutoff">Close bets (min before end)</label>
+            <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
           </div>
+        </div>
+
+        <!-- Computed time summary -->
+        <div class="computed-times" id="computed-times" style="display:none">
+          <span>Bets close: <strong id="computed-closes">—</strong></span>
+          <span>Round ends: <strong id="computed-ends">—</strong></span>
         </div>
 
         <!-- Live guardrail preview -->
         <div id="round-preview" class="round-preview hidden">
           <div class="preview-row"><span>Duration</span><strong id="prev-duration">—</strong></div>
-          <div class="preview-row"><span>Current zone avg</span><strong id="prev-rate">loading...</strong></div>
-          <div class="preview-row" id="prev-expected-row"><span>Expected total</span><strong id="prev-expected">—</strong></div>
+          <div class="preview-row"><span>Avg zone vehicles (this hour)</span><strong id="prev-rate">—</strong></div>
+          <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">—</strong></div>
           <div id="prev-warning" class="preview-warning hidden"></div>
           <div id="prev-ok" class="preview-ok hidden">✓ Round looks competitive</div>
         </div>
@@ -91,6 +111,7 @@
   <script src="/js/supabase-init.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/stream.js"></script>
+  <script src="/js/coord-utils.js"></script>
   <script src="/js/admin-line.js"></script>
   <script src="/js/admin-init.js"></script>
 </body>

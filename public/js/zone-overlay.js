@@ -1,28 +1,38 @@
 /**
  * zone-overlay.js — Read-only canvas overlay showing the admin-defined
- * counting zone on the public live stream. Fetches from Supabase and redraws
- * every 30s to pick up any admin changes.
+ * counting zone on the public live stream.
+ * - Coordinates are content-relative [0,1] via coord-utils.js
+ * - Flashes the zone border green when vehicles cross/enter
  */
 
 const ZoneOverlay = (() => {
   let canvas, ctx, video;
+  let currentLine = null;
+  let flashTimer  = null;
+  let isFlashing  = false;
 
   function init(videoEl, canvasEl) {
-    video = videoEl;
+    video  = videoEl;
     canvas = canvasEl;
-    ctx = canvas.getContext("2d");
+    ctx    = canvas.getContext("2d");
 
     syncSize();
-    window.addEventListener("resize", () => { syncSize(); draw(); });
+    window.addEventListener("resize", () => { syncSize(); draw(currentLine); });
     video.addEventListener("loadedmetadata", () => { syncSize(); loadAndDraw(); });
 
     loadAndDraw();
     setInterval(loadAndDraw, 30_000);
+
+    // Flash zone on crossing events from WS
+    window.addEventListener("count:update", (e) => {
+      const crossings = e.detail?.new_crossings ?? 0;
+      if (crossings > 0) flash();
+    });
   }
 
   function syncSize() {
     if (!video || !canvas) return;
-    canvas.width = video.clientWidth;
+    canvas.width  = video.clientWidth;
     canvas.height = video.clientHeight;
   }
 
@@ -34,71 +44,97 @@ const ZoneOverlay = (() => {
         .eq("is_active", true)
         .limit(1)
         .maybeSingle();
-
-      draw(data?.count_line);
+      currentLine = data?.count_line ?? null;
+      draw(currentLine);
     } catch (e) {
       console.warn("[ZoneOverlay] Failed to load zone:", e);
     }
   }
 
-  function draw(line) {
+  function flash() {
+    isFlashing = true;
+    draw(currentLine, "#00FF88");   // bright green flash
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => {
+      isFlashing = false;
+      draw(currentLine, "#FFD600"); // back to yellow
+    }, 350);
+  }
+
+  function draw(line, color = "#FFD600") {
     if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!line) return;
 
-    const w = canvas.width;
-    const h = canvas.height;
+    const bounds = getContentBounds(video);
+    const pt = (rx, ry) => contentToPixel(rx, ry, bounds);
 
     if (line.x3 !== undefined) {
       // 4-point polygon zone
       const pts = [
-        { x: line.x1 * w, y: line.y1 * h },
-        { x: line.x2 * w, y: line.y2 * h },
-        { x: line.x3 * w, y: line.y3 * h },
-        { x: line.x4 * w, y: line.y4 * h },
+        pt(line.x1, line.y1),
+        pt(line.x2, line.y2),
+        pt(line.x3, line.y3),
+        pt(line.x4, line.y4),
       ];
 
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
       ctx.closePath();
-      ctx.fillStyle = "rgba(255, 214, 0, 0.12)";
+
+      // Fill — brighter on flash
+      ctx.fillStyle = isFlashing
+        ? "rgba(0,255,136,0.18)"
+        : "rgba(255,214,0,0.10)";
       ctx.fill();
-      ctx.strokeStyle = "#FFD600";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 5]);
+
+      // Border
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = isFlashing ? 3 : 2;
+      ctx.setLineDash(isFlashing ? [] : [8, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
 
       // Corner dots
-      for (const p of pts) {
+      pts.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = "#FFD600";
+        ctx.fillStyle = color;
         ctx.fill();
-      }
+      });
 
-      // Label
-      ctx.fillStyle = "rgba(255, 214, 0, 0.9)";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("COUNT ZONE", (pts[0].x + pts[1].x) / 2, pts[0].y - 8);
+      // Label centred in zone
+      const cx = pts.reduce((s, p) => s + p.x, 0) / 4;
+      const cy = pts.reduce((s, p) => s + p.y, 0) / 4;
+      ctx.font         = "bold 11px sans-serif";
+      ctx.fillStyle    = color + "DD";
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("COUNT ZONE", cx, cy);
 
     } else if (line.x1 !== undefined) {
-      // 2-point line
+      // 2-point count line
+      const p1 = pt(line.x1, line.y1);
+      const p2 = pt(line.x2, line.y2);
+
       ctx.beginPath();
-      ctx.moveTo(line.x1 * w, line.y1 * h);
-      ctx.lineTo(line.x2 * w, line.y2 * h);
-      ctx.strokeStyle = "#FFD600";
-      ctx.lineWidth = 3;
-      ctx.setLineDash([10, 6]);
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = isFlashing ? 4 : 3;
+      ctx.setLineDash(isFlashing ? [] : [10, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = "rgba(255, 214, 0, 0.9)";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("COUNT LINE", (line.x1 + line.x2) / 2 * w, line.y1 * h - 8);
+      // Label
+      const mx = (p1.x + p2.x) / 2;
+      const my = (p1.y + p2.y) / 2 - 10;
+      ctx.font         = "bold 11px sans-serif";
+      ctx.fillStyle    = color + "DD";
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("COUNT LINE", mx, my);
     }
   }
 

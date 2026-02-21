@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   let streamUrl;
   try {
     const camResp = await fetch(
-      `${supabaseUrl}/rest/v1/cameras?is_active=eq.true&select=stream_url&limit=1`,
+      `${supabaseUrl}/rest/v1/cameras?is_active=eq.true&stream_url=neq.&select=stream_url&limit=1`,
       {
         headers: {
           apikey: supabaseKey,

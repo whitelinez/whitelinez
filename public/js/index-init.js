@@ -1,10 +1,34 @@
 (async () => {
   const session = await Auth.getSession();
 
+  function defaultAvatar(seed) {
+    const src = String(seed || "whitelinez-user");
+    let hash = 0;
+    for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
+    const hue = Math.abs(hash) % 360;
+    const letter = (src[0] || "U").toUpperCase();
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
+      <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='hsl(${hue},70%,45%)'/><stop offset='100%' stop-color='hsl(${(hue + 35) % 360},70%,35%)'/>
+      </linearGradient></defs><rect width='96' height='96' rx='48' fill='url(#g)'/>
+      <text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='42' fill='white' font-weight='700'>${letter}</text>
+    </svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+
   // Nav auth state
   if (session) {
     document.getElementById("nav-auth")?.classList.add("hidden");
     document.getElementById("nav-user")?.classList.remove("hidden");
+
+    const user = session.user || {};
+    const avatar = user.user_metadata?.avatar_url || defaultAvatar(user.id || user.email || "user");
+    const navAvatar = document.getElementById("nav-avatar");
+    if (navAvatar) navAvatar.src = avatar;
+
+    if (user.app_metadata?.role === "admin") {
+      document.getElementById("nav-admin-link")?.classList.remove("hidden");
+    }
   }
 
   // Play overlay

@@ -1,10 +1,11 @@
 /**
- * POST /api/admin/rounds
- * Proxy admin round creation to Railway backend.
+ * /api/admin/rounds
+ * - POST: create round
+ * - PATCH: manual override resolve by round_id using latest snapshot
  * Forwards the admin's Supabase JWT — Railway validates it and checks admin role.
  */
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+  if (!["POST", "PATCH"].includes(req.method)) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
 
   try {
     const upstream = await fetch(`${railwayUrl}/admin/rounds`, {
-      method: "POST",
+      method: req.method,
       headers: {
         "Content-Type": "application/json",
         Authorization: authHeader,

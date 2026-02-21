@@ -752,6 +752,14 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .nav-icon-btn:hover { color: var(--text); border-color: var(--muted); text-decoration: none; }
 .nav-icon-logout:hover { color: var(--red); border-color: var(--red); }
 
+.nav-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
 /* ── Auth pages ──────────────────────────────────────────────────── */
 .auth-page {
   display: flex;

@@ -10,6 +10,7 @@ const ZoneOverlay = (() => {
   let canvas, ctx, video;
   let countLine = null;
   let detectZone = null;
+  let confirmedTotal = 0;
   let flashTimer = null;
   let isFlashing = false;
 
@@ -26,8 +27,11 @@ const ZoneOverlay = (() => {
     setInterval(loadAndDraw, 30_000);
 
     window.addEventListener("count:update", (e) => {
-      const crossings = e.detail?.new_crossings ?? 0;
+      const detail = e.detail || {};
+      const crossings = detail.new_crossings ?? 0;
+      confirmedTotal = Number(detail.confirmed_crossings_total ?? confirmedTotal ?? 0);
       if (crossings > 0) flash();
+      else draw();
     });
   }
 
@@ -78,7 +82,7 @@ const ZoneOverlay = (() => {
     // Draw count zone (yellow, flashes green on crossing)
     if (countLine) {
       const color = isFlashing ? "#00FF88" : "#FFD600";
-      _drawZone(countLine, color, isFlashing, "COUNT ZONE", pt);
+      _drawZone(countLine, color, isFlashing, String(confirmedTotal), pt);
     }
   }
 

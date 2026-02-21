@@ -71,8 +71,15 @@ async function loadProfile() {
 
   const usernameEl = document.getElementById("profile-username");
   const avatarEl = document.getElementById("profile-avatar-img");
+  const headerAvatarEl = document.getElementById("account-header-avatar");
   if (usernameEl) usernameEl.value = currentProfile.username;
-  if (avatarEl) avatarEl.src = getAvatarUrl(currentProfile.avatar_url, user.id);
+  const avatarSrc = getAvatarUrl(currentProfile.avatar_url, user.id);
+  if (avatarEl) avatarEl.src = avatarSrc;
+  if (headerAvatarEl) headerAvatarEl.src = avatarSrc;
+
+  if (user?.app_metadata?.role === "admin") {
+    document.getElementById("account-nav-admin")?.classList.remove("hidden");
+  }
 }
 
 async function saveProfile() {
@@ -143,7 +150,10 @@ async function onAvatarUpload(e) {
     currentProfile.avatar_url = data?.publicUrl || "";
 
     const avatarEl = document.getElementById("profile-avatar-img");
-    if (avatarEl) avatarEl.src = getAvatarUrl(currentProfile.avatar_url, currentSession.user.id);
+    const headerAvatarEl = document.getElementById("account-header-avatar");
+    const avatarSrc = getAvatarUrl(currentProfile.avatar_url, currentSession.user.id);
+    if (avatarEl) avatarEl.src = avatarSrc;
+    if (headerAvatarEl) headerAvatarEl.src = avatarSrc;
 
     await saveProfile();
   } catch (err) {

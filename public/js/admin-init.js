@@ -208,7 +208,8 @@ async function loadRecentRounds() {
     container.innerHTML = data.map(r => {
       const d = new Date(r.opens_at);
       const timeStr = d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-      const locked = r.status === "locked";
+      const canResolve = r.status === "locked" || r.status === "resolved";
+      const resolveLabel = r.status === "resolved" ? "Override" : "Resolve";
       return `
         <div class="round-row">
           <div class="round-row-info">
@@ -218,7 +219,7 @@ async function loadRecentRounds() {
               ${r.market_type.replace(/_/g," ")} · ${timeStr}
             </span>
           </div>
-          ${locked ? `<button class="btn-resolve" data-round-id="${r.id}">Resolve</button>` : ""}
+          ${canResolve ? `<button class="btn-resolve" data-round-id="${r.id}">${resolveLabel}</button>` : ""}
         </div>`;
     }).join("");
 
@@ -229,6 +230,57 @@ async function loadRecentRounds() {
 
   } catch (e) {
     console.warn("[admin-init] Recent rounds load failed:", e);
+  }
+}
+
+function formatBetDescriptor(b) {
+  if (b.bet_type === "exact_count") {
+    const cls = b.vehicle_class ? `${b.vehicle_class}s` : "vehicles";
+    const win = b.window_duration_sec ? `${b.window_duration_sec}s` : "window";
+    return `Exact ${b.exact_count ?? 0} ${cls} in ${win}`;
+  }
+  const market = b.markets || {};
+  const odds = Number(market.odds || 0);
+  const oddsText = odds > 0 ? `${odds.toFixed(2)}x` : "-";
+  return `${market.label || "Market bet"} (${oddsText})`;
+}
+
+async function loadRecentBets() {
+  const box = document.getElementById("recent-bets");
+  if (!box || !adminSession?.access_token) return;
+
+  try {
+    const res = await fetch("/api/admin/bets?limit=200", {
+      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load bets");
+
+    const bets = payload?.bets || [];
+    if (!bets.length) {
+      box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No bets found.</p>`;
+      return;
+    }
+
+    box.innerHTML = bets.slice(0, 120).map((b) => {
+      const userLabel = b.username || (b.user_id ? `${String(b.user_id).slice(0, 8)}…` : "unknown");
+      const placed = b.placed_at
+        ? new Date(b.placed_at).toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+        : "—";
+      return `
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">${userLabel} • ${placed}</span>
+            <span class="round-row-meta">
+              <span class="round-badge round-${b.status}">${String(b.status || "pending").toUpperCase()}</span>
+              ${formatBetDescriptor(b)} • Stake ${Number(b.amount || 0).toLocaleString()} • Payout ${Number(b.potential_payout || 0).toLocaleString()}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (e) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Recent bets unavailable.</p>`;
   }
 }
 
@@ -490,7 +542,9 @@ async function init() {
   loadBaseline();
   loadStats();
   loadRecentRounds();
+  loadRecentBets();
   setInterval(loadStats, 10_000);
+  setInterval(loadRecentBets, 15_000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

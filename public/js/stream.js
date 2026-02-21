@@ -9,13 +9,15 @@ const Stream = (() => {
   async function init(videoEl) {
     const res = await fetch("/api/token");
     if (!res.ok) throw new Error("Failed to get stream token");
-    const { wss_url, token, stream_url } = await res.json();
+    const { wss_url, token } = await res.json();
 
     // Store token for WebSocket consumers (counter.js, markets.js)
     window._wsToken = token;
     window._wssUrl = wss_url;
 
-    const streamUrl = stream_url;
+    // Stream proxied through Railway — avoids ipcamlive CORS restriction
+    const streamBase = wss_url.replace(/^wss:\/\//, "https://").replace("/ws/live", "");
+    const streamUrl = `${streamBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`;
 
     if (Hls.isSupported()) {
       hlsInstance = new Hls({

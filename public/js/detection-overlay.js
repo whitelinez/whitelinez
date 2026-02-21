@@ -71,15 +71,7 @@ const DetectionOverlay = (() => {
       ctx.lineWidth   = 1.5;
       ctx.strokeRect(p1.x, p1.y, bw, bh);
 
-      // Label chip above box (or below if too close to top)
-      ctx.font = "bold 10px sans-serif";
-      const tw = ctx.measureText(det.cls).width + 8;
-      const lx = p1.x;
-      const ly = p1.y > 14 ? p1.y - 14 : p1.y + bh;
-      ctx.fillStyle = color;
-      ctx.fillRect(lx, ly, tw, 13);
-      ctx.fillStyle = "#000";
-      ctx.fillText(det.cls, lx + 4, ly + 10);
+      // Keep overlay lightweight: box-only rendering reduces jitter on slower devices.
     }
   }
 

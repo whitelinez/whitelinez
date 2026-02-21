@@ -7,6 +7,7 @@ const Chat = (() => {
   let _channel = null;
   let _userSession = null;
   let _username = "User";
+  let _historyLoaded = false;
   const MAX_MESSAGES = 100;
 
   function init(session) {
@@ -15,15 +16,17 @@ const Chat = (() => {
     const inputRow = document.querySelector(".chat-input-row");
 
     if (session) {
-      // Fetch username from profile
-      _username = session.user?.user_metadata?.username || session.user?.email?.split("@")[0] || "User";
-      if (hint) hint.classList.add("hidden");
+      _username = session.user?.user_metadata?.username
+        || session.user?.email?.split("@")[0]
+        || "User";
+      hint?.classList.add("hidden");
       if (inputRow) inputRow.style.display = "";
     } else {
-      if (hint) hint.classList.remove("hidden");
+      hint?.classList.remove("hidden");
       if (inputRow) inputRow.style.display = "none";
     }
 
+    _showSkeleton();
     _loadHistory();
     _subscribe();
 
@@ -33,30 +36,62 @@ const Chat = (() => {
     });
   }
 
+  function _showSkeleton() {
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+    container.innerHTML = Array(5).fill(
+      `<div class="skeleton" style="height:36px;border-radius:6px;"></div>`
+    ).join("");
+  }
+
+  function _showEmpty() {
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+    container.innerHTML = `<div class="empty-state">No messages yet.<br><span>Start the conversation.</span></div>`;
+  }
+
   async function _loadHistory() {
     try {
-      const { data } = await window.sb
+      const { data, error } = await window.sb
         .from("messages")
         .select("username, content, created_at")
         .order("created_at", { ascending: true })
         .limit(50);
-      if (data) data.forEach(renderMsg);
+
+      if (error) throw error;
+
+      const container = document.getElementById("chat-messages");
+      if (!container) return;
+      container.innerHTML = ""; // clear skeleton
+      _historyLoaded = true;
+
+      if (!data || data.length === 0) {
+        _showEmpty();
+        return;
+      }
+
+      data.forEach(renderMsg);
       _scrollToBottom();
     } catch (e) {
       console.warn("[Chat] History load failed:", e);
+      const container = document.getElementById("chat-messages");
+      if (container) {
+        container.innerHTML = `<div class="empty-state">Chat unavailable.<br><span>Run SQL migrations to enable chat.</span></div>`;
+      }
     }
   }
 
   function _subscribe() {
-    if (_channel) {
-      window.sb.removeChannel(_channel);
-    }
+    if (_channel) window.sb.removeChannel(_channel);
     _channel = window.sb
       .channel("chat")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
+          // Clear empty state on first real message
+          const container = document.getElementById("chat-messages");
+          const empty = container?.querySelector(".empty-state");
+          if (empty) empty.remove();
+
           renderMsg(payload.new);
           _scrollToBottom();
         }
@@ -68,12 +103,14 @@ const Chat = (() => {
     const container = document.getElementById("chat-messages");
     if (!container) return;
 
-    // Trim if over limit
     while (container.children.length >= MAX_MESSAGES) {
       container.removeChild(container.firstChild);
     }
 
-    const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    const time = msg.created_at
+      ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "";
+
     const div = document.createElement("div");
     div.className = "chat-msg";
     div.innerHTML = `<span class="chat-user">${esc(msg.username || "User")}</span><span class="chat-text">${esc(msg.content)}</span><span class="chat-time">${time}</span>`;
@@ -81,8 +118,8 @@ const Chat = (() => {
   }
 
   function _scrollToBottom() {
-    const container = document.getElementById("chat-messages");
-    if (container) container.scrollTop = container.scrollHeight;
+    const c = document.getElementById("chat-messages");
+    if (c) c.scrollTop = c.scrollHeight;
   }
 
   async function send() {
@@ -93,6 +130,7 @@ const Chat = (() => {
     if (!content) return;
 
     input.value = "";
+    input.disabled = true;
 
     try {
       const { error } = await window.sb.from("messages").insert({
@@ -103,7 +141,10 @@ const Chat = (() => {
       if (error) throw error;
     } catch (e) {
       console.error("[Chat] Send failed:", e);
-      input.value = content; // restore on failure
+      input.value = content;
+    } finally {
+      input.disabled = false;
+      input.focus();
     }
   }
 

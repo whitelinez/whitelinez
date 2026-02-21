@@ -26,6 +26,7 @@ const Markets = (() => {
   // ── Market loading ────────────────────────────────────────────────
 
   async function loadMarkets() {
+    _showSkeleton();
     try {
       const { data: round, error } = await window.sb
         .from("bet_rounds")
@@ -46,7 +47,18 @@ const Markets = (() => {
       updateRoundStrip(round);
     } catch (e) {
       console.error("[Markets] Failed to load:", e);
+      renderNoRound();
     }
+  }
+
+  function _showSkeleton() {
+    const container = document.getElementById("markets-container");
+    if (!container) return;
+    container.innerHTML = `
+      <div class="skeleton" style="height:22px;width:60%;margin-bottom:10px;border-radius:6px;"></div>
+      <div class="skeleton" style="height:14px;width:100%;margin-bottom:16px;border-radius:4px;"></div>
+      ${Array(3).fill(`<div class="skeleton" style="height:88px;border-radius:8px;margin-bottom:8px;"></div>`).join("")}
+    `;
   }
 
   function renderNoRound() {
@@ -56,9 +68,10 @@ const Markets = (() => {
     const container = document.getElementById("markets-container");
     if (container) {
       container.innerHTML = `
-        <div class="no-round">
-          <p>No active betting round right now.</p>
-          <p class="muted">Check back soon.</p>
+        <div class="empty-state">
+          <div class="empty-state-icon">🎯</div>
+          No active round right now.
+          <span>Check back soon — rounds open regularly.</span>
         </div>`;
     }
     updateRoundStrip(null);

@@ -1,12 +1,13 @@
 /**
- * markets.js — Renders active bet markets from WS feed.
- * Listens for count:update events from counter.js and fetches market data
- * from Supabase directly (public read via anon key + RLS).
+ * markets.js — Renders active bet markets.
+ * Receives real-time round updates via round:update events (from counter.js WS).
+ * Falls back to polling Supabase every 60s.
  */
 
 const Markets = (() => {
   let currentRound = null;
-  let refreshTimer = null;
+  let timersInterval = null;
+  let lastRoundId = null;
 
   async function loadMarkets() {
     try {
@@ -31,6 +32,9 @@ const Markets = (() => {
   }
 
   function renderNoRound() {
+    clearInterval(timersInterval);
+    timersInterval = null;
+    lastRoundId = null;
     const container = document.getElementById("markets-container");
     if (container) {
       container.innerHTML = `
@@ -45,58 +49,129 @@ const Markets = (() => {
     const container = document.getElementById("markets-container");
     if (!container) return;
 
-    const closesAt = round.closes_at ? new Date(round.closes_at) : null;
     const isOpen = round.status === "open";
+    const opensAt  = round.opens_at  ? new Date(round.opens_at)  : null;
+    const closesAt = round.closes_at ? new Date(round.closes_at) : null;
+    const endsAt   = round.ends_at   ? new Date(round.ends_at)   : null;
 
     container.innerHTML = `
       <div class="round-header">
         <span class="round-badge round-${round.status}">${round.status.toUpperCase()}</span>
-        <span class="round-type">${round.market_type.replace("_", " ")}</span>
-        ${closesAt ? `<span class="closes-at">Closes: <strong id="round-countdown"></strong></span>` : ""}
+        <span class="round-type">${round.market_type.replace(/_/g, " ")}</span>
       </div>
-      <div class="market-list">
+      <div class="round-timing">
+        ${opensAt  ? `<div class="timing-row"><span>Started</span><strong id="rt-elapsed"></strong></div>` : ""}
+        ${closesAt ? `<div class="timing-row"><span>Bets close</span><strong id="rt-closes"></strong></div>` : ""}
+        ${endsAt   ? `<div class="timing-row"><span>Round ends</span><strong id="rt-ends"></strong></div>` : ""}
+      </div>
+      <div class="market-list" id="market-list">
         ${round.markets.map((m) => renderMarket(m, isOpen)).join("")}
       </div>`;
 
-    if (closesAt) startCountdown(closesAt);
+    startTimers(opensAt, closesAt, endsAt);
   }
 
   function renderMarket(market, isOpen) {
     return `
-      <div class="market-card" data-market-id="${market.id}">
+      <div class="market-card"
+           data-market-id="${market.id}"
+           data-label="${escAttr(market.label)}"
+           data-odds="${market.odds}">
         <div class="market-label">${market.label}</div>
         <div class="market-odds">${parseFloat(market.odds).toFixed(2)}x</div>
-        <div class="market-staked">${market.total_staked.toLocaleString()} staked</div>
-        ${
-          isOpen
-            ? `<button class="btn-bet" onclick="Bet.openModal('${market.id}', '${market.label}', ${market.odds})">
-                Place Bet
-               </button>`
-            : `<span class="market-closed">Closed</span>`
-        }
+        <div class="market-staked">${(market.total_staked || 0).toLocaleString()} staked</div>
+        ${isOpen
+          ? `<button class="btn-bet">Place Bet</button>`
+          : `<span class="market-closed">Closed</span>`}
       </div>`;
   }
 
-  function startCountdown(closesAt) {
-    const el = document.getElementById("round-countdown");
-    if (!el) return;
-    clearInterval(refreshTimer);
-    refreshTimer = setInterval(() => {
-      const diff = Math.max(0, Math.floor((closesAt - Date.now()) / 1000));
-      const m = Math.floor(diff / 60).toString().padStart(2, "0");
-      const s = (diff % 60).toString().padStart(2, "0");
-      el.textContent = `${m}:${s}`;
-      if (diff === 0) {
-        clearInterval(refreshTimer);
-        loadMarkets(); // reload to show locked state
+  function escAttr(str) {
+    return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function fmtDuration(sec) {
+    if (sec >= 3600) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");
+      const s = (sec % 60).toString().padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    }
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = (sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function startTimers(opensAt, closesAt, endsAt) {
+    clearInterval(timersInterval);
+    let closedFired = false;
+    let endedFired = false;
+
+    timersInterval = setInterval(() => {
+      const now = Date.now();
+
+      const elapsedEl = document.getElementById("rt-elapsed");
+      if (elapsedEl && opensAt) {
+        const elapsed = Math.max(0, Math.floor((now - opensAt) / 1000));
+        elapsedEl.textContent = fmtDuration(elapsed) + " ago";
+      }
+
+      const closesEl = document.getElementById("rt-closes");
+      if (closesEl && closesAt) {
+        const diff = Math.max(0, Math.floor((closesAt - now) / 1000));
+        closesEl.textContent = diff === 0 ? "Closed" : "in " + fmtDuration(diff);
+        if (diff === 0 && !closedFired) {
+          closedFired = true;
+          setTimeout(loadMarkets, 1500);
+        }
+      }
+
+      const endsEl = document.getElementById("rt-ends");
+      if (endsEl && endsAt) {
+        const diff = Math.max(0, Math.floor((endsAt - now) / 1000));
+        endsEl.textContent = diff === 0 ? "Resolving..." : "in " + fmtDuration(diff);
+        if (diff === 0 && !endedFired) {
+          endedFired = true;
+          setTimeout(loadMarkets, 4000);
+        }
       }
     }, 1000);
   }
 
   function init() {
     loadMarkets();
-    // Refresh every 60s in case a new round opens
+    // Fallback poll
     setInterval(loadMarkets, 60_000);
+
+    // Real-time round updates from WS
+    window.addEventListener("round:update", (e) => {
+      if (e.detail) {
+        // Only reload if round changed (avoids re-render on every count tick)
+        if (e.detail.id !== lastRoundId) {
+          lastRoundId = e.detail.id;
+          loadMarkets();
+        }
+      } else {
+        lastRoundId = null;
+        renderNoRound();
+      }
+    });
+
+    // Event delegation for bet buttons (avoids inline onclick — CSP safe)
+    const container = document.getElementById("markets-container");
+    if (container) {
+      container.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-bet");
+        if (!btn) return;
+        const card = btn.closest(".market-card");
+        if (!card) return;
+        Bet.openModal(
+          card.dataset.marketId,
+          card.dataset.label,
+          parseFloat(card.dataset.odds)
+        );
+      });
+    }
   }
 
   return { init, loadMarkets, getCurrentRound: () => currentRound };

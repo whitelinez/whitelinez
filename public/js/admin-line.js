@@ -6,7 +6,7 @@
 
 const AdminLine = (() => {
   let canvas, ctx, video;
-  let points = []; // [{x, y}] in pixel coords — max 2
+  let points = []; // [{x, y}] in pixel coords — max 4
   let cameraId = null;
   let isSaving = false;
 
@@ -36,24 +36,50 @@ const AdminLine = (() => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (points.length >= 2) {
+    if (points.length >= 4) {
       points = [];
+      document.getElementById("btn-save-line")?.setAttribute("disabled", "true");
     }
     points.push({ x, y });
     redraw();
 
-    if (points.length === 2) {
+    if (points.length === 4) {
       document.getElementById("btn-save-line")?.removeAttribute("disabled");
     }
   }
 
   function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (points.length === 0) return;
 
-    // Draw dot(s)
-    for (const p of points) {
+    // Draw filled polygon when all 4 points are set
+    if (points.length === 4) {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255, 214, 0, 0.15)";
+      ctx.fill();
+      ctx.strokeStyle = "#FFD600";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (points.length > 1) {
+      // Draw partial polygon edges as we go
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.strokeStyle = "#FFD600";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Draw corner dots
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
       ctx.beginPath();
       ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
       ctx.fillStyle = "#FFD600";
@@ -61,43 +87,13 @@ const AdminLine = (() => {
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 2;
       ctx.stroke();
+      // Label corner number
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(i + 1, p.x, p.y);
     }
-
-    // Draw line between two points
-    if (points.length === 2) {
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      ctx.lineTo(points[1].x, points[1].y);
-      ctx.strokeStyle = "#FFD600";
-      ctx.lineWidth = 3;
-      ctx.setLineDash([10, 6]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Direction arrow
-      drawArrow(points[0], points[1]);
-    }
-  }
-
-  function drawArrow(from, to) {
-    const angle = Math.atan2(to.y - from.y, to.x - from.x);
-    const midX = (from.x + to.x) / 2;
-    const midY = (from.y + to.y) / 2;
-    const len = 16;
-    ctx.beginPath();
-    ctx.moveTo(midX, midY);
-    ctx.lineTo(
-      midX - len * Math.cos(angle - Math.PI / 6),
-      midY - len * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.moveTo(midX, midY);
-    ctx.lineTo(
-      midX - len * Math.cos(angle + Math.PI / 6),
-      midY - len * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.strokeStyle = "#FFD600";
-    ctx.lineWidth = 2;
-    ctx.stroke();
   }
 
   function clearLine() {
@@ -108,7 +104,7 @@ const AdminLine = (() => {
   }
 
   async function saveLine() {
-    if (points.length < 2 || isSaving) return;
+    if (points.length < 4 || isSaving) return;
     isSaving = true;
 
     const statusEl = document.getElementById("line-status");
@@ -120,6 +116,10 @@ const AdminLine = (() => {
       y1: points[0].y / canvas.height,
       x2: points[1].x / canvas.width,
       y2: points[1].y / canvas.height,
+      x3: points[2].x / canvas.width,
+      y3: points[2].y / canvas.height,
+      x4: points[3].x / canvas.width,
+      y4: points[3].y / canvas.height,
     };
 
     try {
@@ -129,7 +129,7 @@ const AdminLine = (() => {
         .eq("id", cameraId);
 
       if (error) throw error;
-      if (statusEl) statusEl.textContent = `Line saved ✓ — AI will pick it up within 30s`;
+      if (statusEl) statusEl.textContent = `Zone saved ✓ — AI will pick it up within 30s`;
     } catch (e) {
       console.error("[AdminLine] Save failed:", e);
       if (statusEl) statusEl.textContent = `Error: ${e.message}`;

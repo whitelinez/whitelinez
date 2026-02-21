@@ -23,6 +23,12 @@
   const video = document.getElementById("live-video");
   await Stream.init(video);
 
+  const zoneCanvas = document.getElementById("zone-canvas");
+  ZoneOverlay.init(video, zoneCanvas);
+
+  const detectionCanvas = document.getElementById("detection-canvas");
+  DetectionOverlay.init(video, detectionCanvas);
+
   Counter.init();
   Markets.init();
 

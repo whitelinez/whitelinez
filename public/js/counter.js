@@ -76,7 +76,15 @@ const Counter = (() => {
     ws.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
-        if (data.type === "count") update(data);
+        if (data.type === "count") {
+          update(data);
+          // Propagate round info embedded in count messages
+          if ("round" in data) {
+            window.dispatchEvent(new CustomEvent("round:update", { detail: data.round }));
+          }
+        } else if (data.type === "round") {
+          window.dispatchEvent(new CustomEvent("round:update", { detail: data.round }));
+        }
       } catch {}
     };
 

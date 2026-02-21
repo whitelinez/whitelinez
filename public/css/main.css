@@ -162,6 +162,20 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   border-radius: var(--radius);
 }
 
+.detection-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;   /* below zone-overlay */
+}
+
+.zone-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;   /* above detection boxes */
+}
+
 .stream-badge {
   position: absolute;
   top: 12px;
@@ -275,6 +289,24 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .round-type { font-size: 0.85rem; color: var(--muted); text-transform: capitalize; }
 .closes-at { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+
+.round-timing {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 12px;
+}
+.timing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.timing-row span { color: var(--muted); }
+.timing-row strong { color: #FFD600; font-variant-numeric: tabular-nums; }
 
 .market-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -518,6 +550,38 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .field-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .field-row .field { flex: 1; min-width: 180px; }
+
+/* ── Round guardrail preview ──────────────────────────────────────── */
+.round-preview {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+.preview-row span { color: var(--muted); }
+.preview-row strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.preview-warning {
+  margin-top: 4px;
+  color: #FF8C00;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.preview-ok {
+  color: var(--green);
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
 
 /* ── Toast ───────────────────────────────────────────────────────── */
 .toast {

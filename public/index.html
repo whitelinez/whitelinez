@@ -30,6 +30,8 @@
     <section class="stream-panel">
       <div class="stream-wrapper">
         <video id="live-video" muted playsinline autoplay></video>
+        <canvas id="detection-canvas" class="detection-overlay"></canvas>
+        <canvas id="zone-canvas" class="zone-overlay"></canvas>
         <div id="play-overlay" class="play-overlay hidden">
           <button id="btn-play">▶ Play</button>
         </div>
@@ -102,6 +104,8 @@
   <script src="/js/markets.js"></script>
   <script src="/js/bet.js"></script>
 
+  <script src="/js/zone-overlay.js"></script>
+  <script src="/js/detection-overlay.js"></script>
   <script src="/js/index-init.js"></script>
 </body>
 </html>

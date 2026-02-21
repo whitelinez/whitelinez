@@ -12,16 +12,17 @@ export default async function handler(req, res) {
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  const cameraAlias = process.env.CAMERA_ALIAS;
 
-  if (!supabaseUrl || !supabaseKey) {
-    return res.status(500).json({ error: "Supabase not configured" });
+  if (!supabaseUrl || !supabaseKey || !cameraAlias) {
+    return res.status(500).json({ error: "Stream not configured" });
   }
 
   // Read the current stream URL from Supabase cameras table
   let streamUrl;
   try {
     const camResp = await fetch(
-      `${supabaseUrl}/rest/v1/cameras?is_active=eq.true&stream_url=neq.&select=stream_url&limit=1`,
+      `${supabaseUrl}/rest/v1/cameras?ipcam_alias=eq.${cameraAlias}&select=stream_url&limit=1`,
       {
         headers: {
           apikey: supabaseKey,

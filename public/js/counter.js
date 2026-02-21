@@ -47,11 +47,21 @@ const Counter = (() => {
   }
 
   async function connect() {
-    const token = window._wsToken;
-    const wssUrl = window._wssUrl;
-    if (!token || !wssUrl) {
+    // Always fetch a fresh token — the 5-min TTL means a cached token
+    // will be rejected on any reconnect after expiry.
+    let token, wssUrl;
+    try {
+      const res = await fetch("/api/token");
+      if (!res.ok) throw new Error(`token fetch ${res.status}`);
+      ({ token, wss_url: wssUrl } = await res.json());
+      window._wsToken = token;
+      window._wssUrl = wssUrl;
+    } catch (err) {
       setStatus("Waiting for token...", false);
-      setTimeout(connect, 1000);
+      reconnectTimer = setTimeout(() => {
+        backoff = Math.min(backoff * 2, MAX_BACKOFF);
+        connect();
+      }, backoff);
       return;
     }
 

@@ -148,6 +148,20 @@ function statusPill(ok) {
   return `<span class="round-badge round-${ok ? "open" : "locked"}">${ok ? "OK" : "DOWN"}</span>`;
 }
 
+function fmtAgo(iso) {
+  if (!iso) return "-";
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "just now";
+  const sec = Math.floor(ms / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  return `${day}d ago`;
+}
+
 function renderHealthOverview(health, errMsg = "") {
   const box = document.getElementById("health-overview");
   if (!box) return;
@@ -206,6 +220,93 @@ function renderHealthOverview(health, errMsg = "") {
       </div>
     </div>
   `;
+}
+
+async function loadMlProgress() {
+  const totalEl = document.getElementById("ml-points-total");
+  const dayEl = document.getElementById("ml-points-24h");
+  const confEl = document.getElementById("ml-conf-avg");
+  const modelEl = document.getElementById("ml-model-active");
+  const fillEl = document.getElementById("ml-progress-fill");
+  const pctEl = document.getElementById("ml-progress-text");
+  const hintEl = document.getElementById("ml-progress-hint");
+  const lastSeenBox = document.getElementById("ml-last-seen");
+  if (!totalEl || !dayEl || !confEl || !modelEl || !fillEl || !pctEl || !hintEl || !lastSeenBox) return;
+
+  try {
+    const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+
+    const [{ count: totalRows }, { count: rows24h }, recentResp, activeModelResp, lastJobsResp] = await Promise.all([
+      window.sb.from("ml_detection_events").select("id", { count: "exact", head: true }),
+      window.sb.from("ml_detection_events").select("id", { count: "exact", head: true }).gte("captured_at", since24h),
+      window.sb
+        .from("ml_detection_events")
+        .select("captured_at, avg_confidence, detections_count, model_name")
+        .order("captured_at", { ascending: false })
+        .limit(120),
+      window.sb
+        .from("ml_model_registry")
+        .select("model_name, status, promoted_at")
+        .eq("status", "active")
+        .order("promoted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      window.sb
+        .from("ml_training_jobs")
+        .select("job_type, status, created_at, completed_at")
+        .order("created_at", { ascending: false })
+        .limit(3),
+    ]);
+
+    const rows = recentResp?.data || [];
+    const avgConf = rows.length
+      ? rows.reduce((s, r) => s + Number(r.avg_confidence || 0), 0) / rows.length
+      : 0;
+    const latest = rows[0] || null;
+
+    const total = Number(totalRows || 0);
+    const dayCount = Number(rows24h || 0);
+    const readinessPct = Math.max(0, Math.min(100, Math.round((Math.min(dayCount, 5000) / 5000) * 100)));
+
+    totalEl.textContent = total.toLocaleString();
+    dayEl.textContent = dayCount.toLocaleString();
+    confEl.textContent = rows.length ? `${(avgConf * 100).toFixed(1)}%` : "-";
+    modelEl.textContent = activeModelResp?.data?.model_name ? String(activeModelResp.data.model_name) : "none";
+    fillEl.style.width = `${readinessPct}%`;
+    pctEl.textContent = `${readinessPct}%`;
+    hintEl.textContent = `Last 24h target: 5,000 rows. Current: ${dayCount.toLocaleString()} rows.`;
+
+    const lastJob = (lastJobsResp?.data || [])[0];
+    lastSeenBox.innerHTML = `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Last Telemetry</span>
+          <span class="round-row-meta">${latest ? `${new Date(latest.captured_at).toLocaleString()} (${fmtAgo(latest.captured_at)})` : "No data yet"}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Last Model Used</span>
+          <span class="round-row-meta">${latest?.model_name || "-"}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Last Training Job</span>
+          <span class="round-row-meta">${lastJob ? `${lastJob.job_type} / ${lastJob.status} (${fmtAgo(lastJob.created_at)})` : "No jobs yet"}</span>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    totalEl.textContent = "-";
+    dayEl.textContent = "-";
+    confEl.textContent = "-";
+    modelEl.textContent = "-";
+    fillEl.style.width = "0%";
+    pctEl.textContent = "0%";
+    hintEl.textContent = "ML tables unavailable. Run latest schema migration.";
+    lastSeenBox.innerHTML = `<p class="muted" style="font-size:0.82rem;">ML telemetry unavailable.</p>`;
+  }
 }
 
 // ── Recent rounds ─────────────────────────────────────────────────────────────
@@ -573,9 +674,11 @@ async function init() {
   // Load stats + recent rounds
   loadBaseline();
   loadStats();
+  loadMlProgress();
   loadRecentRounds();
   loadRecentBets();
   setInterval(loadStats, 10_000);
+  setInterval(loadMlProgress, 15_000);
   setInterval(loadRecentBets, 15_000);
 }
 

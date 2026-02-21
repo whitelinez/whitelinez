@@ -22,8 +22,25 @@ function defaultAvatar(seed) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+function isAllowedAvatarUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  const u = url.trim();
+  if (!u) return false;
+  if (u.startsWith("data:image/")) return true;
+  if (u.startsWith("blob:")) return true;
+  if (u.startsWith("/")) return true;
+  try {
+    const parsed = new URL(u, window.location.origin);
+    if (parsed.origin === window.location.origin) return true;
+    if (parsed.hostname.endsWith(".supabase.co")) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function getAvatarUrl(avatarUrl, seed) {
-  return avatarUrl || defaultAvatar(seed);
+  return isAllowedAvatarUrl(avatarUrl) ? avatarUrl : defaultAvatar(seed);
 }
 
 function cleanUsername(v, fallback = "User") {
@@ -74,8 +91,14 @@ async function loadProfile() {
   const headerAvatarEl = document.getElementById("account-header-avatar");
   if (usernameEl) usernameEl.value = currentProfile.username;
   const avatarSrc = getAvatarUrl(currentProfile.avatar_url, user.id);
-  if (avatarEl) avatarEl.src = avatarSrc;
-  if (headerAvatarEl) headerAvatarEl.src = avatarSrc;
+  if (avatarEl) {
+    avatarEl.onerror = () => { avatarEl.src = defaultAvatar(user.id); };
+    avatarEl.src = avatarSrc;
+  }
+  if (headerAvatarEl) {
+    headerAvatarEl.onerror = () => { headerAvatarEl.src = defaultAvatar(user.id); };
+    headerAvatarEl.src = avatarSrc;
+  }
 
   if (user?.app_metadata?.role === "admin") {
     document.getElementById("account-nav-admin")?.classList.remove("hidden");
@@ -147,7 +170,8 @@ async function onAvatarUpload(e) {
     if (uploadError) throw uploadError;
 
     const { data } = window.sb.storage.from("avatars").getPublicUrl(path);
-    currentProfile.avatar_url = data?.publicUrl || "";
+    const publicUrl = data?.publicUrl ? `${data.publicUrl}?v=${Date.now()}` : "";
+    currentProfile.avatar_url = publicUrl;
 
     const avatarEl = document.getElementById("profile-avatar-img");
     const headerAvatarEl = document.getElementById("account-header-avatar");

@@ -16,15 +16,40 @@
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
 
+  function isAllowedAvatarUrl(url) {
+    if (!url || typeof url !== "string") return false;
+    const u = url.trim();
+    if (!u) return false;
+    if (u.startsWith("data:image/")) return true;
+    if (u.startsWith("blob:")) return true;
+    if (u.startsWith("/")) return true;
+    try {
+      const parsed = new URL(u, window.location.origin);
+      if (parsed.origin === window.location.origin) return true;
+      if (parsed.hostname.endsWith(".supabase.co")) return true;
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   // Nav auth state
   if (session) {
     document.getElementById("nav-auth")?.classList.add("hidden");
     document.getElementById("nav-user")?.classList.remove("hidden");
 
     const user = session.user || {};
-    const avatar = user.user_metadata?.avatar_url || defaultAvatar(user.id || user.email || "user");
+    const avatarRaw = user.user_metadata?.avatar_url || "";
+    const avatar = isAllowedAvatarUrl(avatarRaw)
+      ? avatarRaw
+      : defaultAvatar(user.id || user.email || "user");
     const navAvatar = document.getElementById("nav-avatar");
-    if (navAvatar) navAvatar.src = avatar;
+    if (navAvatar) {
+      navAvatar.onerror = () => {
+        navAvatar.src = defaultAvatar(user.id || user.email || "user");
+      };
+      navAvatar.src = avatar;
+    }
 
     if (user.app_metadata?.role === "admin") {
       document.getElementById("nav-admin-link")?.classList.remove("hidden");

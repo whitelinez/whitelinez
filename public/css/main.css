@@ -1,5 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+﻿/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -1038,6 +1037,43 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .user-mgmt-row .field { flex: 1; margin-bottom: 0; }
 .user-mgmt-row .btn-primary { padding: 10px 16px; white-space: nowrap; }
 
+.ml-progress-wrap {
+  margin-top: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.ml-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.ml-progress-head strong {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.ml-progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.ml-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #00BCD4 0%, #22c55e 100%);
+  transition: width .25s ease;
+}
+
 /* â”€â”€ Mobile (â‰¤640px) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 640px) {
 
@@ -1373,6 +1409,119 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 @media (max-width: 420px) {
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Admin density + layout polish */
+.admin-grid {
+  gap: 16px;
+  margin: 16px auto;
+}
+
+.admin-col {
+  gap: 16px;
+}
+
+.admin-section {
+  padding: 16px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%), var(--bg2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+.admin-section h2 {
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.admin-hint {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.stream-canvas-wrapper {
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.admin-line-controls {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stat-card {
+  padding: 10px;
+  text-align: left;
+}
+
+.stat-card .stat-val {
+  font-size: 1.35rem;
+}
+
+.stat-card .stat-label {
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+
+.rounds-list {
+  gap: 6px;
+}
+
+.round-row {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+
+.round-row-id {
+  font-size: 0.68rem;
+}
+
+.round-row-meta {
+  font-size: 0.79rem;
+  line-height: 1.35;
+}
+
+#recent-rounds,
+#recent-bets,
+#health-overview,
+#ml-last-seen {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.computed-times {
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+
+.round-preview {
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.user-mgmt-row {
+  gap: 10px;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

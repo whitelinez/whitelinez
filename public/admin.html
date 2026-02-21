@@ -70,6 +70,44 @@
         </div>
       </section>
 
+      <!-- ML Progress -->
+      <section class="admin-section">
+        <h2>ML Progress</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-val" id="ml-points-total">-</div>
+            <div class="stat-label">Telemetry Rows</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="ml-points-24h">-</div>
+            <div class="stat-label">Rows (24h)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="ml-conf-avg">-</div>
+            <div class="stat-label">Avg Confidence</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="ml-model-active">-</div>
+            <div class="stat-label">Active Model</div>
+          </div>
+        </div>
+
+        <div class="ml-progress-wrap">
+          <div class="ml-progress-head">
+            <span>Training Readiness</span>
+            <strong id="ml-progress-text">0%</strong>
+          </div>
+          <div class="ml-progress-bar">
+            <div id="ml-progress-fill" class="ml-progress-fill"></div>
+          </div>
+          <p class="admin-hint" id="ml-progress-hint" style="margin-top:8px; margin-bottom:0;"></p>
+        </div>
+
+        <div id="ml-last-seen" class="rounds-list" style="margin-top:12px;">
+          <p class="loading">Loading ML data...</p>
+        </div>
+      </section>
+
       <!-- User management -->
       <section class="admin-section">
         <h2>User Management</h2>

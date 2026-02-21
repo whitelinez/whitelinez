@@ -31,6 +31,23 @@ const Chat = (() => {
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
 
+  function isAllowedAvatarUrl(url) {
+    if (!url || typeof url !== "string") return false;
+    const u = url.trim();
+    if (!u) return false;
+    if (u.startsWith("data:image/")) return true;
+    if (u.startsWith("blob:")) return true;
+    if (u.startsWith("/")) return true;
+    try {
+      const parsed = new URL(u, window.location.origin);
+      if (parsed.origin === window.location.origin) return true;
+      if (parsed.hostname.endsWith(".supabase.co")) return true;
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   function init(session) {
     _userSession = session;
     const hint = document.getElementById("chat-login-hint");
@@ -161,7 +178,9 @@ const Chat = (() => {
 
     const profile = msg.user_id ? _profileByUserId.get(msg.user_id) : null;
     const username = profile?.username || msg.username || "User";
-    const avatar = profile?.avatar_url || defaultAvatar(msg.user_id || username);
+    const avatar = isAllowedAvatarUrl(profile?.avatar_url)
+      ? profile.avatar_url
+      : defaultAvatar(msg.user_id || username);
     const time = msg.created_at
       ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : "";

@@ -69,7 +69,13 @@ const Markets = (() => {
     if (container) {
       container.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">🎯</div>
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"></circle>
+              <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+            </svg>
+          </div>
           No active round right now.
           <span>Check back soon — rounds open regularly.</span>
         </div>`;
@@ -102,7 +108,8 @@ const Markets = (() => {
       ${isOpen ? `
       <div style="margin-top:12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top:10px;">
         <button class="btn-live-bet btn-full" id="btn-open-live-bet">
-          ⚡ Exact Count Live Bet (8x)
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"></path></svg>
+          <span>Exact Count Live Bet (8x)</span>
         </button>
       </div>` : ""}
     `;
@@ -256,3 +263,5 @@ const Markets = (() => {
 })();
 
 window.Markets = Markets;
+
+

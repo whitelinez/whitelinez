@@ -7,6 +7,7 @@
 const Counter = (() => {
   let ws = null;
   let reconnectTimer = null;
+  let pollTimer = null;
   let backoff = 2000;
   const MAX_BACKOFF = 30000;
 
@@ -16,6 +17,43 @@ const Counter = (() => {
 
   function update(data) {
     window.dispatchEvent(new CustomEvent("count:update", { detail: data }));
+  }
+
+  async function pollLatestSnapshot() {
+    try {
+      const { data } = await window.sb
+        .from("count_snapshots")
+        .select("camera_id, captured_at, total, count_in, count_out, vehicle_breakdown")
+        .order("captured_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data) return;
+      update({
+        type: "count",
+        camera_id: data.camera_id,
+        captured_at: data.captured_at,
+        total: data.total || 0,
+        count_in: data.count_in || 0,
+        count_out: data.count_out || 0,
+        vehicle_breakdown: data.vehicle_breakdown || {},
+        detections: [],
+        new_crossings: 0,
+      });
+    } catch {
+      // keep silent, websocket path is primary
+    }
+  }
+
+  function startPollFallback() {
+    if (pollTimer) return;
+    pollTimer = setInterval(pollLatestSnapshot, 2000);
+    pollLatestSnapshot();
+  }
+
+  function stopPollFallback() {
+    if (!pollTimer) return;
+    clearInterval(pollTimer);
+    pollTimer = null;
   }
 
   async function connect() {
@@ -28,6 +66,7 @@ const Counter = (() => {
       window._wssUrl = wssUrl;
     } catch (err) {
       setStatus(false);
+      startPollFallback();
       reconnectTimer = setTimeout(() => {
         backoff = Math.min(backoff * 2, MAX_BACKOFF);
         connect();
@@ -40,6 +79,7 @@ const Counter = (() => {
 
     ws.onopen = () => {
       setStatus(true);
+      stopPollFallback();
       backoff = 2000;
     };
 
@@ -61,6 +101,7 @@ const Counter = (() => {
 
     ws.onclose = () => {
       setStatus(false);
+      startPollFallback();
       reconnectTimer = setTimeout(() => {
         backoff = Math.min(backoff * 2, MAX_BACKOFF);
         connect();
@@ -75,6 +116,7 @@ const Counter = (() => {
 
   function destroy() {
     clearTimeout(reconnectTimer);
+    stopPollFallback();
     if (ws) ws.close();
   }
 

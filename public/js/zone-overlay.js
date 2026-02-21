@@ -97,6 +97,9 @@ const ZoneOverlay = (() => {
       pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
       ctx.closePath();
 
+      ctx.save();
+      ctx.shadowColor = color + "66";
+      ctx.shadowBlur = flashing ? 18 : 10;
       ctx.fillStyle = flashing
         ? "rgba(0,255,136,0.18)"
         : color === "#00BCD4"
@@ -109,44 +112,79 @@ const ZoneOverlay = (() => {
       ctx.setLineDash(flashing ? [] : [8, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.restore();
 
       pts.forEach(p => {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = color;
+        ctx.arc(p.x, p.y, flashing ? 5 : 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#0d0f14";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, flashing ? 3.5 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = color + "EE";
         ctx.fill();
       });
 
       const cx = pts.reduce((s, p) => s + p.x, 0) / 4;
       const cy = pts.reduce((s, p) => s + p.y, 0) / 4;
-      ctx.font         = "bold 10px sans-serif";
-      ctx.fillStyle    = color + "DD";
-      ctx.textAlign    = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(label, cx, cy);
+      _drawLabelChip(label, cx, cy, color);
 
     } else if (zone.x1 !== undefined) {
       // 2-point line
       const p1 = pt(zone.x1, zone.y1);
       const p2 = pt(zone.x2, zone.y2);
 
+      ctx.save();
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.strokeStyle = color;
       ctx.lineWidth   = flashing ? 4 : 3;
+      ctx.shadowColor = color + "66";
+      ctx.shadowBlur = flashing ? 16 : 10;
       ctx.setLineDash(flashing ? [] : [10, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.restore();
 
       const mx = (p1.x + p2.x) / 2;
       const my = (p1.y + p2.y) / 2 - 10;
-      ctx.font         = "bold 10px sans-serif";
-      ctx.fillStyle    = color + "DD";
-      ctx.textAlign    = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(label, mx, my);
+      _drawLabelChip(label, mx, my, color);
     }
+  }
+
+  function _drawLabelChip(text, x, y, color) {
+    ctx.save();
+    ctx.font = "600 10px system-ui, sans-serif";
+    const padX = 7;
+    const w = Math.ceil(ctx.measureText(text).width + padX * 2);
+    const h = 18;
+    const rx = Math.round(x - (w / 2));
+    const ry = Math.round(y - (h / 2));
+    const r = 6;
+
+    ctx.beginPath();
+    ctx.moveTo(rx + r, ry);
+    ctx.lineTo(rx + w - r, ry);
+    ctx.quadraticCurveTo(rx + w, ry, rx + w, ry + r);
+    ctx.lineTo(rx + w, ry + h - r);
+    ctx.quadraticCurveTo(rx + w, ry + h, rx + w - r, ry + h);
+    ctx.lineTo(rx + r, ry + h);
+    ctx.quadraticCurveTo(rx, ry + h, rx, ry + h - r);
+    ctx.lineTo(rx, ry + r);
+    ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(10,12,16,0.82)";
+    ctx.fill();
+    ctx.strokeStyle = color + "CC";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y + 0.5);
+    ctx.restore();
   }
 
   return { init };

@@ -64,16 +64,19 @@
             <div class="stat-label">WS Users</div>
           </div>
         </div>
+        <div id="analytics-insights" class="analytics-insights">
+          <p class="muted" style="font-size:0.82rem;">Loading analytics...</p>
+        </div>
       </section>
 
       <!-- User management -->
       <section class="admin-section">
         <h2>User Management</h2>
-        <p class="admin-hint">Set admin role for a user by email.</p>
+        <p class="admin-hint">Set admin role for a user by Supabase user ID.</p>
         <div class="user-mgmt-row">
           <div class="field">
-            <label for="admin-email-input">User Email</label>
-            <input id="admin-email-input" type="email" placeholder="user@example.com" />
+            <label for="admin-email-input">User ID</label>
+            <input id="admin-email-input" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
           </div>
           <button id="btn-set-admin" class="btn-primary">Set Admin</button>
         </div>
@@ -139,7 +142,7 @@
             <div class="preview-row"><span>Avg zone vehicles (this hour)</span><strong id="prev-rate">—</strong></div>
             <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">—</strong></div>
             <div id="prev-warning" class="preview-warning hidden"></div>
-            <div id="prev-ok" class="preview-ok hidden">✓ Round looks competitive</div>
+            <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
           </div>
 
           <p id="round-error"   class="auth-error"   role="alert"></p>
@@ -153,6 +156,35 @@
         <h2>Recent Rounds</h2>
         <div id="recent-rounds" class="rounds-list">
           <p class="loading">Loading...</p>
+        </div>
+      </section>
+
+      <!-- Model ops -->
+      <section class="admin-section">
+        <h2>Model Ops</h2>
+        <p class="admin-hint">Export telemetry dataset, run train job, then promote a candidate model to active.</p>
+        <div class="field-row">
+          <div class="field" style="max-width:140px">
+            <label for="ml-hours">Export window (h)</label>
+            <input id="ml-hours" type="number" min="1" max="720" value="24" />
+          </div>
+          <div class="field">
+            <label for="ml-base-model">Base model</label>
+            <input id="ml-base-model" type="text" value="yolov8n.pt" />
+          </div>
+        </div>
+        <div class="admin-line-controls" style="margin-top:0;">
+          <button id="ml-export-btn" class="btn-secondary">Export Dataset</button>
+          <button id="ml-train-btn" class="btn-primary">Start Train Job</button>
+          <span id="ml-msg" class="line-status"></span>
+        </div>
+        <div style="margin-top:12px;">
+          <h3 style="font-size:0.82rem; color:var(--muted); margin-bottom:6px;">Recent ML Jobs</h3>
+          <div id="ml-jobs-list" class="rounds-list"><p class="loading">Loading...</p></div>
+        </div>
+        <div style="margin-top:12px;">
+          <h3 style="font-size:0.82rem; color:var(--muted); margin-bottom:6px;">Model Registry</h3>
+          <div id="ml-models-list" class="rounds-list"><p class="loading">Loading...</p></div>
         </div>
       </section>
 

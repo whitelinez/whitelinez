@@ -1,11 +1,9 @@
 /**
- * /api/admin/rounds
- * - POST: create round
- * - PATCH: resolve round using latest snapshot
- * Proxies to Railway backend with admin JWT passthrough.
+ * GET /api/admin/analytics?hours=24
+ * Proxy admin analytics overview to backend.
  */
 export default async function handler(req, res) {
-  if (!["POST", "PATCH"].includes(req.method)) {
+  if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -19,27 +17,19 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Missing Bearer token" });
   }
 
-  let body;
-  try {
-    body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  } catch {
-    return res.status(400).json({ error: "Invalid JSON body" });
-  }
+  const hours = req.query?.hours ? String(req.query.hours) : "24";
 
   try {
-    const upstream = await fetch(`${railwayUrl}/admin/rounds`, {
-      method: req.method,
+    const upstream = await fetch(`${railwayUrl}/admin/analytics/overview?hours=${encodeURIComponent(hours)}`, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: authHeader,
       },
-      body: JSON.stringify(body),
     });
-
     const data = await upstream.json();
     return res.status(upstream.status).json(data);
   } catch (err) {
-    console.error("[/api/admin/rounds] Upstream error:", err);
+    console.error("[/api/admin/analytics] Upstream error:", err);
     return res.status(502).json({ error: "Upstream request failed" });
   }
 }

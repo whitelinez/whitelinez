@@ -1,11 +1,9 @@
 /**
- * /api/admin/rounds
- * - POST: create round
- * - PATCH: resolve round using latest snapshot
- * Proxies to Railway backend with admin JWT passthrough.
+ * POST /api/admin/set-role
+ * Proxy admin role updates to Railway backend.
  */
 export default async function handler(req, res) {
-  if (!["POST", "PATCH"].includes(req.method)) {
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -27,8 +25,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const upstream = await fetch(`${railwayUrl}/admin/rounds`, {
-      method: req.method,
+    const upstream = await fetch(`${railwayUrl}/admin/set-role`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: authHeader,
@@ -39,7 +37,7 @@ export default async function handler(req, res) {
     const data = await upstream.json();
     return res.status(upstream.status).json(data);
   } catch (err) {
-    console.error("[/api/admin/rounds] Upstream error:", err);
+    console.error("[/api/admin/set-role] Upstream error:", err);
     return res.status(502).json({ error: "Upstream request failed" });
   }
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Account — WHITELINEZ</title>
+  <title>My Account - WHITELINEZ</title>
   <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body class="dark">
@@ -19,11 +19,36 @@
 
   <main class="account-main">
 
+    <section class="account-profile-card">
+      <div class="profile-avatar-wrap">
+        <img id="profile-avatar-img" class="profile-avatar" alt="Profile avatar" />
+        <label for="profile-avatar-input" class="btn-secondary profile-avatar-btn">Upload</label>
+        <input id="profile-avatar-input" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="hidden" />
+      </div>
+      <div class="profile-fields">
+        <div class="field" style="margin-bottom:10px;">
+          <label for="profile-username">Username</label>
+          <input id="profile-username" type="text" maxlength="32" placeholder="Your username" />
+        </div>
+        <div class="profile-actions">
+          <button id="btn-save-profile" class="btn-primary">Save Profile</button>
+          <span id="profile-msg" class="muted"></span>
+        </div>
+      </div>
+    </section>
+
     <section class="account-balance-card">
       <div class="balance-label">Virtual Balance</div>
-      <div id="balance-display" class="balance-value">—</div>
+      <div id="balance-display" class="balance-value">-</div>
       <div class="balance-currency">credits</div>
       <div id="account-ws-status" class="ws-status ws-err">Connecting...</div>
+    </section>
+
+    <section class="account-history">
+      <h2>Pending Bets</h2>
+      <div id="pending-container">
+        <p class="loading">Loading pending bets...</p>
+      </div>
     </section>
 
     <section class="account-history">

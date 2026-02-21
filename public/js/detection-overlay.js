@@ -7,9 +7,10 @@
 
 const DetectionOverlay = (() => {
   let canvas, ctx, video;
+  let latestDetections = [];
+  let rafId = null;
 
   const CLASS_COLORS = {
-    person:     "#7DD3FC",   // light cyan
     car:        "#29B6F6",   // sky blue
     truck:      "#FF7043",   // orange-red
     bus:        "#AB47BC",   // purple
@@ -26,8 +27,16 @@ const DetectionOverlay = (() => {
     video.addEventListener("loadedmetadata", syncSize);
 
     window.addEventListener("count:update", (e) => {
-      draw(e.detail?.detections ?? []);
+      latestDetections = e.detail?.detections ?? [];
+      if (!rafId) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
     });
+  }
+
+  function renderFrame() {
+    rafId = null;
+    draw(latestDetections);
   }
 
   function syncSize() {
@@ -53,67 +62,25 @@ const DetectionOverlay = (() => {
       // Skip degenerate boxes
       if (bw < 4 || bh < 4) continue;
 
-      // Semi-transparent fill with subtle glow
-      ctx.save();
-      ctx.shadowColor = color + "55";
-      ctx.shadowBlur = 8;
-      _roundRect(p1.x, p1.y, bw, bh, 5);
-      ctx.fillStyle = color + "1C";
-      ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
-      ctx.restore();
+      // Semi-transparent fill
+      ctx.fillStyle = color + "18";
+      ctx.fillRect(p1.x, p1.y, bw, bh);
 
-      // Corner accents for a cleaner look
-      const c = 7;
-      _corner(p1.x, p1.y, c, color, "tl");
-      _corner(p2.x, p1.y, c, color, "tr");
-      _corner(p1.x, p2.y, c, color, "bl");
-      _corner(p2.x, p2.y, c, color, "br");
+      // Border
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 1.5;
+      ctx.strokeRect(p1.x, p1.y, bw, bh);
 
       // Label chip above box (or below if too close to top)
-      ctx.font = "600 10px system-ui, sans-serif";
-      const tw = ctx.measureText(det.cls).width + 12;
+      ctx.font = "bold 10px sans-serif";
+      const tw = ctx.measureText(det.cls).width + 8;
       const lx = p1.x;
-      const ly = p1.y > 18 ? p1.y - 17 : p1.y + bh + 3;
-      _roundRect(lx, ly, tw, 14, 4);
-      ctx.fillStyle = "rgba(8,10,14,0.9)";
-      ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      const ly = p1.y > 14 ? p1.y - 14 : p1.y + bh;
       ctx.fillStyle = color;
-      ctx.fillText(det.cls, lx + 6, ly + 10.2);
+      ctx.fillRect(lx, ly, tw, 13);
+      ctx.fillStyle = "#000";
+      ctx.fillText(det.cls, lx + 4, ly + 10);
     }
-  }
-
-  function _roundRect(x, y, w, h, r = 4) {
-    const rr = Math.min(r, w / 2, h / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + rr, y);
-    ctx.lineTo(x + w - rr, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-    ctx.lineTo(x + w, y + h - rr);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-    ctx.lineTo(x + rr, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-    ctx.lineTo(x, y + rr);
-    ctx.quadraticCurveTo(x, y, x + rr, y);
-    ctx.closePath();
-  }
-
-  function _corner(x, y, len, color, pos) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    if (pos === "tl") { ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y); }
-    if (pos === "tr") { ctx.moveTo(x - len, y); ctx.lineTo(x, y); ctx.lineTo(x, y + len); }
-    if (pos === "bl") { ctx.moveTo(x, y - len); ctx.lineTo(x, y); ctx.lineTo(x + len, y); }
-    if (pos === "br") { ctx.moveTo(x - len, y); ctx.lineTo(x, y); ctx.lineTo(x, y - len); }
-    ctx.stroke();
-    ctx.restore();
   }
 
   return { init };

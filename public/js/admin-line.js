@@ -242,7 +242,7 @@ const AdminLine = (() => {
         .update(updateData)
         .eq("id", cameraId);
       if (error) throw error;
-      updateStatus("Zones saved - AI picks up within 30s");
+      updateStatus("Zones saved ✓ — AI picks up within 30s");
     } catch (e) {
       console.error("[AdminLine] Save failed:", e);
       updateStatus(`Error: ${e.message}`);

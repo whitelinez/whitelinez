@@ -4,7 +4,6 @@
  */
 
 let adminSession = null;
-let lastExportJobId = null;
 
 // ── Guardrail constants ────────────────────────────────────────────────────────
 const MIN_DURATION_MIN      = 5;
@@ -113,156 +112,80 @@ async function loadStats() {
         const hData = await h.json();
         const usersEl = document.getElementById("stat-users");
         if (usersEl) usersEl.textContent = hData.user_ws_connections ?? "—";
+        renderHealthOverview(hData);
+      } else {
+        renderHealthOverview(null, `HTTP ${h.status}`);
       }
-    } catch {}
+    } catch {
+      renderHealthOverview(null, "Unavailable");
+    }
   } catch (e) {
     console.warn("[admin-init] Stats load failed:", e);
   }
 }
 
-async function loadAnalyticsOverview() {
-  const box = document.getElementById("analytics-insights");
-  if (!box || !adminSession?.access_token) return;
-  try {
-    const res = await fetch("/api/admin/analytics?hours=24", {
-      headers: { Authorization: `Bearer ${adminSession.access_token}` },
-    });
-    if (!res.ok) throw new Error(`analytics ${res.status}`);
-    const data = await res.json();
-    const traffic = data.traffic || {};
-    const bets = data.bets || {};
-    const ml = data.ml || {};
-    const cls = traffic.class_totals || {};
-    box.innerHTML = `
-      <div class="preview-row"><span>24h avg traffic</span><strong>${Number(traffic.avg_total || 0).toFixed(1)}</strong></div>
-      <div class="preview-row"><span>24h peak traffic</span><strong>${traffic.peak_total ?? 0}</strong></div>
-      <div class="preview-row"><span>Total bets (24h)</span><strong>${bets.bet_count ?? 0}</strong></div>
-      <div class="preview-row"><span>Exact bets ratio</span><strong>${(bets.bet_count ? Math.round((bets.exact_count || 0) * 100 / bets.bet_count) : 0)}%</strong></div>
-      <div class="preview-row"><span>ML avg confidence</span><strong>${Number(ml.avg_detection_confidence || 0).toFixed(3)}</strong></div>
-      <div class="preview-row"><span>Road users mix</span><strong>P:${cls.person || 0} C:${cls.car || 0} T:${cls.truck || 0} B:${cls.bus || 0} M:${cls.motorcycle || 0}</strong></div>
-    `;
-  } catch (e) {
-    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Analytics unavailable.</p>`;
-  }
+function statusPill(ok) {
+  return `<span class="round-badge round-${ok ? "open" : "locked"}">${ok ? "OK" : "DOWN"}</span>`;
 }
 
-async function loadMlOps() {
-  const jobsBox = document.getElementById("ml-jobs-list");
-  const modelsBox = document.getElementById("ml-models-list");
-  if (!jobsBox || !modelsBox || !adminSession?.access_token) return;
-  try {
-    const [jobsRes, modelsRes] = await Promise.all([
-      fetch("/api/admin/ml-jobs?limit=20", { headers: { Authorization: `Bearer ${adminSession.access_token}` } }),
-      fetch("/api/admin/ml-models?limit=20", { headers: { Authorization: `Bearer ${adminSession.access_token}` } }),
-    ]);
-    const jobs = jobsRes.ok ? await jobsRes.json() : [];
-    const models = modelsRes.ok ? await modelsRes.json() : [];
+function renderHealthOverview(health, errMsg = "") {
+  const box = document.getElementById("health-overview");
+  if (!box) return;
+  if (!health) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">/health unavailable${errMsg ? ` (${errMsg})` : ""}</p>`;
+    return;
+  }
 
-    const exportJob = (jobs || []).find(j => j.job_type === "export" && j.status === "completed");
-    lastExportJobId = exportJob?.id ?? null;
-
-    jobsBox.innerHTML = (jobs || []).slice(0, 8).map(j => `
-      <div class="round-row">
-        <div class="round-row-info">
-          <span class="round-row-id">#${j.id} • ${j.job_type}</span>
-          <span class="round-row-meta"><span class="round-badge round-${j.status === "completed" ? "open" : "locked"}">${(j.status || "").toUpperCase()}</span> ${j.provider || "n/a"}</span>
-        </div>
+  box.innerHTML = `
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">API</span>
+        <span class="round-row-meta">${statusPill(health.status === "ok")}</span>
       </div>
-    `).join("") || `<p class="muted" style="font-size:0.82rem;">No jobs yet.</p>`;
-
-    modelsBox.innerHTML = (models || []).slice(0, 8).map(m => `
-      <div class="round-row">
-        <div class="round-row-info">
-          <span class="round-row-id">#${m.id} • ${m.model_name}</span>
-          <span class="round-row-meta"><span class="round-badge round-${m.status === "active" ? "open" : "locked"}">${(m.status || "").toUpperCase()}</span> ${m.model_uri || ""}</span>
-        </div>
-        ${m.status !== "active" ? `<button class="btn-resolve" data-ml-promote="${m.id}">Promote</button>` : ""}
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">AI Task</span>
+        <span class="round-row-meta">${statusPill(Boolean(health.ai_task_running))}</span>
       </div>
-    `).join("") || `<p class="muted" style="font-size:0.82rem;">No models yet.</p>`;
-
-    modelsBox.querySelectorAll("[data-ml-promote]").forEach((btn) => {
-      btn.addEventListener("click", () => handleMlPromote(parseInt(btn.dataset.mlPromote, 10), btn));
-    });
-  } catch (e) {
-    jobsBox.innerHTML = `<p class="muted" style="font-size:0.82rem;">ML jobs unavailable.</p>`;
-    modelsBox.innerHTML = `<p class="muted" style="font-size:0.82rem;">Model registry unavailable.</p>`;
-  }
-}
-
-async function handleMlExport() {
-  const msg = document.getElementById("ml-msg");
-  const hours = parseInt(document.getElementById("ml-hours")?.value || "24", 10);
-  if (!adminSession?.access_token || !msg) return;
-  msg.textContent = "Exporting dataset...";
-  try {
-    const res = await fetch("/api/admin/ml-jobs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
-      body: JSON.stringify({ action: "export", hours }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || data.error || "Export failed");
-    lastExportJobId = data.id ?? null;
-    msg.textContent = `Export complete (job #${data.id})`;
-    await loadMlOps();
-  } catch (e) {
-    msg.textContent = e.message || "Export failed";
-  }
-}
-
-async function handleMlTrain() {
-  const msg = document.getElementById("ml-msg");
-  const baseModel = document.getElementById("ml-base-model")?.value?.trim() || "yolov8n.pt";
-  if (!adminSession?.access_token || !msg) return;
-  msg.textContent = "Starting train job...";
-  try {
-    const res = await fetch("/api/admin/ml-jobs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
-      body: JSON.stringify({
-        action: "train",
-        base_model: baseModel,
-        dataset_job_id: lastExportJobId,
-        provider: "internal_stub",
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || data.error || "Train failed");
-    msg.textContent = `Train complete (job #${data.job?.id ?? "?"}, model #${data.model?.id ?? "?"})`;
-    await loadMlOps();
-  } catch (e) {
-    msg.textContent = e.message || "Train failed";
-  }
-}
-
-async function handleMlPromote(modelId, btn) {
-  const msg = document.getElementById("ml-msg");
-  if (!adminSession?.access_token || !msg) return;
-  if (btn) btn.disabled = true;
-  msg.textContent = `Promoting model #${modelId}...`;
-  try {
-    const res = await fetch("/api/admin/ml-models", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
-      body: JSON.stringify({ model_id: modelId }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || data.error || "Promote failed");
-    msg.textContent = `Model #${modelId} is now active`;
-    await loadMlOps();
-  } catch (e) {
-    msg.textContent = e.message || "Promote failed";
-    if (btn) btn.disabled = false;
-  }
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">Refresh Task</span>
+        <span class="round-row-meta">${statusPill(Boolean(health.refresh_task_running))}</span>
+      </div>
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">Round Task</span>
+        <span class="round-row-meta">${statusPill(Boolean(health.round_task_running))}</span>
+      </div>
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">Resolver Task</span>
+        <span class="round-row-meta">${statusPill(Boolean(health.resolver_task_running))}</span>
+      </div>
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">Public WS / User WS</span>
+        <span class="round-row-meta">${health.public_ws_connections ?? 0} / ${health.user_ws_connections ?? 0}</span>
+      </div>
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">Active Round</span>
+        <span class="round-row-meta">${health.active_round_id ? String(health.active_round_id).slice(0, 8) + "…" : "none"}</span>
+      </div>
+    </div>
+    <div class="round-row">
+      <div class="round-row-info">
+        <span class="round-row-id">Stream URL</span>
+        <span class="round-row-meta">${health.stream_url ? "present" : "missing"}</span>
+      </div>
+    </div>
+  `;
 }
 
 // ── Recent rounds ─────────────────────────────────────────────────────────────
@@ -416,7 +339,7 @@ async function updatePreview() {
 
   if (warnings.length) {
     if (prevWarn) {
-      prevWarn.innerHTML = warnings.map(w => `<div><svg class="ui-icon warn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 16H3l9-16z" fill="none" stroke="currentColor" stroke-width="2"></path><path d="M12 9v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.5" r="1" fill="currentColor"></circle></svg>${w}</div>`).join("");
+      prevWarn.innerHTML = warnings.map(w => `<div>⚠ ${w}</div>`).join("");
       prevWarn.classList.remove("hidden");
     }
     if (submitBtn) submitBtn.disabled = true;
@@ -519,27 +442,20 @@ async function handleSubmit(e) {
 async function handleSetAdmin() {
   const emailEl = document.getElementById("admin-email-input");
   const msgEl   = document.getElementById("user-mgmt-msg");
-  const userId  = emailEl?.value?.trim();
-  if (!userId) return;
+  const email   = emailEl?.value?.trim();
+  if (!email) return;
   if (!adminSession?.access_token) return;
   msgEl.textContent = "Setting...";
   try {
-    const res = await fetch("/api/admin/set-role", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
-      body: JSON.stringify({ user_id: userId, role: "admin" }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || data.error || "Failed to set role");
-
+    // Use Supabase admin RPC or update user_metadata
+    // This calls an RPC set_admin_by_email if available, otherwise shows a note
+    const { error } = await window.sb.rpc("set_admin_by_email", { p_email: email });
+    if (error) throw error;
     msgEl.style.color = "var(--green)";
-    msgEl.textContent = `Admin role set for ${userId}`;
+    msgEl.textContent = `Admin role set for ${email}`;
   } catch (e) {
     msgEl.style.color = "var(--red)";
-    msgEl.textContent = e.message || "Failed to set admin role";
+    msgEl.textContent = e.message || "Failed — ensure set_admin_by_email RPC exists";
   }
 }
 
@@ -573,20 +489,14 @@ async function init() {
   // Load stats + recent rounds
   loadBaseline();
   loadStats();
-  loadAnalyticsOverview();
-  loadMlOps();
   loadRecentRounds();
   setInterval(loadStats, 10_000);
-  setInterval(loadAnalyticsOverview, 30_000);
-  setInterval(loadMlOps, 30_000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
   document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
-  document.getElementById("ml-export-btn")?.addEventListener("click", handleMlExport);
-  document.getElementById("ml-train-btn")?.addEventListener("click", handleMlTrain);
 
   // Market type visibility
   document.getElementById("market-type")?.addEventListener("change", (e) => {
@@ -608,4 +518,3 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 init();
-

@@ -27,8 +27,9 @@ export default async function handler(req, res) {
   }
 
   if (!response.ok) {
-    console.error("[/api/stream] upstream status:", response.status);
-    return res.status(502).json({ error: "Stream unavailable" });
+    const body = await response.text().catch(() => "");
+    console.error("[/api/stream] upstream status:", response.status, body.slice(0, 200));
+    return res.status(502).json({ error: "Stream unavailable", upstream_status: response.status });
   }
 
   const text = await response.text();

@@ -34,13 +34,14 @@ export default function handler(req, res) {
   }
 
   const token = generateHmacToken(secret);
-  // Convert https:// → wss://
   const wssUrl = railwayUrl.replace(/^https?:\/\//, "wss://") + "/ws/live";
+  const streamUrl = process.env.HLS_STREAM_URL || "";
 
   res.setHeader("Cache-Control", "no-store");
   return res.status(200).json({
     token,
     wss_url: wssUrl,
+    stream_url: streamUrl,
     expires_in: TOKEN_TTL_SECONDS,
   });
 }

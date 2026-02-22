@@ -1218,10 +1218,28 @@ async function loadRegisteredUsers() {
       const email = escHtml(u.email || "no-email");
       const uid = escHtml(String(u.id || "").slice(0, 8));
       const role = escHtml(String(u.role || "user").toUpperCase());
+      const username = u.username ? `@${escHtml(String(u.username))}` : "";
       const created = u.created_at
-        ? new Date(u.created_at).toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+        ? new Date(u.created_at).toLocaleString([], {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
         : "-";
       const lastSignIn = u.last_sign_in_at ? fmtAgo(u.last_sign_in_at) : "never";
+
+      const bs = u.bet_summary || {};
+      const betCount = Number(bs.bet_count || 0);
+      const totalStaked = Number(bs.total_staked || 0);
+      const wonCount = Number(bs.won_count || 0);
+      const lostCount = Number(bs.lost_count || 0);
+      const pendingCount = Number(bs.pending_count || 0);
+      const lastBetLabel = bs.last_bet_label ? escHtml(String(bs.last_bet_label)) : "None";
+      const lastBetAmount = Number(bs.last_bet_amount || 0).toLocaleString();
+      const lastBetStatus = escHtml(String(bs.last_bet_status || "-").toUpperCase());
+      const lastBetAt = bs.last_bet_at ? fmtAgo(bs.last_bet_at) : "never";
 
       return `
         <div class="round-row">
@@ -1229,7 +1247,13 @@ async function loadRegisteredUsers() {
             <span class="round-row-id">${email}</span>
             <span class="round-row-meta">
               <span class="round-badge ${String(u.role || "user").toLowerCase() === "admin" ? "round-open" : "round-upcoming"}">${role}</span>
-              id ${uid}… • joined ${created} • last sign-in ${lastSignIn}
+              ${username ? `${username} � ` : ""}id ${uid}... � joined ${created} � last sign-in ${lastSignIn}
+            </span>
+            <span class="round-row-meta">
+              bets ${betCount} � staked ${totalStaked.toLocaleString()} � W ${wonCount} / L ${lostCount} / P ${pendingCount}
+            </span>
+            <span class="round-row-meta">
+              latest: ${lastBetLabel} � stake ${lastBetAmount} � ${lastBetStatus} � ${lastBetAt}
             </span>
           </div>
         </div>
@@ -1239,8 +1263,6 @@ async function loadRegisteredUsers() {
     box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Users list unavailable.</p>`;
   }
 }
-
-// ── Default times ─────────────────────────────────────────────────────────────
 function setDefaultTimes() {
   const now = new Date(); now.setSeconds(0, 0);
   const starts = new Date(now.getTime() + 60_000);
@@ -1312,3 +1334,4 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 init();
+

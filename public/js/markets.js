@@ -308,9 +308,15 @@ const Markets = (() => {
     nextRoundPollTimer = setInterval(_pollNextRoundAt, 15000);
     nextRoundTickTimer = setInterval(() => {
       const cdEl = document.getElementById("next-round-countdown");
+      const noteEl = document.getElementById("next-round-note");
       if (!cdEl || !nextRoundAtIso) return;
       const diff = Math.max(0, Math.floor((new Date(nextRoundAtIso).getTime() - Date.now()) / 1000));
       cdEl.textContent = _formatCountdown(diff);
+      if (diff <= 0) {
+        if (noteEl) noteEl.textContent = "Starting next round...";
+        _pollNextRoundAt();
+        loadMarkets();
+      }
     }, 1000);
   }
 

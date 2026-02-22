@@ -32,6 +32,30 @@ body.dark {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* Global scrollbar theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3444 #0f131a;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #0f131a;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2a3444, #1d2633);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #3a4a60, #273548);
+}
+
 /* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .site-header {
   display: flex;
@@ -223,12 +247,12 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   right: 10px;
   z-index: 8;
   font-family: "Courier New", "Consolas", monospace;
-  font-size: 0.62rem;
+  font-size: 0.46rem;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: #a9f7ff;
-  text-shadow: 0 0 6px rgba(0,188,212,0.45), 0 1px 4px rgba(0,0,0,0.65);
-  opacity: 0.92;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.65);
+  opacity: 0.82;
   pointer-events: none;
 }
 
@@ -237,18 +261,32 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   left: 10px;
   bottom: 10px;
   z-index: 8;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(0,188,212,0.34);
-  background: rgba(7, 12, 20, 0.45);
-  color: #9deef7;
-  font-size: 0.68rem;
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: #8dff9e;
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+  text-shadow: 0 0 8px rgba(28, 255, 74, 0.45), 0 1px 3px rgba(0,0,0,0.65);
   pointer-events: none;
-  backdrop-filter: blur(2px);
+}
+
+.fps-overlay.fps-good {
+  color: #8dff9e;
+  text-shadow: 0 0 8px rgba(28, 255, 74, 0.45), 0 1px 3px rgba(0,0,0,0.65);
+}
+
+.fps-overlay.fps-warn {
+  color: #ffe877;
+  text-shadow: 0 0 8px rgba(255, 232, 119, 0.4), 0 1px 3px rgba(0,0,0,0.65);
+}
+
+.fps-overlay.fps-bad {
+  color: #ff6b6b;
+  text-shadow: 0 0 8px rgba(255, 80, 80, 0.46), 0 1px 3px rgba(0,0,0,0.65);
 }
 
 .live-dot {
@@ -893,30 +931,43 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .ai-flow-path {
   fill: none;
   stroke: url(#aiFlow);
-  stroke-width: 2.5;
+  stroke-width: 2;
   stroke-linecap: round;
-  stroke-dasharray: 5 6;
+  stroke-dasharray: 6 7;
   animation: aiFlowDash 2.2s linear infinite;
 }
 
-.ai-cube {
+.ai-lane path {
+  fill: none;
+  stroke: rgba(180, 214, 220, 0.28);
+  stroke-width: 1;
+}
+
+.ai-vehicle {
   fill: none;
   stroke: rgba(160, 245, 255, 0.95);
-  stroke-width: 1.7;
-  transform-origin: 177px 41px;
-  animation: aiCubeSpin 3.8s linear infinite;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.ai-blips circle {
-  fill: #ffd600;
-  filter: drop-shadow(0 0 4px rgba(255,214,0,0.45));
-  animation: aiBlipPulse 1.3s ease-in-out infinite;
+.ai-car { animation: aiDriveCar 4.2s linear infinite; }
+.ai-bus { animation: aiDriveBus 4.8s linear infinite; }
+.ai-truck { animation: aiDriveTruck 5.1s linear infinite; }
+
+.ai-vehicle circle {
+  fill: rgba(255, 214, 0, 0.8);
 }
 
-.ai-blips circle:nth-child(2) { animation-delay: .16s; }
-.ai-blips circle:nth-child(3) { animation-delay: .32s; }
-.ai-blips circle:nth-child(4) { animation-delay: .48s; }
-.ai-blips circle:nth-child(5) { animation-delay: .64s; }
+.ai-detect-boxes rect {
+  fill: none;
+  stroke: rgba(0,188,212,0.88);
+  stroke-dasharray: 4 3;
+  animation: aiBoxPulse 1.2s ease-in-out infinite;
+}
+
+.ai-detect-boxes rect:nth-child(2) { animation-delay: .2s; }
+.ai-detect-boxes rect:nth-child(3) { animation-delay: .4s; }
 
 .ai-scene-copy {
   display: flex;
@@ -936,14 +987,27 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   to { stroke-dashoffset: -44; }
 }
 
-@keyframes aiCubeSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes aiDriveCar {
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(6px); }
+  100% { transform: translateX(0px); }
 }
 
-@keyframes aiBlipPulse {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.25); }
+@keyframes aiDriveBus {
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(8px); }
+  100% { transform: translateX(0px); }
+}
+
+@keyframes aiDriveTruck {
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(10px); }
+  100% { transform: translateX(0px); }
+}
+
+@keyframes aiBoxPulse {
+  0%, 100% { opacity: 0.46; }
+  50% { opacity: 1; }
 }
 
 .ml-showcase-grid {
@@ -1163,6 +1227,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .nav-icon-btn:hover { color: var(--text); border-color: var(--muted); text-decoration: none; }
 .nav-icon-logout:hover { color: var(--red); border-color: var(--red); }
+
+.nav-icon-logout {
+  background:
+    linear-gradient(var(--bg2), var(--bg2)) padding-box,
+    linear-gradient(135deg, rgba(0,188,212,0.34), rgba(255,214,0,0.32)) border-box;
+  border: 1px solid transparent;
+}
 
 .nav-avatar-btn {
   position: relative;
@@ -1651,15 +1722,15 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .creator-tag {
     top: 6px;
     right: 8px;
-    font-size: 0.52rem;
-    letter-spacing: 0.07em;
+    font-size: 0.40rem;
+    letter-spacing: 0.05em;
   }
 
   .fps-overlay {
     left: 8px;
     bottom: 8px;
-    padding: 2px 7px;
-    font-size: 0.6rem;
+    padding: 2px 4px;
+    font-size: 0.62rem;
   }
 
   .round-strip {
@@ -1862,14 +1933,14 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .creator-tag {
     right: 6px;
     top: 4px;
-    font-size: 0.48rem;
+    font-size: 0.36rem;
   }
 
   .fps-overlay {
     left: 6px;
     bottom: 6px;
     font-size: 0.56rem;
-    padding: 2px 6px;
+    padding: 1px 3px;
   }
 
   .ml-hud {

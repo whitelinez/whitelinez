@@ -3,7 +3,9 @@
  * Two modes toggled by buttons:
  *   - DETECT ZONE (cyan): bounding-box filter zone
  *   - COUNT ZONE (yellow): crossing/counting zone
- * Click 4 points to define each zone as a polygon.
+ * Click points to define zones:
+ *   - Detect: up to 8 points (more complex polygon)
+ *   - Count: fixed 4 points (counting polygon)
  */
 
 const AdminLine = (() => {
@@ -18,6 +20,8 @@ const AdminLine = (() => {
   // Points per zone
   let detectPoints = [];  // [{rx, ry}]
   let countPoints  = [];  // [{rx, ry}]
+  const DETECT_MAX_POINTS = 8;
+  const COUNT_MAX_POINTS = 4;
 
   function init(videoEl, canvasEl, camId) {
     video    = videoEl;
@@ -117,7 +121,12 @@ const AdminLine = (() => {
         ];
       }
 
-      if (detectZone?.x3 !== undefined) {
+      if (Array.isArray(detectZone?.points) && detectZone.points.length >= 3) {
+        detectPoints = detectZone.points
+          .filter((p) => p && typeof p.x === "number" && typeof p.y === "number")
+          .map((p) => ({ rx: p.x, ry: p.y }))
+          .slice(0, DETECT_MAX_POINTS);
+      } else if (detectZone?.x3 !== undefined) {
         detectPoints = [
           { rx: detectZone.x1, ry: detectZone.y1 },
           { rx: detectZone.x2, ry: detectZone.y2 },
@@ -145,20 +154,19 @@ const AdminLine = (() => {
     const bounds = getContentBounds(video);
     const { x: rx, y: ry } = pixelToContent(px, py, bounds);
 
-    const pts = activeMode === "detect" ? detectPoints : countPoints;
-
-    if (pts.length >= 4) {
-      if (activeMode === "detect") detectPoints = [];
-      else countPoints = [];
+    const maxPts = activeMode === "detect" ? DETECT_MAX_POINTS : COUNT_MAX_POINTS;
+    if (activeMode === "detect") {
+      if (detectPoints.length >= maxPts) detectPoints = [];
+      detectPoints.push({ rx, ry });
+    } else {
+      if (countPoints.length >= maxPts) countPoints = [];
+      countPoints.push({ rx, ry });
     }
-
-    if (activeMode === "detect") detectPoints.push({ rx, ry });
-    else countPoints.push({ rx, ry });
 
     redraw();
 
     const saveBtn = document.getElementById("btn-save-line");
-    if ((countPoints.length === 4 || detectPoints.length === 4) && saveBtn) {
+    if ((countPoints.length >= COUNT_MAX_POINTS || detectPoints.length >= 3) && saveBtn) {
       saveBtn.removeAttribute("disabled");
     }
   }
@@ -189,135 +197,55 @@ const AdminLine = (() => {
 
   function _drawPoints(pts, color, label) {
     const px = pts.map(toCanvas);
-    const isDetect = color === "#00BCD4";
-
-    if (pts.length === 4) {
-      const ys = px.map((p) => p.y);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
-      const fillGrad = ctx.createLinearGradient(0, minY, 0, maxY);
-      if (isDetect) {
-        fillGrad.addColorStop(0, "rgba(0,188,212,0.06)");
-        fillGrad.addColorStop(1, "rgba(0,188,212,0.20)");
-      } else {
-        fillGrad.addColorStop(0, "rgba(255,214,0,0.07)");
-        fillGrad.addColorStop(1, "rgba(255,214,0,0.24)");
-      }
-
-      ctx.save();
+    if (pts.length >= 3) {
       ctx.beginPath();
       ctx.moveTo(px[0].x, px[0].y);
-      px.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      px.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
       ctx.closePath();
-      ctx.fillStyle = fillGrad;
+
+      const fill = color === "#00BCD4" ? "rgba(0,188,212,0.10)" : "rgba(255,214,0,0.12)";
+      ctx.fillStyle = fill;
       ctx.fill();
 
-      // Base edge for depth
-      ctx.shadowColor = rgba(color, 0.34);
-      ctx.shadowBlur = 12;
-      ctx.shadowOffsetY = 1;
-      ctx.strokeStyle = rgba(color, 0.35);
-      ctx.lineWidth = 6;
-      ctx.setLineDash([]);
-      ctx.stroke();
-
-      // Crisp top edge
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2.3;
-      ctx.setLineDash(isDetect ? [8, 5] : [10, 4]);
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.restore();
 
-      const cx = px.reduce((s, p) => s + p.x, 0) / 4;
-      const cy = px.reduce((s, p) => s + p.y, 0) / 4;
-      ctx.font      = "bold 11px sans-serif";
+      const cx = px.reduce((s, p) => s + p.x, 0) / px.length;
+      const cy = px.reduce((s, p) => s + p.y, 0) / px.length;
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      const tw = Math.ceil(ctx.measureText(label).width);
-      const padX = 7;
-      const chipW = tw + padX * 2;
-      const chipH = 18;
-      const rx = cx - chipW / 2;
-      const ry = cy - chipH / 2;
-      roundRect(rx, ry, chipW, chipH, 6);
-      ctx.fillStyle = "rgba(7,12,20,0.56)";
-      ctx.fill();
-      ctx.strokeStyle = rgba(color, 0.45);
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = color;
       ctx.fillText(label, cx, cy);
     } else if (pts.length > 1) {
-      ctx.save();
       ctx.beginPath();
       ctx.moveTo(px[0].x, px[0].y);
-      px.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-      ctx.shadowColor = rgba(color, 0.32);
-      ctx.shadowBlur = 10;
-      ctx.strokeStyle = rgba(color, 0.35);
-      ctx.lineWidth = 5;
-      ctx.setLineDash([]);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
+      px.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2.1;
-      ctx.setLineDash(isDetect ? [8, 5] : [10, 4]);
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.restore();
     }
 
     // Corner dots
     px.forEach((p, i) => {
-      ctx.save();
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 7.2, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(color, 0.24);
-      ctx.fill();
-      ctx.strokeStyle = rgba(color, 0.85);
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.3, 0, Math.PI * 2);
-      ctx.fillStyle = "#EAFBFF";
-      ctx.fill();
-      ctx.font      = "bold 9px sans-serif";
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 9px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = "rgba(7,12,20,0.85)";
       ctx.fillText(i + 1, p.x, p.y);
-      ctx.restore();
     });
-  }
-
-  function rgba(hex, alpha) {
-    const h = String(hex || "").replace("#", "");
-    if (h.length !== 6) return `rgba(255,255,255,${alpha})`;
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-
-  function roundRect(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
   }
 
   function clearActive() {
@@ -332,7 +260,7 @@ const AdminLine = (() => {
     isSaving = true;
     updateStatus("Saving...");
 
-    const toRel = (pts) => {
+    const toRel4 = (pts) => {
       if (pts.length < 4) return null;
       return {
         x1: pts[0].rx, y1: pts[0].ry,
@@ -343,11 +271,13 @@ const AdminLine = (() => {
     };
 
     const updateData = {};
-    if (countPoints.length >= 4) {
-      updateData.count_line = toRel(countPoints);
+    if (countPoints.length >= COUNT_MAX_POINTS) {
+      updateData.count_line = toRel4(countPoints);
     }
-    if (detectPoints.length >= 4) {
-      updateData.detect_zone = toRel(detectPoints);
+    if (detectPoints.length >= 3) {
+      updateData.detect_zone = {
+        points: detectPoints.map((p) => ({ x: p.rx, y: p.ry })),
+      };
     } else if (detectPoints.length === 0) {
       updateData.detect_zone = null; // clear if empty
     }

@@ -113,30 +113,46 @@
         </div>
 
         <div class="ai-scene">
-          <svg class="ai-scene-svg" viewBox="0 0 420 100" role="img" aria-label="AI telemetry animation">
+          <svg class="ai-scene-svg" viewBox="0 0 420 100" role="img" aria-label="AI vehicle detection animation">
             <defs>
               <linearGradient id="aiFlow" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="#00BCD4"/>
                 <stop offset="100%" stop-color="#FFD600"/>
               </linearGradient>
             </defs>
-            <path class="ai-flow-path" d="M12 66 C84 24, 152 24, 214 58 S334 94, 408 46"/>
-            <g class="ai-cube">
-              <rect x="162" y="26" width="30" height="30"/>
-              <polygon points="162,26 175,16 205,16 192,26"/>
-              <polygon points="192,26 205,16 205,46 192,56"/>
+            <path class="ai-flow-path" d="M10 74 L410 74"/>
+            <g class="ai-lane">
+              <path d="M20 76 L400 76" />
             </g>
-            <g class="ai-blips">
-              <circle cx="44" cy="62" r="3"/>
-              <circle cx="124" cy="44" r="3"/>
-              <circle cx="222" cy="56" r="3"/>
-              <circle cx="306" cy="68" r="3"/>
-              <circle cx="378" cy="50" r="3"/>
+            <g class="ai-vehicle ai-car">
+              <rect x="26" y="54" width="34" height="12" rx="3"></rect>
+              <circle cx="35" cy="69" r="3"></circle>
+              <circle cx="51" cy="69" r="3"></circle>
+              <path d="M22 50h8M52 50h8M22 50v6M60 50v6"></path>
+            </g>
+            <g class="ai-vehicle ai-bus">
+              <rect x="166" y="50" width="42" height="16" rx="4"></rect>
+              <line x1="166" y1="57" x2="208" y2="57"></line>
+              <circle cx="178" cy="69" r="3"></circle>
+              <circle cx="196" cy="69" r="3"></circle>
+              <path d="M162 46h8M200 46h8M162 46v6M208 46v6"></path>
+            </g>
+            <g class="ai-vehicle ai-truck">
+              <rect x="302" y="54" width="26" height="12" rx="2"></rect>
+              <path d="M328 57h11l6 5v4h-17z"></path>
+              <circle cx="313" cy="69" r="3"></circle>
+              <circle cx="336" cy="69" r="3"></circle>
+              <path d="M298 50h8M330 50h8M298 50v6M338 50v6"></path>
+            </g>
+            <g class="ai-detect-boxes">
+              <rect x="20" y="48" width="46" height="24" rx="3"></rect>
+              <rect x="160" y="44" width="54" height="28" rx="3"></rect>
+              <rect x="296" y="48" width="56" height="24" rx="3"></rect>
             </g>
           </svg>
           <div class="ai-scene-copy">
-            <strong>Live inference stream</strong>
-            <span>Frames and object signals flow from the camera into model telemetry in real time.</span>
+            <strong>Live traffic detection</strong>
+            <span>Cars, buses, and trucks are detected frame-by-frame as AI tracks live road flow.</span>
           </div>
         </div>
 

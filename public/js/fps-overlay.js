@@ -69,6 +69,11 @@ const FpsOverlay = (() => {
     if (!_el) return;
     const fps = computeFps();
     _el.textContent = fps == null ? "FPS --.-" : `FPS ${fps.toFixed(1)}`;
+    _el.classList.remove("fps-good", "fps-warn", "fps-bad");
+    if (fps == null) return;
+    if (fps < 8) _el.classList.add("fps-bad");
+    else if (fps < 14) _el.classList.add("fps-warn");
+    else _el.classList.add("fps-good");
   }
 
   function destroy() {
@@ -88,4 +93,3 @@ const FpsOverlay = (() => {
 })();
 
 window.FpsOverlay = FpsOverlay;
-

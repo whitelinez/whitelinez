@@ -13,6 +13,9 @@ const Markets = (() => {
   let roundBaseline = null;
   let userRoundBets = [];
   let userBetPollTimer = null;
+  let nextRoundPollTimer = null;
+  let nextRoundTickTimer = null;
+  let nextRoundAtIso = null;
 
   const USER_BET_POLL_MS = 5000;
 
@@ -93,10 +96,12 @@ const Markets = (() => {
             </svg>
           </div>
           No active round right now.
-          <span>Check back soon - rounds open regularly.</span>
+          <span id="next-round-note">Checking next round schedule...</span>
+          <strong id="next-round-countdown" style="font-size:0.95rem;color:var(--accent);">--:--</strong>
         </div>`;
     }
     updateRoundStrip(null);
+    _startNextRoundCountdown();
   }
 
   function renderRound(round) {
@@ -138,6 +143,7 @@ const Markets = (() => {
     });
 
     _renderUserRoundBet();
+    _stopNextRoundCountdown();
   }
 
   function renderMarket(market, isOpen) {
@@ -258,6 +264,56 @@ const Markets = (() => {
     }, USER_BET_POLL_MS);
   }
 
+  function _formatCountdown(sec) {
+    const n = Math.max(0, Math.floor(sec));
+    const m = Math.floor(n / 60).toString().padStart(2, "0");
+    const s = (n % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function _stopNextRoundCountdown() {
+    clearInterval(nextRoundPollTimer);
+    clearInterval(nextRoundTickTimer);
+    nextRoundPollTimer = null;
+    nextRoundTickTimer = null;
+    nextRoundAtIso = null;
+  }
+
+  async function _pollNextRoundAt() {
+    const noteEl = document.getElementById("next-round-note");
+    const cdEl = document.getElementById("next-round-countdown");
+    if (!noteEl || !cdEl) return;
+    try {
+      const h = await fetch("/api/health");
+      if (!h.ok) throw new Error("health");
+      const health = await h.json();
+      nextRoundAtIso = health?.next_round_at || null;
+      if (!nextRoundAtIso) {
+        noteEl.textContent = "New round schedule will appear shortly.";
+        cdEl.textContent = "--:--";
+        return;
+      }
+      noteEl.textContent = "Next round starts soon.";
+      const diff = Math.max(0, Math.floor((new Date(nextRoundAtIso).getTime() - Date.now()) / 1000));
+      cdEl.textContent = _formatCountdown(diff);
+    } catch {
+      noteEl.textContent = "Schedule unavailable.";
+      cdEl.textContent = "--:--";
+    }
+  }
+
+  function _startNextRoundCountdown() {
+    _stopNextRoundCountdown();
+    _pollNextRoundAt();
+    nextRoundPollTimer = setInterval(_pollNextRoundAt, 15000);
+    nextRoundTickTimer = setInterval(() => {
+      const cdEl = document.getElementById("next-round-countdown");
+      if (!cdEl || !nextRoundAtIso) return;
+      const diff = Math.max(0, Math.floor((new Date(nextRoundAtIso).getTime() - Date.now()) / 1000));
+      cdEl.textContent = _formatCountdown(diff);
+    }, 1000);
+  }
+
   async function _ensureRoundBaseline(round) {
     if (!round || !round.camera_id || roundBaseline) return;
 
@@ -310,6 +366,7 @@ const Markets = (() => {
 
   function _roundProgressCount() {
     if (!latestCountPayload) return null;
+    if (!currentRound) return null;
     const mt = currentRound?.market_type;
     const params = currentRound?.params || {};
     const vehicleClass = mt === "vehicle_count" ? params.vehicle_class : null;
@@ -329,6 +386,55 @@ const Markets = (() => {
       : Number(roundBaseline?.total || 0);
 
     return Math.max(0, currentRaw - baselineRaw);
+  }
+
+  function _marketProgressCount(bet) {
+    if (!latestCountPayload || !currentRound || !bet) return null;
+    const mt = currentRound.market_type;
+    const params = currentRound.params || {};
+    const vehicleClass = mt === "vehicle_count" ? params.vehicle_class : null;
+    const status = String(currentRound.status || "").toLowerCase();
+    const useRoundRelative = status === "upcoming" || status === "open" || status === "locked";
+
+    const currentRaw = vehicleClass
+      ? Number(latestCountPayload?.vehicle_breakdown?.[vehicleClass] || 0)
+      : Number(latestCountPayload?.total || 0);
+
+    if (!useRoundRelative) return Math.max(0, currentRaw);
+
+    const baseline = Number(
+      bet?.baseline_count ??
+      (vehicleClass
+        ? (roundBaseline?.vehicle_breakdown?.[vehicleClass] || 0)
+        : (roundBaseline?.total || 0))
+    ) || 0;
+
+    return Math.max(0, currentRaw - baseline);
+  }
+
+  function _estimateMarketChance(selection, progress, threshold, placedAtIso) {
+    if (progress == null || !Number.isFinite(threshold)) return null;
+    const now = Date.now();
+    const placed = placedAtIso ? new Date(placedAtIso).getTime() : now;
+    const ends = currentRound?.ends_at ? new Date(currentRound.ends_at).getTime() : now;
+    const elapsedMin = Math.max(0.5, (now - placed) / 60000);
+    const leftMin = Math.max(0, (ends - now) / 60000);
+    const rate = progress / elapsedMin;
+    const projected = progress + (rate * leftMin);
+
+    if (selection === "over") {
+      if (progress > threshold) return 100;
+      return Math.max(5, Math.min(95, Math.round(50 + ((projected - (threshold + 1)) * 6))));
+    }
+    if (selection === "under") {
+      if (progress > threshold) return 0;
+      return Math.max(5, Math.min(95, Math.round(50 + (((threshold - projected)) * 6))));
+    }
+    if (selection === "exact") {
+      const distance = Math.abs(threshold - projected);
+      return Math.max(1, Math.min(60, Math.round(35 - (distance * 4))));
+    }
+    return null;
   }
 
   function _liveExactProgress(bet) {
@@ -379,16 +485,27 @@ const Markets = (() => {
     if (active?.bet_type === "market") {
       const selection = String(active?.markets?.outcome_key || "").toLowerCase();
       const threshold = Number(currentRound?.params?.threshold ?? 0);
-      const progress = _roundProgressCount();
+      const progress = _marketProgressCount(active);
       const status = String(currentRound?.status || "").toLowerCase();
       const isRoundActive = status === "upcoming" || status === "open" || status === "locked";
       const progressLabel = isRoundActive ? "Round progress" : "Global count";
       const progressText = progress == null || !Number.isFinite(threshold)
         ? "—"
         : `${progress.toLocaleString()}/${threshold.toLocaleString()}`;
+      const chance = _estimateMarketChance(selection, progress, threshold, active?.placed_at);
+      const liveEdge = chance == null
+        ? "—"
+        : `${chance}%`;
+      const odds = Number(active?.markets?.odds || 0);
+      const payout = Number(active?.potential_payout || 0);
+      const stake = Number(active?.amount || 0);
       body = `
         <div class="user-round-bet-row"><span>Your pick</span><strong>${(active?.markets?.label || "Market bet")}</strong></div>
+        <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
+        <div class="user-round-bet-row"><span>Odds</span><strong>${odds ? odds.toFixed(2) + "x" : "—"}</strong></div>
+        <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>${progressLabel}</span><strong>${progressText}</strong></div>
+        <div class="user-round-bet-row"><span>Live likelihood</span><strong>${liveEdge}</strong></div>
         <div class="user-round-bet-note">${_marketHint(selection, progress, threshold)}</div>
       `;
     } else if (active?.bet_type === "exact_count") {
@@ -399,8 +516,12 @@ const Markets = (() => {
       const hint = live == null
         ? "Waiting for live count..."
         : (live === target ? "On target right now." : `Need ${Math.max(0, target - live)} more to hit target.`);
+      const payout = Number(active?.potential_payout || 0);
+      const stake = Number(active?.amount || 0);
       body = `
         <div class="user-round-bet-row"><span>Your pick</span><strong>Exact ${target} (${cls})</strong></div>
+        <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
+        <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>Window progress</span><strong>${liveText}</strong></div>
         <div class="user-round-bet-note">${hint}</div>
       `;
@@ -423,6 +544,7 @@ const Markets = (() => {
         <span>Your Bet Status</span>
         <span class="badge badge-pending">${pendingCount} pending</span>
       </div>
+      <div class="user-round-bet-row"><span>Receipt</span><strong>#${String(active?.id || "").slice(0, 8)}</strong></div>
       ${body}
       ${resolvedBlock}
     `;

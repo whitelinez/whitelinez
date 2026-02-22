@@ -77,6 +77,7 @@
         <button class="tab-btn active" data-tab="markets">Markets</button>
         <button class="tab-btn" data-tab="activity">Activity</button>
         <button class="tab-btn" data-tab="chat">Chat</button>
+        <button class="tab-btn" data-tab="ml-showcase">ML Showcase</button>
       </div>
 
       <div id="tab-markets" class="tab-content active">
@@ -100,6 +101,53 @@
         <p id="chat-login-hint" class="chat-login-hint hidden">
           <a href="/login.html">Login</a> to send messages
         </p>
+      </div>
+
+      <div id="tab-ml-showcase" class="tab-content">
+        <div class="ml-showcase-head">
+          <p class="ml-showcase-eyebrow">Live ML Engine</p>
+          <h3>Real-Time Learning Showcase</h3>
+          <p class="ml-showcase-sub">This panel streams live model signals from your production pipeline.</p>
+        </div>
+
+        <div class="ml-showcase-grid">
+          <article class="mls-card">
+            <p class="mls-label">Live Objects (session)</p>
+            <p id="mls-live-objects" class="mls-value">0</p>
+            <p id="mls-live-rate" class="mls-sub">0.0 objects/min</p>
+          </article>
+          <article class="mls-card">
+            <p class="mls-label">Avg Confidence</p>
+            <p id="mls-live-conf" class="mls-value">-</p>
+            <p id="mls-last-seen" class="mls-sub">Waiting for telemetry...</p>
+          </article>
+          <article class="mls-card">
+            <p class="mls-label">Rows (24h)</p>
+            <p id="mls-rows-24h" class="mls-value">0</p>
+            <p id="mls-model-name" class="mls-sub">Model: -</p>
+          </article>
+        </div>
+
+        <div class="mls-bars">
+          <div class="mls-bar-row">
+            <div class="mls-bar-head"><span>Training Readiness</span><strong id="mls-readiness-text">0%</strong></div>
+            <div class="mls-bar-track"><div id="mls-readiness-fill" class="mls-bar-fill"></div></div>
+          </div>
+          <div class="mls-bar-row">
+            <div class="mls-bar-head"><span>Confidence Quality</span><strong id="mls-quality-text">0%</strong></div>
+            <div class="mls-bar-track"><div id="mls-quality-fill" class="mls-bar-fill alt"></div></div>
+          </div>
+        </div>
+
+        <div class="mls-card">
+          <div class="mls-stream-head">
+            <span class="mls-pulse"></span>
+            <strong>ML capture stream</strong>
+          </div>
+          <div id="mls-stream-list" class="mls-stream-list">
+            <p class="loading">Collecting live ML events...</p>
+          </div>
+        </div>
       </div>
 
       <div id="bet-panel" class="bet-panel hidden">
@@ -179,6 +227,7 @@
   <script src="/js/detection-overlay.js"></script>
   <script src="/js/floating-count.js"></script>
   <script src="/js/ml-overlay.js"></script>
+  <script src="/js/ml-showcase.js"></script>
   <script src="/js/markets.js"></script>
   <script src="/js/bet.js"></script>
   <script src="/js/live-bet.js"></script>

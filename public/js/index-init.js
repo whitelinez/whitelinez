@@ -115,6 +115,7 @@
 
   // Activity feed
   Activity.init();
+  MlShowcase.init();
 
   // ws_account — per-user events (balance, bet resolution)
   if (session) {

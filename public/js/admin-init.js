@@ -992,6 +992,116 @@ function buildMarkets(marketType, vehicleClass, threshold) {
   return [];
 }
 
+async function loadRoundSessions() {
+  const box = document.getElementById("session-list");
+  if (!box || !adminSession?.access_token) return;
+  try {
+    const res = await fetch("/api/admin/rounds?mode=sessions&limit=20", {
+      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load sessions");
+    const sessions = payload?.sessions || [];
+    if (!sessions.length) {
+      box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No active sessions.</p>`;
+      return;
+    }
+    box.innerHTML = sessions.map((s) => {
+      const status = String(s.status || "active");
+      const next = s.next_round_at ? `${new Date(s.next_round_at).toLocaleString()} (${fmtAgo(s.next_round_at)})` : "n/a";
+      const th = s.threshold != null ? `T${s.threshold}` : "no-threshold";
+      const vc = s.vehicle_class ? ` ${s.vehicle_class}` : "";
+      return `
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">${String(s.id).slice(0, 8)}... <span class="round-badge round-${status === "active" ? "open" : "locked"}">${status.toUpperCase()}</span></span>
+            <span class="round-row-meta">${s.market_type}${vc} • ${th} • next ${next} • rounds ${Number(s.created_rounds || 0)}${s.max_rounds ? "/" + s.max_rounds : ""}</span>
+          </div>
+          ${status === "active" ? `<button class="btn-resolve btn-stop-session" data-id="${s.id}">Stop</button>` : ""}
+        </div>
+      `;
+    }).join("");
+    box.querySelectorAll(".btn-stop-session").forEach((btn) => {
+      btn.addEventListener("click", () => stopRoundSession(btn.dataset.id, btn));
+    });
+  } catch {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Sessions unavailable.</p>`;
+  }
+}
+
+async function stopRoundSession(sessionId, btn) {
+  if (!adminSession?.access_token || !sessionId) return;
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Stopping...";
+  try {
+    await fetch(`/api/admin/rounds?mode=session-stop&id=${encodeURIComponent(sessionId)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminSession.access_token}`,
+      },
+      body: JSON.stringify({}),
+    });
+    await loadRoundSessions();
+  } catch {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+
+async function handleStartSession() {
+  const statusEl = document.getElementById("session-status");
+  if (statusEl) statusEl.textContent = "";
+  if (!adminSession?.access_token) return;
+
+  const marketType = document.getElementById("market-type")?.value;
+  const vehicleClass = document.getElementById("vehicle-class")?.value;
+  const threshold = parseInt(document.getElementById("threshold")?.value || "0", 10);
+  const duration = parseInt(document.getElementById("duration")?.value || "10", 10);
+  const cutoff = parseInt(document.getElementById("bet-cutoff")?.value || "1", 10);
+  const sessionDuration = parseInt(document.getElementById("session-duration")?.value || "120", 10);
+  const intervalMin = parseInt(document.getElementById("session-interval")?.value || "2", 10);
+  const maxRoundsRaw = parseInt(document.getElementById("session-max-rounds")?.value || "", 10);
+  const maxRounds = Number.isFinite(maxRoundsRaw) ? maxRoundsRaw : null;
+
+  const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
+  const cameraId = cameras?.[0]?.id;
+  if (!cameraId) {
+    if (statusEl) statusEl.textContent = "No active camera found.";
+    return;
+  }
+
+  const body = {
+    camera_id: cameraId,
+    market_type: marketType,
+    threshold: (marketType === "over_under" || marketType === "vehicle_count") ? threshold : null,
+    vehicle_class: marketType === "vehicle_count" ? vehicleClass : null,
+    round_duration_min: duration,
+    bet_cutoff_min: cutoff,
+    interval_min: intervalMin,
+    session_duration_min: sessionDuration,
+    max_rounds: maxRounds,
+  };
+
+  try {
+    const res = await fetch("/api/admin/rounds?mode=sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminSession.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to start session");
+    if (statusEl) statusEl.textContent = "Session started. Rounds will auto-loop.";
+    await loadRoundSessions();
+  } catch (e) {
+    if (statusEl) statusEl.textContent = e.message || "Could not start session.";
+  }
+}
+
 // ── Form submission ───────────────────────────────────────────────────────────
 async function handleSubmit(e) {
   e.preventDefault();
@@ -1162,12 +1272,14 @@ async function init() {
   loadMlCaptureStatus();
   loadRecentRounds();
   loadRecentBets();
+  loadRoundSessions();
   loadRegisteredUsers();
   setInterval(loadStats, 10_000);
   setInterval(loadMlProgress, 15_000);
   setInterval(loadMlUsage, 20_000);
   setInterval(loadMlCaptureStatus, 8_000);
   setInterval(loadRecentBets, 15_000);
+  setInterval(loadRoundSessions, 15_000);
   setInterval(loadRegisteredUsers, 30_000);
 }
 
@@ -1176,6 +1288,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
   document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
+  document.getElementById("btn-session-start")?.addEventListener("click", handleStartSession);
   document.getElementById("btn-ml-retrain")?.addEventListener("click", handleMlRetrain);
   document.getElementById("btn-copy-capture-error")?.addEventListener("click", copyLatestCaptureError);
 

@@ -1,0 +1,169 @@
+/**
+ * ml-showcase.js - Live ML showcase panel for public users.
+ * Uses real stream events + Supabase telemetry to visualize model activity.
+ */
+
+const MlShowcase = (() => {
+  const state = {
+    startedAt: Date.now(),
+    objects: 0,
+    confSum: 0,
+    confCount: 0,
+    rows24h: 0,
+    modelName: "-",
+    lastSeenIso: "",
+    streamItems: [],
+  };
+
+  let _bound = false;
+  let _pollTimer = null;
+
+  function init() {
+    if (_bound) return;
+    _bound = true;
+    state.startedAt = Date.now();
+
+    window.addEventListener("count:update", (e) => onCountUpdate(e.detail || {}));
+    pollTelemetry();
+    _pollTimer = setInterval(pollTelemetry, 20000);
+    render();
+  }
+
+  function destroy() {
+    clearInterval(_pollTimer);
+    _pollTimer = null;
+    _bound = false;
+  }
+
+  function onCountUpdate(payload) {
+    const detections = Array.isArray(payload?.detections) ? payload.detections : [];
+    state.objects += detections.length;
+    for (const d of detections) {
+      const c = Number(d?.conf);
+      if (Number.isFinite(c) && c >= 0 && c <= 1) {
+        state.confSum += c;
+        state.confCount += 1;
+      }
+    }
+    render();
+  }
+
+  async function pollTelemetry() {
+    try {
+      const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+      const [rows24Resp, recentResp, healthResp] = await Promise.all([
+        window.sb
+          .from("ml_detection_events")
+          .select("id", { count: "exact", head: true })
+          .gte("captured_at", since24h),
+        window.sb
+          .from("ml_detection_events")
+          .select("captured_at, detections_count, avg_confidence, model_name")
+          .order("captured_at", { ascending: false })
+          .limit(8),
+        fetch("/api/health"),
+      ]);
+
+      state.rows24h = Number(rows24Resp?.count || 0);
+
+      const recent = recentResp?.data || [];
+      if (recent.length > 0) {
+        state.lastSeenIso = recent[0].captured_at || "";
+        state.modelName = recent[0].model_name || state.modelName || "-";
+      }
+      state.streamItems = recent;
+
+      if (healthResp.ok) {
+        const health = await healthResp.json();
+        if (health?.ml_retrain_task_running) {
+          state.modelName = `${state.modelName} (retraining)`;
+        }
+      }
+    } catch {
+      // Keep previous values.
+    }
+    render();
+  }
+
+  function avgConf() {
+    if (!state.confCount) return null;
+    return state.confSum / state.confCount;
+  }
+
+  function objectsPerMinute() {
+    const elapsedMin = Math.max(1 / 6, (Date.now() - state.startedAt) / 60000);
+    return state.objects / elapsedMin;
+  }
+
+  function ago(iso) {
+    if (!iso) return "No telemetry yet";
+    const ms = Date.now() - new Date(iso).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return "just now";
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    return `${h}h ago`;
+  }
+
+  function render() {
+    const tab = document.getElementById("tab-ml-showcase");
+    if (!tab) return;
+
+    const objectsEl = document.getElementById("mls-live-objects");
+    const rateEl = document.getElementById("mls-live-rate");
+    const confEl = document.getElementById("mls-live-conf");
+    const rowsEl = document.getElementById("mls-rows-24h");
+    const modelEl = document.getElementById("mls-model-name");
+    const lastSeenEl = document.getElementById("mls-last-seen");
+    const readinessFill = document.getElementById("mls-readiness-fill");
+    const readinessText = document.getElementById("mls-readiness-text");
+    const qualityFill = document.getElementById("mls-quality-fill");
+    const qualityText = document.getElementById("mls-quality-text");
+    const streamEl = document.getElementById("mls-stream-list");
+
+    if (!objectsEl || !rateEl || !confEl || !rowsEl || !modelEl || !lastSeenEl ||
+        !readinessFill || !readinessText || !qualityFill || !qualityText || !streamEl) {
+      return;
+    }
+
+    const rate = objectsPerMinute();
+    const conf = avgConf();
+    const readiness = Math.max(0, Math.min(100, Math.round((Math.min(state.rows24h, 5000) / 5000) * 100)));
+    const quality = conf == null ? 0 : Math.max(0, Math.min(100, Math.round(conf * 100)));
+
+    objectsEl.textContent = state.objects.toLocaleString();
+    rateEl.textContent = `${rate.toFixed(1)} objects/min`;
+    confEl.textContent = conf == null ? "-" : `${(conf * 100).toFixed(1)}%`;
+    rowsEl.textContent = state.rows24h.toLocaleString();
+    modelEl.textContent = `Model: ${state.modelName || "-"}`;
+    lastSeenEl.textContent = `Last telemetry ${ago(state.lastSeenIso)}`;
+
+    readinessFill.style.width = `${readiness}%`;
+    readinessText.textContent = `${readiness}%`;
+    qualityFill.style.width = `${quality}%`;
+    qualityText.textContent = `${quality}%`;
+
+    if (!state.streamItems.length) {
+      streamEl.innerHTML = `<p class="loading">Collecting live ML events...</p>`;
+      return;
+    }
+
+    streamEl.innerHTML = state.streamItems.map((r) => {
+      const det = Number(r.detections_count || 0);
+      const c = Number(r.avg_confidence || 0);
+      const model = r.model_name || "model";
+      return `
+        <div class="mls-item">
+          <span class="mls-item-main">${model} | ${det} detections | ${(c * 100).toFixed(1)}% conf</span>
+          <span class="mls-item-meta">${ago(r.captured_at)}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  return { init, destroy };
+})();
+
+window.MlShowcase = MlShowcase;

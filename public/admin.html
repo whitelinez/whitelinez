@@ -119,6 +119,32 @@
               <p id="round-success" class="auth-success" role="status"></p>
               <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
             </form>
+
+            <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+              <h4 style="margin:0 0 8px;">Session Loop</h4>
+              <p class="admin-hint" style="margin-bottom:8px;">Auto-run rounds continuously for a fixed session window.</p>
+              <div class="field-row">
+                <div class="field" style="max-width:180px">
+                  <label for="session-duration">Session Duration (min)</label>
+                  <input id="session-duration" type="number" min="10" max="1440" value="120" />
+                </div>
+                <div class="field" style="max-width:170px">
+                  <label for="session-interval">Interval Between Rounds (min)</label>
+                  <input id="session-interval" type="number" min="0" max="120" value="2" />
+                </div>
+                <div class="field" style="max-width:150px">
+                  <label for="session-max-rounds">Max Rounds (optional)</label>
+                  <input id="session-max-rounds" type="number" min="1" max="500" placeholder="no limit" />
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:6px;">
+                <button type="button" id="btn-session-start" class="btn-primary">Start Session</button>
+              </div>
+              <p id="session-status" class="auth-success" role="status" style="min-height:18px; margin-top:6px;"></p>
+              <div id="session-list" class="rounds-list data-list" style="margin-top:8px;">
+                <p class="loading">Loading sessions...</p>
+              </div>
+            </div>
           </section>
         </div>
 

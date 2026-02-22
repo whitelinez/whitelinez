@@ -5,6 +5,7 @@
 
 let adminSession = null;
 let latestCaptureUploadError = null;
+let mlCaptureStats = { captureTotal: 0, uploadSuccessTotal: 0, uploadFailTotal: 0 };
 const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
 const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
 
@@ -174,6 +175,101 @@ function escHtml(input) {
     .replace(/'/g, "&#39;");
 }
 
+function clampPct(value) {
+  return Math.max(0, Math.min(100, Number(value) || 0));
+}
+
+function datasetLevel(totalRows, rows24h, avgConf) {
+  const totalScore = Math.min(1, totalRows / 50000);
+  const dayScore = Math.min(1, rows24h / 5000);
+  const confScore = Math.min(1, (avgConf || 0) / 0.55);
+  const score = (totalScore * 0.5) + (dayScore * 0.3) + (confScore * 0.2);
+
+  if (score >= 0.85) return { key: "platinum", label: "Platinum", hint: "Production-ready telemetry volume" };
+  if (score >= 0.65) return { key: "gold", label: "Gold", hint: "Strong dataset with good momentum" };
+  if (score >= 0.4) return { key: "silver", label: "Silver", hint: "Usable but still improving" };
+  if (score > 0) return { key: "bronze", label: "Bronze", hint: "Early stage dataset, collect more" };
+  return { key: "unknown", label: "Unknown", hint: "No telemetry data yet" };
+}
+
+function setMlBar(fillId, textId, pct, label) {
+  const fillEl = document.getElementById(fillId);
+  const textEl = document.getElementById(textId);
+  if (fillEl) fillEl.style.width = `${clampPct(pct)}%`;
+  if (textEl) textEl.textContent = label;
+}
+
+function renderMlVisualSummary(totalRows, rows24h, avgConf, activeModel, latestTs) {
+  const total = Number(totalRows || 0);
+  const day = Number(rows24h || 0);
+  const conf = Number(avgConf || 0);
+  const level = datasetLevel(total, day, conf);
+
+  const totalKpi = document.getElementById("ml-kpi-total");
+  const dayKpi = document.getElementById("ml-kpi-24h");
+  const confKpi = document.getElementById("ml-kpi-confidence");
+  const levelKpi = document.getElementById("ml-kpi-level");
+  const levelSub = document.getElementById("ml-kpi-level-sub");
+  const totalSub = document.getElementById("ml-kpi-total-sub");
+  const daySub = document.getElementById("ml-kpi-24h-sub");
+  const confSub = document.getElementById("ml-kpi-confidence-sub");
+  const glance = document.getElementById("ml-glance-summary");
+
+  if (totalKpi) totalKpi.textContent = total.toLocaleString();
+  if (dayKpi) dayKpi.textContent = day.toLocaleString();
+  if (confKpi) confKpi.textContent = total > 0 ? `${(conf * 100).toFixed(1)}%` : "-";
+  if (totalSub) totalSub.textContent = `Target: 50,000 (${((total / 50000) * 100).toFixed(1)}%)`;
+  if (daySub) daySub.textContent = `Target: 5,000/day (${((day / 5000) * 100).toFixed(1)}%)`;
+  if (confSub) confSub.textContent = `Target: 55%+ (${((conf / 0.55) * 100).toFixed(1)}%)`;
+  if (levelKpi) {
+    levelKpi.textContent = level.label;
+    levelKpi.className = `ml-kpi-level level-${level.key}`;
+  }
+  if (levelSub) levelSub.textContent = level.hint;
+
+  const uploadTotal = Number(mlCaptureStats.uploadSuccessTotal || 0) + Number(mlCaptureStats.uploadFailTotal || 0);
+  const uploadPct = uploadTotal > 0 ? (Number(mlCaptureStats.uploadSuccessTotal || 0) / uploadTotal) * 100 : 0;
+
+  setMlBar("ml-health-total-fill", "ml-health-total-text", (total / 50000) * 100, `${total.toLocaleString()} / 50,000`);
+  setMlBar("ml-health-24h-fill", "ml-health-24h-text", (day / 5000) * 100, `${day.toLocaleString()} / 5,000`);
+  setMlBar("ml-health-confidence-fill", "ml-health-confidence-text", (conf / 0.55) * 100, `${(conf * 100).toFixed(1)}% / 55%`);
+  setMlBar(
+    "ml-health-upload-fill",
+    "ml-health-upload-text",
+    uploadPct,
+    uploadTotal > 0 ? `${uploadPct.toFixed(1)}% success (${uploadTotal.toLocaleString()} uploads)` : "No uploads yet"
+  );
+
+  if (glance) {
+    glance.innerHTML = `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Data Level</span>
+          <span class="round-row-meta"><span class="round-badge round-open">${level.label}</span> ${escHtml(level.hint)}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Active Model</span>
+          <span class="round-row-meta">${escHtml(activeModel || "none")}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Latest Telemetry</span>
+          <span class="round-row-meta">${latestTs ? `${new Date(latestTs).toLocaleString()} (${fmtAgo(latestTs)})` : "No telemetry yet"}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Collection Momentum</span>
+          <span class="round-row-meta">${day >= 5000 ? "Healthy daily intake" : "Below daily target, keep capture running"}</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
 function initMlDatasetUrlField() {
   const datasetEl = document.getElementById("ml-dataset-yaml");
   if (!datasetEl) return;
@@ -202,6 +298,11 @@ function initAdminSections() {
     navBtns.forEach((btn) => btn.classList.toggle("active", btn.dataset.panel === target));
     panels.forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${target}`));
     localStorage.setItem(storageKey, target);
+    window.dispatchEvent(new CustomEvent("admin:panel-change", { detail: { panel: target } }));
+    if (target === "overview") {
+      setTimeout(() => window.AdminLine?.refresh?.(), 0);
+      setTimeout(() => window.AdminLine?.refresh?.(), 180);
+    }
   };
 
   const fromHash = normalize(window.location.hash);
@@ -222,58 +323,46 @@ function renderHealthOverview(health, errMsg = "") {
     return;
   }
 
+  const statusText = (ok) => ok ? "OK" : "Down";
+  const dot = (ok) => `<span class="health-dot ${ok ? "ok" : "down"}"></span>${statusText(ok)}`;
+
   box.innerHTML = `
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">API</span>
-        <span class="round-row-meta">${statusPill(health.status === "ok")}</span>
+    <div class="health-grid">
+      <div class="health-item">
+        <p class="health-item-title">API</p>
+        <p class="health-item-value">${dot(health.status === "ok")}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">AI Task</span>
-        <span class="round-row-meta">${statusPill(Boolean(health.ai_task_running))}</span>
+      <div class="health-item">
+        <p class="health-item-title">AI Task</p>
+        <p class="health-item-value">${dot(Boolean(health.ai_task_running))}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">Refresh Task</span>
-        <span class="round-row-meta">${statusPill(Boolean(health.refresh_task_running))}</span>
+      <div class="health-item">
+        <p class="health-item-title">Refresh Task</p>
+        <p class="health-item-value">${dot(Boolean(health.refresh_task_running))}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">Round Task</span>
-        <span class="round-row-meta">${statusPill(Boolean(health.round_task_running))}</span>
+      <div class="health-item">
+        <p class="health-item-title">Round Task</p>
+        <p class="health-item-value">${dot(Boolean(health.round_task_running))}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">Resolver Task</span>
-        <span class="round-row-meta">${statusPill(Boolean(health.resolver_task_running))}</span>
+      <div class="health-item">
+        <p class="health-item-title">Resolver Task</p>
+        <p class="health-item-value">${dot(Boolean(health.resolver_task_running))}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">Public WS / User WS</span>
-        <span class="round-row-meta">${health.public_ws_connections ?? 0} / ${health.user_ws_connections ?? 0}</span>
+      <div class="health-item">
+        <p class="health-item-title">Stream URL</p>
+        <p class="health-item-value">${dot(Boolean(health.stream_url))}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">Active Round</span>
-        <span class="round-row-meta">${health.active_round_id ? String(health.active_round_id).slice(0, 8) + "…" : "none"}</span>
+      <div class="health-item">
+        <p class="health-item-title">Public WS / User WS</p>
+        <p class="health-item-value">${health.public_ws_connections ?? 0} / ${health.user_ws_connections ?? 0}</p>
       </div>
-    </div>
-    <div class="round-row">
-      <div class="round-row-info">
-        <span class="round-row-id">Stream URL</span>
-        <span class="round-row-meta">${health.stream_url ? "present" : "missing"}</span>
+      <div class="health-item">
+        <p class="health-item-title">Active Round</p>
+        <p class="health-item-value">${health.active_round_id ? String(health.active_round_id).slice(0, 8) + "..." : "none"}</p>
       </div>
     </div>
   `;
 }
-
 async function loadMlProgress() {
   const totalEl = document.getElementById("ml-points-total");
   const dayEl = document.getElementById("ml-points-24h");
@@ -319,14 +408,16 @@ async function loadMlProgress() {
     const total = Number(totalRows || 0);
     const dayCount = Number(rows24h || 0);
     const readinessPct = Math.max(0, Math.min(100, Math.round((Math.min(dayCount, 5000) / 5000) * 100)));
+    const activeModel = activeModelResp?.data?.model_name ? String(activeModelResp.data.model_name) : "none";
 
     totalEl.textContent = total.toLocaleString();
     dayEl.textContent = dayCount.toLocaleString();
     confEl.textContent = rows.length ? `${(avgConf * 100).toFixed(1)}%` : "-";
-    modelEl.textContent = activeModelResp?.data?.model_name ? String(activeModelResp.data.model_name) : "none";
+    modelEl.textContent = activeModel;
     fillEl.style.width = `${readinessPct}%`;
     pctEl.textContent = `${readinessPct}%`;
     hintEl.textContent = `Last 24h target: 5,000 rows. Current: ${dayCount.toLocaleString()} rows.`;
+    renderMlVisualSummary(total, dayCount, avgConf, activeModel, latest?.captured_at || null);
 
     const lastJob = (lastJobsResp?.data || [])[0];
     lastSeenBox.innerHTML = `
@@ -358,6 +449,7 @@ async function loadMlProgress() {
     pctEl.textContent = "0%";
     hintEl.textContent = "ML tables unavailable. Run latest schema migration.";
     lastSeenBox.innerHTML = `<p class="muted" style="font-size:0.82rem;">ML telemetry unavailable.</p>`;
+    renderMlVisualSummary(0, 0, 0, "none", null);
   }
 }
 
@@ -423,7 +515,12 @@ async function loadMlCaptureStatus() {
     const classes = (payload?.capture_classes || []).join(", ") || "-";
     const captureState = payload?.capture_enabled ? "ON" : "OFF";
     const uploadState = payload?.upload_enabled ? "ON" : "OFF";
-    const counters = `saved=${Number(payload?.capture_total || 0)} upload_ok=${Number(payload?.upload_success_total || 0)} upload_fail=${Number(payload?.upload_fail_total || 0)}`;
+    mlCaptureStats = {
+      captureTotal: Number(payload?.capture_total || 0),
+      uploadSuccessTotal: Number(payload?.upload_success_total || 0),
+      uploadFailTotal: Number(payload?.upload_fail_total || 0),
+    };
+    const counters = `saved=${mlCaptureStats.captureTotal} upload_ok=${mlCaptureStats.uploadSuccessTotal} upload_fail=${mlCaptureStats.uploadFailTotal}`;
 
     const rows = events.slice().reverse().slice(0, 40).map((evt) => {
       const ts = evt?.ts ? `${new Date(evt.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} (${fmtAgo(evt.ts)})` : "-";
@@ -456,6 +553,14 @@ async function loadMlCaptureStatus() {
       </div>
       ${rows || `<p class="muted" style="font-size:0.82rem;">No capture events yet.</p>`}
     `;
+
+    // Keep dashboard bars in sync when capture/upload counters change.
+    const total = Number(document.getElementById("ml-points-total")?.textContent?.replace(/,/g, "") || 0);
+    const day = Number(document.getElementById("ml-points-24h")?.textContent?.replace(/,/g, "") || 0);
+    const confText = String(document.getElementById("ml-conf-avg")?.textContent || "0").replace("%", "");
+    const conf = Number(confText) / 100;
+    const model = document.getElementById("ml-model-active")?.textContent || "none";
+    renderMlVisualSummary(total, day, Number.isFinite(conf) ? conf : 0, model, null);
   } catch (e) {
     box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Capture logs unavailable.</p>`;
   }
@@ -899,9 +1004,53 @@ async function handleSetAdmin() {
     if (error) throw error;
     msgEl.style.color = "var(--green)";
     msgEl.textContent = `Admin role set for ${email}`;
+    loadRegisteredUsers();
   } catch (e) {
     msgEl.style.color = "var(--red)";
     msgEl.textContent = e.message || "Failed — ensure set_admin_by_email RPC exists";
+  }
+}
+
+async function loadRegisteredUsers() {
+  const box = document.getElementById("registered-users");
+  if (!box || !adminSession?.access_token) return;
+
+  try {
+    const res = await fetch("/api/admin/users?per_page=500", {
+      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load users");
+
+    const users = payload?.users || [];
+    if (!users.length) {
+      box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No registered users found.</p>`;
+      return;
+    }
+
+    box.innerHTML = users.map((u) => {
+      const email = escHtml(u.email || "no-email");
+      const uid = escHtml(String(u.id || "").slice(0, 8));
+      const role = escHtml(String(u.role || "user").toUpperCase());
+      const created = u.created_at
+        ? new Date(u.created_at).toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+        : "-";
+      const lastSignIn = u.last_sign_in_at ? fmtAgo(u.last_sign_in_at) : "never";
+
+      return `
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">${email}</span>
+            <span class="round-row-meta">
+              <span class="round-badge ${String(u.role || "user").toLowerCase() === "admin" ? "round-open" : "round-upcoming"}">${role}</span>
+              id ${uid}… • joined ${created} • last sign-in ${lastSignIn}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (e) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Users list unavailable.</p>`;
   }
 }
 
@@ -927,11 +1076,7 @@ async function init() {
   const video  = document.getElementById("admin-video");
   const canvas = document.getElementById("line-canvas");
   await Stream.init(video);
-
-  video.addEventListener("loadedmetadata", () => {
-    AdminLine.init(video, canvas, cameraId);
-  });
-  if (video.videoWidth) AdminLine.init(video, canvas, cameraId);
+  AdminLine.init(video, canvas, cameraId);
 
   // Load stats + recent rounds
   loadBaseline();
@@ -941,11 +1086,13 @@ async function init() {
   loadMlCaptureStatus();
   loadRecentRounds();
   loadRecentBets();
+  loadRegisteredUsers();
   setInterval(loadStats, 10_000);
   setInterval(loadMlProgress, 15_000);
   setInterval(loadMlUsage, 20_000);
   setInterval(loadMlCaptureStatus, 8_000);
   setInterval(loadRecentBets, 15_000);
+  setInterval(loadRegisteredUsers, 30_000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

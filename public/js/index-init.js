@@ -79,6 +79,7 @@
   // Floating count widget
   const streamWrapper = document.querySelector(".stream-wrapper");
   FloatingCount.init(streamWrapper);
+  MlOverlay.init();
 
   // WS counter — hooks into floating widget
   Counter.init();

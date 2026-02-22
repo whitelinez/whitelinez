@@ -188,6 +188,23 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   z-index: 2;
 }
 
+/* Covers top-left provider watermark region without altering video geometry. */
+.feed-watermark-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(220px, 40vw, 420px);
+  height: clamp(26px, 5.8vw, 64px);
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    to bottom,
+    rgba(9, 12, 16, 0.9) 0%,
+    rgba(9, 12, 16, 0.78) 55%,
+    rgba(9, 12, 16, 0.0) 100%
+  );
+}
+
 .stream-badge {
   position: absolute;
   top: 12px;
@@ -218,15 +235,16 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 /* â”€â”€ Floating count widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .count-widget {
   position: absolute;
-  top: 12px;
+  top: 52px;
   left: 12px;
-  background: rgba(0,0,0,0.82);
-  border: 1px solid rgba(255,214,0,0.3);
+  background: transparent;
+  border: none;
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 2px 4px;
   z-index: 6;
-  backdrop-filter: blur(4px);
+  backdrop-filter: none;
   min-width: 140px;
+  box-shadow: none;
 }
 
 .count-widget-total {
@@ -241,6 +259,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-weight: 900;
   color: var(--accent);
   line-height: 1;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.55);
 }
 
 .cw-label {
@@ -248,6 +267,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.45);
 }
 
 .count-widget-breakdown {
@@ -259,6 +279,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .cw-item {
   font-size: 0.8rem;
   color: var(--muted);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.45);
 }
 .cw-item strong { color: var(--text); }
 
@@ -272,6 +293,48 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .cw-ws-ok  { background: var(--green); }
 .cw-ws-err { background: var(--red); animation: pulse 1.5s infinite; }
+
+/* ML subtle overlay */
+.ml-hud {
+  position: absolute;
+  right: 12px;
+  top: 46px;
+  max-width: 320px;
+  background: rgba(8, 14, 18, 0.48);
+  border: 1px solid rgba(0, 188, 212, 0.22);
+  border-radius: 10px;
+  padding: 8px 10px;
+  z-index: 6;
+  backdrop-filter: blur(3px);
+}
+
+.ml-hud-title {
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #98dce5;
+  margin-bottom: 3px;
+}
+
+.ml-hud-msg {
+  font-size: 0.75rem;
+  color: #d5edf1;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.ml-hud-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  font-size: 0.7rem;
+  color: #8eb7c0;
+}
+
+.ml-hud-stats strong {
+  color: #f2fcff;
+  font-weight: 700;
+}
 
 /* +N float-up animation */
 .count-pop {
@@ -1138,7 +1201,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
   /* â”€â”€ Count widget â€” compact pill â”€â”€ */
   .count-widget {
-    top: 8px;
+    top: 44px;
     left: 8px;
     padding: 5px 9px;
     min-width: 0;
@@ -1176,6 +1239,28 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
   .rs-badge { font-size: 0.58rem; padding: 1px 5px; }
   .rs-timer { font-size: 0.78rem; }
+
+  .ml-hud {
+    top: 38px;
+    right: 8px;
+    max-width: 230px;
+    padding: 7px 8px;
+  }
+
+  .ml-hud-msg {
+    font-size: 0.68rem;
+    margin-bottom: 4px;
+  }
+
+  .ml-hud-stats {
+    font-size: 0.65rem;
+    gap: 3px 6px;
+  }
+
+  .feed-watermark-cover {
+    width: min(72vw, 320px);
+    height: 40px;
+  }
 
   /* â”€â”€ Stream badge â”€â”€ */
   .stream-badge {

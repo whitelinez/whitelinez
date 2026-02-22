@@ -10,6 +10,7 @@ const AdminLine = (() => {
   let canvas, ctx, video;
   let cameraId = null;
   let isSaving = false;
+  let isInitialized = false;
 
   // Active mode: "detect" | "count"
   let activeMode = "count";
@@ -24,18 +25,30 @@ const AdminLine = (() => {
     ctx      = canvas.getContext("2d");
     cameraId = camId;
 
-    syncSize();
-    window.addEventListener("resize", () => { syncSize(); redraw(); });
-    video.addEventListener("loadedmetadata", () => { syncSize(); loadExistingZones(); });
+    if (!isInitialized) {
+      window.addEventListener("resize", () => refresh());
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refresh();
+      });
+      video.addEventListener("loadedmetadata", () => {
+        refresh();
+        loadExistingZones();
+      });
+      video.addEventListener("playing", refresh);
 
-    canvas.addEventListener("click", handleClick);
-    document.getElementById("btn-clear-line")?.addEventListener("click", clearActive);
-    document.getElementById("btn-save-line")?.addEventListener("click", saveZones);
+      canvas.addEventListener("click", handleClick);
+      document.getElementById("btn-clear-line")?.addEventListener("click", clearActive);
+      document.getElementById("btn-save-line")?.addEventListener("click", saveZones);
 
-    // Zone toggle buttons
-    document.getElementById("btn-zone-detect")?.addEventListener("click", () => setMode("detect"));
-    document.getElementById("btn-zone-count")?.addEventListener("click",  () => setMode("count"));
+      // Zone toggle buttons
+      document.getElementById("btn-zone-detect")?.addEventListener("click", () => setMode("detect"));
+      document.getElementById("btn-zone-count")?.addEventListener("click",  () => setMode("count"));
+      isInitialized = true;
+    }
 
+    refresh();
+    setTimeout(refresh, 120);
+    setTimeout(refresh, 380);
     if (video.videoWidth) loadExistingZones();
     updateModeUI();
   }
@@ -55,8 +68,17 @@ const AdminLine = (() => {
 
   function syncSize() {
     if (!video || !canvas) return;
-    canvas.width  = video.clientWidth;
-    canvas.height = video.clientHeight;
+    const w = Math.round(video.clientWidth || video.getBoundingClientRect().width || 0);
+    const h = Math.round(video.clientHeight || video.getBoundingClientRect().height || 0);
+    if (w > 0 && h > 0) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+
+  function refresh() {
+    syncSize();
+    redraw();
   }
 
   async function loadExistingZones() {
@@ -256,7 +278,7 @@ const AdminLine = (() => {
     if (el) el.textContent = msg;
   }
 
-  return { init, clearActive, saveZones };
+  return { init, clearActive, saveZones, refresh };
 })();
 
 window.AdminLine = AdminLine;

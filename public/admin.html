@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin - WHITELINEZ</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,17 +38,6 @@
         <div class="panel-head">
           <h2>Overview</h2>
           <p>Main actions: zone setup and round control.</p>
-        </div>
-
-        <div class="stats-grid compact">
-          <div class="stat-card"><div class="stat-val" id="stat-count">-</div><div class="stat-label">Live Count</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-round">-</div><div class="stat-label">Round Status</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-bets">-</div><div class="stat-label">Bets Placed</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">WS Users</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
         </div>
 
         <div class="overview-grid main-actions-grid">
@@ -131,6 +122,17 @@
           </section>
         </div>
 
+        <div class="stats-grid compact" style="margin-top:12px;">
+          <div class="stat-card"><div class="stat-val" id="stat-count">-</div><div class="stat-label">Live Count</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-round">-</div><div class="stat-label">Round Status</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-bets">-</div><div class="stat-label">Bets Placed</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">WS Users</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
+        </div>
+
         <div class="overview-grid" style="margin-top:12px;">
           <div class="card-box">
             <h3>System Health</h3>
@@ -147,6 +149,71 @@
         <div class="panel-head">
           <h2>ML Control</h2>
           <p>Training, model status, and capture pipeline.</p>
+        </div>
+
+        <div class="ml-kpi-grid">
+          <article class="ml-kpi-card">
+            <p class="ml-kpi-label">Total Dataset Rows</p>
+            <p id="ml-kpi-total" class="ml-kpi-value">-</p>
+            <p id="ml-kpi-total-sub" class="ml-kpi-sub">Target: 50,000</p>
+          </article>
+          <article class="ml-kpi-card">
+            <p class="ml-kpi-label">Rows Last 24h</p>
+            <p id="ml-kpi-24h" class="ml-kpi-value">-</p>
+            <p id="ml-kpi-24h-sub" class="ml-kpi-sub">Target: 5,000/day</p>
+          </article>
+          <article class="ml-kpi-card">
+            <p class="ml-kpi-label">Avg Confidence</p>
+            <p id="ml-kpi-confidence" class="ml-kpi-value">-</p>
+            <p id="ml-kpi-confidence-sub" class="ml-kpi-sub">Target: 55%+</p>
+          </article>
+          <article class="ml-kpi-card">
+            <p class="ml-kpi-label">Dataset Level</p>
+            <p id="ml-kpi-level" class="ml-kpi-level level-unknown">Unknown</p>
+            <p id="ml-kpi-level-sub" class="ml-kpi-sub">Collect more data to improve stability</p>
+          </article>
+        </div>
+
+        <div class="ml-health-grid">
+          <div class="ml-health-card">
+            <h3>Dataset Health</h3>
+            <div class="ml-health-rows">
+              <div class="ml-health-row">
+                <div class="ml-health-row-head">
+                  <span>Total Volume</span>
+                  <strong id="ml-health-total-text">-</strong>
+                </div>
+                <div class="ml-health-bar"><div id="ml-health-total-fill" class="ml-health-fill"></div></div>
+              </div>
+              <div class="ml-health-row">
+                <div class="ml-health-row-head">
+                  <span>24h Throughput</span>
+                  <strong id="ml-health-24h-text">-</strong>
+                </div>
+                <div class="ml-health-bar"><div id="ml-health-24h-fill" class="ml-health-fill"></div></div>
+              </div>
+              <div class="ml-health-row">
+                <div class="ml-health-row-head">
+                  <span>Confidence Quality</span>
+                  <strong id="ml-health-confidence-text">-</strong>
+                </div>
+                <div class="ml-health-bar"><div id="ml-health-confidence-fill" class="ml-health-fill"></div></div>
+              </div>
+              <div class="ml-health-row">
+                <div class="ml-health-row-head">
+                  <span>Capture Upload Health</span>
+                  <strong id="ml-health-upload-text">-</strong>
+                </div>
+                <div class="ml-health-bar"><div id="ml-health-upload-fill" class="ml-health-fill"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="ml-health-card">
+            <h3>At a Glance</h3>
+            <div id="ml-glance-summary" class="rounds-list data-list">
+              <p class="loading">Loading ML summary...</p>
+            </div>
+          </div>
         </div>
 
         <div class="ml-progress-wrap">
@@ -201,7 +268,7 @@
       <section class="admin-panel" id="panel-users">
         <div class="panel-head">
           <h2>User Management</h2>
-          <p>Grant admin role by email.</p>
+          <p>View registered users and grant admin role by email.</p>
         </div>
         <div class="user-mgmt-row">
           <div class="field">
@@ -211,6 +278,12 @@
           <button id="btn-set-admin" class="btn-primary">Set Admin</button>
         </div>
         <p id="user-mgmt-msg" style="font-size:0.82rem; margin-top:8px; color: var(--green);"></p>
+        <div class="card-box slim" style="margin-top:12px;">
+          <h3>Registered Users</h3>
+          <div id="registered-users" class="rounds-list data-list tall">
+            <p class="loading">Loading users...</p>
+          </div>
+        </div>
       </section>
     </main>
   </div>

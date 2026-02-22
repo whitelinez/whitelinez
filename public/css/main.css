@@ -281,7 +281,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .ml-hud {
   position: absolute;
   right: 12px;
-  bottom: 74px;
+  bottom: 14px;
   width: min(310px, 52vw);
   background: transparent;
   border: none;
@@ -1155,22 +1155,18 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   padding: 7px 12px;
 }
 
-/* â”€â”€ Mobile (â‰¤640px) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Mobile overlay optimization */
 @media (max-width: 640px) {
 
   :root { --header-h: 48px; }
 
-  /* Stack: video on top, sidebar below */
   .main-grid {
     grid-template-columns: 1fr;
     height: auto;
     overflow: visible;
   }
 
-  /* Video locked to 16:9 so it doesn't eat the full screen */
-  .stream-panel {
-    height: auto;
-  }
+  .stream-panel { height: auto; }
   .stream-wrapper {
     aspect-ratio: 16 / 9;
     height: auto;
@@ -1183,90 +1179,80 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     height: 100%;
   }
 
-  /* Sidebar scrolls normally below the video */
   .sidebar {
     height: 60vh;
     border-left: none;
     border-top: 1px solid var(--border);
   }
 
-  /* â”€â”€ Count widget â€” compact pill â”€â”€ */
   .count-widget {
-    top: 44px;
+    top: 40px;
     left: 8px;
-    padding: 5px 9px;
+    padding: 4px 7px;
     min-width: 0;
+    max-width: calc(100% - 16px);
     border-radius: 8px;
   }
   .count-widget-total {
-    gap: 4px;
-    margin-bottom: 3px;
+    gap: 3px;
+    margin-bottom: 2px;
   }
-  .count-widget-total span:first-child {
-    font-size: 1.1rem;
-  }
-  .cw-label {
-    font-size: 0.6rem;
-  }
-  .count-widget-breakdown {
-    gap: 6px;
-  }
-  .cw-item {
-    font-size: 0.7rem;
-  }
+  .count-widget-total span:first-child { font-size: 1rem; }
+  .cw-label { font-size: 0.56rem; }
+  .count-widget-breakdown { gap: 4px; }
+  .cw-item { font-size: 0.62rem; }
   .cw-ws-dot {
-    top: 5px;
-    right: 7px;
+    top: 4px;
+    right: 6px;
     width: 5px;
     height: 5px;
   }
 
-  /* â”€â”€ Round strip â€” smaller â”€â”€ */
-  .round-strip {
-    bottom: 8px;
-    right: 8px;
-    padding: 4px 8px;
-    gap: 5px;
-  }
-  .rs-badge { font-size: 0.58rem; padding: 1px 5px; }
-  .rs-timer { font-size: 0.78rem; }
-
-  .ml-hud {
-    bottom: 54px;
-    right: 8px;
-    width: min(280px, 72vw);
-    padding: 3px 5px;
-  }
-
-  .ml-hud-title {
-    font-size: 0.6rem;
-  }
-
-  .ml-hud-msg {
-    font-size: 0.64rem;
-    margin-bottom: 4px;
-  }
-
-  .ml-hud-stats {
-    font-size: 0.57rem;
-    gap: 3px 6px;
-  }
-
-  /* â”€â”€ Stream badge â”€â”€ */
   .stream-badge {
     top: 8px;
     right: 8px;
-    font-size: 0.7rem;
-    padding: 3px 8px;
+    font-size: 0.62rem;
+    padding: 2px 7px;
+    max-width: 58vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* â”€â”€ Sidebar tabs â”€â”€ */
-  .tab-btn { padding: 10px 0; font-size: 0.8rem; }
+  .round-strip {
+    bottom: 8px;
+    right: 8px;
+    padding: 3px 7px;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+  }
+  .rs-badge { font-size: 0.54rem; padding: 1px 4px; }
+  .rs-timer { font-size: 0.72rem; }
 
-  /* â”€â”€ Bet panel â”€â”€ */
+  .ml-hud {
+    bottom: 42px;
+    right: 8px;
+    width: min(250px, 64vw);
+    padding: 2px 4px;
+    z-index: 7;
+  }
+  .ml-hud-title {
+    font-size: 0.54rem;
+    margin-bottom: 1px;
+  }
+  .ml-hud-msg {
+    font-size: 0.58rem;
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+  .ml-hud-stats {
+    font-size: 0.52rem;
+    gap: 2px 5px;
+  }
+
+  .tab-btn { padding: 10px 0; font-size: 0.8rem; }
   .bet-panel { padding: 12px; gap: 10px; }
 
-  /* â”€â”€ Toast â”€â”€ */
   .toast {
     bottom: 12px;
     right: 12px;
@@ -1276,7 +1262,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     padding: 10px 14px;
   }
 
-  /* â”€â”€ Header â”€â”€ */
   .site-header { padding: 0 14px; }
   .logo img { height: 28px; }
   .site-header nav { gap: 8px; }
@@ -1285,8 +1270,46 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .nav-icon-btn { width: 32px; height: 32px; }
   .nav-balance { font-size: 0.78rem; padding: 3px 8px; }
 
-  /* â”€â”€ Empty states on mobile â”€â”€ */
   .empty-state { padding: 24px 16px; }
+}
+
+@media (max-width: 480px) {
+  .count-widget {
+    top: 36px;
+    left: 6px;
+    padding: 3px 6px;
+  }
+  .count-widget-breakdown {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 1px 6px;
+  }
+
+  .stream-badge {
+    right: 6px;
+    top: 6px;
+    max-width: 56vw;
+    font-size: 0.58rem;
+    padding: 2px 6px;
+  }
+
+  .ml-hud {
+    right: 6px;
+    bottom: 38px;
+    width: min(225px, 66vw);
+    padding: 1px 3px;
+  }
+  .ml-hud-msg { font-size: 0.54rem; }
+  .ml-hud-stats {
+    font-size: 0.49rem;
+    gap: 1px 4px;
+  }
+
+  .round-strip {
+    right: 6px;
+    bottom: 6px;
+    padding: 3px 6px;
+  }
 }
 
 /* Account profile + pending bets */

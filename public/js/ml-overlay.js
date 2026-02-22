@@ -87,9 +87,15 @@ const MlOverlay = (() => {
 
     const level = getLevel();
     const avgConf = getAvgConf();
-    const loopTag = state.modelLoop === "active" ? " | retrain loop on" : "";
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+    const loopTag = state.modelLoop === "active"
+      ? (isMobile ? " | loop on" : " | retrain loop on")
+      : "";
+    const compactLabel = isMobile
+      ? level.label.replace("Stabilizing", "Stable").replace("Warming up", "Warmup")
+      : level.label;
 
-    levelEl.textContent = `${level.label}${loopTag}`;
+    levelEl.textContent = `${compactLabel}${loopTag}`;
     msgEl.textContent = level.msg;
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();

@@ -1232,9 +1232,11 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .ml-hud {
     bottom: 34px;
     right: 8px;
-    width: min(180px, 48vw);
+    width: min(132px, 36vw);
+    max-width: 132px;
     padding: 1px 3px;
     z-index: 7;
+    overflow: hidden;
   }
   .ml-hud-title {
     font-size: 0.5rem;
@@ -1254,6 +1256,14 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     gap: 1px 4px;
     grid-template-columns: 1fr;
     justify-items: end;
+    width: 100%;
+  }
+
+  .ml-hud-stats span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .tab-btn { padding: 10px 0; font-size: 0.8rem; }
@@ -1302,8 +1312,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .ml-hud {
     right: 6px;
     bottom: 30px;
-    width: min(155px, 46vw);
+    width: min(116px, 34vw);
+    max-width: 116px;
     padding: 1px 3px;
+    overflow: hidden;
   }
   .ml-hud-title { font-size: 0.46rem; }
   .ml-hud-msg { font-size: 0.46rem; margin-bottom: 1px; }

@@ -281,45 +281,44 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .ml-hud {
   position: absolute;
   right: 12px;
-  bottom: 50px;
-  max-width: 430px;
+  bottom: 74px;
+  width: min(310px, 52vw);
   background: transparent;
   border: none;
   border-radius: 0;
   padding: 4px 6px;
   z-index: 6;
   backdrop-filter: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: block;
+  text-align: right;
 }
 
 .ml-hud-title {
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: #98dce5;
-  margin: 0;
-  white-space: nowrap;
+  margin: 0 0 2px;
   text-shadow: 0 1px 8px rgba(0,0,0,0.5);
 }
 
 .ml-hud-msg {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: #d5edf1;
-  line-height: 1.25;
-  margin: 0;
-  max-width: 210px;
+  line-height: 1.35;
+  margin: 0 0 6px;
+  max-width: 100%;
+  display: block;
   text-shadow: 0 1px 8px rgba(0,0,0,0.5);
 }
 
 .ml-hud-stats {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.64rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  font-size: 0.63rem;
   color: #8eb7c0;
-  white-space: nowrap;
+  justify-items: end;
   text-shadow: 0 1px 8px rgba(0,0,0,0.5);
 }
 
@@ -1233,11 +1232,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .rs-timer { font-size: 0.78rem; }
 
   .ml-hud {
-    bottom: 44px;
+    bottom: 54px;
     right: 8px;
-    max-width: 290px;
+    width: min(280px, 72vw);
     padding: 3px 5px;
-    gap: 7px;
   }
 
   .ml-hud-title {
@@ -1245,13 +1243,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
 
   .ml-hud-msg {
-    font-size: 0.62rem;
-    max-width: 130px;
+    font-size: 0.64rem;
+    margin-bottom: 4px;
   }
 
   .ml-hud-stats {
-    font-size: 0.58rem;
-    gap: 5px;
+    font-size: 0.57rem;
+    gap: 3px 6px;
   }
 
   /* â”€â”€ Stream badge â”€â”€ */

@@ -71,10 +71,10 @@ const MlOverlay = (() => {
     score += Math.min(30, (detRate / 40) * 30);
     if (avgConf != null) score += Math.min(20, (avgConf / 0.6) * 20);
 
-    if (score >= 80) return { label: "Stabilizing", msg: "Detection quality is trending stronger frame by frame." };
-    if (score >= 55) return { label: "Adapting", msg: "Model signal is improving as traffic patterns repeat." };
-    if (score >= 30) return { label: "Learning", msg: "Vehicle vision improves with every new scene observed." };
-    return { label: "Warming up", msg: "Early signal only. It will sharpen as more frames pass." };
+    if (score >= 80) return { label: "Stabilizing", msg: "Detection quality is improving as more traffic is observed." };
+    if (score >= 55) return { label: "Adapting", msg: "The model is adapting to this camera and roadway pattern." };
+    if (score >= 30) return { label: "Learning", msg: "Vehicle detection gets better over time with more samples." };
+    return { label: "Warming up", msg: "Early learning stage. Confidence will increase as data accumulates." };
   }
 
   function render() {

@@ -1335,3 +1335,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
 init();
 
+
+// ML panel pipeline sync (keeps new workflow cards updated from live admin data)
+(function mlPipelineSyncInit() {
+  function text(id) {
+    const el = document.getElementById(id);
+    return el ? String(el.textContent || "").trim() : "";
+  }
+
+  function set(id, value) {
+    const el = document.getElementById(id);
+    if (el && value) el.textContent = value;
+  }
+
+  function syncMlPipelineCards() {
+    const total = text("ml-points-total") || text("ml-kpi-total") || "-";
+    const day = text("ml-points-24h") || text("ml-kpi-24h") || "-";
+    const model = text("ml-model-active") || "none";
+
+    set("ml-pipe-dataset-value", `${total} rows • 24h ${day}`);
+    set("ml-pipe-model-value", model && model !== "-" ? model : "No active model yet");
+
+    const usage = document.getElementById("ml-usage");
+    if (usage) {
+      const firstMeta = usage.querySelector(".round-row .round-row-meta");
+      if (firstMeta && firstMeta.textContent) {
+        set("ml-pipe-training-value", firstMeta.textContent.trim());
+      }
+    }
+
+    const captureState = (window.mlCaptureStats || mlCaptureStats || {});
+    const saved = Number(captureState.captureTotal || 0);
+    const upOk = Number(captureState.uploadSuccessTotal || 0);
+    const upFail = Number(captureState.uploadFailTotal || 0);
+    if (saved > 0 || upOk > 0 || upFail > 0) {
+      set("ml-pipe-capture-value", `saved=${saved} upload_ok=${upOk} upload_fail=${upFail}`);
+    }
+  }
+
+  setInterval(syncMlPipelineCards, 2500);
+  setTimeout(syncMlPipelineCards, 300);
+})();

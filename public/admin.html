@@ -174,7 +174,42 @@
       <section class="admin-panel" id="panel-ml">
         <div class="panel-head">
           <h2>ML Control</h2>
-          <p>Training, model status, and capture pipeline.</p>
+          <p>Core workflow: capture traffic frames, build dataset, retrain automatically, and promote better models.</p>
+        </div>
+
+        <div class="ml-core-grid">
+          <div class="ml-core-card">
+            <h3>Live ML Pipeline</h3>
+            <div class="ml-pipeline-grid">
+              <article class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Capture + Upload</p>
+                <p id="ml-pipe-capture-value" class="ml-pipeline-value">Checking...</p>
+                <p class="ml-pipeline-sub">Frames + labels from live feed to Supabase</p>
+              </article>
+              <article class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Dataset Growth</p>
+                <p id="ml-pipe-dataset-value" class="ml-pipeline-value">Checking...</p>
+                <p class="ml-pipeline-sub">Telemetry volume and daily throughput</p>
+              </article>
+              <article class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Training Engine</p>
+                <p id="ml-pipe-training-value" class="ml-pipeline-value">Checking...</p>
+                <p class="ml-pipeline-sub">Auto retrain loop + latest training job</p>
+              </article>
+              <article class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Active Detection Model</p>
+                <p id="ml-pipe-model-value" class="ml-pipeline-value">Checking...</p>
+                <p class="ml-pipeline-sub">Model currently used for traffic detection</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="ml-core-card">
+            <h3>Mission Focus</h3>
+            <div id="ml-glance-summary" class="rounds-list data-list">
+              <p class="loading">Loading ML summary...</p>
+            </div>
+          </div>
         </div>
 
         <div class="ml-kpi-grid">
@@ -200,78 +235,37 @@
           </article>
         </div>
 
-        <div class="ml-health-grid">
-          <div class="ml-health-card">
-            <h3>Dataset Health</h3>
-            <div class="ml-health-rows">
-              <div class="ml-health-row">
-                <div class="ml-health-row-head">
-                  <span>Total Volume</span>
-                  <strong id="ml-health-total-text">-</strong>
-                </div>
-                <div class="ml-health-bar"><div id="ml-health-total-fill" class="ml-health-fill"></div></div>
-              </div>
-              <div class="ml-health-row">
-                <div class="ml-health-row-head">
-                  <span>24h Throughput</span>
-                  <strong id="ml-health-24h-text">-</strong>
-                </div>
-                <div class="ml-health-bar"><div id="ml-health-24h-fill" class="ml-health-fill"></div></div>
-              </div>
-              <div class="ml-health-row">
-                <div class="ml-health-row-head">
-                  <span>Confidence Quality</span>
-                  <strong id="ml-health-confidence-text">-</strong>
-                </div>
-                <div class="ml-health-bar"><div id="ml-health-confidence-fill" class="ml-health-fill"></div></div>
-              </div>
-              <div class="ml-health-row">
-                <div class="ml-health-row-head">
-                  <span>Capture Upload Health</span>
-                  <strong id="ml-health-upload-text">-</strong>
-                </div>
-                <div class="ml-health-bar"><div id="ml-health-upload-fill" class="ml-health-fill"></div></div>
-              </div>
+        <div class="ml-ops-grid">
+          <div class="ml-progress-wrap">
+            <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
+            <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
+            <p id="ml-progress-hint" class="admin-hint"></p>
+            <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
+          </div>
+
+          <div class="ml-control-wrap">
+            <h3>Training Controls</h3>
+            <div class="field">
+              <label for="ml-dataset-yaml">Dataset YAML URL</label>
+              <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
             </div>
-          </div>
-          <div class="ml-health-card">
-            <h3>At a Glance</h3>
-            <div id="ml-glance-summary" class="rounds-list data-list">
-              <p class="loading">Loading ML summary...</p>
+
+            <div class="field-row">
+              <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
+              <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
+              <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
             </div>
-          </div>
-        </div>
 
-        <div class="ml-progress-wrap">
-          <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
-          <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
-          <p id="ml-progress-hint" class="admin-hint"></p>
-        </div>
-
-        <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
-
-        <div class="ml-control-wrap" style="margin-top:12px;">
-          <div class="field">
-            <label for="ml-dataset-yaml">Dataset YAML URL</label>
-            <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
-          </div>
-
-          <div class="field-row">
-            <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
-            <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
-            <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
-          </div>
-
-          <div class="ml-control-actions">
-            <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
-            <span id="ml-control-msg" class="muted"></span>
+            <div class="ml-control-actions">
+              <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
+              <span id="ml-control-msg" class="muted"></span>
+            </div>
           </div>
 
           <div class="card-box slim">
             <h3>Latest Jobs and Models</h3>
             <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
           </div>
-
           <div class="card-box slim">
             <h3>Live Capture Logs</h3>
             <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>

@@ -181,23 +181,23 @@
           <div class="ml-core-card">
             <h3>Live ML Pipeline</h3>
             <div class="ml-pipeline-grid">
-              <article class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Capture + Upload</p>
+              <article id="ml-pipeline-capture" class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Capture + Upload <span id="ml-pipe-capture-badge" class="ml-pipe-badge">Checking</span></p>
                 <p id="ml-pipe-capture-value" class="ml-pipeline-value">Checking...</p>
                 <p class="ml-pipeline-sub">Frames + labels from live feed to Supabase</p>
               </article>
-              <article class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Dataset Growth</p>
+              <article id="ml-pipeline-dataset" class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Dataset Growth <span id="ml-pipe-dataset-badge" class="ml-pipe-badge">Checking</span></p>
                 <p id="ml-pipe-dataset-value" class="ml-pipeline-value">Checking...</p>
                 <p class="ml-pipeline-sub">Telemetry volume and daily throughput</p>
               </article>
-              <article class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Training Engine</p>
+              <article id="ml-pipeline-training" class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Training Engine <span id="ml-pipe-training-badge" class="ml-pipe-badge">Checking</span></p>
                 <p id="ml-pipe-training-value" class="ml-pipeline-value">Checking...</p>
                 <p class="ml-pipeline-sub">Auto retrain loop + latest training job</p>
               </article>
-              <article class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Active Detection Model</p>
+              <article id="ml-pipeline-model" class="ml-pipeline-item">
+                <p class="ml-pipeline-title">Active Detection Model <span id="ml-pipe-model-badge" class="ml-pipe-badge">Checking</span></p>
                 <p id="ml-pipe-model-value" class="ml-pipeline-value">Checking...</p>
                 <p class="ml-pipeline-sub">Model currently used for traffic detection</p>
               </article>
@@ -259,6 +259,20 @@
             <div class="ml-control-actions">
               <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
               <span id="ml-control-msg" class="muted"></span>
+            </div>
+          </div>
+
+          <div class="card-box slim">
+            <h3>One-Click Model Pipeline</h3>
+            <p class="muted" style="font-size:0.82rem; margin-bottom:8px;">
+              Runs export -> train -> candidate promotion path and reports exactly what is missing or failing.
+            </p>
+            <div class="ml-control-actions" style="margin-bottom:10px;">
+              <button id="btn-ml-one-click" class="btn-primary" type="button">One-Click Get Model</button>
+              <span id="ml-one-click-msg" class="muted"></span>
+            </div>
+            <div id="ml-diagnostics" class="rounds-list data-list">
+              <p class="loading">Loading diagnostics...</p>
             </div>
           </div>
 

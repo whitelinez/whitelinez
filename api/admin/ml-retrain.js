@@ -1,9 +1,12 @@
 /**
  * /api/admin/ml-retrain
- * - POST: trigger backend ML retraining pipeline
+ * - GET ?action=diagnostics : fetch ML diagnostics
+ * - POST ?action=one-click : run one-click pipeline
+ * - POST (default) : trigger retrain
  */
 export default async function handler(req, res) {
-  if ((req.method || "GET") !== "POST") {
+  const method = req.method || "GET";
+  if (!["GET", "POST"].includes(method)) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -18,15 +21,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
-    const upstream = await fetch(`${railwayUrl}/admin/ml/retrain`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: authHeader,
-      },
-      body: JSON.stringify(body),
-    });
+    const action = String(req.query?.action || "").trim().toLowerCase();
+    let upstream;
+
+    if (method === "GET") {
+      if (action !== "diagnostics") {
+        return res.status(400).json({ error: "Unsupported GET action" });
+      }
+      upstream = await fetch(`${railwayUrl}/admin/ml/diagnostics`, {
+        method: "GET",
+        headers: { Authorization: authHeader },
+      });
+    } else {
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const targetPath = action === "one-click" ? "/admin/ml/one-click" : "/admin/ml/retrain";
+      upstream = await fetch(`${railwayUrl}${targetPath}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify(body),
+      });
+    }
 
     const raw = await upstream.text();
     let data;

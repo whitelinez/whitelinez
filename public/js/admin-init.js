@@ -1376,3 +1376,204 @@ init();
   setInterval(syncMlPipelineCards, 2500);
   setTimeout(syncMlPipelineCards, 300);
 })();
+// ML pipeline stage health badges (live)
+(function mlPipelineStageHealthInit() {
+  function readNum(id) {
+    const el = document.getElementById(id);
+    if (!el) return NaN;
+    const n = Number(String(el.textContent || "").replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function setStage(stage, status, label) {
+    const card = document.getElementById(`ml-pipeline-${stage}`);
+    const badge = document.getElementById(`ml-pipe-${stage}-badge`);
+    if (!card || !badge) return;
+
+    card.classList.remove("status-ok", "status-warn", "status-fail");
+    badge.classList.remove("status-ok", "status-warn", "status-fail");
+
+    const finalStatus = ["ok", "warn", "fail"].includes(status) ? status : "warn";
+    card.classList.add(`status-${finalStatus}`);
+    badge.classList.add(`status-${finalStatus}`);
+    badge.textContent = label || (finalStatus === "ok" ? "Healthy" : finalStatus === "fail" ? "Failed" : "Warning");
+  }
+
+  function syncStageHealth() {
+    const cap = (window.mlCaptureStats || mlCaptureStats || {});
+    const saved = Number(cap.captureTotal || 0);
+    const upOk = Number(cap.uploadSuccessTotal || 0);
+    const upFail = Number(cap.uploadFailTotal || 0);
+    const upTotal = upOk + upFail;
+    const upRate = upTotal > 0 ? upOk / upTotal : 0;
+    if (saved <= 0) setStage("capture", "warn", "No Data");
+    else if (upTotal > 5 && upRate < 0.85) setStage("capture", "fail", "Upload Fail");
+    else if (upTotal > 0 && upRate < 0.95) setStage("capture", "warn", "Partial");
+    else setStage("capture", "ok", "Healthy");
+
+    const totalRows = readNum("ml-kpi-total");
+    const rows24h = readNum("ml-kpi-24h");
+    const confTextEl = document.getElementById("ml-kpi-confidence");
+    const conf = confTextEl ? Number(String(confTextEl.textContent || "").replace("%", "")) : NaN;
+    if (!Number.isFinite(totalRows) || totalRows <= 0) setStage("dataset", "warn", "No Data");
+    else if ((rows24h >= 5000) && (Number.isFinite(conf) && conf >= 55)) setStage("dataset", "ok", "Healthy");
+    else if (rows24h < 1000) setStage("dataset", "warn", "Low 24h");
+    else setStage("dataset", "warn", "Building");
+
+    const trainingValueEl = document.getElementById("ml-pipe-training-value");
+    const trainingText = String(trainingValueEl?.textContent || "").toLowerCase();
+    if (!trainingText || trainingText.includes("no training jobs")) setStage("training", "warn", "No Jobs");
+    else if (trainingText.includes("failed")) setStage("training", "fail", "Failed");
+    else if (trainingText.includes("running")) setStage("training", "ok", "Running");
+    else if (trainingText.includes("completed")) setStage("training", "ok", "Completed");
+    else setStage("training", "warn", "Checking");
+
+    const modelValueEl = document.getElementById("ml-pipe-model-value");
+    const modelText = String(modelValueEl?.textContent || "").trim().toLowerCase();
+    if (!modelText || modelText === "none" || modelText.includes("no active model")) {
+      setStage("model", "warn", "No Model");
+    } else {
+      setStage("model", "ok", "Active");
+    }
+  }
+
+  setInterval(syncStageHealth, 2500);
+  setTimeout(syncStageHealth, 400);
+})();
+// One-click ML diagnostics + trigger helpers
+(function mlOneClickToolsInit() {
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  async function loadMlDiagnosticsPanel() {
+    const box = document.getElementById("ml-diagnostics");
+    if (!box || !adminSession?.access_token) return;
+
+    try {
+      const res = await fetch("/api/admin/ml-retrain?action=diagnostics", {
+        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load diagnostics");
+
+      const checks = payload?.checks || [];
+      const latestError = payload?.latest_error || "";
+      const ready = Boolean(payload?.ready_for_one_click);
+      const summary = payload?.summary || {};
+
+      const rows = checks.map((c) => {
+        const isOk = String(c?.status || "") === "ok";
+        const badge = isOk ? "round-open" : "round-locked";
+        const label = isOk ? "OK" : "BLOCKED";
+        return `
+          <div class="ml-diag-row">
+            <div class="ml-diag-text">
+              <p class="ml-diag-name">${esc(c?.name || "Check")}</p>
+              <p class="ml-diag-detail">${esc(c?.detail || "")}</p>
+            </div>
+            <span class="round-badge ${badge}">${label}</span>
+          </div>
+        `;
+      }).join("");
+
+      box.innerHTML = `
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">Pipeline Readiness</span>
+            <span class="round-row-meta"><span class="round-badge ${ready ? "round-open" : "round-locked"}">${ready ? "READY" : "BLOCKED"}</span></span>
+          </div>
+        </div>
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">Rows / 24h / Active</span>
+            <span class="round-row-meta">${Number(summary.total_rows || 0).toLocaleString()} / ${Number(summary.rows_24h || 0).toLocaleString()} / ${esc(summary.active_model_name || "none")}</span>
+          </div>
+        </div>
+        ${rows || `<p class="muted" style="font-size:0.82rem;">No diagnostics checks yet.</p>`}
+        ${latestError ? `<div class="round-row"><div class="round-row-info"><span class="round-row-id">Latest Training Error</span><span class="round-row-meta">${esc(latestError)}</span></div></div>` : ""}
+      `;
+    } catch (e) {
+      box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Diagnostics unavailable.</p>`;
+    }
+  }
+
+  async function runMlOneClickPipeline() {
+    const btn = document.getElementById("btn-ml-one-click");
+    const msg = document.getElementById("ml-one-click-msg");
+    const datasetEl = document.getElementById("ml-dataset-yaml");
+    const epochsEl = document.getElementById("ml-epochs");
+    const imgszEl = document.getElementById("ml-imgsz");
+    const batchEl = document.getElementById("ml-batch");
+    if (!btn || !msg || !adminSession?.access_token) return;
+
+    const dataset_yaml_url = String(datasetEl?.value || "").trim();
+    const epochs = Number(epochsEl?.value || 20);
+    const imgsz = Number(imgszEl?.value || 640);
+    const batch = Number(batchEl?.value || 16);
+
+    btn.disabled = true;
+    msg.style.color = "var(--muted)";
+    msg.textContent = "Running one-click pipeline...";
+
+    try {
+      const res = await fetch("/api/admin/ml-retrain?action=one-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminSession.access_token}`,
+        },
+        body: JSON.stringify({
+          dataset_yaml_url,
+          epochs: Number.isFinite(epochs) ? epochs : 20,
+          imgsz: Number.isFinite(imgsz) ? imgsz : 640,
+          batch: Number.isFinite(batch) ? batch : 16,
+        }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = payload?.detail;
+        if (typeof detail === "string") throw new Error(detail);
+        if (detail?.message) throw new Error(detail.message);
+        throw new Error(payload?.error || "One-click pipeline failed");
+      }
+
+      const state = payload?.result?.status || "completed";
+      if (state === "skipped") {
+        msg.style.color = "#f1b37c";
+        msg.textContent = payload?.result?.reason || "Pipeline skipped by guardrails.";
+      } else {
+        msg.style.color = "var(--green)";
+        msg.textContent = "One-click pipeline completed.";
+      }
+
+      if (typeof loadMlUsage === "function") loadMlUsage();
+      if (typeof loadMlProgress === "function") loadMlProgress();
+      if (typeof loadMlCaptureStatus === "function") loadMlCaptureStatus();
+      await loadMlDiagnosticsPanel();
+    } catch (e) {
+      msg.style.color = "var(--red)";
+      msg.textContent = e?.message || "One-click pipeline failed.";
+      await loadMlDiagnosticsPanel();
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("btn-ml-one-click");
+    if (btn && !btn.dataset.wiredOneClick) {
+      btn.dataset.wiredOneClick = "1";
+      btn.addEventListener("click", runMlOneClickPipeline);
+    }
+    setTimeout(loadMlDiagnosticsPanel, 700);
+    setInterval(loadMlDiagnosticsPanel, 20000);
+  });
+})();
+

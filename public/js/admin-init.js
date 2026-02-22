@@ -190,6 +190,30 @@ function persistMlDatasetUrl(url) {
   localStorage.setItem(ML_DATASET_URL_STORAGE_KEY, normalized);
 }
 
+function initAdminSections() {
+  const navBtns = Array.from(document.querySelectorAll(".admin-nav-btn"));
+  const panels = Array.from(document.querySelectorAll(".admin-panel"));
+  if (!navBtns.length || !panels.length) return;
+
+  const storageKey = "whitelinez.admin.active_panel";
+  const normalize = (value) => String(value || "").replace(/^#?panel-?/, "").trim();
+  const show = (panelName) => {
+    const target = normalize(panelName);
+    navBtns.forEach((btn) => btn.classList.toggle("active", btn.dataset.panel === target));
+    panels.forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${target}`));
+    localStorage.setItem(storageKey, target);
+  };
+
+  const fromHash = normalize(window.location.hash);
+  const saved = normalize(localStorage.getItem(storageKey));
+  const initial = fromHash || saved || "overview";
+  show(initial);
+
+  navBtns.forEach((btn) => {
+    btn.addEventListener("click", () => show(btn.dataset.panel));
+  });
+}
+
 function renderHealthOverview(health, errMsg = "") {
   const box = document.getElementById("health-overview");
   if (!box) return;
@@ -401,17 +425,17 @@ async function loadMlCaptureStatus() {
     const uploadState = payload?.upload_enabled ? "ON" : "OFF";
     const counters = `saved=${Number(payload?.capture_total || 0)} upload_ok=${Number(payload?.upload_success_total || 0)} upload_fail=${Number(payload?.upload_fail_total || 0)}`;
 
-    const rows = events.slice().reverse().map((evt) => {
+    const rows = events.slice().reverse().slice(0, 40).map((evt) => {
       const ts = evt?.ts ? `${new Date(evt.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} (${fmtAgo(evt.ts)})` : "-";
       const msg = escHtml(evt?.message || evt?.event || "event");
-      const meta = evt?.meta ? escHtml(JSON.stringify(evt.meta)) : "";
+      const meta = evt?.meta ? escHtml(JSON.stringify(evt.meta, null, 2)) : "";
       const badgeClass = evt?.event === "upload_failed" ? "round-locked" : "round-open";
       return `
         <div class="round-row">
           <div class="round-row-info">
             <span class="round-row-id">${ts}</span>
             <span class="round-row-meta"><span class="round-badge ${badgeClass}">${escHtml(evt?.event || "event")}</span> ${msg}</span>
-            ${meta ? `<span class="round-row-meta" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">${meta}</span>` : ""}
+            ${meta ? `<details class="log-meta"><summary>Details</summary><pre>${meta}</pre></details>` : ""}
           </div>
         </div>
       `;
@@ -925,6 +949,7 @@ async function init() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initAdminSections();
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
   document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);

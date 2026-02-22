@@ -6,7 +6,7 @@
   <title>Admin - WHITELINEZ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="stylesheet" href="/css/admin-dashboard.css" />
 </head>
@@ -15,7 +15,7 @@
   <header class="site-header admin-header">
     <div class="admin-header-left">
       <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" /></a>
-      <span class="admin-badge">ADMIN</span>
+      <span class="admin-badge">Admin</span>
     </div>
     <nav class="admin-header-actions">
       <a href="/index.html">Public View</a>
@@ -23,82 +23,56 @@
     </nav>
   </header>
 
-  <nav class="admin-top-nav">
-    <a href="#overview">Overview</a>
-    <a href="#zones">Zones</a>
-    <a href="#ml">ML Control</a>
-    <a href="#rounds">Rounds</a>
-    <a href="#bets">Bets</a>
-    <a href="#users">Users</a>
-  </nav>
+  <div class="admin-shell">
+    <aside class="admin-sidenav">
+      <button class="admin-nav-btn active" data-panel="overview">Overview</button>
+      <button class="admin-nav-btn" data-panel="zones">Zones</button>
+      <button class="admin-nav-btn" data-panel="ml">ML Control</button>
+      <button class="admin-nav-btn" data-panel="rounds">Rounds</button>
+      <button class="admin-nav-btn" data-panel="bets">Bets</button>
+      <button class="admin-nav-btn" data-panel="users">Users</button>
+    </aside>
 
-  <main class="admin-grid">
-
-    <div class="admin-col">
-
-      <section class="admin-section" id="overview">
-        <div class="section-head">
-          <p class="section-kicker">Operations</p>
-          <h2>At A Glance</h2>
+    <main class="admin-workspace">
+      <section class="admin-panel active" id="panel-overview">
+        <div class="panel-head">
+          <h2>Overview</h2>
+          <p>Live system and model health.</p>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-val" id="stat-count">-</div>
-            <div class="stat-label">Live Count</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="stat-round">-</div>
-            <div class="stat-label">Round Status</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="stat-bets">-</div>
-            <div class="stat-label">Bets Placed</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="stat-users">-</div>
-            <div class="stat-label">WS Users</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="ml-points-total">-</div>
-            <div class="stat-label">Telemetry Rows</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="ml-points-24h">-</div>
-            <div class="stat-label">Rows (24h)</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="ml-conf-avg">-</div>
-            <div class="stat-label">Avg Confidence</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="ml-model-active">-</div>
-            <div class="stat-label">Active Model</div>
-          </div>
+        <div class="stats-grid compact">
+          <div class="stat-card"><div class="stat-val" id="stat-count">-</div><div class="stat-label">Live Count</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-round">-</div><div class="stat-label">Round Status</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-bets">-</div><div class="stat-label">Bets Placed</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">WS Users</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
+          <div class="stat-card"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
         </div>
 
-        <div class="split-2">
-          <div>
-            <h3 class="subhead">System Health</h3>
-            <div id="health-overview" class="rounds-list">
-              <p class="loading">Loading /health...</p>
-            </div>
+        <div class="overview-grid">
+          <div class="card-box">
+            <h3>System Health</h3>
+            <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
           </div>
-          <div>
-            <h3 class="subhead">Recent ML Activity</h3>
-            <div id="ml-last-seen" class="rounds-list">
-              <p class="loading">Loading ML data...</p>
+          <div class="card-box">
+            <h3>ML Progress</h3>
+            <div class="ml-progress-wrap">
+              <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
+              <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
+              <p id="ml-progress-hint" class="admin-hint"></p>
             </div>
+            <div id="ml-last-seen" class="rounds-list data-list"><p class="loading">Loading ML data...</p></div>
           </div>
         </div>
       </section>
 
-      <section class="admin-section" id="zones">
-        <div class="section-head">
-          <p class="section-kicker">Stream</p>
+      <section class="admin-panel" id="panel-zones">
+        <div class="panel-head">
           <h2>Zone Editor</h2>
+          <p>Set detect and count zones on the live feed.</p>
         </div>
-        <p class="admin-hint">Select zone type, then click 4 points on the feed. Detect zone filters visible boxes. Count zone tracks crossings.</p>
 
         <div class="stream-canvas-wrapper">
           <video id="admin-video" muted playsinline autoplay></video>
@@ -116,65 +90,133 @@
         </div>
       </section>
 
-      <section class="admin-section" id="ml">
-        <div class="section-head">
-          <p class="section-kicker">Models</p>
+      <section class="admin-panel" id="panel-ml">
+        <div class="panel-head">
           <h2>ML Control</h2>
-        </div>
-
-        <div class="ml-progress-wrap">
-          <div class="ml-progress-head">
-            <span>Training Readiness</span>
-            <strong id="ml-progress-text">0%</strong>
-          </div>
-          <div class="ml-progress-bar">
-            <div id="ml-progress-fill" class="ml-progress-fill"></div>
-          </div>
-          <p class="admin-hint" id="ml-progress-hint" style="margin-top:8px; margin-bottom:0;"></p>
+          <p>Trigger retraining and review capture pipeline.</p>
         </div>
 
         <div class="ml-control-wrap">
-          <div class="field" style="margin-bottom:8px;">
+          <div class="field">
             <label for="ml-dataset-yaml">Dataset YAML URL</label>
             <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
           </div>
-          <div class="field-row" style="margin-bottom:8px;">
-            <div class="field">
-              <label for="ml-epochs">Epochs</label>
-              <input id="ml-epochs" type="number" min="1" max="300" value="20" />
-            </div>
-            <div class="field">
-              <label for="ml-imgsz">Image Size</label>
-              <input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" />
-            </div>
-            <div class="field">
-              <label for="ml-batch">Batch</label>
-              <input id="ml-batch" type="number" min="1" max="128" value="16" />
-            </div>
+
+          <div class="field-row">
+            <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
+            <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
+            <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
           </div>
+
           <div class="ml-control-actions">
             <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
             <span id="ml-control-msg" class="muted"></span>
           </div>
-          <div id="ml-usage" class="rounds-list" style="margin-top:10px;">
-            <p class="loading">Loading training usage...</p>
+
+          <div class="card-box slim">
+            <h3>Latest Jobs and Models</h3>
+            <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
           </div>
-          <div id="ml-capture-log" class="rounds-list" style="margin-top:10px;">
-            <p class="loading">Loading live capture logs...</p>
-          </div>
-          <div class="ml-control-actions" style="margin-top:8px;">
-            <button id="btn-copy-capture-error" class="btn-secondary" type="button">Copy Latest Upload Error</button>
-            <span id="ml-capture-copy-msg" class="muted"></span>
+
+          <div class="card-box slim">
+            <h3>Live Capture Logs</h3>
+            <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>
+            <div class="ml-control-actions" style="margin-top:10px;">
+              <button id="btn-copy-capture-error" class="btn-secondary" type="button">Copy Latest Upload Error</button>
+              <span id="ml-capture-copy-msg" class="muted"></span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="admin-section" id="users">
-        <div class="section-head">
-          <p class="section-kicker">Access</p>
-          <h2>User Management</h2>
+      <section class="admin-panel" id="panel-rounds">
+        <div class="panel-head">
+          <h2>Rounds</h2>
+          <p>Create and resolve betting rounds.</p>
         </div>
-        <p class="admin-hint">Set admin role for a user by email.</p>
+
+        <div class="rounds-grid">
+          <section class="card-box">
+            <h3>Create Round</h3>
+            <form id="round-form">
+              <div class="field-row">
+                <div class="field">
+                  <label for="market-type">Bet Type</label>
+                  <select id="market-type">
+                    <option value="over_under">Over / Under - total vehicles</option>
+                    <option value="vehicle_count">Count - specific vehicle type</option>
+                    <option value="vehicle_type">Type Leader - which type wins</option>
+                  </select>
+                </div>
+                <div class="field" id="vehicle-class-field" style="display:none">
+                  <label for="vehicle-class">Vehicle Type</label>
+                  <select id="vehicle-class">
+                    <option value="car">Cars</option>
+                    <option value="truck">Trucks</option>
+                    <option value="bus">Buses</option>
+                    <option value="motorcycle">Motorcycles</option>
+                  </select>
+                </div>
+                <div class="field" id="threshold-field">
+                  <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
+                  <input id="threshold" type="number" min="1" value="20" />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="starts-at">Round Starts <small class="muted">(local time)</small></label>
+                  <input id="starts-at" type="datetime-local" required />
+                </div>
+                <div class="field" style="max-width:130px">
+                  <label for="duration">Duration (min)</label>
+                  <input id="duration" type="number" min="5" max="480" value="10" />
+                </div>
+                <div class="field" style="max-width:150px">
+                  <label for="bet-cutoff">Close bets (min before end)</label>
+                  <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
+                </div>
+              </div>
+
+              <div class="computed-times" id="computed-times" style="display:none">
+                <span>Bets close: <strong id="computed-closes">-</strong></span>
+                <span>Round ends: <strong id="computed-ends">-</strong></span>
+              </div>
+
+              <div id="round-preview" class="round-preview hidden">
+                <div class="preview-row"><span>Duration</span><strong id="prev-duration">-</strong></div>
+                <div class="preview-row"><span>Avg zone vehicles (this hour)</span><strong id="prev-rate">-</strong></div>
+                <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">-</strong></div>
+                <div id="prev-warning" class="preview-warning hidden"></div>
+                <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
+              </div>
+
+              <p id="round-error" class="auth-error" role="alert"></p>
+              <p id="round-success" class="auth-success" role="status"></p>
+              <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
+            </form>
+          </section>
+
+          <section class="card-box">
+            <h3>Recent Rounds</h3>
+            <div id="recent-rounds" class="rounds-list data-list"><p class="loading">Loading...</p></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="panel-bets">
+        <div class="panel-head">
+          <h2>Recent Bets</h2>
+          <p>Latest bettor activity and stake details.</p>
+        </div>
+        <div id="recent-bets" class="rounds-list data-list tall"><p class="loading">Loading...</p></div>
+      </section>
+
+      <section class="admin-panel" id="panel-users">
+        <div class="panel-head">
+          <h2>User Management</h2>
+          <p>Grant admin role by email.</p>
+        </div>
         <div class="user-mgmt-row">
           <div class="field">
             <label for="admin-email-input">User Email</label>
@@ -184,98 +226,8 @@
         </div>
         <p id="user-mgmt-msg" style="font-size:0.82rem; margin-top:8px; color: var(--green);"></p>
       </section>
-
-    </div>
-
-    <div class="admin-col">
-
-      <section class="admin-section" id="rounds">
-        <div class="section-head">
-          <p class="section-kicker">Markets</p>
-          <h2>Create Round</h2>
-        </div>
-        <form id="round-form">
-
-          <div class="field-row">
-            <div class="field">
-              <label for="market-type">Bet Type</label>
-              <select id="market-type">
-                <option value="over_under">Over / Under - total vehicles</option>
-                <option value="vehicle_count">Count - specific vehicle type</option>
-                <option value="vehicle_type">Type Leader - which type wins</option>
-              </select>
-            </div>
-            <div class="field" id="vehicle-class-field" style="display:none">
-              <label for="vehicle-class">Vehicle Type</label>
-              <select id="vehicle-class">
-                <option value="car">Cars</option>
-                <option value="truck">Trucks</option>
-                <option value="bus">Buses</option>
-                <option value="motorcycle">Motorcycles</option>
-              </select>
-            </div>
-            <div class="field" id="threshold-field">
-              <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
-              <input id="threshold" type="number" min="1" value="20" />
-            </div>
-          </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label for="starts-at">Round Starts <small class="muted">(local time)</small></label>
-              <input id="starts-at" type="datetime-local" required />
-            </div>
-            <div class="field" style="max-width:130px">
-              <label for="duration">Duration (min)</label>
-              <input id="duration" type="number" min="5" max="480" value="10" />
-            </div>
-            <div class="field" style="max-width:150px">
-              <label for="bet-cutoff">Close bets (min before end)</label>
-              <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
-            </div>
-          </div>
-
-          <div class="computed-times" id="computed-times" style="display:none">
-            <span>Bets close: <strong id="computed-closes">-</strong></span>
-            <span>Round ends: <strong id="computed-ends">-</strong></span>
-          </div>
-
-          <div id="round-preview" class="round-preview hidden">
-            <div class="preview-row"><span>Duration</span><strong id="prev-duration">-</strong></div>
-            <div class="preview-row"><span>Avg zone vehicles (this hour)</span><strong id="prev-rate">-</strong></div>
-            <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">-</strong></div>
-            <div id="prev-warning" class="preview-warning hidden"></div>
-            <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
-          </div>
-
-          <p id="round-error" class="auth-error" role="alert"></p>
-          <p id="round-success" class="auth-success" role="status"></p>
-          <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
-        </form>
-      </section>
-
-      <section class="admin-section">
-        <div class="section-head">
-          <p class="section-kicker">Recent</p>
-          <h2>Rounds Feed</h2>
-        </div>
-        <div id="recent-rounds" class="rounds-list">
-          <p class="loading">Loading...</p>
-        </div>
-      </section>
-
-      <section class="admin-section" id="bets">
-        <div class="section-head">
-          <p class="section-kicker">Recent</p>
-          <h2>Bets Feed</h2>
-        </div>
-        <div id="recent-bets" class="rounds-list">
-          <p class="loading">Loading...</p>
-        </div>
-      </section>
-
-    </div>
-  </main>
+    </main>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>

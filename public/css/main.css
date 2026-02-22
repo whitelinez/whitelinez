@@ -1117,9 +1117,9 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 @media (max-width: 900px) {
   .ml-hud {
     right: 8px;
-    bottom: 42px;
-    width: min(138px, 28vw);
-    max-width: 138px;
+    bottom: 30px;
+    width: 148px;
+    max-width: 148px;
     padding: 1px 3px;
     overflow: hidden;
     z-index: 7;
@@ -1134,6 +1134,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     font-size: 0.48rem;
     line-height: 1.15;
     margin-bottom: 1px;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1147,10 +1148,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
 
   .ml-hud-stats span {
+    display: block;
+    width: 100%;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: right;
   }
 }
 
@@ -1271,10 +1275,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .rs-timer { font-size: 0.72rem; }
 
   .ml-hud {
-    bottom: 34px;
+    bottom: 24px;
     right: 8px;
-    width: min(132px, 36vw);
-    max-width: 132px;
+    width: 126px;
+    max-width: 126px;
     padding: 1px 3px;
     z-index: 7;
     overflow: hidden;
@@ -1287,6 +1291,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     font-size: 0.5rem;
     line-height: 1.2;
     margin-bottom: 1px;
+    max-width: 100%;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -1301,10 +1306,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
 
   .ml-hud-stats span {
+    display: block;
+    width: 100%;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: right;
   }
 
   .tab-btn { padding: 10px 0; font-size: 0.8rem; }
@@ -1352,9 +1360,9 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
   .ml-hud {
     right: 6px;
-    bottom: 30px;
-    width: min(116px, 34vw);
-    max-width: 116px;
+    bottom: 22px;
+    width: 108px;
+    max-width: 108px;
     padding: 1px 3px;
     overflow: hidden;
   }

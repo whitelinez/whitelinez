@@ -23,21 +23,19 @@
     </nav>
   </header>
 
-  <div class="admin-shell">
-    <aside class="admin-sidenav">
-      <button class="admin-nav-btn active" data-panel="overview">Overview</button>
-      <button class="admin-nav-btn" data-panel="zones">Zones</button>
-      <button class="admin-nav-btn" data-panel="ml">ML Control</button>
-      <button class="admin-nav-btn" data-panel="rounds">Rounds</button>
-      <button class="admin-nav-btn" data-panel="bets">Bets</button>
-      <button class="admin-nav-btn" data-panel="users">Users</button>
-    </aside>
+  <nav class="admin-topnav">
+    <button class="admin-nav-btn active" data-panel="overview">Overview</button>
+    <button class="admin-nav-btn" data-panel="ml">ML Control</button>
+    <button class="admin-nav-btn" data-panel="bets">Bets</button>
+    <button class="admin-nav-btn" data-panel="users">Users</button>
+  </nav>
 
+  <div class="admin-shell">
     <main class="admin-workspace">
       <section class="admin-panel active" id="panel-overview">
         <div class="panel-head">
           <h2>Overview</h2>
-          <p>Live system and model health.</p>
+          <p>Main actions: zone setup and round control.</p>
         </div>
 
         <div class="stats-grid compact">
@@ -51,91 +49,26 @@
           <div class="stat-card"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
         </div>
 
-        <div class="overview-grid">
-          <div class="card-box">
-            <h3>System Health</h3>
-            <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
-          </div>
-          <div class="card-box">
-            <h3>ML Progress</h3>
-            <div class="ml-progress-wrap">
-              <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
-              <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
-              <p id="ml-progress-hint" class="admin-hint"></p>
+        <div class="overview-grid main-actions-grid">
+          <section class="card-box">
+            <h3>Zone Editor</h3>
+            <p class="admin-hint">Set detect/count zones, then save.</p>
+            <div class="stream-canvas-wrapper">
+              <video id="admin-video" muted playsinline autoplay></video>
+              <canvas id="line-canvas"></canvas>
             </div>
-            <div id="ml-last-seen" class="rounds-list data-list"><p class="loading">Loading ML data...</p></div>
-          </div>
-        </div>
-      </section>
 
-      <section class="admin-panel" id="panel-zones">
-        <div class="panel-head">
-          <h2>Zone Editor</h2>
-          <p>Set detect and count zones on the live feed.</p>
-        </div>
-
-        <div class="stream-canvas-wrapper">
-          <video id="admin-video" muted playsinline autoplay></video>
-          <canvas id="line-canvas"></canvas>
-        </div>
-
-        <div class="admin-line-controls">
-          <div class="zone-toggle-group">
-            <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
-            <button id="btn-zone-count" class="zone-toggle count active">Count</button>
-          </div>
-          <button id="btn-clear-line" class="btn-secondary">Clear</button>
-          <button id="btn-save-line" class="btn-primary" disabled>Save Zones</button>
-          <span id="line-status" class="line-status"></span>
-        </div>
-      </section>
-
-      <section class="admin-panel" id="panel-ml">
-        <div class="panel-head">
-          <h2>ML Control</h2>
-          <p>Trigger retraining and review capture pipeline.</p>
-        </div>
-
-        <div class="ml-control-wrap">
-          <div class="field">
-            <label for="ml-dataset-yaml">Dataset YAML URL</label>
-            <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
-          </div>
-
-          <div class="field-row">
-            <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
-            <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
-            <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
-          </div>
-
-          <div class="ml-control-actions">
-            <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
-            <span id="ml-control-msg" class="muted"></span>
-          </div>
-
-          <div class="card-box slim">
-            <h3>Latest Jobs and Models</h3>
-            <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
-          </div>
-
-          <div class="card-box slim">
-            <h3>Live Capture Logs</h3>
-            <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>
-            <div class="ml-control-actions" style="margin-top:10px;">
-              <button id="btn-copy-capture-error" class="btn-secondary" type="button">Copy Latest Upload Error</button>
-              <span id="ml-capture-copy-msg" class="muted"></span>
+            <div class="admin-line-controls">
+              <div class="zone-toggle-group">
+                <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
+                <button id="btn-zone-count" class="zone-toggle count active">Count</button>
+              </div>
+              <button id="btn-clear-line" class="btn-secondary">Clear</button>
+              <button id="btn-save-line" class="btn-primary" disabled>Save Zones</button>
+              <span id="line-status" class="line-status"></span>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section class="admin-panel" id="panel-rounds">
-        <div class="panel-head">
-          <h2>Rounds</h2>
-          <p>Create and resolve betting rounds.</p>
-        </div>
-
-        <div class="rounds-grid">
           <section class="card-box">
             <h3>Create Round</h3>
             <form id="round-form">
@@ -196,11 +129,64 @@
               <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
             </form>
           </section>
+        </div>
 
-          <section class="card-box">
+        <div class="overview-grid" style="margin-top:12px;">
+          <div class="card-box">
+            <h3>System Health</h3>
+            <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
+          </div>
+          <div class="card-box">
             <h3>Recent Rounds</h3>
             <div id="recent-rounds" class="rounds-list data-list"><p class="loading">Loading...</p></div>
-          </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="panel-ml">
+        <div class="panel-head">
+          <h2>ML Control</h2>
+          <p>Training, model status, and capture pipeline.</p>
+        </div>
+
+        <div class="ml-progress-wrap">
+          <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
+          <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
+          <p id="ml-progress-hint" class="admin-hint"></p>
+        </div>
+
+        <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
+
+        <div class="ml-control-wrap" style="margin-top:12px;">
+          <div class="field">
+            <label for="ml-dataset-yaml">Dataset YAML URL</label>
+            <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
+          </div>
+
+          <div class="field-row">
+            <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
+            <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
+            <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
+          </div>
+
+          <div class="ml-control-actions">
+            <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
+            <span id="ml-control-msg" class="muted"></span>
+          </div>
+
+          <div class="card-box slim">
+            <h3>Latest Jobs and Models</h3>
+            <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
+          </div>
+
+          <div class="card-box slim">
+            <h3>Live Capture Logs</h3>
+            <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>
+            <div class="ml-control-actions" style="margin-top:10px;">
+              <button id="btn-copy-capture-error" class="btn-secondary" type="button">Copy Latest Upload Error</button>
+              <span id="ml-capture-copy-msg" class="muted"></span>
+            </div>
+          </div>
         </div>
       </section>
 

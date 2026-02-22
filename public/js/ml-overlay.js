@@ -11,6 +11,7 @@ const MlOverlay = (() => {
     confSum: 0,
     confCount: 0,
     modelLoop: "unknown",
+    seededFromTelemetry: false,
   };
 
   let _bound = false;
@@ -36,6 +37,7 @@ const MlOverlay = (() => {
     state.startedAt = Date.now();
 
     window.addEventListener("count:update", (e) => updateFromCount(e.detail || {}));
+    seedFromTelemetry();
     pollHealth();
     _pollTimer = setInterval(pollHealth, 20000);
     _titleTimer = setInterval(() => {
@@ -43,6 +45,43 @@ const MlOverlay = (() => {
       render();
     }, 7000);
     render();
+  }
+
+  async function seedFromTelemetry() {
+    if (state.seededFromTelemetry) return;
+    if (!window.sb?.from) return;
+    try {
+      const since = new Date(Date.now() - 30 * 60_000).toISOString();
+      const { data } = await window.sb
+        .from("ml_detection_events")
+        .select("avg_confidence,detections_count")
+        .gte("captured_at", since)
+        .order("captured_at", { ascending: false })
+        .limit(120);
+      const rows = Array.isArray(data) ? data : [];
+      if (!rows.length) return;
+
+      let detCount = 0;
+      let confWeighted = 0;
+      for (const row of rows) {
+        const d = Number(row?.detections_count || 0);
+        const c = Number(row?.avg_confidence);
+        if (Number.isFinite(d) && d > 0 && Number.isFinite(c) && c >= 0 && c <= 1) {
+          detCount += d;
+          confWeighted += c * d;
+        }
+      }
+      if (detCount > 0) {
+        state.confSum += confWeighted;
+        state.confCount += detCount;
+        state.detections += detCount;
+      }
+      state.frames += rows.length;
+      state.seededFromTelemetry = true;
+      render();
+    } catch {
+      // Keep live-only mode if telemetry query fails.
+    }
   }
 
   function updateFromCount(data) {
@@ -99,6 +138,7 @@ const MlOverlay = (() => {
     const titleEl = document.querySelector(".ml-hud-title");
     const levelEl = document.getElementById("ml-hud-level");
     const msgEl = document.getElementById("ml-hud-msg");
+    const warnEl = document.querySelector(".ml-hud-warning");
     const framesEl = document.getElementById("ml-hud-frames");
     const detsEl = document.getElementById("ml-hud-dets");
     const confEl = document.getElementById("ml-hud-conf");
@@ -115,10 +155,13 @@ const MlOverlay = (() => {
     const compactLabel = isMobile
       ? level.label.replace("Stabilizing", "Stable").replace("Warming up", "Warmup")
       : level.label;
+    const nowHour = new Date().getHours();
+    const showNightWarning = nowHour >= 18 || nowHour < 6;
 
     titleEl.textContent = title;
     levelEl.textContent = `${compactLabel}${loopTag}`;
     msgEl.textContent = level.msg;
+    if (warnEl) warnEl.style.display = showNightWarning ? "block" : "none";
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
     confEl.textContent = avgConf == null ? "-" : `${(avgConf * 100).toFixed(1)}%`;

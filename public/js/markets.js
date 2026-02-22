@@ -334,10 +334,31 @@ const Markets = (() => {
     const cdEl = document.getElementById("next-round-countdown");
     if (!noteEl || !cdEl) return;
     try {
-      const h = await fetch("/api/health");
-      if (!h.ok) throw new Error("health");
-      const health = await h.json();
-      nextRoundAtIso = health?.next_round_at || null;
+      nextRoundAtIso = null;
+
+      // 1) Try backend health first, but do not fail hard if unavailable.
+      try {
+        const h = await fetch("/api/health");
+        if (h.ok) {
+          const health = await h.json();
+          nextRoundAtIso = health?.next_round_at || null;
+        }
+      } catch {}
+
+      // 2) Fallback to active session scheduler timestamp.
+      if (!nextRoundAtIso && window.sb) {
+        const { data: session } = await window.sb
+          .from("round_sessions")
+          .select("next_round_at,status")
+          .eq("status", "active")
+          .not("next_round_at", "is", null)
+          .order("next_round_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        nextRoundAtIso = session?.next_round_at || null;
+      }
+
+      // 3) Final fallback to upcoming rounds table.
       if (!nextRoundAtIso && window.sb) {
         const { data } = await window.sb
           .from("bet_rounds")
@@ -357,7 +378,7 @@ const Markets = (() => {
       const diff = Math.max(0, Math.floor((new Date(nextRoundAtIso).getTime() - Date.now()) / 1000));
       cdEl.textContent = _formatCountdown(diff);
     } catch {
-      noteEl.textContent = "Schedule unavailable.";
+      noteEl.textContent = "Schedule temporarily unavailable.";
       cdEl.textContent = "--:--";
     }
   }

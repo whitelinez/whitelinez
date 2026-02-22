@@ -6,6 +6,9 @@
 let adminSession = null;
 let latestCaptureUploadError = null;
 let mlCaptureStats = { captureTotal: 0, uploadSuccessTotal: 0, uploadFailTotal: 0 };
+let adminLiveWs = null;
+let adminLiveWsTimer = null;
+let adminLiveWsBackoffMs = 2000;
 const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
 const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
 
@@ -174,7 +177,21 @@ async function loadStats() {
       .maybeSingle();
 
     const roundEl = document.getElementById("stat-round");
-    if (roundEl) roundEl.textContent = round ? "OPEN" : "—";
+    if (roundEl) {
+      if (round?.status) {
+        roundEl.textContent = String(round.status).toUpperCase();
+      } else {
+        // Fallback: show next known lifecycle state if no open round exists.
+        const { data: fallbackRound } = await window.sb
+          .from("bet_rounds")
+          .select("status")
+          .in("status", ["upcoming", "locked"])
+          .order("opens_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        roundEl.textContent = fallbackRound?.status ? String(fallbackRound.status).toUpperCase() : "—";
+      }
+    }
 
     // Bets placed today
     const since = new Date(); since.setHours(0,0,0,0);
@@ -202,6 +219,64 @@ async function loadStats() {
     }
   } catch (e) {
     console.warn("[admin-init] Stats load failed:", e);
+  }
+}
+function _setAdminLiveStatCount(value) {
+  const countEl = document.getElementById("stat-count");
+  if (!countEl) return;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return;
+  countEl.textContent = n.toLocaleString();
+}
+
+function _setAdminLiveStatRound(round) {
+  const roundEl = document.getElementById("stat-round");
+  if (!roundEl) return;
+  if (!round || !round.status) return;
+  roundEl.textContent = String(round.status).toUpperCase();
+}
+
+async function connectAdminLiveStatsWs() {
+  try {
+    if (adminLiveWs && (adminLiveWs.readyState === WebSocket.OPEN || adminLiveWs.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    const tokenResp = await fetch("/api/token");
+    if (!tokenResp.ok) throw new Error(`token ${tokenResp.status}`);
+    const tokenData = await tokenResp.json();
+    const wsUrl = `${tokenData.wss_url}?token=${encodeURIComponent(tokenData.token)}`;
+    adminLiveWs = new WebSocket(wsUrl);
+
+    adminLiveWs.onopen = () => {
+      adminLiveWsBackoffMs = 2000;
+    };
+
+    adminLiveWs.onmessage = (evt) => {
+      try {
+        const data = JSON.parse(evt.data);
+        if (data?.type === "count") {
+          if (typeof data.total !== "undefined") _setAdminLiveStatCount(data.total);
+          if (data.round) _setAdminLiveStatRound(data.round);
+        } else if (data?.type === "round") {
+          _setAdminLiveStatRound(data.round);
+        }
+      } catch {}
+    };
+
+    adminLiveWs.onclose = () => {
+      clearTimeout(adminLiveWsTimer);
+      adminLiveWsTimer = setTimeout(connectAdminLiveStatsWs, adminLiveWsBackoffMs);
+      adminLiveWsBackoffMs = Math.min(adminLiveWsBackoffMs * 2, 30000);
+    };
+
+    adminLiveWs.onerror = () => {
+      try { adminLiveWs?.close(); } catch {}
+    };
+  } catch {
+    clearTimeout(adminLiveWsTimer);
+    adminLiveWsTimer = setTimeout(connectAdminLiveStatsWs, adminLiveWsBackoffMs);
+    adminLiveWsBackoffMs = Math.min(adminLiveWsBackoffMs * 2, 30000);
   }
 }
 
@@ -1289,6 +1364,7 @@ async function init() {
   // Load stats + recent rounds
   loadBaseline();
   loadStats();
+  connectAdminLiveStatsWs();
   loadMlProgress();
   loadMlUsage();
   loadMlCaptureStatus();
@@ -1576,4 +1652,5 @@ init();
     setInterval(loadMlDiagnosticsPanel, 20000);
   });
 })();
+
 

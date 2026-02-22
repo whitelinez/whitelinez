@@ -15,6 +15,7 @@ const MlShowcase = (() => {
     lastSeenIso: "",
     streamItems: [],
     fallbackItems: [],
+    seededFromTelemetry: false,
   };
 
   let _bound = false;
@@ -86,6 +87,27 @@ const MlShowcase = (() => {
       if (recent.length > 0) {
         state.lastSeenIso = recent[0].captured_at || "";
         state.modelName = recent[0].model_name || state.modelName || "-";
+      }
+      if (!state.seededFromTelemetry && recent.length > 0) {
+        let detCount = 0;
+        let confWeighted = 0;
+        for (const row of recent) {
+          const d = Number(row?.detections_count || 0);
+          const c = Number(row?.avg_confidence);
+          if (Number.isFinite(d) && d > 0) {
+            detCount += d;
+            if (Number.isFinite(c) && c >= 0 && c <= 1) {
+              confWeighted += c * d;
+            }
+          }
+        }
+        if (detCount > 0) {
+          state.objects += detCount;
+          state.confSum += confWeighted;
+          state.confCount += detCount;
+        }
+        state.frames += recent.length;
+        state.seededFromTelemetry = true;
       }
       state.streamItems = recent;
 

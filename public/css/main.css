@@ -398,6 +398,18 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   text-shadow: 0 1px 8px rgba(0,0,0,0.5);
 }
 
+.ml-hud-warning {
+  margin: 0 0 6px;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: #ffb5b5;
+  background: rgba(120, 16, 16, 0.45);
+  border: 1px solid rgba(255, 120, 120, 0.55);
+  border-radius: 8px;
+  padding: 4px 6px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+}
+
 .ml-hud-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1680,6 +1692,14 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     display: none;
   }
 
+  .ml-hud-warning {
+    font-size: 0.47rem;
+    line-height: 1.2;
+    padding: 3px 4px;
+    margin: 0 0 4px;
+    border-radius: 6px;
+  }
+
   .ml-hud-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px 3px;
@@ -1842,6 +1862,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     margin-bottom: 1px;
   }
   .ml-hud-msg { display: none; }
+  .ml-hud-warning {
+    font-size: 0.44rem;
+    line-height: 1.2;
+    padding: 3px 4px;
+    margin: 0 0 3px;
+    border-radius: 6px;
+  }
   .ml-hud-stats {
     font-size: 0.41rem;
     gap: 1px 2px;
@@ -2042,6 +2069,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
   .ml-hud-title { font-size: 0.46rem; }
   .ml-hud-msg { display: none; }
+  .ml-hud-warning {
+    font-size: 0.41rem;
+    line-height: 1.15;
+    padding: 2px 3px;
+    margin: 0 0 3px;
+    border-radius: 5px;
+  }
   .ml-hud-stats {
     font-size: 0.39rem;
     gap: 1px 2px;

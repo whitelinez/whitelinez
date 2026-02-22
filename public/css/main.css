@@ -192,7 +192,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(0,0,0,0.75);
+  background: transparent;
   color: var(--text);
   font-size: 0.78rem;
   padding: 4px 10px;

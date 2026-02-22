@@ -15,6 +15,20 @@ const MlOverlay = (() => {
 
   let _bound = false;
   let _pollTimer = null;
+  let _titleTimer = null;
+  let _titleIndex = 0;
+
+  const TITLE_MESSAGES_DESKTOP = [
+    "AI Learning",
+    "Learning vehicle patterns",
+    "Count accuracy improves",
+  ];
+
+  const TITLE_MESSAGES_MOBILE = [
+    "AI Learning",
+    "Learning vehicles",
+    "Count improving",
+  ];
 
   function init() {
     if (_bound) return;
@@ -24,6 +38,10 @@ const MlOverlay = (() => {
     window.addEventListener("count:update", (e) => updateFromCount(e.detail || {}));
     pollHealth();
     _pollTimer = setInterval(pollHealth, 20000);
+    _titleTimer = setInterval(() => {
+      _titleIndex = (_titleIndex + 1) % TITLE_MESSAGES_DESKTOP.length;
+      render();
+    }, 7000);
     render();
   }
 
@@ -78,16 +96,19 @@ const MlOverlay = (() => {
   }
 
   function render() {
+    const titleEl = document.querySelector(".ml-hud-title");
     const levelEl = document.getElementById("ml-hud-level");
     const msgEl = document.getElementById("ml-hud-msg");
     const framesEl = document.getElementById("ml-hud-frames");
     const detsEl = document.getElementById("ml-hud-dets");
     const confEl = document.getElementById("ml-hud-conf");
-    if (!levelEl || !msgEl || !framesEl || !detsEl || !confEl) return;
+    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl) return;
 
     const level = getLevel();
     const avgConf = getAvgConf();
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
+    const titleMessages = isMobile ? TITLE_MESSAGES_MOBILE : TITLE_MESSAGES_DESKTOP;
+    const title = titleMessages[_titleIndex % titleMessages.length];
     const loopTag = state.modelLoop === "active"
       ? (isMobile ? "" : " | retrain loop on")
       : "";
@@ -95,6 +116,7 @@ const MlOverlay = (() => {
       ? level.label.replace("Stabilizing", "Stable").replace("Warming up", "Warmup")
       : level.label;
 
+    titleEl.textContent = title;
     levelEl.textContent = `${compactLabel}${loopTag}`;
     msgEl.textContent = level.msg;
     framesEl.textContent = state.frames.toLocaleString();
@@ -104,7 +126,9 @@ const MlOverlay = (() => {
 
   function destroy() {
     if (_pollTimer) clearInterval(_pollTimer);
+    if (_titleTimer) clearInterval(_titleTimer);
     _pollTimer = null;
+    _titleTimer = null;
     _bound = false;
   }
 

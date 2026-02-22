@@ -22,8 +22,13 @@ const AdminLine = (() => {
   function init(videoEl, canvasEl, camId) {
     video    = videoEl;
     canvas   = canvasEl;
-    ctx      = canvas.getContext("2d");
+    ctx      = canvas?.getContext?.("2d") || null;
     cameraId = camId;
+
+    if (!video || !canvas || !ctx) {
+      console.warn("[AdminLine] init skipped: missing video/canvas/context");
+      return;
+    }
 
     if (!isInitialized) {
       window.addEventListener("resize", () => refresh());
@@ -67,7 +72,7 @@ const AdminLine = (() => {
   }
 
   function syncSize() {
-    if (!video || !canvas) return;
+    if (!video || !canvas || !ctx) return;
     const w = Math.round(video.clientWidth || video.getBoundingClientRect().width || 0);
     const h = Math.round(video.clientHeight || video.getBoundingClientRect().height || 0);
     if (w > 0 && h > 0) {
@@ -77,6 +82,11 @@ const AdminLine = (() => {
   }
 
   function refresh() {
+    if (!canvas || !video) return;
+    if (!ctx && canvas?.getContext) {
+      ctx = canvas.getContext("2d");
+    }
+    if (!ctx) return;
     syncSize();
     redraw();
   }
@@ -159,6 +169,11 @@ const AdminLine = (() => {
   }
 
   function redraw() {
+    if (!canvas) return;
+    if (!ctx && canvas?.getContext) {
+      ctx = canvas.getContext("2d");
+    }
+    if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw detect zone (cyan)
@@ -174,56 +189,135 @@ const AdminLine = (() => {
 
   function _drawPoints(pts, color, label) {
     const px = pts.map(toCanvas);
+    const isDetect = color === "#00BCD4";
 
     if (pts.length === 4) {
+      const ys = px.map((p) => p.y);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const fillGrad = ctx.createLinearGradient(0, minY, 0, maxY);
+      if (isDetect) {
+        fillGrad.addColorStop(0, "rgba(0,188,212,0.06)");
+        fillGrad.addColorStop(1, "rgba(0,188,212,0.20)");
+      } else {
+        fillGrad.addColorStop(0, "rgba(255,214,0,0.07)");
+        fillGrad.addColorStop(1, "rgba(255,214,0,0.24)");
+      }
+
+      ctx.save();
       ctx.beginPath();
       ctx.moveTo(px[0].x, px[0].y);
       px.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
       ctx.closePath();
-
-      const hex = color === "#00BCD4" ? "rgba(0,188,212,0.1)" : "rgba(255,214,0,0.12)";
-      ctx.fillStyle = hex;
+      ctx.fillStyle = fillGrad;
       ctx.fill();
 
+      // Base edge for depth
+      ctx.shadowColor = rgba(color, 0.34);
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 1;
+      ctx.strokeStyle = rgba(color, 0.35);
+      ctx.lineWidth = 6;
+      ctx.setLineDash([]);
+      ctx.stroke();
+
+      // Crisp top edge
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
       ctx.strokeStyle = color;
-      ctx.lineWidth   = 2;
-      ctx.setLineDash([8, 5]);
+      ctx.lineWidth = 2.3;
+      ctx.setLineDash(isDetect ? [8, 5] : [10, 4]);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.restore();
 
       const cx = px.reduce((s, p) => s + p.x, 0) / 4;
       const cy = px.reduce((s, p) => s + p.y, 0) / 4;
       ctx.font      = "bold 11px sans-serif";
-      ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      const tw = Math.ceil(ctx.measureText(label).width);
+      const padX = 7;
+      const chipW = tw + padX * 2;
+      const chipH = 18;
+      const rx = cx - chipW / 2;
+      const ry = cy - chipH / 2;
+      roundRect(rx, ry, chipW, chipH, 6);
+      ctx.fillStyle = "rgba(7,12,20,0.56)";
+      ctx.fill();
+      ctx.strokeStyle = rgba(color, 0.45);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = color;
       ctx.fillText(label, cx, cy);
     } else if (pts.length > 1) {
+      ctx.save();
       ctx.beginPath();
       ctx.moveTo(px[0].x, px[0].y);
       px.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.shadowColor = rgba(color, 0.32);
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = rgba(color, 0.35);
+      ctx.lineWidth = 5;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
       ctx.strokeStyle = color;
-      ctx.lineWidth   = 2;
-      ctx.setLineDash([8, 5]);
+      ctx.lineWidth = 2.1;
+      ctx.setLineDash(isDetect ? [8, 5] : [10, 4]);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.restore();
     }
 
     // Corner dots
     px.forEach((p, i) => {
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle   = color;
+      ctx.arc(p.x, p.y, 7.2, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(color, 0.24);
       ctx.fill();
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth   = 1.5;
+      ctx.strokeStyle = rgba(color, 0.85);
+      ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 1.3, 0, Math.PI * 2);
+      ctx.fillStyle = "#EAFBFF";
+      ctx.fill();
       ctx.font      = "bold 9px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(7,12,20,0.85)";
       ctx.fillText(i + 1, p.x, p.y);
+      ctx.restore();
     });
+  }
+
+  function rgba(hex, alpha) {
+    const h = String(hex || "").replace("#", "");
+    if (h.length !== 6) return `rgba(255,255,255,${alpha})`;
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
   }
 
   function clearActive() {

@@ -25,12 +25,22 @@
     let hash = 0;
     for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
     const hue = Math.abs(hash) % 360;
-    const letter = (src[0] || "U").toUpperCase();
+    const hue2 = (hue + 28) % 360;
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
-      <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0%' stop-color='hsl(${hue},70%,45%)'/><stop offset='100%' stop-color='hsl(${(hue + 35) % 360},70%,35%)'/>
-      </linearGradient></defs><rect width='96' height='96' rx='48' fill='url(#g)'/>
-      <text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='42' fill='white' font-weight='700'>${letter}</text>
+      <defs>
+        <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
+          <stop offset='0%' stop-color='hsl(${hue},66%,34%)'/>
+          <stop offset='100%' stop-color='hsl(${hue2},74%,20%)'/>
+        </linearGradient>
+      </defs>
+      <rect width='96' height='96' rx='48' fill='url(#bg)'/>
+      <circle cx='48' cy='48' r='41' fill='none' stroke='rgba(255,255,255,0.24)' stroke-width='1.5'/>
+      <path d='M24 56l6-14h34l7 14' fill='none' stroke='#d8f8ff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/>
+      <rect x='20' y='56' width='56' height='12' rx='4' fill='none' stroke='#d8f8ff' stroke-width='3.2'/>
+      <circle cx='34' cy='69' r='5' fill='none' stroke='#ffd600' stroke-width='2.6'/>
+      <circle cx='62' cy='69' r='5' fill='none' stroke='#ffd600' stroke-width='2.6'/>
+      <path d='M33 48h22' stroke='#7de3ff' stroke-width='2.2' stroke-linecap='round'/>
+      <path d='M28 28h9M59 28h9M28 28v7M68 28v7' stroke='#ffd600' stroke-width='2' stroke-linecap='round'/>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
@@ -87,6 +97,7 @@
   // Stream
   const video = document.getElementById("live-video");
   await Stream.init(video);
+  FpsOverlay.init(video, document.getElementById("fps-overlay"));
 
   // Canvas overlays
   const zoneCanvas = document.getElementById("zone-canvas");

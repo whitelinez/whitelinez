@@ -20,7 +20,7 @@
       </span>
       <span id="nav-user" class="hidden">
         <a id="nav-admin-link" href="/admin.html" class="nav-link hidden">Admin</a>
-        <a href="/account.html" class="nav-icon-btn" title="Account">
+        <a href="/account.html" class="nav-icon-btn nav-avatar-btn" title="Account">
           <img id="nav-avatar" class="nav-avatar" alt="Profile" />
         </a>
         <button id="btn-logout" class="nav-icon-btn nav-icon-logout" title="Logout">
@@ -36,6 +36,8 @@
         <video id="live-video" muted playsinline autoplay></video>
         <canvas id="detection-canvas" class="detection-overlay"></canvas>
         <canvas id="zone-canvas" class="zone-overlay"></canvas>
+        <div class="creator-tag" aria-label="creator credit">created by ruel</div>
+        <div id="fps-overlay" class="fps-overlay" aria-live="polite">FPS --.-</div>
 
         <div id="play-overlay" class="play-overlay hidden">
           <button id="btn-play">
@@ -76,8 +78,8 @@
       <div class="sidebar-tabs">
         <button class="tab-btn active" data-tab="markets">Markets</button>
         <button class="tab-btn" data-tab="activity">Activity</button>
-        <button class="tab-btn" data-tab="chat">Chat</button>
-        <button class="tab-btn" data-tab="ml-showcase">ML Showcase</button>
+        <button class="tab-btn" data-tab="chat">Chat <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span></button>
+        <button class="tab-btn" data-tab="ml-showcase">AI</button>
       </div>
 
       <div id="tab-markets" class="tab-content active">
@@ -105,9 +107,37 @@
 
       <div id="tab-ml-showcase" class="tab-content">
         <div class="ml-showcase-head">
-          <p class="ml-showcase-eyebrow">Live ML Engine</p>
-          <h3>Real-Time Learning Showcase</h3>
-          <p class="ml-showcase-sub">This panel streams live model signals from your production pipeline.</p>
+          <p class="ml-showcase-eyebrow">Live AI Engine</p>
+          <h3>Real-Time AI Showcase</h3>
+          <p class="ml-showcase-sub">This panel shows live traffic-feed AI data: detections, confidence, capture flow, and training readiness from your production pipeline.</p>
+        </div>
+
+        <div class="ai-scene">
+          <svg class="ai-scene-svg" viewBox="0 0 420 100" role="img" aria-label="AI telemetry animation">
+            <defs>
+              <linearGradient id="aiFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00BCD4"/>
+                <stop offset="100%" stop-color="#FFD600"/>
+              </linearGradient>
+            </defs>
+            <path class="ai-flow-path" d="M12 66 C84 24, 152 24, 214 58 S334 94, 408 46"/>
+            <g class="ai-cube">
+              <rect x="162" y="26" width="30" height="30"/>
+              <polygon points="162,26 175,16 205,16 192,26"/>
+              <polygon points="192,26 205,16 205,46 192,56"/>
+            </g>
+            <g class="ai-blips">
+              <circle cx="44" cy="62" r="3"/>
+              <circle cx="124" cy="44" r="3"/>
+              <circle cx="222" cy="56" r="3"/>
+              <circle cx="306" cy="68" r="3"/>
+              <circle cx="378" cy="50" r="3"/>
+            </g>
+          </svg>
+          <div class="ai-scene-copy">
+            <strong>Live inference stream</strong>
+            <span>Frames and object signals flow from the camera into model telemetry in real time.</span>
+          </div>
         </div>
 
         <div class="ml-showcase-grid">
@@ -142,7 +172,7 @@
         <div class="mls-card">
           <div class="mls-stream-head">
             <span class="mls-pulse"></span>
-            <strong>ML capture stream</strong>
+            <strong>AI capture stream</strong>
           </div>
           <div id="mls-stream-list" class="mls-stream-list">
             <p class="loading">Collecting live ML events...</p>
@@ -227,6 +257,7 @@
   <script src="/js/detection-overlay.js"></script>
   <script src="/js/floating-count.js"></script>
   <script src="/js/ml-overlay.js"></script>
+  <script src="/js/fps-overlay.js"></script>
   <script src="/js/ml-showcase.js"></script>
   <script src="/js/markets.js"></script>
   <script src="/js/bet.js"></script>

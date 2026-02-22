@@ -6,6 +6,7 @@
 const MlShowcase = (() => {
   const state = {
     startedAt: Date.now(),
+    frames: 0,
     objects: 0,
     confSum: 0,
     confCount: 0,
@@ -13,6 +14,7 @@ const MlShowcase = (() => {
     modelName: "-",
     lastSeenIso: "",
     streamItems: [],
+    fallbackItems: [],
   };
 
   let _bound = false;
@@ -37,7 +39,10 @@ const MlShowcase = (() => {
 
   function onCountUpdate(payload) {
     const detections = Array.isArray(payload?.detections) ? payload.detections : [];
+    const breakdown = payload?.vehicle_breakdown || {};
+    state.frames += 1;
     state.objects += detections.length;
+    state.lastSeenIso = new Date().toISOString();
     for (const d of detections) {
       const c = Number(d?.conf);
       if (Number.isFinite(c) && c >= 0 && c <= 1) {
@@ -45,6 +50,17 @@ const MlShowcase = (() => {
         state.confCount += 1;
       }
     }
+    const sample = {
+      captured_at: new Date().toISOString(),
+      detections_count: detections.length,
+      avg_confidence: detections.length
+        ? detections.reduce((s, d) => s + (Number(d?.conf) || 0), 0) / detections.length
+        : null,
+      model_name: "live",
+      breakdown,
+    };
+    state.fallbackItems.unshift(sample);
+    state.fallbackItems = state.fallbackItems.slice(0, 12);
     render();
   }
 
@@ -80,7 +96,7 @@ const MlShowcase = (() => {
         }
       }
     } catch {
-      // Keep previous values.
+      // Keep previous values and fallback to live stream-only mode.
     }
     render();
   }
@@ -93,6 +109,11 @@ const MlShowcase = (() => {
   function objectsPerMinute() {
     const elapsedMin = Math.max(1 / 6, (Date.now() - state.startedAt) / 60000);
     return state.objects / elapsedMin;
+  }
+
+  function framesPerMinute() {
+    const elapsedMin = Math.max(1 / 6, (Date.now() - state.startedAt) / 60000);
+    return state.frames / elapsedMin;
   }
 
   function ago(iso) {
@@ -130,7 +151,10 @@ const MlShowcase = (() => {
 
     const rate = objectsPerMinute();
     const conf = avgConf();
-    const readiness = Math.max(0, Math.min(100, Math.round((Math.min(state.rows24h, 5000) / 5000) * 100)));
+    const readinessFromRows = Math.max(0, Math.min(100, Math.round((Math.min(state.rows24h, 5000) / 5000) * 100)));
+    const readinessFromLive = Math.max(0, Math.min(100, Math.round((Math.min(state.objects, 600) / 600) * 100)));
+    const readinessFromFrames = Math.max(0, Math.min(100, Math.round((Math.min(state.frames, 900) / 900) * 100)));
+    const readiness = Math.max(readinessFromRows, readinessFromLive, readinessFromFrames);
     const quality = conf == null ? 0 : Math.max(0, Math.min(100, Math.round(conf * 100)));
 
     objectsEl.textContent = state.objects.toLocaleString();
@@ -145,18 +169,25 @@ const MlShowcase = (() => {
     qualityFill.style.width = `${quality}%`;
     qualityText.textContent = `${quality}%`;
 
-    if (!state.streamItems.length) {
-      streamEl.innerHTML = `<p class="loading">Collecting live ML events...</p>`;
+    const items = state.streamItems.length ? state.streamItems : state.fallbackItems;
+    if (!items.length) {
+      streamEl.innerHTML = `<p class="loading">Collecting live AI events...</p>`;
       return;
     }
 
-    streamEl.innerHTML = state.streamItems.map((r) => {
+    const liveFrameRate = framesPerMinute();
+    streamEl.innerHTML = items.map((r) => {
       const det = Number(r.detections_count || 0);
       const c = Number(r.avg_confidence || 0);
-      const model = r.model_name || "model";
+      const model = r.model_name || "live";
+      const b = r.breakdown || {};
+      const detail = [Number(b.car || 0), Number(b.truck || 0), Number(b.bus || 0), Number(b.motorcycle || 0)]
+        .some((v) => v > 0)
+        ? ` | C:${Number(b.car || 0)} T:${Number(b.truck || 0)} B:${Number(b.bus || 0)} M:${Number(b.motorcycle || 0)}`
+        : "";
       return `
         <div class="mls-item">
-          <span class="mls-item-main">${model} | ${det} detections | ${(c * 100).toFixed(1)}% conf</span>
+          <span class="mls-item-main">${model} | ${det} detections | ${Number.isFinite(c) && c > 0 ? `${(c * 100).toFixed(1)}% conf` : "conf n/a"}${detail}${model === "live" ? ` | ${liveFrameRate.toFixed(1)} frames/min` : ""}</span>
           <span class="mls-item-meta">${ago(r.captured_at)}</span>
         </div>
       `;

@@ -309,6 +309,101 @@ async function loadMlProgress() {
   }
 }
 
+async function loadMlUsage() {
+  const usageBox = document.getElementById("ml-usage");
+  if (!usageBox || !adminSession?.access_token) return;
+
+  try {
+    const [jobsRes, modelsRes] = await Promise.all([
+      fetch("/api/admin/ml-jobs?limit=5", {
+        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      }),
+      fetch("/api/admin/ml-models?limit=5", {
+        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      }),
+    ]);
+
+    const jobsPayload = await jobsRes.json().catch(() => ({}));
+    const modelsPayload = await modelsRes.json().catch(() => ({}));
+    if (!jobsRes.ok) throw new Error(jobsPayload?.detail || jobsPayload?.error || "Failed to load jobs");
+    if (!modelsRes.ok) throw new Error(modelsPayload?.detail || modelsPayload?.error || "Failed to load models");
+
+    const jobs = jobsPayload?.jobs || [];
+    const models = modelsPayload?.models || [];
+    const lastJob = jobs[0];
+    const lastModel = models[0];
+
+    usageBox.innerHTML = `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Last Training Job</span>
+          <span class="round-row-meta">${lastJob ? `${lastJob.job_type} / ${lastJob.status} (${fmtAgo(lastJob.created_at)})` : "No jobs yet"}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Last Model Entry</span>
+          <span class="round-row-meta">${lastModel ? `${lastModel.model_name || "-"} / ${lastModel.status || "-"} (${fmtAgo(lastModel.created_at)})` : "No models yet"}</span>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    usageBox.innerHTML = `<p class="muted" style="font-size:0.82rem;">ML usage unavailable.</p>`;
+  }
+}
+
+async function handleMlRetrain() {
+  const btn = document.getElementById("btn-ml-retrain");
+  const msg = document.getElementById("ml-control-msg");
+  const datasetEl = document.getElementById("ml-dataset-yaml");
+  const epochsEl = document.getElementById("ml-epochs");
+  const imgszEl = document.getElementById("ml-imgsz");
+  const batchEl = document.getElementById("ml-batch");
+  if (!btn || !msg || !adminSession?.access_token) return;
+
+  const dataset_yaml_url = String(datasetEl?.value || "").trim();
+  const epochs = Number(epochsEl?.value || 20);
+  const imgsz = Number(imgszEl?.value || 640);
+  const batch = Number(batchEl?.value || 16);
+  if (!dataset_yaml_url) {
+    msg.textContent = "Dataset YAML URL is required.";
+    msg.style.color = "var(--red)";
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = "Starting retrain...";
+  msg.style.color = "var(--muted)";
+
+  try {
+    const res = await fetch("/api/admin/ml-retrain", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminSession.access_token}`,
+      },
+      body: JSON.stringify({
+        dataset_yaml_url,
+        epochs: Number.isFinite(epochs) ? epochs : 20,
+        imgsz: Number.isFinite(imgsz) ? imgsz : 640,
+        batch: Number.isFinite(batch) ? batch : 16,
+      }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to trigger retrain");
+
+    msg.textContent = payload?.message || "Retrain triggered.";
+    msg.style.color = "var(--green)";
+    loadMlUsage();
+    loadMlProgress();
+  } catch (e) {
+    msg.textContent = e?.message || "Retrain failed.";
+    msg.style.color = "var(--red)";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── Recent rounds ─────────────────────────────────────────────────────────────
 async function loadRecentRounds() {
   const container = document.getElementById("recent-rounds");
@@ -675,10 +770,12 @@ async function init() {
   loadBaseline();
   loadStats();
   loadMlProgress();
+  loadMlUsage();
   loadRecentRounds();
   loadRecentBets();
   setInterval(loadStats, 10_000);
   setInterval(loadMlProgress, 15_000);
+  setInterval(loadMlUsage, 20_000);
   setInterval(loadRecentBets, 15_000);
 }
 
@@ -686,6 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
   document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
+  document.getElementById("btn-ml-retrain")?.addEventListener("click", handleMlRetrain);
 
   // Market type visibility
   document.getElementById("market-type")?.addEventListener("change", (e) => {

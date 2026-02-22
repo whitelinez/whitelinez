@@ -106,6 +106,38 @@
         <div id="ml-last-seen" class="rounds-list" style="margin-top:12px;">
           <p class="loading">Loading ML data...</p>
         </div>
+
+        <div class="ml-control-wrap">
+          <div class="ml-control-head">
+            <strong>ML Control</strong>
+            <span class="muted">Manual retrain + usage</span>
+          </div>
+          <div class="field" style="margin-bottom:8px;">
+            <label for="ml-dataset-yaml">Dataset YAML URL</label>
+            <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
+          </div>
+          <div class="field-row" style="margin-bottom:8px;">
+            <div class="field">
+              <label for="ml-epochs">Epochs</label>
+              <input id="ml-epochs" type="number" min="1" max="300" value="20" />
+            </div>
+            <div class="field">
+              <label for="ml-imgsz">Image Size</label>
+              <input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" />
+            </div>
+            <div class="field">
+              <label for="ml-batch">Batch</label>
+              <input id="ml-batch" type="number" min="1" max="128" value="16" />
+            </div>
+          </div>
+          <div class="ml-control-actions">
+            <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
+            <span id="ml-control-msg" class="muted"></span>
+          </div>
+          <div id="ml-usage" class="rounds-list" style="margin-top:10px;">
+            <p class="loading">Loading training usage...</p>
+          </div>
+        </div>
       </section>
 
       <!-- User management -->

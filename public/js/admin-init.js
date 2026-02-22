@@ -5,6 +5,8 @@
 
 let adminSession = null;
 let latestCaptureUploadError = null;
+const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
+const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
 
 // ── Guardrail constants ────────────────────────────────────────────────────────
 const MIN_DURATION_MIN      = 5;
@@ -170,6 +172,22 @@ function escHtml(input) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function initMlDatasetUrlField() {
+  const datasetEl = document.getElementById("ml-dataset-yaml");
+  if (!datasetEl) return;
+  const saved = localStorage.getItem(ML_DATASET_URL_STORAGE_KEY) || "";
+  const current = String(datasetEl.value || "").trim();
+  if (!current) {
+    datasetEl.value = saved || DEFAULT_ML_DATASET_YAML_URL;
+  }
+}
+
+function persistMlDatasetUrl(url) {
+  const normalized = String(url || "").trim();
+  if (!normalized) return;
+  localStorage.setItem(ML_DATASET_URL_STORAGE_KEY, normalized);
 }
 
 function renderHealthOverview(health, errMsg = "") {
@@ -478,6 +496,7 @@ async function handleMlRetrain() {
     msg.style.color = "var(--red)";
     return;
   }
+  persistMlDatasetUrl(dataset_yaml_url);
 
   btn.disabled = true;
   msg.textContent = "Starting retrain...";
@@ -505,8 +524,23 @@ async function handleMlRetrain() {
     loadMlUsage();
     loadMlProgress();
   } catch (e) {
-    msg.textContent = e?.message || "Retrain failed.";
-    msg.style.color = "var(--red)";
+    try {
+      const check = await fetch("/api/admin/ml-jobs?limit=1", {
+        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      });
+      const checkPayload = await check.json().catch(() => ({}));
+      const latest = (checkPayload?.jobs || [])[0];
+      if (check.ok && latest?.job_type === "train" && latest?.status === "running") {
+        msg.textContent = "Training is running. Status may take a while to update.";
+        msg.style.color = "var(--green)";
+      } else {
+        msg.textContent = e?.message || "Retrain failed.";
+        msg.style.color = "var(--red)";
+      }
+    } catch {
+      msg.textContent = e?.message || "Retrain failed.";
+      msg.style.color = "var(--red)";
+    }
   } finally {
     btn.disabled = false;
   }
@@ -861,6 +895,7 @@ function setDefaultTimes() {
 async function init() {
   adminSession = await Auth.requireAdmin("/index.html");
   if (!adminSession) return;
+  initMlDatasetUrlField();
 
   const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
   const cameraId = cameras?.[0]?.id;

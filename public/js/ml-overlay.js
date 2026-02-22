@@ -89,7 +89,7 @@ const MlOverlay = (() => {
     const avgConf = getAvgConf();
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
     const loopTag = state.modelLoop === "active"
-      ? (isMobile ? " | loop on" : " | retrain loop on")
+      ? (isMobile ? "" : " | retrain loop on")
       : "";
     const compactLabel = isMobile
       ? level.label.replace("Stabilizing", "Stable").replace("Warming up", "Warmup")

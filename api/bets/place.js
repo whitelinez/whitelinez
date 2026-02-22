@@ -26,7 +26,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const upstream = await fetch(`${railwayUrl}/bets/place`, {
+    const isLive = String(req.query?.live || "") === "1";
+    const upstreamPath = isLive ? "/bets/place-live" : "/bets/place";
+    const upstream = await fetch(`${railwayUrl}${upstreamPath}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

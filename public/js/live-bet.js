@@ -79,7 +79,7 @@ const LiveBet = (() => {
     submitBtn.disabled = true;
 
     try {
-      const res = await fetch("/api/bets/place-live", {
+      const res = await fetch("/api/bets/place?live=1", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

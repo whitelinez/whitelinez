@@ -14,7 +14,7 @@ const MIN_DURATION_MIN      = 5;
 const MAX_DURATION_MIN      = 480;
 const THRESHOLD_MIN_PER_MIN = 0.5;
 const THRESHOLD_MAX_PER_MIN = 25.0;
-const CLASS_RATE = { car: 0.50, motorcycle: 0.20, truck: 0.15, bus: 0.10 };
+const CLASS_RATE_FALLBACK = { car: 0.50, motorcycle: 0.20, truck: 0.15, bus: 0.10 };
 
 // ── Historical baseline ────────────────────────────────────────────────────────
 const hourlyBaseline = {};
@@ -27,22 +27,79 @@ async function loadBaseline() {
   try {
     const since = new Date(Date.now() - 7 * 86400_000).toISOString();
     const { data } = await window.sb
-      .from("count_snapshots")
-      .select("total, captured_at")
+      .from("ml_detection_events")
+      .select("captured_at, detections_count, class_counts, avg_confidence")
       .gte("captured_at", since)
-      .order("captured_at", { ascending: false })
-      .limit(5000);
+      .order("captured_at", { ascending: true })
+      .limit(20000);
 
     if (!data) return;
+
+    const deltas = [];
+    for (let i = 1; i < data.length; i += 1) {
+      const prevTs = new Date(data[i - 1].captured_at).getTime();
+      const currTs = new Date(data[i].captured_at).getTime();
+      const diffSec = (currTs - prevTs) / 1000;
+      if (Number.isFinite(diffSec) && diffSec >= 1 && diffSec <= 120) deltas.push(diffSec);
+    }
+    const sampleIntervalSec = deltas.length
+      ? deltas.sort((a, b) => a - b)[Math.floor(deltas.length / 2)]
+      : 5;
+    const perEventToMinute = 60 / Math.max(1, sampleIntervalSec);
+
     const buckets = {};
     for (const row of data) {
       const hour = new Date(row.captured_at).getHours();
-      if (!buckets[hour]) buckets[hour] = { sum: 0, count: 0 };
-      buckets[hour].sum += row.total;
-      buckets[hour].count += 1;
+      const det = Number(row.detections_count || 0);
+      if (!buckets[hour]) {
+        buckets[hour] = {
+          sample_count: 0,
+          rate_sum: 0,
+          rate_sq_sum: 0,
+          conf_sum: 0,
+          conf_count: 0,
+          class_sums: { car: 0, truck: 0, bus: 0, motorcycle: 0 },
+        };
+      }
+      const b = buckets[hour];
+      b.sample_count += 1;
+
+      const perMinute = det * perEventToMinute;
+      b.rate_sum += perMinute;
+      b.rate_sq_sum += perMinute * perMinute;
+
+      const conf = Number(row.avg_confidence);
+      if (Number.isFinite(conf) && conf >= 0 && conf <= 1) {
+        b.conf_sum += conf;
+        b.conf_count += 1;
+      }
+
+      const cc = row.class_counts || {};
+      b.class_sums.car += Number(cc.car || 0);
+      b.class_sums.truck += Number(cc.truck || 0);
+      b.class_sums.bus += Number(cc.bus || 0);
+      b.class_sums.motorcycle += Number(cc.motorcycle || 0);
     }
+
     for (const h in buckets) {
-      hourlyBaseline[h] = { avg: buckets[h].sum / buckets[h].count, count: buckets[h].count };
+      const b = buckets[h];
+      const n = Math.max(1, b.sample_count);
+      const avgPerMin = b.rate_sum / n;
+      const variance = Math.max(0, (b.rate_sq_sum / n) - (avgPerMin * avgPerMin));
+      const classTotal = Math.max(1, b.class_sums.car + b.class_sums.truck + b.class_sums.bus + b.class_sums.motorcycle);
+
+      hourlyBaseline[h] = {
+        sample_count: b.sample_count,
+        avg_per_min: avgPerMin,
+        std_per_min: Math.sqrt(variance),
+        avg_conf: b.conf_count > 0 ? b.conf_sum / b.conf_count : null,
+        class_share: {
+          car: b.class_sums.car / classTotal,
+          truck: b.class_sums.truck / classTotal,
+          bus: b.class_sums.bus / classTotal,
+          motorcycle: b.class_sums.motorcycle / classTotal,
+        },
+      };
     }
     baselineLoaded = true;
   } catch (e) {
@@ -798,21 +855,21 @@ async function resolveRound(roundId, btn) {
 
 // ── Preview update ────────────────────────────────────────────────────────────
 async function updatePreview() {
-  const marketType   = document.getElementById("market-type")?.value;
+  const marketType = document.getElementById("market-type")?.value;
   const vehicleClass = document.getElementById("vehicle-class")?.value;
-  const threshold    = parseInt(document.getElementById("threshold")?.value || "0", 10);
+  const threshold = parseInt(document.getElementById("threshold")?.value || "0", 10);
 
-  const preview    = document.getElementById("round-preview");
-  const prevDur    = document.getElementById("prev-duration");
-  const prevRate   = document.getElementById("prev-rate");
+  const preview = document.getElementById("round-preview");
+  const prevDur = document.getElementById("prev-duration");
+  const prevRate = document.getElementById("prev-rate");
   const prevExpRow = document.getElementById("prev-expected-row");
-  const prevExp    = document.getElementById("prev-expected");
-  const prevWarn   = document.getElementById("prev-warning");
-  const prevOk     = document.getElementById("prev-ok");
-  const submitBtn  = document.getElementById("round-submit-btn");
-  const ctRow      = document.getElementById("computed-times");
-  const ctCloses   = document.getElementById("computed-closes");
-  const ctEnds     = document.getElementById("computed-ends");
+  const prevExp = document.getElementById("prev-expected");
+  const prevWarn = document.getElementById("prev-warning");
+  const prevOk = document.getElementById("prev-ok");
+  const submitBtn = document.getElementById("round-submit-btn");
+  const ctRow = document.getElementById("computed-times");
+  const ctCloses = document.getElementById("computed-closes");
+  const ctEnds = document.getElementById("computed-ends");
 
   const times = getComputedTimes();
   if (!times) {
@@ -825,41 +882,58 @@ async function updatePreview() {
   const { starts, ends, closes, duration } = times;
   if (ctRow) ctRow.style.display = "";
   if (ctCloses) ctCloses.textContent = fmtLocal(closes);
-  if (ctEnds)   ctEnds.textContent   = fmtLocal(ends);
+  if (ctEnds) ctEnds.textContent = fmtLocal(ends);
 
   preview?.classList.remove("hidden");
   if (prevDur) prevDur.textContent = fmtDurationMin(duration);
 
   await loadBaseline();
   const baseline = getBaselineForHour(starts);
-  const avgOccupancy = baseline?.avg ?? null;
+  const avgPerMin = baseline?.avg_per_min ?? null;
+  const stdPerMin = baseline?.std_per_min ?? null;
+  const avgConf = baseline?.avg_conf ?? null;
 
   if (prevRate) {
-    prevRate.textContent = avgOccupancy !== null
-      ? `~${avgOccupancy.toFixed(1)} vehicles (${baseline.count} samples)`
-      : "No historical data yet";
+    prevRate.textContent = avgPerMin !== null
+      ? `~${avgPerMin.toFixed(1)} / min (${baseline.sample_count} samples${avgConf != null ? `, ${(avgConf * 100).toFixed(1)}% conf` : ""})`
+      : "No telemetry profile for this hour yet";
   }
 
   prevWarn?.classList.add("hidden");
   prevOk?.classList.add("hidden");
   const warnings = [];
 
-  if (duration < MIN_DURATION_MIN)
-    warnings.push(`Too short — minimum is ${MIN_DURATION_MIN} minutes.`);
-  if (duration > MAX_DURATION_MIN)
-    warnings.push(`Too long — maximum is ${MAX_DURATION_MIN} minutes.`);
+  if (duration < MIN_DURATION_MIN) warnings.push(`Too short - minimum is ${MIN_DURATION_MIN} minutes.`);
+  if (duration > MAX_DURATION_MIN) warnings.push(`Too long - maximum is ${MAX_DURATION_MIN} minutes.`);
 
   if (marketType === "over_under" || marketType === "vehicle_count") {
     prevExpRow?.classList.remove("hidden");
-    const multiplier = marketType === "vehicle_count" ? (CLASS_RATE[vehicleClass] ?? 0.25) : 1.0;
-    const minThresh = Math.max(1, Math.ceil(duration * THRESHOLD_MIN_PER_MIN * multiplier));
-    const maxThresh = Math.max(5, Math.floor(duration * THRESHOLD_MAX_PER_MIN * multiplier));
 
-    let expectedText = `${minThresh}–${maxThresh}`;
-    if (avgOccupancy !== null) {
-      const est = Math.round(avgOccupancy * duration * multiplier * 0.4);
-      expectedText = `~${est} vehicles (valid: ${minThresh}–${maxThresh})`;
+    const classShare = marketType === "vehicle_count"
+      ? (baseline?.class_share?.[vehicleClass] ?? CLASS_RATE_FALLBACK[vehicleClass] ?? 0.25)
+      : 1.0;
+
+    const guardrailMin = Math.max(1, Math.ceil(duration * THRESHOLD_MIN_PER_MIN * classShare));
+    const guardrailMax = Math.max(5, Math.floor(duration * THRESHOLD_MAX_PER_MIN * classShare));
+
+    let minThresh = guardrailMin;
+    let maxThresh = guardrailMax;
+    let expectedText = `${guardrailMin}-${guardrailMax}`;
+
+    if (avgPerMin !== null) {
+      const mean = Math.max(1, avgPerMin * duration * classShare);
+      const sigma = Math.max(Math.sqrt(mean), (stdPerMin ?? 0) * duration * classShare);
+      const lowData = Math.max(1, Math.floor(mean - 1.2 * sigma));
+      const highData = Math.max(lowData + 1, Math.ceil(mean + 1.2 * sigma));
+      minThresh = Math.max(guardrailMin, lowData);
+      maxThresh = Math.min(guardrailMax, highData);
+      if (minThresh > maxThresh) {
+        minThresh = guardrailMin;
+        maxThresh = guardrailMax;
+      }
+      expectedText = `${minThresh}-${maxThresh} (from telemetry, mean ${Math.round(mean)})`;
     }
+
     if (prevExp) prevExp.textContent = expectedText;
 
     const typeLabel = marketType === "vehicle_count"
@@ -867,10 +941,8 @@ async function updatePreview() {
       : `for ${fmtDurationMin(duration)}`;
 
     if (!isNaN(threshold)) {
-      if (threshold < minThresh)
-        warnings.push(`Threshold ${threshold} too low ${typeLabel}. Min: ${minThresh}.`);
-      else if (threshold > maxThresh)
-        warnings.push(`Threshold ${threshold} too high ${typeLabel}. Max: ${maxThresh}.`);
+      if (threshold < minThresh) warnings.push(`Threshold ${threshold} too low ${typeLabel}. Min: ${minThresh}.`);
+      else if (threshold > maxThresh) warnings.push(`Threshold ${threshold} too high ${typeLabel}. Max: ${maxThresh}.`);
     }
   } else {
     prevExpRow?.classList.add("hidden");
@@ -878,17 +950,21 @@ async function updatePreview() {
 
   if (warnings.length) {
     if (prevWarn) {
-      prevWarn.innerHTML = warnings.map(w => `<div>⚠ ${w}</div>`).join("");
+      prevWarn.innerHTML = warnings.map((w) => `<div>WARN: ${w}</div>`).join("");
       prevWarn.classList.remove("hidden");
     }
     if (submitBtn) submitBtn.disabled = true;
   } else if (duration >= MIN_DURATION_MIN) {
-    prevOk?.classList.remove("hidden");
+    if (prevOk) {
+      const quality = avgConf == null
+        ? "using telemetry range"
+        : `using ${(avgConf * 100).toFixed(1)}% avg confidence profile`;
+      prevOk.textContent = `Round looks competitive - ${quality}`;
+      prevOk.classList.remove("hidden");
+    }
     if (submitBtn) submitBtn.disabled = false;
   }
 }
-
-// ── Market builder ────────────────────────────────────────────────────────────
 function buildMarkets(marketType, vehicleClass, threshold) {
   if (marketType === "over_under") {
     return [

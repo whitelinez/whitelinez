@@ -1,5 +1,24 @@
 (async () => {
   const session = await Auth.getSession();
+  const currentUserId = session?.user?.id || "";
+
+  async function refreshNavBalance() {
+    if (!currentUserId) return;
+    try {
+      const { data } = await window.sb
+        .from("user_balances")
+        .select("balance")
+        .eq("user_id", currentUserId)
+        .maybeSingle();
+      const balEl = document.getElementById("nav-balance");
+      if (balEl && data?.balance != null) {
+        balEl.textContent = Number(data.balance).toLocaleString() + " ₡";
+        balEl.classList.remove("hidden");
+      }
+    } catch {
+      // WS updates still handle most cases; keep silent on poll failures.
+    }
+  }
 
   function defaultAvatar(seed) {
     const src = String(seed || "whitelinez-user");
@@ -99,6 +118,8 @@
 
   // ws_account — per-user events (balance, bet resolution)
   if (session) {
+    refreshNavBalance();
+    setInterval(refreshNavBalance, 20000);
     _connectUserWs(session);
   }
 
@@ -113,10 +134,12 @@
 
   // Reload markets on bet placed
   window.addEventListener("bet:placed", () => Markets.loadMarkets());
+  window.addEventListener("bet:placed", refreshNavBalance);
 
   // Handle bet resolution from ws_account
   window.addEventListener("bet:resolved", (e) => {
     LiveBet.onBetResolved(e.detail);
+    refreshNavBalance();
   });
 })();
 

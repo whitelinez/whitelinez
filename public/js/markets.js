@@ -8,6 +8,13 @@ const Markets = (() => {
   let currentRound = null;
   let timersInterval = null;
   let lastRoundId = null;
+  let currentUserId = null;
+  let latestCountPayload = null;
+  let roundBaseline = null;
+  let userRoundBets = [];
+  let userBetPollTimer = null;
+
+  const USER_BET_POLL_MS = 5000;
 
   function initTabs() {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -24,6 +31,7 @@ const Markets = (() => {
   async function loadMarkets() {
     _showSkeleton();
     try {
+      await _ensureCurrentUser();
       const { data: round, error } = await window.sb
         .from("bet_rounds")
         .select("*, markets(*)")
@@ -37,10 +45,17 @@ const Markets = (() => {
         return;
       }
 
+      if (currentRound?.id !== round.id) {
+        _resetRoundLiveState();
+      }
+
       currentRound = round;
       LiveBet.setRound(round);
       renderRound(round);
       updateRoundStrip(round);
+      await _ensureRoundBaseline(round);
+      await _loadUserRoundBets();
+      _startUserBetPolling();
     } catch (e) {
       console.error("[Markets] Failed to load:", e);
       renderNoRound();
@@ -61,6 +76,8 @@ const Markets = (() => {
     clearInterval(timersInterval);
     timersInterval = null;
     lastRoundId = null;
+    _stopUserBetPolling();
+    _resetRoundLiveState();
     const container = document.getElementById("markets-container");
     if (container) {
       container.innerHTML = `
@@ -101,6 +118,7 @@ const Markets = (() => {
         ${closesAt ? `<div class="timing-row"><span>Bets close</span><strong id="rt-closes"></strong></div>` : ""}
         ${endsAt ? `<div class="timing-row"><span>Round ends</span><strong id="rt-ends"></strong></div>` : ""}
       </div>
+      <div id="user-round-bet" class="user-round-bet hidden"></div>
       <div class="market-list" id="market-list">
         ${round.markets.map((m) => renderMarket(m, isOpen)).join("")}
       </div>
@@ -118,6 +136,8 @@ const Markets = (() => {
     document.getElementById("btn-open-live-bet")?.addEventListener("click", () => {
       LiveBet.open(currentRound);
     });
+
+    _renderUserRoundBet();
   }
 
   function renderMarket(market, isOpen) {
@@ -210,7 +230,202 @@ const Markets = (() => {
           setTimeout(loadMarkets, 4000);
         }
       }
+      _renderUserRoundBet();
     }, 1000);
+  }
+
+  async function _ensureCurrentUser() {
+    if (currentUserId !== null) return;
+    const session = await Auth.getSession();
+    currentUserId = session?.user?.id || "";
+  }
+
+  function _resetRoundLiveState() {
+    roundBaseline = null;
+    userRoundBets = [];
+  }
+
+  function _stopUserBetPolling() {
+    clearInterval(userBetPollTimer);
+    userBetPollTimer = null;
+  }
+
+  function _startUserBetPolling() {
+    _stopUserBetPolling();
+    if (!currentRound || !currentUserId) return;
+    userBetPollTimer = setInterval(() => {
+      _loadUserRoundBets();
+    }, USER_BET_POLL_MS);
+  }
+
+  async function _ensureRoundBaseline(round) {
+    if (!round || !round.camera_id || roundBaseline) return;
+
+    try {
+      const opensAt = round.opens_at || new Date().toISOString();
+      const { data } = await window.sb
+        .from("count_snapshots")
+        .select("total, vehicle_breakdown, captured_at")
+        .eq("camera_id", round.camera_id)
+        .lte("captured_at", opensAt)
+        .order("captured_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      roundBaseline = {
+        total: Number(data?.total || 0),
+        vehicle_breakdown: data?.vehicle_breakdown || {},
+      };
+    } catch {
+      roundBaseline = { total: 0, vehicle_breakdown: {} };
+    }
+
+    _renderUserRoundBet();
+  }
+
+  async function _loadUserRoundBets() {
+    const box = document.getElementById("user-round-bet");
+    if (!box) return;
+    if (!currentRound || !currentUserId) {
+      userRoundBets = [];
+      _renderUserRoundBet();
+      return;
+    }
+
+    try {
+      const { data } = await window.sb
+        .from("bets")
+        .select("id, bet_type, status, amount, potential_payout, exact_count, actual_count, vehicle_class, window_duration_sec, window_start, baseline_count, placed_at, resolved_at, markets(label, odds, outcome_key)")
+        .eq("user_id", currentUserId)
+        .eq("round_id", currentRound.id)
+        .order("placed_at", { ascending: false })
+        .limit(20);
+
+      userRoundBets = data || [];
+      _renderUserRoundBet();
+    } catch (err) {
+      console.warn("[Markets] User bet load failed:", err);
+    }
+  }
+
+  function _roundProgressCount() {
+    if (!latestCountPayload) return null;
+    const mt = currentRound?.market_type;
+    const params = currentRound?.params || {};
+    const vehicleClass = mt === "vehicle_count" ? params.vehicle_class : null;
+    const status = String(currentRound?.status || "").toLowerCase();
+    const useRoundRelative = status === "upcoming" || status === "open" || status === "locked";
+
+    const currentRaw = vehicleClass
+      ? Number(latestCountPayload?.vehicle_breakdown?.[vehicleClass] || 0)
+      : Number(latestCountPayload?.total || 0);
+
+    if (!useRoundRelative) {
+      return Math.max(0, currentRaw);
+    }
+
+    const baselineRaw = vehicleClass
+      ? Number(roundBaseline?.vehicle_breakdown?.[vehicleClass] || 0)
+      : Number(roundBaseline?.total || 0);
+
+    return Math.max(0, currentRaw - baselineRaw);
+  }
+
+  function _liveExactProgress(bet) {
+    if (!latestCountPayload || !bet) return null;
+    const vehicleClass = bet.vehicle_class || null;
+    const currentRaw = vehicleClass
+      ? Number(latestCountPayload?.vehicle_breakdown?.[vehicleClass] || 0)
+      : Number(latestCountPayload?.total || 0);
+    const baseline = Number(bet.baseline_count || 0);
+    return Math.max(0, currentRaw - baseline);
+  }
+
+  function _marketHint(selection, progress, threshold) {
+    if (progress == null || !Number.isFinite(threshold)) return "Waiting for live count...";
+    if (selection === "over") {
+      const need = Math.max(0, threshold + 1 - progress);
+      return need === 0 ? "Over line reached." : `Need ${need} more to clear over.`;
+    }
+    if (selection === "under") {
+      if (progress > threshold) return "Under is currently busted.";
+      const left = Math.max(0, threshold - progress);
+      return `${left} left before under breaks.`;
+    }
+    if (selection === "exact") {
+      const diff = Math.abs(threshold - progress);
+      return diff === 0 ? "On exact target." : `${diff} away from exact target.`;
+    }
+    return "Tracking round progress live.";
+  }
+
+  function _renderUserRoundBet() {
+    const box = document.getElementById("user-round-bet");
+    if (!box) return;
+
+    const pending = userRoundBets.filter((b) => b.status === "pending");
+    const latestResolved = userRoundBets.find((b) => b.status !== "pending");
+
+    if (!pending.length && !latestResolved) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+
+    const active = pending[0] || null;
+    const pendingCount = pending.length;
+    let body = "";
+
+    if (active?.bet_type === "market") {
+      const selection = String(active?.markets?.outcome_key || "").toLowerCase();
+      const threshold = Number(currentRound?.params?.threshold ?? 0);
+      const progress = _roundProgressCount();
+      const status = String(currentRound?.status || "").toLowerCase();
+      const isRoundActive = status === "upcoming" || status === "open" || status === "locked";
+      const progressLabel = isRoundActive ? "Round progress" : "Global count";
+      const progressText = progress == null || !Number.isFinite(threshold)
+        ? "—"
+        : `${progress.toLocaleString()}/${threshold.toLocaleString()}`;
+      body = `
+        <div class="user-round-bet-row"><span>Your pick</span><strong>${(active?.markets?.label || "Market bet")}</strong></div>
+        <div class="user-round-bet-row"><span>${progressLabel}</span><strong>${progressText}</strong></div>
+        <div class="user-round-bet-note">${_marketHint(selection, progress, threshold)}</div>
+      `;
+    } else if (active?.bet_type === "exact_count") {
+      const live = _liveExactProgress(active);
+      const target = Number(active?.exact_count || 0);
+      const cls = active?.vehicle_class || "all vehicles";
+      const liveText = live == null ? "—" : `${live.toLocaleString()}/${target.toLocaleString()}`;
+      const hint = live == null
+        ? "Waiting for live count..."
+        : (live === target ? "On target right now." : `Need ${Math.max(0, target - live)} more to hit target.`);
+      body = `
+        <div class="user-round-bet-row"><span>Your pick</span><strong>Exact ${target} (${cls})</strong></div>
+        <div class="user-round-bet-row"><span>Window progress</span><strong>${liveText}</strong></div>
+        <div class="user-round-bet-note">${hint}</div>
+      `;
+    }
+
+    const resolvedBlock = latestResolved
+      ? `
+        <div class="user-round-bet-resolved">
+          <span class="badge badge-${latestResolved.status}">${latestResolved.status}</span>
+          <span>${latestResolved.status === "won"
+            ? `Won +${Number(latestResolved.potential_payout || 0).toLocaleString()}`
+            : "Lost"}</span>
+        </div>
+      `
+      : "";
+
+    box.classList.remove("hidden");
+    box.innerHTML = `
+      <div class="user-round-bet-head">
+        <span>Your Bet Status</span>
+        <span class="badge badge-pending">${pendingCount} pending</span>
+      </div>
+      ${body}
+      ${resolvedBlock}
+    `;
   }
 
   function init() {
@@ -229,6 +444,19 @@ const Markets = (() => {
         lastRoundId = null;
         renderNoRound();
       }
+    });
+
+    window.addEventListener("count:update", (e) => {
+      latestCountPayload = e.detail || null;
+      _renderUserRoundBet();
+    });
+
+    window.addEventListener("bet:placed", () => {
+      _loadUserRoundBets();
+    });
+
+    window.addEventListener("bet:resolved", () => {
+      _loadUserRoundBets();
     });
 
     const container = document.getElementById("markets-container");

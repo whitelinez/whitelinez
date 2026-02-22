@@ -4,6 +4,7 @@
  */
 
 let adminSession = null;
+let latestCaptureUploadError = null;
 
 // ── Guardrail constants ────────────────────────────────────────────────────────
 const MIN_DURATION_MIN      = 5;
@@ -160,6 +161,15 @@ function fmtAgo(iso) {
   if (hr < 24) return `${hr}h ago`;
   const day = Math.floor(hr / 24);
   return `${day}d ago`;
+}
+
+function escHtml(input) {
+  return String(input ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function renderHealthOverview(health, errMsg = "") {
@@ -349,6 +359,104 @@ async function loadMlUsage() {
     `;
   } catch (e) {
     usageBox.innerHTML = `<p class="muted" style="font-size:0.82rem;">ML usage unavailable.</p>`;
+  }
+}
+
+async function loadMlCaptureStatus() {
+  const box = document.getElementById("ml-capture-log");
+  if (!box || !adminSession?.access_token) return;
+
+  try {
+    const res = await fetch("/api/admin/ml-capture-status?limit=30", {
+      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load capture logs");
+
+    const events = payload?.events || [];
+    latestCaptureUploadError = events
+      .slice()
+      .reverse()
+      .find((evt) => evt?.event === "upload_failed") || null;
+    const classes = (payload?.capture_classes || []).join(", ") || "-";
+    const captureState = payload?.capture_enabled ? "ON" : "OFF";
+    const uploadState = payload?.upload_enabled ? "ON" : "OFF";
+    const counters = `saved=${Number(payload?.capture_total || 0)} upload_ok=${Number(payload?.upload_success_total || 0)} upload_fail=${Number(payload?.upload_fail_total || 0)}`;
+
+    const rows = events.slice().reverse().map((evt) => {
+      const ts = evt?.ts ? `${new Date(evt.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} (${fmtAgo(evt.ts)})` : "-";
+      const msg = escHtml(evt?.message || evt?.event || "event");
+      const meta = evt?.meta ? escHtml(JSON.stringify(evt.meta)) : "";
+      const badgeClass = evt?.event === "upload_failed" ? "round-locked" : "round-open";
+      return `
+        <div class="round-row">
+          <div class="round-row-info">
+            <span class="round-row-id">${ts}</span>
+            <span class="round-row-meta"><span class="round-badge ${badgeClass}">${escHtml(evt?.event || "event")}</span> ${msg}</span>
+            ${meta ? `<span class="round-row-meta" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">${meta}</span>` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    box.innerHTML = `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Live Capture</span>
+          <span class="round-row-meta">capture=${captureState} upload=${uploadState} classes=${escHtml(classes)}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Counters</span>
+          <span class="round-row-meta">${escHtml(counters)}</span>
+        </div>
+      </div>
+      ${rows || `<p class="muted" style="font-size:0.82rem;">No capture events yet.</p>`}
+    `;
+  } catch (e) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Capture logs unavailable.</p>`;
+  }
+}
+
+async function copyLatestCaptureError() {
+  const msgEl = document.getElementById("ml-capture-copy-msg");
+  if (!msgEl) return;
+
+  if (!latestCaptureUploadError) {
+    msgEl.style.color = "var(--muted)";
+    msgEl.textContent = "No upload_failed event yet.";
+    return;
+  }
+
+  const payload = {
+    ts: latestCaptureUploadError.ts || null,
+    event: latestCaptureUploadError.event || "upload_failed",
+    message: latestCaptureUploadError.message || "",
+    meta: latestCaptureUploadError.meta || {},
+  };
+  const text = JSON.stringify(payload, null, 2);
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (!ok) throw new Error("clipboard unavailable");
+    }
+    msgEl.style.color = "var(--green)";
+    msgEl.textContent = "Copied latest upload error.";
+  } catch {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Copy failed. Open browser console logs.";
   }
 }
 
@@ -771,11 +879,13 @@ async function init() {
   loadStats();
   loadMlProgress();
   loadMlUsage();
+  loadMlCaptureStatus();
   loadRecentRounds();
   loadRecentBets();
   setInterval(loadStats, 10_000);
   setInterval(loadMlProgress, 15_000);
   setInterval(loadMlUsage, 20_000);
+  setInterval(loadMlCaptureStatus, 8_000);
   setInterval(loadRecentBets, 15_000);
 }
 
@@ -784,6 +894,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
   document.getElementById("btn-ml-retrain")?.addEventListener("click", handleMlRetrain);
+  document.getElementById("btn-copy-capture-error")?.addEventListener("click", copyLatestCaptureError);
 
   // Market type visibility
   document.getElementById("market-type")?.addEventListener("change", (e) => {

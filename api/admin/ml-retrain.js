@@ -27,7 +27,15 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify(body),
     });
-    const data = await upstream.json();
+
+    const raw = await upstream.text();
+    let data;
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = { detail: raw || "Upstream returned a non-JSON response" };
+    }
+
     return res.status(upstream.status).json(data);
   } catch (err) {
     console.error("[/api/admin/ml-retrain] Upstream error:", err);

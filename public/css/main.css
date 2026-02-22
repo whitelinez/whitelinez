@@ -1113,6 +1113,47 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
+/* Tablet + mobile: hard-constrain ML HUD so it never bleeds into scene */
+@media (max-width: 900px) {
+  .ml-hud {
+    right: 8px;
+    bottom: 42px;
+    width: min(138px, 28vw);
+    max-width: 138px;
+    padding: 1px 3px;
+    overflow: hidden;
+    z-index: 7;
+  }
+
+  .ml-hud-title {
+    font-size: 0.5rem;
+    margin-bottom: 1px;
+  }
+
+  .ml-hud-msg {
+    font-size: 0.48rem;
+    line-height: 1.15;
+    margin-bottom: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ml-hud-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px 4px;
+    font-size: 0.45rem;
+    justify-items: end;
+  }
+
+  .ml-hud-stats span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 .ml-progress-bar {
   width: 100%;
   height: 8px;

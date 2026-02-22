@@ -1016,7 +1016,7 @@ async function loadRegisteredUsers() {
   if (!box || !adminSession?.access_token) return;
 
   try {
-    const res = await fetch("/api/admin/users?per_page=500", {
+    const res = await fetch("/api/admin/set-role?per_page=500", {
       headers: { Authorization: `Bearer ${adminSession.access_token}` },
     });
     const payload = await res.json().catch(() => ({}));

@@ -67,6 +67,14 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-wrap: nowrap;
+}
+
+#nav-auth,
+#nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .site-header nav a {
@@ -77,12 +85,15 @@ a:hover { text-decoration: underline; }
 .site-header nav a.active { color: var(--text); }
 
 .nav-balance {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--accent);
   background: rgba(255,214,0,0.1);
   border: 1px solid rgba(255,214,0,0.2);
   padding: 3px 10px;
+  line-height: 1;
   border-radius: 999px;
 }
 
@@ -768,10 +779,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 /* â”€â”€ Modern nav buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nav-link {
+  display: inline-flex;
+  align-items: center;
   color: var(--muted);
   font-size: 0.88rem;
   padding: 6px 10px;
   border-radius: var(--radius);
+  line-height: 1;
   transition: color .15s;
 }
 .nav-link:hover { color: var(--text); text-decoration: none; }
@@ -783,6 +797,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-weight: 700;
   padding: 6px 14px;
   border-radius: var(--radius);
+  line-height: 1;
   transition: opacity .15s;
   text-decoration: none;
   display: inline-flex;
@@ -1315,6 +1330,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .site-header { padding: 0 14px; }
   .logo img { height: 28px; }
   .site-header nav { gap: 8px; }
+  #nav-auth, #nav-user { gap: 6px; }
   .nav-link { padding: 4px 6px; font-size: 0.82rem; }
   .btn-nav-register { padding: 5px 12px; font-size: 0.8rem; }
   .nav-icon-btn { width: 32px; height: 32px; }

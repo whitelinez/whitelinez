@@ -16,6 +16,12 @@ const Markets = (() => {
   let nextRoundPollTimer = null;
   let nextRoundTickTimer = null;
   let nextRoundAtIso = null;
+  let hasInitialRender = false;
+  let lastUserBetMarkup = "";
+  let latestResolvedCard = null;
+  const dismissedResolvedBetIds = new Set();
+  const RESOLVED_CARD_STORAGE_KEY = "wlz_round_result_card_v1";
+  const DISMISSED_RESOLVED_STORAGE_KEY = "wlz_round_result_dismissed_v1";
 
   const USER_BET_POLL_MS = 5000;
 
@@ -32,7 +38,7 @@ const Markets = (() => {
   }
 
   async function loadMarkets() {
-    _showSkeleton();
+    if (!hasInitialRender) _showSkeleton();
     try {
       await _ensureCurrentUser();
       const { data: round, error } = await window.sb
@@ -49,6 +55,9 @@ const Markets = (() => {
       }
 
       if (currentRound?.id !== round.id) {
+        if (latestResolvedCard?.round_id && latestResolvedCard.round_id !== round.id) {
+          _clearResolvedOutcomeCard();
+        }
         _resetRoundLiveState();
       }
 
@@ -83,7 +92,7 @@ const Markets = (() => {
     _resetRoundLiveState();
     const container = document.getElementById("markets-container");
     if (container) {
-      container.innerHTML = `
+      const html = `
         <div class="empty-state">
           <div class="empty-state-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -99,9 +108,12 @@ const Markets = (() => {
           <span id="next-round-note">Checking next round schedule...</span>
           <strong id="next-round-countdown" style="font-size:0.95rem;color:var(--accent);">--:--</strong>
         </div>`;
+      if (container.innerHTML !== html) container.innerHTML = html;
     }
     updateRoundStrip(null);
     _startNextRoundCountdown();
+    _renderResolvedOutcomeCard();
+    hasInitialRender = true;
   }
 
   function renderRound(round) {
@@ -113,7 +125,7 @@ const Markets = (() => {
     const closesAt = round.closes_at ? new Date(round.closes_at) : null;
     const endsAt = round.ends_at ? new Date(round.ends_at) : null;
 
-    container.innerHTML = `
+    const html = `
       <div class="round-header">
         <span class="round-badge round-${round.status}">${round.status.toUpperCase()}</span>
         <span class="round-type">${round.market_type.replace(/_/g, " ")}</span>
@@ -135,6 +147,7 @@ const Markets = (() => {
         </button>
       </div>` : ""}
     `;
+    if (container.innerHTML !== html) container.innerHTML = html;
 
     startTimers(opensAt, closesAt, endsAt);
 
@@ -144,6 +157,8 @@ const Markets = (() => {
 
     _renderUserRoundBet();
     _stopNextRoundCountdown();
+    _renderResolvedOutcomeCard();
+    hasInitialRender = true;
   }
 
   function renderMarket(market, isOpen) {
@@ -236,7 +251,6 @@ const Markets = (() => {
           setTimeout(loadMarkets, 4000);
         }
       }
-      _renderUserRoundBet();
     }, 1000);
   }
 
@@ -249,6 +263,42 @@ const Markets = (() => {
   function _resetRoundLiveState() {
     roundBaseline = null;
     userRoundBets = [];
+  }
+
+  function _loadPersistedResolvedCard() {
+    try {
+      const rawCard = localStorage.getItem(RESOLVED_CARD_STORAGE_KEY);
+      if (rawCard) {
+        const parsed = JSON.parse(rawCard);
+        if (parsed && parsed.bet_id) latestResolvedCard = parsed;
+      }
+      const rawDismissed = localStorage.getItem(DISMISSED_RESOLVED_STORAGE_KEY);
+      if (rawDismissed) {
+        const arr = JSON.parse(rawDismissed);
+        if (Array.isArray(arr)) {
+          arr.slice(0, 200).forEach((id) => dismissedResolvedBetIds.add(String(id)));
+        }
+      }
+    } catch {}
+  }
+
+  function _persistResolvedCard() {
+    try {
+      if (!latestResolvedCard || !latestResolvedCard.bet_id) {
+        localStorage.removeItem(RESOLVED_CARD_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(RESOLVED_CARD_STORAGE_KEY, JSON.stringify(latestResolvedCard));
+    } catch {}
+  }
+
+  function _persistDismissedResolved() {
+    try {
+      localStorage.setItem(
+        DISMISSED_RESOLVED_STORAGE_KEY,
+        JSON.stringify(Array.from(dismissedResolvedBetIds).slice(-200)),
+      );
+    } catch {}
   }
 
   function _stopUserBetPolling() {
@@ -288,6 +338,16 @@ const Markets = (() => {
       if (!h.ok) throw new Error("health");
       const health = await h.json();
       nextRoundAtIso = health?.next_round_at || null;
+      if (!nextRoundAtIso && window.sb) {
+        const { data } = await window.sb
+          .from("bet_rounds")
+          .select("id, opens_at, status")
+          .eq("status", "upcoming")
+          .order("opens_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        nextRoundAtIso = data?.opens_at || null;
+      }
       if (!nextRoundAtIso) {
         noteEl.textContent = "New round schedule will appear shortly.";
         cdEl.textContent = "--:--";
@@ -357,7 +417,7 @@ const Markets = (() => {
     try {
       const { data } = await window.sb
         .from("bets")
-        .select("id, bet_type, status, amount, potential_payout, exact_count, actual_count, vehicle_class, window_duration_sec, window_start, baseline_count, placed_at, resolved_at, markets(label, odds, outcome_key)")
+        .select("id, round_id, bet_type, status, amount, potential_payout, exact_count, actual_count, vehicle_class, window_duration_sec, window_start, baseline_count, placed_at, resolved_at, markets(label, odds, outcome_key)")
         .eq("user_id", currentUserId)
         .eq("round_id", currentRound.id)
         .order("placed_at", { ascending: false })
@@ -477,10 +537,27 @@ const Markets = (() => {
 
     const pending = userRoundBets.filter((b) => b.status === "pending");
     const latestResolved = userRoundBets.find((b) => b.status !== "pending");
+    if (latestResolved && !dismissedResolvedBetIds.has(String(latestResolved.id))) {
+      latestResolvedCard = {
+        bet_id: latestResolved.id,
+        round_id: latestResolved.round_id || currentRound?.id || null,
+        won: latestResolved.status === "won",
+        payout: Number(latestResolved.potential_payout || 0),
+        actual: latestResolved.actual_count,
+        exact: latestResolved.exact_count,
+        vehicle_class: latestResolved.vehicle_class || null,
+        amount: Number(latestResolved.amount || 0),
+        market_label: latestResolved?.markets?.label || null,
+        status: latestResolved.status,
+      };
+      _persistResolvedCard();
+      _renderResolvedOutcomeCard();
+    }
 
     if (!pending.length && !latestResolved) {
       box.classList.add("hidden");
-      box.innerHTML = "";
+      if (box.innerHTML) box.innerHTML = "";
+      lastUserBetMarkup = "";
       return;
     }
 
@@ -544,8 +621,7 @@ const Markets = (() => {
       `
       : "";
 
-    box.classList.remove("hidden");
-    box.innerHTML = `
+    const markup = `
       <div class="user-round-bet-head">
         <span>Your Bet Status</span>
         <span class="badge badge-pending">${pendingCount} pending</span>
@@ -554,6 +630,12 @@ const Markets = (() => {
       ${body}
       ${resolvedBlock}
     `;
+
+    box.classList.remove("hidden");
+    if (markup !== lastUserBetMarkup) {
+      box.innerHTML = markup;
+      lastUserBetMarkup = markup;
+    }
   }
 
   function init() {
@@ -587,6 +669,25 @@ const Markets = (() => {
       _loadUserRoundBets();
     });
 
+    window.addEventListener("bet:resolved", (e) => {
+      const d = e.detail || {};
+      if (d.bet_id && dismissedResolvedBetIds.has(String(d.bet_id))) return;
+      latestResolvedCard = {
+        bet_id: d.bet_id,
+        round_id: d.round_id || currentRound?.id || null,
+        won: !!d.won,
+        payout: Number(d.payout || 0),
+        actual: d.actual,
+        exact: d.exact,
+        vehicle_class: d.vehicle_class || null,
+        amount: Number(d.amount || 0),
+        market_label: d.market_label || null,
+        status: d.won ? "won" : "lost",
+      };
+      _persistResolvedCard();
+      _renderResolvedOutcomeCard();
+    });
+
     const container = document.getElementById("markets-container");
     if (container) {
       container.addEventListener("click", (e) => {
@@ -601,6 +702,65 @@ const Markets = (() => {
         );
       });
     }
+
+    document.getElementById("tab-markets")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-dismiss-resolved]");
+      if (!btn) return;
+      const id = String(btn.getAttribute("data-dismiss-resolved") || "");
+      if (id) {
+        dismissedResolvedBetIds.add(id);
+        _persistDismissedResolved();
+      }
+      _clearResolvedOutcomeCard();
+    });
+
+    _loadPersistedResolvedCard();
+    _renderResolvedOutcomeCard();
+  }
+
+  function _clearResolvedOutcomeCard() {
+    latestResolvedCard = null;
+    _persistResolvedCard();
+    const card = document.getElementById("round-result-card");
+    if (card) card.remove();
+  }
+
+  function _renderResolvedOutcomeCard() {
+    const tab = document.getElementById("tab-markets");
+    if (!tab || !latestResolvedCard || !latestResolvedCard.bet_id) return;
+    if (dismissedResolvedBetIds.has(String(latestResolvedCard.bet_id))) return;
+
+    const existing = document.getElementById("round-result-card");
+    if (existing) existing.remove();
+
+    const card = document.createElement("div");
+    card.id = "round-result-card";
+    card.className = `round-result-card ${latestResolvedCard.won ? "result-win" : "result-loss"}`;
+
+    const badge = latestResolvedCard.won ? "WIN" : "LOSS";
+    const subtitle = latestResolvedCard.market_label
+      ? latestResolvedCard.market_label
+      : `Exact ${latestResolvedCard.exact ?? "?"}${latestResolvedCard.vehicle_class ? ` (${latestResolvedCard.vehicle_class})` : ""}`;
+
+    const payoutText = latestResolvedCard.won
+      ? `+${Number(latestResolvedCard.payout || 0).toLocaleString()} credits`
+      : `-${Number(latestResolvedCard.amount || 0).toLocaleString()} credits`;
+
+    card.innerHTML = `
+      <div class="round-result-head">
+        <span class="round-result-badge">${badge}</span>
+        <button class="round-result-close" type="button" data-dismiss-resolved="${latestResolvedCard.bet_id}" aria-label="Dismiss">x</button>
+      </div>
+      <div class="round-result-title">${subtitle}</div>
+      <div class="round-result-row"><span>Receipt</span><strong>#${String(latestResolvedCard.bet_id).slice(0, 8)}</strong></div>
+      <div class="round-result-row"><span>Outcome</span><strong>${payoutText}</strong></div>
+      <div class="round-result-row"><span>Actual</span><strong>${latestResolvedCard.actual ?? "-"}</strong></div>
+      <div class="round-result-row"><span>Target</span><strong>${latestResolvedCard.exact ?? "-"}</strong></div>
+    `;
+
+    const container = document.getElementById("markets-container");
+    if (container) tab.insertBefore(card, container);
+    else tab.prepend(card);
   }
 
   return { init, loadMarkets, getCurrentRound: () => currentRound };

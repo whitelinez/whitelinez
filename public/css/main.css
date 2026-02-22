@@ -632,6 +632,81 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   color: var(--muted);
 }
 
+.round-result-card {
+  margin: 0 0 10px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));
+  box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+}
+
+.round-result-card.result-win {
+  border-color: rgba(34,197,94,0.35);
+  background: linear-gradient(160deg, rgba(34,197,94,0.14), rgba(0,0,0,0.22));
+}
+
+.round-result-card.result-loss {
+  border-color: rgba(239,68,68,0.35);
+  background: linear-gradient(160deg, rgba(239,68,68,0.12), rgba(0,0,0,0.22));
+}
+
+.round-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.round-result-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.result-win .round-result-badge { color: var(--green); }
+.result-loss .round-result-badge { color: var(--red); }
+
+.round-result-close {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.22);
+  color: var(--muted);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.round-result-close:hover {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.22);
+}
+
+.round-result-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.round-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.round-result-row span { color: var(--muted); }
+.round-result-row strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .market-list { display: flex; flex-direction: column; gap: 8px; }
 
 .market-card {
@@ -926,6 +1001,16 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   width: 100%;
   height: 72px;
   display: block;
+}
+
+.ai-scene-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
 .ai-flow-path {
@@ -1826,6 +1911,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
   .ai-scene-svg {
     height: 60px;
+  }
+
+  .ai-scene-img {
+    height: 140px;
   }
 
   .ai-scene-copy {

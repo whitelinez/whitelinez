@@ -108,48 +108,12 @@
       <div id="tab-ml-showcase" class="tab-content">
         <div class="ml-showcase-head">
           <p class="ml-showcase-eyebrow">Live AI Engine</p>
-          <h3>Real-Time AI Showcase</h3>
-          <p class="ml-showcase-sub">This panel shows live traffic-feed AI data: detections, confidence, capture flow, and training readiness from your production pipeline.</p>
+          <h3>Real-Time Traffic Action</h3>
+          <p class="ml-showcase-sub">This section shows what the AI is seeing live on the road.<br>It counts vehicles passing through the area, measures confidence levels, and updates predictions in real time.<br><br>You&rsquo;re basically watching the system analyze traffic while users make predictions on how many vehicles will pass within a set time.<br><br>Bet smart. Watch the road. See the data live.</p>
         </div>
 
         <div class="ai-scene">
-          <svg class="ai-scene-svg" viewBox="0 0 420 100" role="img" aria-label="AI vehicle detection animation">
-            <defs>
-              <linearGradient id="aiFlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#00BCD4"/>
-                <stop offset="100%" stop-color="#FFD600"/>
-              </linearGradient>
-            </defs>
-            <path class="ai-flow-path" d="M10 74 L410 74"/>
-            <g class="ai-lane">
-              <path d="M20 76 L400 76" />
-            </g>
-            <g class="ai-vehicle ai-car">
-              <rect x="26" y="54" width="34" height="12" rx="3"></rect>
-              <circle cx="35" cy="69" r="3"></circle>
-              <circle cx="51" cy="69" r="3"></circle>
-              <path d="M22 50h8M52 50h8M22 50v6M60 50v6"></path>
-            </g>
-            <g class="ai-vehicle ai-bus">
-              <rect x="166" y="50" width="42" height="16" rx="4"></rect>
-              <line x1="166" y1="57" x2="208" y2="57"></line>
-              <circle cx="178" cy="69" r="3"></circle>
-              <circle cx="196" cy="69" r="3"></circle>
-              <path d="M162 46h8M200 46h8M162 46v6M208 46v6"></path>
-            </g>
-            <g class="ai-vehicle ai-truck">
-              <rect x="302" y="54" width="26" height="12" rx="2"></rect>
-              <path d="M328 57h11l6 5v4h-17z"></path>
-              <circle cx="313" cy="69" r="3"></circle>
-              <circle cx="336" cy="69" r="3"></circle>
-              <path d="M298 50h8M330 50h8M298 50v6M338 50v6"></path>
-            </g>
-            <g class="ai-detect-boxes">
-              <rect x="20" y="48" width="46" height="24" rx="3"></rect>
-              <rect x="160" y="44" width="54" height="28" rx="3"></rect>
-              <rect x="296" y="48" width="56" height="24" rx="3"></rect>
-            </g>
-          </svg>
+          <img class="ai-scene-img" src="/img/ai.png" alt="Live AI traffic detection view" loading="lazy" />
           <div class="ai-scene-copy">
             <strong>Live traffic detection</strong>
             <span>Cars, buses, and trucks are detected frame-by-frame as AI tracks live road flow.</span>

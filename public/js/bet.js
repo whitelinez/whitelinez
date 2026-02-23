@@ -39,6 +39,10 @@ const Bet = (() => {
           <span>Potential payout</span>
           <strong id="bmi-payout">—</strong>
         </div>
+        <div id="bmi-loading" class="modal-loading hidden" aria-live="polite">
+          <span class="modal-spinner" aria-hidden="true"></span>
+          <span>Validating bet...</span>
+        </div>
         <p id="bmi-error" class="modal-error" role="alert"></p>
         <button id="bmi-submit" class="btn-primary btn-full">Confirm Bet</button>
       </div>
@@ -74,6 +78,7 @@ const Bet = (() => {
     const amountEl = document.getElementById("bmi-amount");
     const errorEl = document.getElementById("bmi-error");
     const submitBtn = document.getElementById("bmi-submit");
+    const loadingEl = document.getElementById("bmi-loading");
 
     const amount = parseInt(amountEl?.value ?? 0, 10);
     const round = Markets.getCurrentRound();
@@ -103,6 +108,8 @@ const Bet = (() => {
 
     if (submitBtn) submitBtn.disabled = true;
     if (errorEl) errorEl.textContent = "";
+    if (loadingEl) loadingEl.classList.remove("hidden");
+    if (submitBtn) submitBtn.textContent = "Validating...";
 
     try {
       const res = await fetch("/api/bets/place", {
@@ -131,6 +138,8 @@ const Bet = (() => {
       if (errorEl) errorEl.textContent = "Network error — try again";
     } finally {
       if (submitBtn) submitBtn.disabled = false;
+      if (submitBtn) submitBtn.textContent = "Confirm Bet";
+      if (loadingEl) loadingEl.classList.add("hidden");
     }
   }
 
@@ -165,6 +174,10 @@ window.Bet = Bet;
     .modal-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; color: var(--muted); }
     .modal-row strong { color: var(--text); font-size: 1rem; }
     .modal-row input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: var(--radius); font-size: 0.95rem; width: 120px; text-align: right; }
+    .modal-loading { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:0.85rem; margin-bottom:10px; }
+    .modal-loading.hidden { display:none; }
+    .modal-spinner { width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); border-top-color: var(--accent); animation: modalSpin .8s linear infinite; }
+    @keyframes modalSpin { to { transform: rotate(360deg); } }
     .modal-error { color: var(--red); font-size: 0.85rem; margin-bottom: 10px; min-height: 20px; }
   `;
   document.head.appendChild(s);

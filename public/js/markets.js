@@ -526,10 +526,53 @@ const Markets = (() => {
         .limit(20);
 
       userRoundBets = data || [];
+      await _hydrateBetBaselines(userRoundBets);
       _renderUserRoundBet();
     } catch (err) {
       console.warn("[Markets] User bet load failed:", err);
     }
+  }
+
+  async function _hydrateBetBaselines(bets) {
+    if (!Array.isArray(bets) || !bets.length) return;
+    if (!currentRound?.camera_id) return;
+
+    const targets = bets.filter((b) =>
+      (b?.baseline_count == null)
+      && !!b?.placed_at
+    );
+    if (!targets.length) return;
+
+    await Promise.all(targets.map(async (bet) => {
+      try {
+        const betType = String(bet?.bet_type || "market");
+        const mt = String(currentRound?.market_type || "");
+        const params = currentRound?.params || {};
+        let vehicleClass = null;
+        if (betType === "exact_count") {
+          vehicleClass = bet?.vehicle_class || null;
+        } else if (mt === "vehicle_count") {
+          vehicleClass = params.vehicle_class || null;
+        }
+
+        const { data } = await window.sb
+          .from("count_snapshots")
+          .select("total, vehicle_breakdown")
+          .eq("camera_id", currentRound.camera_id)
+          .lte("captured_at", bet.placed_at)
+          .order("captured_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!data) return;
+        const derived = vehicleClass
+          ? Number(data?.vehicle_breakdown?.[vehicleClass] || 0)
+          : Number(data?.total || 0);
+        if (Number.isFinite(derived)) {
+          bet._derived_baseline_count = derived;
+        }
+      } catch {}
+    }));
   }
 
   function _roundProgressCount() {
@@ -570,12 +613,9 @@ const Markets = (() => {
 
     if (!useRoundRelative) return Math.max(0, currentRaw);
 
-    const baseline = Number(
-      bet?.baseline_count ??
-      (vehicleClass
-        ? (roundBaseline?.vehicle_breakdown?.[vehicleClass] || 0)
-        : (roundBaseline?.total || 0))
-    ) || 0;
+    const baselineRaw = bet?.baseline_count ?? bet?._derived_baseline_count;
+    const baseline = Number(baselineRaw);
+    if (!Number.isFinite(baseline)) return null;
 
     return Math.max(0, currentRaw - baseline);
   }

@@ -10,11 +10,28 @@
 
 const AdminLine = (() => {
   const DEFAULT_COUNT_SETTINGS = {
-    min_track_frames: 3,
-    min_box_area_ratio: 0,
-    min_confidence: 0,
-    allowed_classes: [],
-    class_min_confidence: {},
+    min_track_frames: 6,
+    min_box_area_ratio: 0.004,
+    min_confidence: 0.30,
+    allowed_classes: ["car", "truck", "bus", "motorcycle"],
+    class_min_confidence: {
+      car: 0.30,
+      truck: 0.42,
+      bus: 0.45,
+      motorcycle: 0.32,
+    },
+  };
+  const COUNT_SETTINGS_NIGHT_PRESET = {
+    min_track_frames: 8,
+    min_box_area_ratio: 0.003,
+    min_confidence: 0.22,
+    allowed_classes: ["car", "truck", "bus", "motorcycle"],
+    class_min_confidence: {
+      car: 0.22,
+      truck: 0.38,
+      bus: 0.40,
+      motorcycle: 0.25,
+    },
   };
 
   let canvas, ctx, video;
@@ -58,6 +75,14 @@ const AdminLine = (() => {
       document.getElementById("btn-clear-line")?.addEventListener("click", clearActive);
       document.getElementById("btn-save-line")?.addEventListener("click", saveZones);
       document.getElementById("btn-save-count-settings")?.addEventListener("click", saveCountSettingsOnly);
+      document.getElementById("btn-count-preset-balanced")?.addEventListener("click", () => {
+        applyCountSettingsToForm(DEFAULT_COUNT_SETTINGS);
+        updateCountSettingsStatus("Preset A applied. Click Save Count Tuning.");
+      });
+      document.getElementById("btn-count-preset-night")?.addEventListener("click", () => {
+        applyCountSettingsToForm(COUNT_SETTINGS_NIGHT_PRESET);
+        updateCountSettingsStatus("Preset B applied. Click Save Count Tuning.");
+      });
 
       // Zone toggle buttons
       document.getElementById("btn-zone-detect")?.addEventListener("click", () => setMode("detect"));
@@ -387,9 +412,9 @@ const AdminLine = (() => {
   function readCountSettingsFromForm() {
     const getVal = (id) => document.getElementById(id)?.value ?? "";
     return {
-      min_track_frames: Math.round(toBoundedNumber(getVal("count-min-track-frames"), 3, 1, 30)),
-      min_confidence: toBoundedNumber(getVal("count-min-confidence"), 0, 0, 1),
-      min_box_area_ratio: toBoundedNumber(getVal("count-min-box-area-ratio"), 0, 0, 1),
+      min_track_frames: Math.round(toBoundedNumber(getVal("count-min-track-frames"), 6, 1, 30)),
+      min_confidence: toBoundedNumber(getVal("count-min-confidence"), 0.30, 0, 1),
+      min_box_area_ratio: toBoundedNumber(getVal("count-min-box-area-ratio"), 0.004, 0, 1),
       allowed_classes: parseAllowedClasses(getVal("count-allowed-classes")),
       class_min_confidence: parseClassMinConfidence(getVal("count-class-min-confidence")),
     };
@@ -404,9 +429,9 @@ const AdminLine = (() => {
       const el = document.getElementById(id);
       if (el) el.value = val;
     };
-    setVal("count-min-track-frames", String(Math.round(toBoundedNumber(s.min_track_frames, 3, 1, 30))));
-    setVal("count-min-confidence", String(toBoundedNumber(s.min_confidence, 0, 0, 1)));
-    setVal("count-min-box-area-ratio", String(toBoundedNumber(s.min_box_area_ratio, 0, 0, 1)));
+    setVal("count-min-track-frames", String(Math.round(toBoundedNumber(s.min_track_frames, 6, 1, 30))));
+    setVal("count-min-confidence", String(toBoundedNumber(s.min_confidence, 0.30, 0, 1)));
+    setVal("count-min-box-area-ratio", String(toBoundedNumber(s.min_box_area_ratio, 0.004, 0, 1)));
     setVal("count-allowed-classes", Array.isArray(s.allowed_classes) ? s.allowed_classes.join(", ") : "");
     setVal("count-class-min-confidence", classMinConfidenceToText(s.class_min_confidence));
   }

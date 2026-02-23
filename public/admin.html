@@ -66,26 +66,28 @@
               <div class="count-tuning-grid">
                 <div class="field">
                   <label for="count-min-track-frames">Min Track Frames</label>
-                  <input id="count-min-track-frames" type="number" min="1" max="30" step="1" value="3" />
+                  <input id="count-min-track-frames" type="number" min="1" max="30" step="1" value="6" />
                 </div>
                 <div class="field">
                   <label for="count-min-confidence">Min Confidence</label>
-                  <input id="count-min-confidence" type="number" min="0" max="1" step="0.01" value="0" />
+                  <input id="count-min-confidence" type="number" min="0" max="1" step="0.01" value="0.30" />
                 </div>
                 <div class="field">
                   <label for="count-min-box-area-ratio">Min Box Area Ratio</label>
-                  <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.0001" value="0" />
+                  <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.0001" value="0.004" />
                 </div>
                 <div class="field count-tuning-wide">
                   <label for="count-allowed-classes">Allowed Classes (comma-separated)</label>
-                  <input id="count-allowed-classes" type="text" placeholder="car, truck, bus, motorcycle" />
+                  <input id="count-allowed-classes" type="text" value="car, truck, bus, motorcycle" placeholder="car, truck, bus, motorcycle" />
                 </div>
                 <div class="field count-tuning-wide">
                   <label for="count-class-min-confidence">Per-Class Min Confidence</label>
-                  <input id="count-class-min-confidence" type="text" placeholder="car:0.35, truck:0.40" />
+                  <input id="count-class-min-confidence" type="text" value="car:0.30, truck:0.42, bus:0.45, motorcycle:0.32" placeholder="car:0.35, truck:0.40" />
                 </div>
               </div>
             <div class="count-tuning-actions">
+                <button id="btn-count-preset-balanced" class="btn-secondary" type="button">Preset A (Balanced)</button>
+                <button id="btn-count-preset-night" class="btn-secondary" type="button">Preset B (Night)</button>
                 <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
                 <span id="count-settings-status" class="line-status"></span>
               </div>
@@ -575,15 +577,15 @@
               </div>
               <div class="field" style="max-width:180px">
                 <label for="det-line-width">Line Width</label>
-                <input id="det-line-width" type="range" min="1" max="5" step="0.5" value="1.5" />
+                <input id="det-line-width" type="range" min="1" max="5" step="0.5" value="2" />
               </div>
               <div class="field" style="max-width:180px">
                 <label for="det-fill-alpha">Fill Opacity</label>
-                <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.01" value="0.09" />
+                <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.01" value="0.10" />
               </div>
               <div class="field" style="max-width:180px">
                 <label for="det-max-boxes">Max Boxes</label>
-                <input id="det-max-boxes" type="number" min="1" max="200" value="120" />
+                <input id="det-max-boxes" type="number" min="1" max="40" value="10" />
               </div>
             </div>
 
@@ -618,12 +620,14 @@
                 <label for="det-show-zone-only">Render Boxes In Detect Zone Only</label>
                 <select id="det-show-zone-only">
                   <option value="0">No (Full Feed)</option>
-                  <option value="1">Yes (Visual Filter)</option>
+                  <option value="1" selected>Yes (Visual Filter)</option>
                 </select>
               </div>
             </div>
 
             <div class="ml-control-actions">
+              <button id="btn-det-preset-balanced" class="btn-secondary" type="button">Preset A Overlay</button>
+              <button id="btn-det-preset-night" class="btn-secondary" type="button">Preset B Overlay</button>
               <button id="btn-det-save" class="btn-primary" type="button">Save Detection Settings</button>
               <button id="btn-det-reset" class="btn-secondary" type="button">Reset Defaults</button>
               <span id="det-settings-msg" class="muted"></span>

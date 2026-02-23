@@ -10,6 +10,27 @@ const LiveBet = (() => {
   let _countdownTimer = null;
   let _wsAccountRef = null;  // set by index-init
 
+  function _ensureSpinnerStyle() {
+    if (document.getElementById("live-bet-spinner-style")) return;
+    const style = document.createElement("style");
+    style.id = "live-bet-spinner-style";
+    style.textContent = `
+      .wlz-inline-spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        margin-right: 6px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.25);
+        border-top-color: currentColor;
+        animation: wlzSpin .8s linear infinite;
+        vertical-align: -2px;
+      }
+      @keyframes wlzSpin { to { transform: rotate(360deg); } }
+    `;
+    document.head.appendChild(style);
+  }
+
   // ── Open / close panel ────────────────────────────────────────────
 
   function open(round) {
@@ -91,7 +112,12 @@ const LiveBet = (() => {
     const jwt = await Auth.getJwt();
     if (!jwt) { window.location.href = "/login.html"; return; }
 
+    if (submitBtn && !submitBtn.dataset.defaultHtml) {
+      submitBtn.dataset.defaultHtml = submitBtn.innerHTML;
+    }
     submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="wlz-inline-spinner" aria-hidden="true"></span>Validating...`;
+    errorEl.textContent = "";
 
     try {
       const res = await fetch("/api/bets/place?live=1", {
@@ -123,6 +149,7 @@ const LiveBet = (() => {
       errorEl.textContent = "Network error — try again";
     } finally {
       submitBtn.disabled = false;
+      submitBtn.innerHTML = submitBtn.dataset.defaultHtml || "Place Live Bet";
     }
   }
 
@@ -176,6 +203,7 @@ const LiveBet = (() => {
   // ── Init ──────────────────────────────────────────────────────────
 
   function init() {
+    _ensureSpinnerStyle();
     // Back button
     document.getElementById("bet-panel-back")?.addEventListener("click", close);
 

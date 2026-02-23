@@ -59,14 +59,18 @@ async function resolveActiveCameraId() {
 }
 const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
 const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
-const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v1";
+const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v3";
 const DETECTION_DEFAULT_SETTINGS = {
   box_style: "solid",
-  line_width: 1.5,
-  fill_alpha: 0.09,
-  max_boxes: 120,
+  line_width: 2,
+  fill_alpha: 0.10,
+  max_boxes: 10,
   show_labels: true,
-  detect_zone_only: false,
+  detect_zone_only: true,
+  outside_scan_enabled: true,
+  outside_scan_min_conf: 0.45,
+  outside_scan_max_boxes: 25,
+  outside_scan_hold_ms: 600,
   colors: {
     car: "#29B6F6",
     truck: "#FF7043",
@@ -80,6 +84,18 @@ const DETECTION_DEFAULT_SETTINGS = {
     hue: 0,
     blur: 0,
   },
+};
+const DETECTION_NIGHT_SETTINGS_PRESET = {
+  box_style: "solid",
+  line_width: 2,
+  fill_alpha: 0.14,
+  max_boxes: 12,
+  show_labels: true,
+  detect_zone_only: true,
+  outside_scan_enabled: true,
+  outside_scan_min_conf: 0.45,
+  outside_scan_max_boxes: 30,
+  outside_scan_hold_ms: 650,
 };
 const FEED_APPEARANCE_DAY_PRESET = {
   brightness: 102,
@@ -283,11 +299,15 @@ function readDetectionSettingsFromForm() {
   const getVal = (id, fallback = "") => document.getElementById(id)?.value ?? fallback;
   return {
     box_style: String(getVal("det-box-style", "solid")),
-    line_width: Math.max(1, Math.min(5, Number(getVal("det-line-width", "1.5")) || 1.5)),
-    fill_alpha: Math.max(0, Math.min(0.45, Number(getVal("det-fill-alpha", "0.09")) || 0.09)),
-    max_boxes: Math.max(1, Math.min(200, Number(getVal("det-max-boxes", "120")) || 120)),
+    line_width: Math.max(1, Math.min(5, Number(getVal("det-line-width", "2")) || 2)),
+    fill_alpha: Math.max(0, Math.min(0.45, Number(getVal("det-fill-alpha", "0.10")) || 0.10)),
+    max_boxes: Math.max(1, Math.min(40, Number(getVal("det-max-boxes", "10")) || 10)),
     show_labels: String(getVal("det-show-labels", "1")) === "1",
-    detect_zone_only: String(getVal("det-show-zone-only", "0")) === "1",
+    detect_zone_only: String(getVal("det-show-zone-only", "1")) === "1",
+    outside_scan_enabled: true,
+    outside_scan_min_conf: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_min_conf || 0.45),
+    outside_scan_max_boxes: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_max_boxes || 25),
+    outside_scan_hold_ms: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_hold_ms || 600),
     colors: {
       car: String(getVal("det-color-car", DETECTION_DEFAULT_SETTINGS.colors.car)),
       truck: String(getVal("det-color-truck", DETECTION_DEFAULT_SETTINGS.colors.truck)),
@@ -394,6 +414,22 @@ function resetDetectionSettings() {
     msg.textContent = "Defaults restored.";
   }
 }
+function applyDetectionPreset(preset, label) {
+  const current = getDetectionSettings();
+  const merged = {
+    ...current,
+    ...preset,
+    colors: { ...(current?.colors || DETECTION_DEFAULT_SETTINGS.colors) },
+    appearance: { ...(current?.appearance || DETECTION_DEFAULT_SETTINGS.appearance) },
+  };
+  applyDetectionSettingsToForm(merged);
+  publishDetectionSettings(merged);
+  const msg = document.getElementById("det-settings-msg");
+  if (msg) {
+    msg.style.color = "var(--green)";
+    msg.textContent = `${label} applied. Click Save Detection Settings to persist.`;
+  }
+}
 async function loadDetectionStatus() {
   const setText = (id, value) => {
     const node = document.getElementById(id);
@@ -469,6 +505,12 @@ function initDetectionStudio() {
 
   document.getElementById("btn-det-save")?.addEventListener("click", saveDetectionSettings);
   document.getElementById("btn-det-reset")?.addEventListener("click", resetDetectionSettings);
+  document.getElementById("btn-det-preset-balanced")?.addEventListener("click", () => {
+    applyDetectionPreset(DETECTION_DEFAULT_SETTINGS, "Preset A overlay");
+  });
+  document.getElementById("btn-det-preset-night")?.addEventListener("click", () => {
+    applyDetectionPreset(DETECTION_NIGHT_SETTINGS_PRESET, "Preset B overlay");
+  });
   document.getElementById("btn-video-push-public")?.addEventListener("click", pushFeedAppearanceToPublic);
   document.getElementById("btn-feed-preset-day")?.addEventListener("click", () => {
     applyAppearancePresetToForm(FEED_APPEARANCE_DAY_PRESET);

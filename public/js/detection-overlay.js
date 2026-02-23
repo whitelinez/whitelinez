@@ -9,15 +9,27 @@ const DetectionOverlay = (() => {
   let canvas, ctx, video;
   let latestDetections = [];
   let rafId = null;
-  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v1";
+  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v3";
+  let pixiApp = null;
+  let pixiEnabled = false;
+  const pixiGraphicsPool = [];
+  const pixiTextPool = [];
+  let pixiGraphicsUsed = 0;
+  let pixiTextUsed = 0;
+  let forceRender = true;
+  let lastFrameKey = "";
 
   let settings = {
     box_style: "solid",
-    line_width: 1.5,
-    fill_alpha: 0.09,
-    max_boxes: 120,
+    line_width: 2,
+    fill_alpha: 0.10,
+    max_boxes: 10,
     show_labels: true,
-    detect_zone_only: false,
+    detect_zone_only: true,
+    outside_scan_enabled: true,
+    outside_scan_min_conf: 0.45,
+    outside_scan_max_boxes: 25,
+    outside_scan_hold_ms: 600,
     colors: {
       car: "#29B6F6",
       truck: "#FF7043",
@@ -25,6 +37,16 @@ const DetectionOverlay = (() => {
       motorcycle: "#FFD600",
     },
   };
+  const outsideGhosts = new Map();
+
+  function hexToPixi(hex) {
+    const raw = String(hex || "").replace("#", "");
+    const safe = raw.length === 3
+      ? raw.split("").map((c) => c + c).join("")
+      : raw.padEnd(6, "0").slice(0, 6);
+    const n = Number.parseInt(safe, 16);
+    return Number.isFinite(n) ? n : 0x66bb6a;
+  }
 
   function loadSettings() {
     try {
@@ -46,6 +68,28 @@ const DetectionOverlay = (() => {
       ...nextSettings,
       colors: { ...settings.colors, ...(nextSettings?.colors || {}) },
     };
+    forceRender = true;
+  }
+
+  function buildFrameKey(detections) {
+    if (!Array.isArray(detections) || detections.length === 0) return "empty";
+    const lim = Math.min(detections.length, 80);
+    let key = `${lim}|`;
+    for (let i = 0; i < lim; i += 1) {
+      const d = detections[i] || {};
+      key += [
+        d.tracker_id ?? -1,
+        d.cls || "u",
+        Number(d.conf || 0).toFixed(2),
+        Number(d.x1 || 0).toFixed(3),
+        Number(d.y1 || 0).toFixed(3),
+        Number(d.x2 || 0).toFixed(3),
+        Number(d.y2 || 0).toFixed(3),
+        d.in_detect_zone === false ? "0" : "1",
+      ].join(",");
+      key += ";";
+    }
+    return key;
   }
 
   function hexToRgba(hex, alpha) {
@@ -73,18 +117,217 @@ const DetectionOverlay = (() => {
     ctx.stroke();
   }
 
+  function drawCornerBoxPixi(g, x, y, w, h, colorNum, lineWidth) {
+    const c = Math.max(6, Math.min(20, Math.floor(Math.min(w, h) * 0.2)));
+    g.lineStyle(lineWidth, colorNum, 1);
+    g.moveTo(x, y + c); g.lineTo(x, y); g.lineTo(x + c, y);
+    g.moveTo(x + w - c, y); g.lineTo(x + w, y); g.lineTo(x + w, y + c);
+    g.moveTo(x + w, y + h - c); g.lineTo(x + w, y + h); g.lineTo(x + w - c, y + h);
+    g.moveTo(x + c, y + h); g.lineTo(x, y + h); g.lineTo(x, y + h - c);
+  }
+
+  function initPixiRenderer() {
+    if (!canvas || !window.PIXI) return false;
+    try {
+      pixiApp = new window.PIXI.Application({
+        view: canvas,
+        width: Math.max(1, canvas.width || 1),
+        height: Math.max(1, canvas.height || 1),
+        backgroundAlpha: 0,
+        antialias: true,
+        autoDensity: true,
+        resolution: window.devicePixelRatio || 1,
+        powerPreference: "high-performance",
+      });
+      pixiEnabled = true;
+      console.info("[DetectionOverlay] Renderer: WebGL (PixiJS)");
+      return true;
+    } catch (err) {
+      console.warn("[DetectionOverlay] Pixi init failed, falling back to 2D:", err);
+      pixiEnabled = false;
+      pixiApp = null;
+      return false;
+    }
+  }
+
+  function beginPixiFrame() {
+    pixiGraphicsUsed = 0;
+    pixiTextUsed = 0;
+  }
+
+  function endPixiFrame() {
+    for (let i = pixiGraphicsUsed; i < pixiGraphicsPool.length; i += 1) {
+      pixiGraphicsPool[i].visible = false;
+    }
+    for (let i = pixiTextUsed; i < pixiTextPool.length; i += 1) {
+      pixiTextPool[i].visible = false;
+    }
+  }
+
+  function getPixiGraphic() {
+    if (!pixiApp) return null;
+    if (pixiGraphicsUsed >= pixiGraphicsPool.length) {
+      const g = new window.PIXI.Graphics();
+      g.visible = false;
+      pixiGraphicsPool.push(g);
+      pixiApp.stage.addChild(g);
+    }
+    const g = pixiGraphicsPool[pixiGraphicsUsed];
+    pixiGraphicsUsed += 1;
+    g.clear();
+    g.visible = true;
+    return g;
+  }
+
+  function getPixiText() {
+    if (!pixiApp) return null;
+    if (pixiTextUsed >= pixiTextPool.length) {
+      const t = new window.PIXI.Text("", {
+        fontFamily: "Inter, sans-serif",
+        fontSize: 11,
+        fill: 0x0d1118,
+      });
+      t.visible = false;
+      pixiTextPool.push(t);
+      pixiApp.stage.addChild(t);
+    }
+    const t = pixiTextPool[pixiTextUsed];
+    pixiTextUsed += 1;
+    t.visible = true;
+    return t;
+  }
+
+  function buildGhostKey(det) {
+    const tid = Number(det?.tracker_id);
+    if (Number.isFinite(tid) && tid >= 0) return `t:${tid}:${String(det?.cls || "vehicle")}`;
+    const x1 = Math.round(Number(det?.x1 || 0) * 100);
+    const y1 = Math.round(Number(det?.y1 || 0) * 100);
+    const x2 = Math.round(Number(det?.x2 || 0) * 100);
+    const y2 = Math.round(Number(det?.y2 || 0) * 100);
+    return `b:${String(det?.cls || "vehicle")}:${x1}:${y1}:${x2}:${y2}`;
+  }
+
+  function drawDetectionBox(det, bounds, opts = {}) {
+    if (pixiEnabled && pixiApp) {
+      return drawDetectionBoxPixi(det, bounds, opts);
+    }
+    if (!ctx) return;
+    const p1 = contentToPixel(det.x1, det.y1, bounds);
+    const p2 = contentToPixel(det.x2, det.y2, bounds);
+    const bw = p2.x - p1.x;
+    const bh = p2.y - p1.y;
+    if (bw < 4 || bh < 4) return;
+
+    const color = opts.color || settings.colors?.[det.cls] || "#66BB6A";
+    const lineWidth = Math.max(1, Number(opts.lineWidth ?? settings.line_width) || 1.5);
+    const alpha = Math.max(0, Math.min(0.45, Number(opts.alpha ?? settings.fill_alpha) || 0));
+    const style = String(opts.style || settings.box_style || "solid");
+    const showLabels = opts.showLabels !== false;
+    const labelText = opts.labelText;
+
+    ctx.fillStyle = hexToRgba(color, alpha);
+    ctx.fillRect(p1.x, p1.y, bw, bh);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    if (style === "dashed") ctx.setLineDash([8, 4]);
+    else ctx.setLineDash([]);
+    if (style === "corner") drawCornerBox(p1.x, p1.y, bw, bh, color, lineWidth);
+    else ctx.strokeRect(p1.x, p1.y, bw, bh);
+
+    if (showLabels) {
+      const defaultConf = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
+      const label = labelText || `${String(det?.cls || "vehicle").toUpperCase()}${defaultConf}`;
+      ctx.setLineDash([]);
+      ctx.font = "11px Inter, sans-serif";
+      const padX = 6;
+      const padY = 4;
+      const tw = Math.max(30, Math.ceil(ctx.measureText(label).width + padX * 2));
+      const th = 18;
+      const lx = p1.x;
+      const ly = Math.max(2, p1.y - th - 2);
+      ctx.fillStyle = hexToRgba(color, opts.labelBgAlpha ?? 0.85);
+      ctx.fillRect(lx, ly, tw, th);
+      ctx.fillStyle = opts.labelColor || "#0d1118";
+      ctx.fillText(label, lx + padX, ly + th - padY);
+    }
+  }
+
+  function drawDetectionBoxPixi(det, bounds, opts = {}) {
+    const g = getPixiGraphic();
+    if (!g) return;
+    const p1 = contentToPixel(det.x1, det.y1, bounds);
+    const p2 = contentToPixel(det.x2, det.y2, bounds);
+    const bw = p2.x - p1.x;
+    const bh = p2.y - p1.y;
+    if (bw < 4 || bh < 4) {
+      g.visible = false;
+      return;
+    }
+
+    const color = opts.color || settings.colors?.[det.cls] || "#66BB6A";
+    const colorNum = hexToPixi(color);
+    const lineWidth = Math.max(1, Number(opts.lineWidth ?? settings.line_width) || 1.5);
+    const alpha = Math.max(0, Math.min(0.45, Number(opts.alpha ?? settings.fill_alpha) || 0));
+    const style = String(opts.style || settings.box_style || "solid");
+    const showLabels = opts.showLabels !== false;
+    const labelText = opts.labelText;
+
+    g.beginFill(colorNum, alpha);
+    g.drawRect(p1.x, p1.y, bw, bh);
+    g.endFill();
+
+    if (style === "corner") {
+      drawCornerBoxPixi(g, p1.x, p1.y, bw, bh, colorNum, lineWidth);
+    } else {
+      g.lineStyle(lineWidth, colorNum, 1);
+      g.drawRect(p1.x, p1.y, bw, bh);
+    }
+
+    if (!showLabels) return;
+
+    const defaultConf = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
+    const label = labelText || `${String(det?.cls || "vehicle").toUpperCase()}${defaultConf}`;
+    const txt = getPixiText();
+    if (!txt) return;
+
+    txt.text = label;
+    txt.style.fill = hexToPixi(opts.labelColor || "#0d1118");
+
+    const padX = 6;
+    const th = 18;
+    const tw = Math.max(30, Math.ceil(txt.width + padX * 2));
+    const lx = p1.x;
+    const ly = Math.max(2, p1.y - th - 2);
+
+    g.beginFill(colorNum, Math.max(0, Math.min(1, Number(opts.labelBgAlpha ?? 0.85))));
+    g.drawRect(lx, ly, tw, th);
+    g.endFill();
+
+    txt.x = lx + padX;
+    txt.y = ly + 2;
+  }
+
   function init(videoEl, canvasEl) {
     video  = videoEl;
     canvas = canvasEl;
-    ctx    = canvas.getContext("2d");
     loadSettings();
 
     syncSize();
+    if (!initPixiRenderer()) {
+      ctx = canvas.getContext("2d");
+      pixiEnabled = false;
+    }
+
     window.addEventListener("resize", syncSize);
     video.addEventListener("loadedmetadata", syncSize);
 
     window.addEventListener("count:update", (e) => {
       latestDetections = e.detail?.detections ?? [];
+      const nextKey = buildFrameKey(latestDetections);
+      if (nextKey !== lastFrameKey) {
+        forceRender = true;
+        lastFrameKey = nextKey;
+      }
       if (!rafId) {
         rafId = requestAnimationFrame(renderFrame);
       }
@@ -98,69 +341,91 @@ const DetectionOverlay = (() => {
 
   function renderFrame() {
     rafId = null;
+    if (!forceRender) return;
     draw(latestDetections);
   }
 
   function syncSize() {
     if (!video || !canvas) return;
+    const prevW = canvas.width;
+    const prevH = canvas.height;
     canvas.width  = video.clientWidth;
     canvas.height = video.clientHeight;
+    if (pixiEnabled && pixiApp?.renderer) {
+      pixiApp.renderer.resize(Math.max(1, canvas.width), Math.max(1, canvas.height));
+    }
+    if (canvas.width !== prevW || canvas.height !== prevH) {
+      forceRender = true;
+    }
   }
 
   function draw(detections) {
-    if (!ctx || !canvas) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!detections.length) return;
+    if (!canvas) return;
+    if (pixiEnabled) beginPixiFrame();
+    else if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    else return;
+    if (!detections.length) {
+      if (pixiEnabled) endPixiFrame();
+      return;
+    }
 
     const bounds = getContentBounds(video);
-    const maxBoxes = Math.max(1, Number(settings.max_boxes) || 120);
-    const lineWidth = Math.max(1, Number(settings.line_width) || 1.5);
-    const style = String(settings.box_style || "solid");
-    const showLabels = settings.show_labels !== false;
-    const alpha = Math.max(0, Math.min(0.45, Number(settings.fill_alpha) || 0));
-
-    for (const det of detections.slice(0, maxBoxes)) {
-      if (settings.detect_zone_only && det?.in_detect_zone === false) continue;
-      const p1 = contentToPixel(det.x1, det.y1, bounds);
-      const p2 = contentToPixel(det.x2, det.y2, bounds);
-      const bw = p2.x - p1.x;
-      const bh = p2.y - p1.y;
-      const color = settings.colors?.[det.cls] ?? "#66BB6A";
-
-      // Skip degenerate boxes
-      if (bw < 4 || bh < 4) continue;
-
-      // Semi-transparent fill
-      ctx.fillStyle = hexToRgba(color, alpha);
-      ctx.fillRect(p1.x, p1.y, bw, bh);
-
-      // Border
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      if (style === "dashed") ctx.setLineDash([8, 4]);
-      else ctx.setLineDash([]);
-      if (style === "corner") drawCornerBox(p1.x, p1.y, bw, bh, color, lineWidth);
-      else ctx.strokeRect(p1.x, p1.y, bw, bh);
-
-      if (showLabels) {
-        const confPct = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
-        const label = `${String(det?.cls || "vehicle").toUpperCase()}${confPct}`;
-        ctx.setLineDash([]);
-        ctx.font = "11px Inter, sans-serif";
-        const padX = 6;
-        const padY = 4;
-        const tw = Math.max(30, Math.ceil(ctx.measureText(label).width + padX * 2));
-        const th = 18;
-        const lx = p1.x;
-        const ly = Math.max(2, p1.y - th - 2);
-        ctx.fillStyle = hexToRgba(color, 0.85);
-        ctx.fillRect(lx, ly, tw, th);
-        ctx.fillStyle = "#0d1118";
-        ctx.fillText(label, lx + padX, ly + th - padY);
-      }
-
-      // Keep overlay lightweight: box-only rendering reduces jitter on slower devices.
+    const laneMaxBoxes = Math.max(1, Math.min(15, Number(settings.max_boxes) || 10));
+    const laneDetections = [];
+    const outsideDetections = [];
+    for (const det of detections) {
+      if (det?.in_detect_zone === false) outsideDetections.push(det);
+      else laneDetections.push(det);
     }
+
+    for (const det of laneDetections.slice(0, laneMaxBoxes)) {
+      drawDetectionBox(det, bounds, {
+        style: settings.box_style,
+        lineWidth: settings.line_width,
+        alpha: settings.fill_alpha,
+        showLabels: settings.show_labels !== false,
+      });
+    }
+
+    if (settings.detect_zone_only || settings.outside_scan_enabled === false) {
+      if (pixiEnabled) endPixiFrame();
+      return;
+    }
+
+    const now = Date.now();
+    const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.45));
+    const outsideMax = Math.max(1, Math.min(35, Number(settings.outside_scan_max_boxes) || 25));
+    const holdMs = Math.max(100, Number(settings.outside_scan_hold_ms) || 600);
+    const fresh = outsideDetections
+      .filter((d) => Number(d?.conf || 0) >= minConf)
+      .sort((a, b) => Number(b?.conf || 0) - Number(a?.conf || 0))
+      .slice(0, outsideMax);
+
+    for (const det of fresh) {
+      outsideGhosts.set(buildGhostKey(det), { det, exp: now + holdMs });
+    }
+
+    for (const [k, v] of outsideGhosts.entries()) {
+      if (!v || !v.det || Number(v.exp || 0) < now) outsideGhosts.delete(k);
+    }
+
+    const ghosts = Array.from(outsideGhosts.values())
+      .sort((a, b) => Number(b.det?.conf || 0) - Number(a.det?.conf || 0))
+      .slice(0, outsideMax);
+
+    for (const g of ghosts) {
+      drawDetectionBox(g.det, bounds, {
+        style: "dashed",
+        lineWidth: 1.25,
+        alpha: 0.035,
+        showLabels: true,
+        labelText: "SCAN",
+        labelBgAlpha: 0.25,
+        labelColor: "#D7E6F5",
+      });
+    }
+    if (pixiEnabled) endPixiFrame();
+    forceRender = false;
   }
 
   return { init };

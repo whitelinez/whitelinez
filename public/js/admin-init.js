@@ -9,6 +9,7 @@ let mlCaptureStats = { captureTotal: 0, uploadSuccessTotal: 0, uploadFailTotal: 
 let adminLiveWs = null;
 let adminLiveWsTimer = null;
 let adminLiveWsBackoffMs = 2000;
+let activeCameraId = null;
 const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
 const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
 const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v1";
@@ -32,6 +33,20 @@ const DETECTION_DEFAULT_SETTINGS = {
     hue: 0,
     blur: 0,
   },
+};
+const FEED_APPEARANCE_DAY_PRESET = {
+  brightness: 102,
+  contrast: 106,
+  saturate: 104,
+  hue: 0,
+  blur: 0,
+};
+const FEED_APPEARANCE_NIGHT_PRESET = {
+  brightness: 132,
+  contrast: 136,
+  saturate: 122,
+  hue: 0,
+  blur: 0.2,
 };
 
 // ── Guardrail constants ────────────────────────────────────────────────────────
@@ -172,6 +187,13 @@ function buildAdminVideoFilter(settings) {
   const blur = Math.max(0, Math.min(4, Number(a.blur) || 0));
   return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) hue-rotate(${hue}deg) blur(${blur.toFixed(1)}px)`;
 }
+function isNightWindowNow() {
+  const h = new Date().getHours();
+  return h >= 18 || h < 6;
+}
+function getAutoAppearancePreset() {
+  return isNightWindowNow() ? FEED_APPEARANCE_NIGHT_PRESET : FEED_APPEARANCE_DAY_PRESET;
+}
 function updateAppearanceLabels(settings) {
   const a = settings?.appearance || {};
   const setText = (id, value) => {
@@ -233,6 +255,77 @@ function readDetectionSettingsFromForm() {
       blur: Math.max(0, Math.min(4, Number(getVal("det-video-blur", "0")) || 0)),
     },
   };
+}
+function applyAppearancePresetToForm(preset) {
+  const setVal = (id, v) => { const n = document.getElementById(id); if (n) n.value = String(v); };
+  setVal("det-video-brightness", preset?.brightness ?? 100);
+  setVal("det-video-contrast", preset?.contrast ?? 100);
+  setVal("det-video-saturate", preset?.saturate ?? 100);
+  setVal("det-video-hue", preset?.hue ?? 0);
+  setVal("det-video-blur", preset?.blur ?? 0);
+  const s = readDetectionSettingsFromForm();
+  updateAppearanceLabels(s);
+  publishDetectionSettings(s);
+}
+function setFeedAppearanceMsg(msg, isError = false) {
+  const el = document.getElementById("feed-settings-msg");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? "var(--danger)" : "var(--green)";
+}
+async function loadCameraFeedAppearance() {
+  if (!activeCameraId) return;
+  try {
+    const { data, error } = await window.sb
+      .from("cameras")
+      .select("feed_appearance")
+      .eq("id", activeCameraId)
+      .maybeSingle();
+    if (error) throw error;
+    const cfg = (data?.feed_appearance && typeof data.feed_appearance === "object")
+      ? data.feed_appearance
+      : {};
+    if (cfg.appearance && typeof cfg.appearance === "object") {
+      applyAppearancePresetToForm(cfg.appearance);
+    }
+    const pushEl = document.getElementById("feed-push-public");
+    if (pushEl) pushEl.value = cfg.push_public === false ? "0" : "1";
+    const autoEl = document.getElementById("feed-auto-preset");
+    if (autoEl) autoEl.value = cfg.auto_day_night ? "1" : "0";
+    if (cfg.auto_day_night) {
+      applyAppearancePresetToForm(getAutoAppearancePreset());
+    }
+  } catch (e) {
+    console.warn("[admin-init] Could not load feed appearance:", e);
+  }
+}
+async function pushFeedAppearanceToPublic() {
+  if (!activeCameraId) {
+    setFeedAppearanceMsg("No active camera found.", true);
+    return;
+  }
+  try {
+    const autoEnabled = document.getElementById("feed-auto-preset")?.value === "1";
+    if (autoEnabled) {
+      applyAppearancePresetToForm(getAutoAppearancePreset());
+    }
+    const settings = readDetectionSettingsFromForm();
+    const pushPublic = document.getElementById("feed-push-public")?.value !== "0";
+    const payload = {
+      appearance: settings.appearance,
+      push_public: pushPublic,
+      auto_day_night: autoEnabled,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await window.sb
+      .from("cameras")
+      .update({ feed_appearance: payload })
+      .eq("id", activeCameraId);
+    if (error) throw error;
+    setFeedAppearanceMsg("Appearance pushed to public view.");
+  } catch (e) {
+    setFeedAppearanceMsg(e.message || "Failed to push appearance", true);
+  }
 }
 function saveDetectionSettings() {
   const settings = readDetectionSettingsFromForm();
@@ -322,6 +415,19 @@ function initDetectionStudio() {
 
   document.getElementById("btn-det-save")?.addEventListener("click", saveDetectionSettings);
   document.getElementById("btn-det-reset")?.addEventListener("click", resetDetectionSettings);
+  document.getElementById("btn-video-push-public")?.addEventListener("click", pushFeedAppearanceToPublic);
+  document.getElementById("btn-feed-preset-day")?.addEventListener("click", () => {
+    applyAppearancePresetToForm(FEED_APPEARANCE_DAY_PRESET);
+    setFeedAppearanceMsg("Day preset applied.");
+  });
+  document.getElementById("btn-feed-preset-night")?.addEventListener("click", () => {
+    applyAppearancePresetToForm(FEED_APPEARANCE_NIGHT_PRESET);
+    setFeedAppearanceMsg("Night preset applied.");
+  });
+  document.getElementById("btn-feed-apply-auto")?.addEventListener("click", () => {
+    applyAppearancePresetToForm(getAutoAppearancePreset());
+    setFeedAppearanceMsg(`Auto preset applied (${isNightWindowNow() ? "night" : "day"}).`);
+  });
 
   [
     "det-box-style", "det-line-width", "det-fill-alpha", "det-max-boxes",
@@ -1675,11 +1781,13 @@ async function init() {
 
   const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
   const cameraId = cameras?.[0]?.id;
+  activeCameraId = cameraId || null;
 
   const video  = document.getElementById("admin-video");
   const canvas = document.getElementById("line-canvas");
   await Stream.init(video);
   AdminLine.init(video, canvas, cameraId);
+  await loadCameraFeedAppearance();
 
   // Load stats + recent rounds
   loadBaseline();

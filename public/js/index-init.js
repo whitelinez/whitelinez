@@ -1,4 +1,56 @@
 (async () => {
+  const PUBLIC_DAY_PRESET = {
+    brightness: 102,
+    contrast: 106,
+    saturate: 104,
+    hue: 0,
+    blur: 0,
+  };
+  const PUBLIC_NIGHT_PRESET = {
+    brightness: 132,
+    contrast: 136,
+    saturate: 122,
+    hue: 0,
+    blur: 0.2,
+  };
+
+  function isNightWindowNow() {
+    const h = new Date().getHours();
+    return h >= 18 || h < 6;
+  }
+  function buildVideoFilter(a) {
+    const brightness = Math.max(50, Math.min(180, Number(a?.brightness) || 100));
+    const contrast = Math.max(50, Math.min(200, Number(a?.contrast) || 100));
+    const saturate = Math.max(0, Math.min(220, Number(a?.saturate) || 100));
+    const hue = Math.max(0, Math.min(360, Number(a?.hue) || 0));
+    const blur = Math.max(0, Math.min(4, Number(a?.blur) || 0));
+    return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) hue-rotate(${hue}deg) blur(${blur.toFixed(1)}px)`;
+  }
+  async function applyPublicFeedAppearance(videoEl) {
+    if (!videoEl || !window.sb) return;
+    try {
+      const { data: cam } = await window.sb
+        .from("cameras")
+        .select("feed_appearance")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      const cfg = cam?.feed_appearance && typeof cam.feed_appearance === "object"
+        ? cam.feed_appearance
+        : null;
+      if (!cfg || cfg.push_public === false) {
+        videoEl.style.filter = "";
+        return;
+      }
+      const appearance = cfg.auto_day_night
+        ? (isNightWindowNow() ? PUBLIC_NIGHT_PRESET : PUBLIC_DAY_PRESET)
+        : (cfg.appearance || {});
+      videoEl.style.filter = buildVideoFilter(appearance);
+    } catch {
+      // Keep public view resilient if appearance config fetch fails.
+    }
+  }
+
   const session = await Auth.getSession();
   const currentUserId = session?.user?.id || "";
 
@@ -97,6 +149,8 @@
   // Stream
   const video = document.getElementById("live-video");
   await Stream.init(video);
+  await applyPublicFeedAppearance(video);
+  setInterval(() => applyPublicFeedAppearance(video), 15000);
   FpsOverlay.init(video, document.getElementById("fps-overlay"));
 
   // Canvas overlays

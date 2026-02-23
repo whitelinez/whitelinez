@@ -85,9 +85,61 @@
                   <input id="count-class-min-confidence" type="text" placeholder="car:0.35, truck:0.40" />
                 </div>
               </div>
-              <div class="count-tuning-actions">
+            <div class="count-tuning-actions">
                 <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
                 <span id="count-settings-status" class="line-status"></span>
+              </div>
+            </div>
+
+            <div class="count-tuning-box">
+              <h4>Feed Appearance</h4>
+              <p class="admin-hint">Preview updates instantly here. Push to public view when ready.</p>
+              <div class="field-row">
+                <div class="field" style="max-width:220px">
+                  <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
+                  <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
+                </div>
+                <div class="field" style="max-width:220px">
+                  <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
+                  <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
+                </div>
+                <div class="field" style="max-width:220px">
+                  <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
+                  <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field" style="max-width:220px">
+                  <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
+                  <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
+                </div>
+                <div class="field" style="max-width:220px">
+                  <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
+                  <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field" style="max-width:210px">
+                  <label for="feed-push-public">Push To Public View</label>
+                  <select id="feed-push-public">
+                    <option value="1">Enabled</option>
+                    <option value="0">Disabled</option>
+                  </select>
+                </div>
+                <div class="field" style="max-width:210px">
+                  <label for="feed-auto-preset">Auto Day/Night Preset</label>
+                  <select id="feed-auto-preset">
+                    <option value="0">Disabled</option>
+                    <option value="1">Enabled</option>
+                  </select>
+                </div>
+              </div>
+              <div class="count-tuning-actions">
+                <button id="btn-feed-preset-day" class="btn-secondary" type="button">Apply Day Preset</button>
+                <button id="btn-feed-preset-night" class="btn-secondary" type="button">Apply Night Preset</button>
+                <button id="btn-feed-apply-auto" class="btn-secondary" type="button">Apply Auto Preset Now</button>
+                <button id="btn-video-push-public" class="btn-primary" type="button">Push Appearance To Public</button>
+                <span id="feed-settings-msg" class="line-status"></span>
               </div>
             </div>
           </section>
@@ -513,33 +565,6 @@
                   <option value="0">No (Full Feed)</option>
                   <option value="1">Yes (Visual Filter)</option>
                 </select>
-              </div>
-            </div>
-
-            <h3 style="margin-top:12px;">Feed Appearance (Admin View Only)</h3>
-            <div class="field-row">
-              <div class="field" style="max-width:220px">
-                <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
-                <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
-              </div>
-              <div class="field" style="max-width:220px">
-                <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
-                <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
-              </div>
-              <div class="field" style="max-width:220px">
-                <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
-                <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
-              </div>
-            </div>
-
-            <div class="field-row">
-              <div class="field" style="max-width:220px">
-                <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
-                <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
-              </div>
-              <div class="field" style="max-width:220px">
-                <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
-                <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
               </div>
             </div>
 

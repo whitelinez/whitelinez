@@ -46,7 +46,7 @@ const Markets = (() => {
       const { data: round, error } = await window.sb
         .from("bet_rounds")
         .select("*, markets(*)")
-        .in("status", ["open", "upcoming"])
+        .in("status", ["open", "locked", "upcoming"])
         .order("opens_at", { ascending: true })
         .limit(1)
         .maybeSingle();

@@ -406,7 +406,8 @@ async function loadDetectionStatus() {
     if (healthResp && healthResp.ok) {
       const health = await healthResp.json();
       setText("det-runtime-ai", health.ai_task_running ? "Running" : "Stopped");
-      setText("det-runtime-stream", health.stream_url ? "Connected" : "Missing stream URL");
+      const streamConfigured = Boolean(health.stream_configured ?? health.stream_url);
+      setText("det-runtime-stream", streamConfigured ? "Connected" : "Missing stream URL");
       setText("det-runtime-profile", "Waiting for live runtime profile...");
       setText("det-runtime-reason", "Waiting for live runtime reason...");
     } else {
@@ -417,7 +418,7 @@ async function loadDetectionStatus() {
     }
 
     if (adminSession?.access_token) {
-      const nightRes = await fetch("/api/admin/ml-night-profile", {
+      const nightRes = await fetch("/api/admin/ml-runtime-profile?scope=night", {
         headers: { Authorization: `Bearer ${adminSession.access_token}` },
       });
       if (nightRes.ok) {
@@ -664,6 +665,22 @@ function fmtAgo(iso) {
   return `${day}d ago`;
 }
 
+function fmtInOrAgo(iso) {
+  if (!iso) return "-";
+  const targetMs = new Date(iso).getTime();
+  if (!Number.isFinite(targetMs)) return "-";
+  const diffSec = Math.floor((targetMs - Date.now()) / 1000);
+  if (Math.abs(diffSec) < 5) return "just now";
+  const absSec = Math.abs(diffSec);
+  if (absSec < 60) return diffSec > 0 ? `in ${absSec}s` : `${absSec}s ago`;
+  const absMin = Math.floor(absSec / 60);
+  if (absMin < 60) return diffSec > 0 ? `in ${absMin}m` : `${absMin}m ago`;
+  const absHr = Math.floor(absMin / 60);
+  if (absHr < 24) return diffSec > 0 ? `in ${absHr}h` : `${absHr}h ago`;
+  const absDay = Math.floor(absHr / 24);
+  return diffSec > 0 ? `in ${absDay}d` : `${absDay}d ago`;
+}
+
 function escHtml(input) {
   return String(input ?? "")
     .replace(/&/g, "&amp;")
@@ -876,7 +893,7 @@ function renderHealthOverview(health, errMsg = "") {
       </div>
       <div class="health-item">
         <p class="health-item-title">Stream URL</p>
-        <p class="health-item-value">${dot(Boolean(health.stream_url))}</p>
+        <p class="health-item-value">${dot(Boolean(health.stream_configured ?? health.stream_url))}</p>
       </div>
       <div class="health-item">
         <p class="health-item-title">Public WS / User WS</p>
@@ -1357,6 +1374,65 @@ function formatBetDescriptor(b) {
   return `${market.label || "Market bet"} (${oddsText})`;
 }
 
+function formatBetDebugInfo(b) {
+  const baseline = Number(b.baseline_count || 0);
+  const actual = b.actual_count == null ? null : Number(b.actual_count || 0);
+  const ws = b.window_start ? new Date(b.window_start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : null;
+  const dur = Number(b.window_duration_sec || 0);
+  const windowLabel = ws && dur > 0 ? `${ws} + ${dur}s` : null;
+  const parts = [`baseline ${baseline.toLocaleString()}`];
+  if (windowLabel) parts.push(`window ${windowLabel}`);
+  if (actual != null) parts.push(`actual ${actual.toLocaleString()}`);
+  return parts.join(" • ");
+}
+
+function formatValidationReasonLabel(reason) {
+  const text = String(reason || "").trim();
+  if (!text) return "Unknown";
+  return text.length > 88 ? `${text.slice(0, 88)}...` : text;
+}
+
+async function loadBetValidationStatus() {
+  const box = document.getElementById("bet-validation-status");
+  if (!box || !adminSession?.access_token) return;
+
+  try {
+    const res = await fetch("/api/admin/bets?mode=validation-status", {
+      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load validation status");
+
+    const accepted = Number(payload?.accepted_total || 0);
+    const rejected = Number(payload?.rejected_total || 0);
+    const total = Number(payload?.total_evaluated || accepted + rejected);
+    const rejectRate = total > 0 ? (rejected / total) * 100 : 0;
+    const lastEvent = payload?.last_event_at ? fmtAgo(payload.last_event_at) : "no events yet";
+    const reasonsObj = (payload?.reasons && typeof payload.reasons === "object") ? payload.reasons : {};
+    const reasonRows = Object.entries(reasonsObj)
+      .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+      .slice(0, 6);
+
+    const reasonsHtml = reasonRows.length
+      ? reasonRows.map(([reason, count]) => (
+          `<div class="round-row-meta"><span class="muted">${formatValidationReasonLabel(reason)}</span> - ${Number(count || 0).toLocaleString()}</div>`
+        )).join("")
+      : `<div class="round-row-meta"><span class="muted">No rejection reasons recorded yet.</span></div>`;
+
+    box.innerHTML = `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Accepted ${accepted.toLocaleString()} • Rejected ${rejected.toLocaleString()} • Checked ${total.toLocaleString()}</span>
+          <span class="round-row-meta">Reject rate ${rejectRate.toFixed(1)}% • Last event ${lastEvent}</span>
+          ${reasonsHtml}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Validation status unavailable.</p>`;
+  }
+}
+
 async function loadRecentBets() {
   const box = document.getElementById("recent-bets");
   if (!box || !adminSession?.access_token) return;
@@ -1383,12 +1459,13 @@ async function loadRecentBets() {
         <div class="round-row">
           <div class="round-row-info">
             <span class="round-row-id">${userLabel} • ${placed}</span>
-            <span class="round-row-meta">
-              <span class="round-badge round-${b.status}">${String(b.status || "pending").toUpperCase()}</span>
-              ${formatBetDescriptor(b)} • Stake ${Number(b.amount || 0).toLocaleString()} • Payout ${Number(b.potential_payout || 0).toLocaleString()}
-            </span>
+              <span class="round-row-meta">
+                <span class="round-badge round-${b.status}">${String(b.status || "pending").toUpperCase()}</span>
+                ${formatBetDescriptor(b)} • Stake ${Number(b.amount || 0).toLocaleString()} • Payout ${Number(b.potential_payout || 0).toLocaleString()}
+                <br><span class="muted" style="font-size:0.78rem;">${formatBetDebugInfo(b)}</span>
+              </span>
+            </div>
           </div>
-        </div>
       `;
     }).join("");
   } catch (e) {
@@ -1562,6 +1639,7 @@ function buildMarkets(marketType, vehicleClass, threshold) {
 
 async function loadRoundSessions() {
   const box = document.getElementById("session-list");
+  const statusEl = document.getElementById("session-status");
   if (!box || !adminSession?.access_token) return;
   try {
     const res = await fetch("/api/admin/rounds?mode=sessions&limit=20", {
@@ -1572,11 +1650,12 @@ async function loadRoundSessions() {
     const sessions = payload?.sessions || [];
     if (!sessions.length) {
       box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No active sessions.</p>`;
+      if (statusEl) statusEl.textContent = "";
       return;
     }
     box.innerHTML = sessions.map((s) => {
       const status = String(s.status || "active");
-      const next = s.next_round_at ? `${new Date(s.next_round_at).toLocaleString()} (${fmtAgo(s.next_round_at)})` : "n/a";
+      const next = s.next_round_at ? `${new Date(s.next_round_at).toLocaleString()} (${fmtInOrAgo(s.next_round_at)})` : "n/a";
       const th = s.threshold != null ? `T${s.threshold}` : "no-threshold";
       const vc = s.vehicle_class ? ` ${s.vehicle_class}` : "";
       return `
@@ -1592,18 +1671,21 @@ async function loadRoundSessions() {
     box.querySelectorAll(".btn-stop-session").forEach((btn) => {
       btn.addEventListener("click", () => stopRoundSession(btn.dataset.id, btn));
     });
-  } catch {
-    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Sessions unavailable.</p>`;
+    if (statusEl) statusEl.textContent = "";
+  } catch (e) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Sessions unavailable: ${escHtml(e?.message || "unknown error")}</p>`;
+    if (statusEl) statusEl.textContent = e?.message || "Could not load sessions.";
   }
 }
 
 async function stopRoundSession(sessionId, btn) {
   if (!adminSession?.access_token || !sessionId) return;
+  const statusEl = document.getElementById("session-status");
   const old = btn.textContent;
   btn.disabled = true;
   btn.textContent = "Stopping...";
   try {
-    await fetch(`/api/admin/rounds?mode=session-stop&id=${encodeURIComponent(sessionId)}`, {
+    const res = await fetch(`/api/admin/rounds?mode=session-stop&id=${encodeURIComponent(sessionId)}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -1611,8 +1693,12 @@ async function stopRoundSession(sessionId, btn) {
       },
       body: JSON.stringify({}),
     });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to stop session");
+    if (statusEl) statusEl.textContent = "Session stopped.";
     await loadRoundSessions();
-  } catch {
+  } catch (e) {
+    if (statusEl) statusEl.textContent = e?.message || "Could not stop session.";
     btn.disabled = false;
     btn.textContent = old;
   }
@@ -1632,6 +1718,18 @@ async function handleStartSession() {
   const intervalMin = parseInt(document.getElementById("session-interval")?.value || "2", 10);
   const maxRoundsRaw = parseInt(document.getElementById("session-max-rounds")?.value || "", 10);
   const maxRounds = Number.isFinite(maxRoundsRaw) ? maxRoundsRaw : null;
+  if (!Number.isFinite(duration) || duration < 5) {
+    if (statusEl) statusEl.textContent = "Round duration must be at least 5 minutes.";
+    return;
+  }
+  if (!Number.isFinite(cutoff) || cutoff < 0 || cutoff >= duration) {
+    if (statusEl) statusEl.textContent = "Bet cutoff must be less than round duration.";
+    return;
+  }
+  if (!Number.isFinite(sessionDuration) || sessionDuration < duration) {
+    if (statusEl) statusEl.textContent = "Session duration must be >= round duration.";
+    return;
+  }
 
   const cameraId = await resolveActiveCameraId();
   if (!cameraId) {
@@ -1878,6 +1976,7 @@ async function init() {
   loadMlProgress();
   loadMlUsage();
   loadMlCaptureStatus();
+  loadBetValidationStatus();
   loadRecentRounds();
   loadRecentBets();
   loadRoundSessions();
@@ -1886,6 +1985,7 @@ async function init() {
   setInterval(loadMlProgress, 15_000);
   setInterval(loadMlUsage, 20_000);
   setInterval(loadMlCaptureStatus, 8_000);
+  setInterval(loadBetValidationStatus, 8_000);
   setInterval(loadRecentBets, 15_000);
   setInterval(loadRoundSessions, 15_000);
   setInterval(loadRegisteredUsers, 30_000);

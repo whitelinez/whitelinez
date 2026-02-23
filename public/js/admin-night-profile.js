@@ -265,7 +265,7 @@
     if (!jwt) return;
     try {
       setMsg("Loading...", true);
-      const res = await fetch("/api/admin/ml-night-profile", {
+      const res = await fetch("/api/admin/ml-runtime-profile?scope=night", {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       const payload = await res.json().catch(() => ({}));
@@ -295,7 +295,7 @@
         iou: Number(el("night-iou")?.value || 0.45),
         max_det: Number(el("night-max-det")?.value || 120),
       };
-      const res = await fetch("/api/admin/ml-night-profile", {
+      const res = await fetch("/api/admin/ml-runtime-profile?scope=night", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

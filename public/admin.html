@@ -489,6 +489,7 @@
                 <button id="btn-runtime-force-auto" class="btn-secondary" type="button">Force Auto</button>
                 <span id="runtime-profile-msg" class="muted"></span>
               </div>
+              <p id="runtime-profile-error" class="auth-error" role="alert" style="display:none; margin-top:8px;"></p>
             </div>
           </div>
 
@@ -635,6 +636,12 @@
         <div class="panel-head">
           <h2>Recent Bets</h2>
           <p>Latest bettor activity and stake details.</p>
+        </div>
+        <div class="card-box slim" style="margin-bottom:12px;">
+          <h3>Bet Validation Status</h3>
+          <div id="bet-validation-status" class="rounds-list data-list">
+            <p class="loading">Loading validation metrics...</p>
+          </div>
         </div>
         <div id="recent-bets" class="rounds-list data-list tall"><p class="loading">Loading...</p></div>
       </section>

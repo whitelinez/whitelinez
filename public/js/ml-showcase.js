@@ -4,6 +4,13 @@
  */
 
 const MlShowcase = (() => {
+  const escHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
   const state = {
     startedAt: Date.now(),
     frames: 0,
@@ -201,7 +208,8 @@ const MlShowcase = (() => {
     streamEl.innerHTML = items.map((r) => {
       const det = Number(r.detections_count || 0);
       const c = Number(r.avg_confidence || 0);
-      const model = r.model_name || "live";
+      const rawModel = String(r.model_name || "live");
+      const model = escHtml(rawModel);
       const b = r.breakdown || {};
       const detail = [Number(b.car || 0), Number(b.truck || 0), Number(b.bus || 0), Number(b.motorcycle || 0)]
         .some((v) => v > 0)
@@ -209,8 +217,8 @@ const MlShowcase = (() => {
         : "";
       return `
         <div class="mls-item">
-          <span class="mls-item-main">${model} | ${det} detections | ${Number.isFinite(c) && c > 0 ? `${(c * 100).toFixed(1)}% conf` : "conf n/a"}${detail}${model === "live" ? ` | ${liveFrameRate.toFixed(1)} frames/min` : ""}</span>
-          <span class="mls-item-meta">${ago(r.captured_at)}</span>
+          <span class="mls-item-main">${model} | ${det} detections | ${Number.isFinite(c) && c > 0 ? `${(c * 100).toFixed(1)}% conf` : "conf n/a"}${detail}${rawModel === "live" ? ` | ${liveFrameRate.toFixed(1)} frames/min` : ""}</span>
+          <span class="mls-item-meta">${escHtml(ago(r.captured_at))}</span>
         </div>
       `;
     }).join("");

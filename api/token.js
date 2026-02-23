@@ -1,10 +1,10 @@
 /**
  * GET /api/token
  * Issues a short-lived HMAC WebSocket token and the WSS URL.
- * HLS stream URL and Railway backend URL are NEVER sent to the client.
+ * Railway backend URL is never sent directly as an HTTP endpoint.
  * The Railway WSS URL is returned here — it's safe because:
  *   - The WS endpoint itself validates the HMAC token
- *   - The token is single-use scoped to a 5-minute window
+ *   - The token is time-limited to a 5-minute window
  */
 import crypto from "crypto";
 
@@ -35,13 +35,10 @@ export default function handler(req, res) {
 
   const token = generateHmacToken(secret);
   const wssUrl = railwayUrl.replace(/^https?:\/\//, "wss://") + "/ws/live";
-  const streamUrl = process.env.HLS_STREAM_URL || "";
-
   res.setHeader("Cache-Control", "no-store");
   return res.status(200).json({
     token,
     wss_url: wssUrl,
-    stream_url: streamUrl,
     expires_in: TOKEN_TTL_SECONDS,
   });
 }

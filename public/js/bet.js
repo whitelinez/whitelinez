@@ -86,6 +86,17 @@ const Bet = (() => {
       if (errorEl) errorEl.textContent = "No active round";
       return;
     }
+    if (String(round.status || "").toLowerCase() !== "open") {
+      if (errorEl) errorEl.textContent = `Round is ${String(round.status || "closed")}. Betting is closed.`;
+      return;
+    }
+    if (round.closes_at) {
+      const closesAt = new Date(round.closes_at).getTime();
+      if (Number.isFinite(closesAt) && Date.now() >= closesAt) {
+        if (errorEl) errorEl.textContent = "Betting window has closed.";
+        return;
+      }
+    }
 
     const jwt = await Auth.getJwt();
     if (!jwt) { window.location.href = "/login.html"; return; }

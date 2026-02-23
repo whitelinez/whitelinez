@@ -18,6 +18,19 @@
     node.style.color = ok ? "var(--green)" : "var(--red)";
   }
 
+  function setErrorBanner(text = "") {
+    const node = el("runtime-profile-error");
+    if (!node) return;
+    const msg = String(text || "").trim();
+    if (!msg) {
+      node.style.display = "none";
+      node.textContent = "";
+      return;
+    }
+    node.textContent = msg;
+    node.style.display = "block";
+  }
+
   function toLocalInput(iso) {
     if (!iso) return "";
     const dt = new Date(iso);
@@ -124,6 +137,7 @@
     try {
       const state = await fetchRuntimeState();
       if (!state) return;
+      setErrorBanner("");
       writeForm(state);
       updateRuntimeStatusChip(
         String(state.mode || "auto"),
@@ -131,7 +145,9 @@
         lastLiveReason || (String(state.mode || "auto") === "manual" ? "manual_override" : "auto"),
       );
     } catch (e) {
-      setMsg(e?.message || "Runtime profile unavailable", false);
+      const msg = e?.message || "Runtime profile unavailable";
+      setMsg(msg, false);
+      setErrorBanner(`Runtime profile load failed: ${msg}`);
     }
   }
 
@@ -147,10 +163,13 @@
         stream_grab_latest: form.stream_grab_latest,
       };
       await saveRuntimeState(payload);
+      setErrorBanner("");
       setMsg("Runtime profile controls saved.", true);
       await refresh();
     } catch (e) {
-      setMsg(e?.message || "Failed to save runtime profile", false);
+      const msg = e?.message || "Failed to save runtime profile";
+      setMsg(msg, false);
+      setErrorBanner(`Runtime profile save failed: ${msg}`);
     }
   }
 
@@ -161,10 +180,13 @@
         manual_profile: "",
         manual_until: null,
       });
+      setErrorBanner("");
       setMsg("Auto mode restored.", true);
       await refresh();
     } catch (e) {
-      setMsg(e?.message || "Failed to force auto mode", false);
+      const msg = e?.message || "Failed to force auto mode";
+      setMsg(msg, false);
+      setErrorBanner(`Force auto failed: ${msg}`);
     }
   }
 
@@ -206,4 +228,3 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-

@@ -12,6 +12,20 @@ let adminLiveWsTimer = null;
 let adminLiveWsBackoffMs = 2000;
 let activeCameraId = null;
 
+async function getAdminJwt() {
+  const jwt = await Auth.getJwt();
+  if (jwt && adminSession) {
+    adminSession.access_token = jwt;
+  }
+  return jwt || adminSession || null;
+}
+
+async function getAdminHeaders(extra = {}) {
+  const jwt = await getAdminJwt();
+  if (!jwt) throw new Error("Admin session expired");
+  return { ...extra, Authorization: `Bearer ${jwt}` };
+}
+
 async function resolveActiveCameraId() {
   try {
     const { data, error } = await window.sb
@@ -417,9 +431,9 @@ async function loadDetectionStatus() {
       setText("det-runtime-reason", "Unavailable");
     }
 
-    if (adminSession?.access_token) {
+    if (adminSession) {
       const nightRes = await fetch("/api/admin/ml-runtime-profile?scope=night", {
-        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+        headers: await getAdminHeaders(),
       });
       if (nightRes.ok) {
         const night = await nightRes.json();
@@ -1004,15 +1018,15 @@ async function loadMlProgress() {
 
 async function loadMlUsage() {
   const usageBox = document.getElementById("ml-usage");
-  if (!usageBox || !adminSession?.access_token) return;
+  if (!usageBox || !adminSession) return;
 
   try {
     const [jobsRes, modelsRes] = await Promise.all([
       fetch("/api/admin/ml-jobs?limit=5", {
-        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+        headers: await getAdminHeaders(),
       }),
       fetch("/api/admin/ml-models?limit=5", {
-        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+        headers: await getAdminHeaders(),
       }),
     ]);
 
@@ -1053,11 +1067,11 @@ async function loadMlUsage() {
 
 async function loadMlCaptureStatus() {
   const box = document.getElementById("ml-capture-log");
-  if (!box || !adminSession?.access_token) return;
+  if (!box || !adminSession) return;
 
   try {
     const res = await fetch("/api/admin/ml-capture-status?limit=30", {
-      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      headers: await getAdminHeaders(),
     });
     const payload = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load capture logs");
@@ -1169,7 +1183,7 @@ async function copyLatestCaptureError() {
 async function toggleCapturePause() {
   const btn = document.getElementById("btn-toggle-capture-pause");
   const msgEl = document.getElementById("ml-capture-pause-msg");
-  if (!btn || !adminSession?.access_token) return;
+  if (!btn || !adminSession) return;
 
   const nextPaused = !capturePaused;
   btn.disabled = true;
@@ -1181,10 +1195,7 @@ async function toggleCapturePause() {
   try {
     const res = await fetch("/api/admin/ml-capture-status", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ paused: nextPaused }),
     });
     const payload = await res.json().catch(() => ({}));
@@ -1212,7 +1223,7 @@ async function handleMlRetrain() {
   const epochsEl = document.getElementById("ml-epochs");
   const imgszEl = document.getElementById("ml-imgsz");
   const batchEl = document.getElementById("ml-batch");
-  if (!btn || !msg || !adminSession?.access_token) return;
+  if (!btn || !msg || !adminSession) return;
 
   const dataset_yaml_url = String(datasetEl?.value || "").trim();
   const epochs = Number(epochsEl?.value || 20);
@@ -1232,10 +1243,7 @@ async function handleMlRetrain() {
   try {
     const res = await fetch("/api/admin/ml-jobs", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         dataset_yaml_url,
         epochs: Number.isFinite(epochs) ? epochs : 20,
@@ -1253,7 +1261,7 @@ async function handleMlRetrain() {
   } catch (e) {
     try {
       const check = await fetch("/api/admin/ml-jobs?limit=1", {
-        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+        headers: await getAdminHeaders(),
       });
       const checkPayload = await check.json().catch(() => ({}));
       const latest = (checkPayload?.jobs || [])[0];
@@ -1279,7 +1287,7 @@ async function handleMlTrainCaptures() {
   const epochsEl = document.getElementById("ml-epochs");
   const imgszEl = document.getElementById("ml-imgsz");
   const batchEl = document.getElementById("ml-batch");
-  if (!btn || !msg || !adminSession?.access_token) return;
+  if (!btn || !msg || !adminSession) return;
 
   const epochs = Number(epochsEl?.value || 20);
   const imgsz = Number(imgszEl?.value || 640);
@@ -1292,10 +1300,7 @@ async function handleMlTrainCaptures() {
   try {
     const res = await fetch("/api/admin/ml-jobs?action=train-captures", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         epochs: Number.isFinite(epochs) ? epochs : 20,
         imgsz: Number.isFinite(imgsz) ? imgsz : 640,
@@ -1394,11 +1399,11 @@ function formatValidationReasonLabel(reason) {
 
 async function loadBetValidationStatus() {
   const box = document.getElementById("bet-validation-status");
-  if (!box || !adminSession?.access_token) return;
+  if (!box || !adminSession) return;
 
   try {
     const res = await fetch("/api/admin/bets?mode=validation-status", {
-      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      headers: await getAdminHeaders(),
     });
     const payload = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load validation status");
@@ -1435,11 +1440,11 @@ async function loadBetValidationStatus() {
 
 async function loadRecentBets() {
   const box = document.getElementById("recent-bets");
-  if (!box || !adminSession?.access_token) return;
+  if (!box || !adminSession) return;
 
   try {
     const res = await fetch("/api/admin/bets?limit=200", {
-      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      headers: await getAdminHeaders(),
     });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load bets");
@@ -1480,10 +1485,7 @@ async function resolveRound(roundId, btn) {
   try {
     const res = await fetch(`/api/admin/rounds`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ round_id: roundId }),
     });
     if (res.ok) {
@@ -1640,10 +1642,10 @@ function buildMarkets(marketType, vehicleClass, threshold) {
 async function loadRoundSessions() {
   const box = document.getElementById("session-list");
   const statusEl = document.getElementById("session-status");
-  if (!box || !adminSession?.access_token) return;
+  if (!box || !adminSession) return;
   try {
     const res = await fetch("/api/admin/rounds?mode=sessions&limit=20", {
-      headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      headers: await getAdminHeaders(),
     });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load sessions");
@@ -1679,7 +1681,7 @@ async function loadRoundSessions() {
 }
 
 async function stopRoundSession(sessionId, btn) {
-  if (!adminSession?.access_token || !sessionId) return;
+  if (!adminSession || !sessionId) return;
   const statusEl = document.getElementById("session-status");
   const old = btn.textContent;
   btn.disabled = true;
@@ -1687,10 +1689,7 @@ async function stopRoundSession(sessionId, btn) {
   try {
     const res = await fetch(`/api/admin/rounds?mode=session-stop&id=${encodeURIComponent(sessionId)}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({}),
     });
     const payload = await res.json().catch(() => ({}));
@@ -1707,7 +1706,7 @@ async function stopRoundSession(sessionId, btn) {
 async function handleStartSession() {
   const statusEl = document.getElementById("session-status");
   if (statusEl) statusEl.textContent = "";
-  if (!adminSession?.access_token) return;
+  if (!adminSession) return;
 
   const marketType = document.getElementById("market-type")?.value;
   const vehicleClass = document.getElementById("vehicle-class")?.value;
@@ -1752,10 +1751,7 @@ async function handleStartSession() {
   try {
     const res = await fetch("/api/admin/rounds?mode=sessions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminSession.access_token}`,
-      },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(body),
     });
     const payload = await res.json();
@@ -1777,7 +1773,7 @@ async function handleSubmit(e) {
   successEl.textContent = "";
   btn.disabled = true;
 
-  const jwt = adminSession?.access_token;
+  const jwt = adminSession;
   if (!jwt) return;
 
   const marketType   = document.getElementById("market-type").value;
@@ -1845,7 +1841,7 @@ async function handleSetAdmin() {
   const msgEl   = document.getElementById("user-mgmt-msg");
   const email   = emailEl?.value?.trim();
   if (!email) return;
-  if (!adminSession?.access_token) return;
+  if (!adminSession) return;
   msgEl.textContent = "Setting...";
   try {
     // Use Supabase admin RPC or update user_metadata
@@ -1888,10 +1884,12 @@ async function fetchAllAdminUsers(jwt) {
 
 async function loadRegisteredUsers() {
   const box = document.getElementById("registered-users");
-  if (!box || !adminSession?.access_token) return;
+  if (!box || !adminSession) return;
 
   try {
-    const users = await fetchAllAdminUsers(adminSession.access_token);
+    const jwt = await getAdminJwt();
+    if (!jwt) throw new Error("Admin session expired");
+    const users = await fetchAllAdminUsers(jwt);
     if (!users.length) {
       box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No registered users found.</p>`;
       return;
@@ -2221,11 +2219,11 @@ init();
 
   async function loadMlDiagnosticsPanel() {
     const box = document.getElementById("ml-diagnostics");
-    if (!box || !adminSession?.access_token) return;
+    if (!box || !adminSession) return;
 
     try {
       const res = await fetch("/api/admin/ml-jobs?action=diagnostics", {
-        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+        headers: await getAdminHeaders(),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load diagnostics");
@@ -2278,7 +2276,7 @@ init();
     const epochsEl = document.getElementById("ml-epochs");
     const imgszEl = document.getElementById("ml-imgsz");
     const batchEl = document.getElementById("ml-batch");
-    if (!btn || !msg || !adminSession?.access_token) return;
+    if (!btn || !msg || !adminSession) return;
 
     const dataset_yaml_url = String(datasetEl?.value || "").trim();
     const epochs = Number(epochsEl?.value || 20);
@@ -2292,10 +2290,7 @@ init();
     try {
       const res = await fetch("/api/admin/ml-jobs?action=one-click", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminSession.access_token}`,
-        },
+        headers: await getAdminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           dataset_yaml_url,
           epochs: Number.isFinite(epochs) ? epochs : 20,

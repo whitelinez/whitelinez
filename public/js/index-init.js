@@ -234,6 +234,9 @@
 function _connectUserWs(session) {
   let ws = null;
   let backoff = 2000;
+  let attempts = 0;
+  let waitForToken = null;
+  let reconnectTimer = null;
 
   async function connect() {
     const jwt = await Auth.getJwt();
@@ -247,6 +250,14 @@ function _connectUserWs(session) {
     }
     const accountUrl = wssUrl.replace("/ws/live", "/ws/account");
     ws = new WebSocket(`${accountUrl}?token=${encodeURIComponent(jwt)}`);
+    attempts += 1;
+    let opened = false;
+
+    ws.onopen = () => {
+      opened = true;
+      backoff = 2000;
+      attempts = 0;
+    };
 
     ws.onmessage = (e) => {
       try {
@@ -259,18 +270,38 @@ function _connectUserWs(session) {
       } catch {}
     };
 
-    ws.onclose = () => {
+    ws.onclose = (evt) => {
       ws = null;
+      const hardRejected = evt?.code === 4001 || evt?.code === 4003;
+      if (hardRejected) {
+        // Auth/origin failures won't self-heal with rapid retries.
+        reconnectTimer = setTimeout(connect, 60000);
+        return;
+      }
+      if (!opened && attempts >= 8) {
+        // Keep nav balance alive via HTTP polling; stop aggressive WS retry loop.
+        return;
+      }
       backoff = Math.min(backoff * 2, 30000);
-      setTimeout(connect, backoff);
+      reconnectTimer = setTimeout(connect, backoff);
+    };
+
+    ws.onerror = () => {
+      // Browser prints socket errors to console; keep handler silent.
     };
   }
 
   // Wait for ws token to be available (set by Counter.init/stream.js)
-  const waitForToken = setInterval(() => {
+  waitForToken = setInterval(() => {
     if (window._wssUrl) {
       clearInterval(waitForToken);
       connect();
     }
   }, 1000);
+
+  window.addEventListener("beforeunload", () => {
+    if (waitForToken) clearInterval(waitForToken);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    try { ws?.close(); } catch {}
+  });
 }

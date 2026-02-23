@@ -42,6 +42,116 @@
     return hour >= startHour || hour < endHour;
   }
 
+  function fmtAgo(ts) {
+    if (!ts) return "-";
+    const ms = Date.now() - new Date(ts).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return "just now";
+    const sec = Math.floor(ms / 1000);
+    if (sec < 60) return `${sec}s ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h ago`;
+    return `${Math.floor(hr / 24)}d ago`;
+  }
+
+  function setLiveField(id, value) {
+    const node = el(id);
+    if (node) node.textContent = value || "-";
+  }
+
+  let liveRefreshRunning = false;
+
+  async function refreshNightLiveData() {
+    if (liveRefreshRunning) return;
+    liveRefreshRunning = true;
+    try {
+      const enabled = Number(el("night-profile-enabled")?.value || 0) === 1;
+      const startHour = Number(el("night-start-hour")?.value || 18);
+      const endHour = Number(el("night-end-hour")?.value || 6);
+      const now = new Date();
+      const activeNow = enabled && isNightWindowActive(now.getHours(), startHour, endHour);
+
+      setLiveField("night-live-now", now.toLocaleString());
+      setLiveField("night-live-window-state", enabled ? (activeNow ? "IN NIGHT WINDOW" : "Waiting for window") : "Night profile disabled");
+      setLiveField(
+        "night-live-thresholds",
+        `conf ${Number(el("night-yolo-conf")?.value || 0).toFixed(2)} | iou ${Number(el("night-iou")?.value || 0).toFixed(2)} | size ${Number(el("night-infer-size")?.value || 0)} | max det ${Number(el("night-max-det")?.value || 0)}`
+      );
+
+      const summary = el("night-live-summary");
+      if (summary) {
+        summary.textContent = !enabled
+          ? "Night overrides are OFF. Day profile is in use."
+          : activeNow
+            ? "Night overrides are ACTIVE now. Detector is using night thresholds."
+            : "Night profile is enabled but currently outside night hours.";
+      }
+
+      const jwt = await getJwt();
+      if (!jwt) {
+        setLiveField("night-live-counters", "Sign in required");
+        setLiveField("night-live-training", "Sign in required");
+        setLiveField("night-live-telemetry", "Sign in required");
+        return;
+      }
+
+      const [captureRes, jobsRes] = await Promise.all([
+        fetch("/api/admin/ml-capture-status?limit=5", { headers: { Authorization: `Bearer ${jwt}` } }),
+        fetch("/api/admin/ml-jobs?limit=1", { headers: { Authorization: `Bearer ${jwt}` } }),
+      ]);
+
+      const capturePayload = await captureRes.json().catch(() => ({}));
+      const jobsPayload = await jobsRes.json().catch(() => ({}));
+
+      if (captureRes.ok) {
+        const saved = Number(capturePayload?.capture_total || 0).toLocaleString();
+        const upOk = Number(capturePayload?.upload_success_total || 0).toLocaleString();
+        const upFail = Number(capturePayload?.upload_fail_total || 0).toLocaleString();
+        setLiveField("night-live-counters", `${saved} saved | ${upOk} uploaded | ${upFail} failed`);
+      } else {
+        setLiveField("night-live-counters", "Capture status unavailable");
+      }
+
+      if (jobsRes.ok) {
+        const j = (jobsPayload?.jobs || [])[0];
+        setLiveField(
+          "night-live-training",
+          j ? `${String(j.job_type || "-").toUpperCase()} | ${String(j.status || "-").toUpperCase()} | ${fmtAgo(j.created_at)}` : "No jobs yet"
+        );
+      } else {
+        setLiveField("night-live-training", "Training status unavailable");
+      }
+
+      if (window.sb) {
+        const resp = await window.sb
+          .from("ml_detection_events")
+          .select("captured_at, detections_count, avg_confidence, model_name")
+          .order("captured_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!resp.error && resp.data) {
+          const d = resp.data;
+          const conf = Number(d.avg_confidence || 0);
+          setLiveField(
+            "night-live-telemetry",
+            `${d.model_name || "-"} | det ${Number(d.detections_count || 0)} | conf ${(conf * 100).toFixed(1)}% | ${fmtAgo(d.captured_at)}`
+          );
+        } else {
+          setLiveField("night-live-telemetry", "No telemetry yet");
+        }
+      } else {
+        setLiveField("night-live-telemetry", "Telemetry client unavailable");
+      }
+    } catch {
+      setLiveField("night-live-counters", "Live data unavailable");
+      setLiveField("night-live-training", "Live data unavailable");
+      setLiveField("night-live-telemetry", "Live data unavailable");
+    } finally {
+      liveRefreshRunning = false;
+    }
+  }
+
   function updateNightProfileIndicator() {
     const statusEl = el("night-profile-status");
     const windowEl = el("night-profile-window");
@@ -65,6 +175,7 @@
       statusEl.textContent = "Enabled (Day)";
     }
     windowEl.textContent = `Window: ${startHour}:00 - ${endHour}:00 local time`;
+    refreshNightLiveData();
   }
 
   function initMlSubnav() {
@@ -218,6 +329,8 @@
     btn.addEventListener("click", saveSettings);
     updateNightProfileIndicator();
     setInterval(updateNightProfileIndicator, 60_000);
+    setInterval(refreshNightLiveData, 10_000);
+    refreshNightLiveData();
     loadSettings();
   });
 })();

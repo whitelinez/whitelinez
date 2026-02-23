@@ -24,6 +24,8 @@ const Markets = (() => {
   const DISMISSED_RESOLVED_STORAGE_KEY = "wlz_round_result_dismissed_v1";
 
   const USER_BET_POLL_MS = 5000;
+  const NIGHT_PAUSE_START_HOUR = 18;
+  const NIGHT_RESUME_HOUR = 6;
 
   function initTabs() {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -107,6 +109,10 @@ const Markets = (() => {
           No active round right now.
           <span id="next-round-note">Checking next round schedule...</span>
           <strong id="next-round-countdown" style="font-size:0.95rem;color:var(--accent);">--:--</strong>
+          <div id="night-market-warning" style="display:none;margin-top:10px;padding:10px;border:1px solid rgba(241,179,124,0.42);border-radius:8px;background:rgba(56,41,24,0.35);color:#f6cd93;font-size:0.83rem;line-height:1.35;">
+            Night pause active: rounds are paused because AI night detection is still being trained for accuracy.
+            Rounds resume at <strong id="night-resume-time">6:00 AM</strong>.
+          </div>
         </div>`;
       if (container.innerHTML !== html) container.innerHTML = html;
     }
@@ -114,6 +120,30 @@ const Markets = (() => {
     _startNextRoundCountdown();
     _renderResolvedOutcomeCard();
     hasInitialRender = true;
+  }
+
+  function _isNightTrainingPause(now = new Date()) {
+    const hour = now.getHours();
+    return hour >= NIGHT_PAUSE_START_HOUR || hour < NIGHT_RESUME_HOUR;
+  }
+
+  function _nextResumeAtSixLocal(now = new Date()) {
+    const target = new Date(now);
+    target.setSeconds(0, 0);
+    target.setMinutes(0);
+    target.setHours(NIGHT_RESUME_HOUR);
+    if (now.getHours() >= NIGHT_RESUME_HOUR) target.setDate(target.getDate() + 1);
+    return target;
+  }
+
+  function _setNightMarketWarning(visible, resumeAt = null) {
+    const warningEl = document.getElementById("night-market-warning");
+    const resumeEl = document.getElementById("night-resume-time");
+    if (!warningEl) return;
+    warningEl.style.display = visible ? "block" : "none";
+    if (visible && resumeEl && resumeAt) {
+      resumeEl.textContent = resumeAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
   }
 
   function renderRound(round) {
@@ -335,6 +365,18 @@ const Markets = (() => {
     if (!noteEl || !cdEl) return;
     try {
       nextRoundAtIso = null;
+      const now = new Date();
+      const nightPaused = _isNightTrainingPause(now);
+      if (nightPaused) {
+        const resumeAt = _nextResumeAtSixLocal(now);
+        nextRoundAtIso = resumeAt.toISOString();
+        noteEl.textContent = "Rounds paused overnight while AI improves night detection. Resuming at 6:00 AM.";
+        const diffNight = Math.max(0, Math.floor((resumeAt.getTime() - Date.now()) / 1000));
+        cdEl.textContent = _formatCountdown(diffNight);
+        _setNightMarketWarning(true, resumeAt);
+        return;
+      }
+      _setNightMarketWarning(false);
 
       // 1) Try backend health first, but do not fail hard if unavailable.
       try {

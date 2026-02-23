@@ -307,6 +307,26 @@ function escHtml(input) {
     .replace(/'/g, "&#39;");
 }
 
+function shortText(input, max = 180) {
+  const text = String(input || "").trim().replace(/\s+/g, " ");
+  if (!text) return "";
+  return text.length > max ? `${text.slice(0, max - 1)}...` : text;
+}
+
+function formatTrainingJobSummary(job) {
+  if (!job) return "No training jobs yet";
+  const type = String(job.job_type || "-").toUpperCase();
+  const status = String(job.status || "-").toUpperCase();
+  return `${type} | ${status} | ${fmtAgo(job.created_at)}`;
+}
+
+function getTrainingFailureReason(job) {
+  if (!job) return "";
+  const status = String(job.status || "").toLowerCase();
+  if (status !== "failed") return "";
+  return shortText(job.notes || job.error || "");
+}
+
 function clampPct(value) {
   return Math.max(0, Math.min(100, Number(value) || 0));
 }
@@ -534,7 +554,7 @@ async function loadMlProgress() {
         .maybeSingle(),
       window.sb
         .from("ml_training_jobs")
-        .select("job_type, status, created_at, completed_at")
+        .select("job_type, status, created_at, completed_at, notes")
         .order("created_at", { ascending: false })
         .limit(3),
     ]);
@@ -560,6 +580,7 @@ async function loadMlProgress() {
     renderMlVisualSummary(total, dayCount, avgConf, activeModel, latest?.captured_at || null);
 
     const lastJob = (lastJobsResp?.data || [])[0];
+    const failReason = getTrainingFailureReason(lastJob);
     lastSeenBox.innerHTML = `
       <div class="round-row">
         <div class="round-row-info">
@@ -576,9 +597,14 @@ async function loadMlProgress() {
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Last Training Job</span>
-          <span class="round-row-meta">${lastJob ? `${lastJob.job_type} / ${lastJob.status} (${fmtAgo(lastJob.created_at)})` : "No jobs yet"}</span>
+          <span class="round-row-meta">${escHtml(formatTrainingJobSummary(lastJob))}</span>
         </div>
       </div>
+      ${
+        failReason
+          ? `<div class="round-row"><div class="round-row-info"><span class="round-row-id">Failure Reason</span><span class="round-row-meta">${escHtml(failReason)}</span></div></div>`
+          : ""
+      }
     `;
   } catch (e) {
     totalEl.textContent = "-";
@@ -616,14 +642,20 @@ async function loadMlUsage() {
     const models = modelsPayload?.models || [];
     const lastJob = jobs[0];
     const lastModel = models[0];
+    const failReason = getTrainingFailureReason(lastJob);
 
     usageBox.innerHTML = `
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Last Training Job</span>
-          <span class="round-row-meta">${lastJob ? `${String(lastJob.job_type || "-").toUpperCase()} | ${String(lastJob.status || "-").toUpperCase()} | ${fmtAgo(lastJob.created_at)}` : "No training jobs yet"}</span>
+          <span class="round-row-meta">${escHtml(formatTrainingJobSummary(lastJob))}</span>
         </div>
       </div>
+      ${
+        failReason
+          ? `<div class="round-row"><div class="round-row-info"><span class="round-row-id">Failure Reason</span><span class="round-row-meta">${escHtml(failReason)}</span></div></div>`
+          : ""
+      }
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Last Model Entry</span>
@@ -771,7 +803,7 @@ async function handleMlRetrain() {
   msg.style.color = "var(--muted)";
 
   try {
-    let res = await fetch("/api/admin/ml-retrain", {
+    const res = await fetch("/api/admin/ml-jobs", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -784,21 +816,6 @@ async function handleMlRetrain() {
         batch: Number.isFinite(batch) ? batch : 16,
       }),
     });
-    if (res.status === 404) {
-      res = await fetch("/api/admin/ml-jobs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminSession.access_token}`,
-        },
-        body: JSON.stringify({
-          dataset_yaml_url,
-          epochs: Number.isFinite(epochs) ? epochs : 20,
-          imgsz: Number.isFinite(imgsz) ? imgsz : 640,
-          batch: Number.isFinite(batch) ? batch : 16,
-        }),
-      });
-    }
     const payload = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to trigger retrain");
 
@@ -1651,14 +1668,9 @@ init();
     if (!box || !adminSession?.access_token) return;
 
     try {
-      let res = await fetch("/api/admin/ml-retrain?action=diagnostics", {
+      const res = await fetch("/api/admin/ml-jobs?action=diagnostics", {
         headers: { Authorization: `Bearer ${adminSession.access_token}` },
       });
-      if (res.status === 404) {
-        res = await fetch("/api/admin/ml-jobs?action=diagnostics", {
-          headers: { Authorization: `Bearer ${adminSession.access_token}` },
-        });
-      }
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load diagnostics");
 
@@ -1722,7 +1734,7 @@ init();
     msg.textContent = "Running one-click pipeline...";
 
     try {
-      let res = await fetch("/api/admin/ml-retrain?action=one-click", {
+      const res = await fetch("/api/admin/ml-jobs?action=one-click", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1735,21 +1747,6 @@ init();
           batch: Number.isFinite(batch) ? batch : 16,
         }),
       });
-      if (res.status === 404) {
-        res = await fetch("/api/admin/ml-jobs?action=one-click", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${adminSession.access_token}`,
-          },
-          body: JSON.stringify({
-            dataset_yaml_url,
-            epochs: Number.isFinite(epochs) ? epochs : 20,
-            imgsz: Number.isFinite(imgsz) ? imgsz : 640,
-            batch: Number.isFinite(batch) ? batch : 16,
-          }),
-        });
-      }
 
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {

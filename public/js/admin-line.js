@@ -4,7 +4,7 @@
  *   - DETECT ZONE (cyan): bounding-box filter zone
  *   - COUNT ZONE (yellow): crossing/counting zone
  * Click points to define zones:
- *   - Detect: up to 8 points (more complex polygon)
+ *   - Detect: unlimited points (more complex polygon)
  *   - Count: fixed 4 points (counting polygon)
  */
 
@@ -28,8 +28,9 @@ const AdminLine = (() => {
   // Points per zone
   let detectPoints = [];  // [{rx, ry}]
   let countPoints  = [];  // [{rx, ry}]
-  const DETECT_MAX_POINTS = 8;
+  const DETECT_MAX_POINTS = Number.POSITIVE_INFINITY;
   const COUNT_MAX_POINTS = 4;
+  const COUNT_MIN_POINTS = 2;
 
   function init(videoEl, canvasEl, camId) {
     video    = videoEl;
@@ -147,8 +148,7 @@ const AdminLine = (() => {
       if (Array.isArray(detectZone?.points) && detectZone.points.length >= 3) {
         detectPoints = detectZone.points
           .filter((p) => p && typeof p.x === "number" && typeof p.y === "number")
-          .map((p) => ({ rx: p.x, ry: p.y }))
-          .slice(0, DETECT_MAX_POINTS);
+          .map((p) => ({ rx: p.x, ry: p.y }));
       } else if (detectZone?.x3 !== undefined) {
         detectPoints = [
           { rx: detectZone.x1, ry: detectZone.y1 },
@@ -179,7 +179,6 @@ const AdminLine = (() => {
 
     const maxPts = activeMode === "detect" ? DETECT_MAX_POINTS : COUNT_MAX_POINTS;
     if (activeMode === "detect") {
-      if (detectPoints.length >= maxPts) detectPoints = [];
       detectPoints.push({ rx, ry });
     } else {
       if (countPoints.length >= maxPts) countPoints = [];
@@ -189,7 +188,7 @@ const AdminLine = (() => {
     redraw();
 
     const saveBtn = document.getElementById("btn-save-line");
-    if ((countPoints.length >= COUNT_MAX_POINTS || detectPoints.length >= 3) && saveBtn) {
+    if ((countPoints.length >= COUNT_MIN_POINTS || detectPoints.length >= 3) && saveBtn) {
       saveBtn.removeAttribute("disabled");
     }
   }
@@ -292,10 +291,19 @@ const AdminLine = (() => {
         x4: pts[3].rx, y4: pts[3].ry,
       };
     };
+    const toRel2 = (pts) => {
+      if (pts.length < 2) return null;
+      return {
+        x1: pts[0].rx, y1: pts[0].ry,
+        x2: pts[1].rx, y2: pts[1].ry,
+      };
+    };
 
     const updateData = {};
     if (countPoints.length >= COUNT_MAX_POINTS) {
       updateData.count_line = toRel4(countPoints);
+    } else if (countPoints.length >= COUNT_MIN_POINTS) {
+      updateData.count_line = toRel2(countPoints);
     }
     if (detectPoints.length >= 3) {
       updateData.detect_zone = {

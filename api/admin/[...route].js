@@ -7,6 +7,21 @@ export const config = {
   maxDuration: 300,
 };
 
+function routeFromUrl(url) {
+  try {
+    const u = new URL(url || "", "http://localhost");
+    const parts = (u.pathname || "")
+      .split("/")
+      .filter(Boolean);
+    const apiIdx = parts.indexOf("api");
+    const adminIdx = parts.indexOf("admin");
+    if (apiIdx === -1 || adminIdx === -1 || adminIdx <= apiIdx) return [];
+    return parts.slice(adminIdx + 1);
+  } catch {
+    return [];
+  }
+}
+
 function buildQuery(reqQuery) {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(reqQuery || {})) {
@@ -33,9 +48,12 @@ export default async function handler(req, res) {
   }
 
   const rawRoute = req.query?.route;
-  const routeParts = Array.isArray(rawRoute)
+  let routeParts = Array.isArray(rawRoute)
     ? rawRoute
     : (typeof rawRoute === "string" && rawRoute.trim() ? [rawRoute] : []);
+  if (!routeParts.length) {
+    routeParts = routeFromUrl(req.url);
+  }
   if (!routeParts.length) {
     return res.status(400).json({ error: "Missing admin route" });
   }

@@ -59,7 +59,7 @@ async function resolveActiveCameraId() {
 }
 const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
 const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
-const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v3";
+const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v4";
 const DETECTION_DEFAULT_SETTINGS = {
   box_style: "solid",
   line_width: 2,
@@ -70,7 +70,7 @@ const DETECTION_DEFAULT_SETTINGS = {
   outside_scan_enabled: true,
   outside_scan_min_conf: 0.45,
   outside_scan_max_boxes: 25,
-  outside_scan_hold_ms: 600,
+  outside_scan_hold_ms: 220,
   colors: {
     car: "#29B6F6",
     truck: "#FF7043",
@@ -95,7 +95,7 @@ const DETECTION_NIGHT_SETTINGS_PRESET = {
   outside_scan_enabled: true,
   outside_scan_min_conf: 0.45,
   outside_scan_max_boxes: 30,
-  outside_scan_hold_ms: 650,
+  outside_scan_hold_ms: 260,
 };
 const FEED_APPEARANCE_DAY_PRESET = {
   brightness: 102,
@@ -307,7 +307,7 @@ function readDetectionSettingsFromForm() {
     outside_scan_enabled: true,
     outside_scan_min_conf: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_min_conf || 0.45),
     outside_scan_max_boxes: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_max_boxes || 25),
-    outside_scan_hold_ms: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_hold_ms || 600),
+    outside_scan_hold_ms: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_hold_ms || 220),
     colors: {
       car: String(getVal("det-color-car", DETECTION_DEFAULT_SETTINGS.colors.car)),
       truck: String(getVal("det-color-truck", DETECTION_DEFAULT_SETTINGS.colors.truck)),

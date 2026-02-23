@@ -9,15 +9,18 @@ const DetectionOverlay = (() => {
   let canvas, ctx, video;
   let latestDetections = [];
   let rafId = null;
-  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v3";
+  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
   let pixiApp = null;
   let pixiEnabled = false;
+  let isMobileClient = false;
   const pixiGraphicsPool = [];
   const pixiTextPool = [];
   let pixiGraphicsUsed = 0;
   let pixiTextUsed = 0;
   let forceRender = true;
   let lastFrameKey = "";
+  let ghostSeq = 0;
+  const laneSmoothing = new Map();
 
   let settings = {
     box_style: "solid",
@@ -29,7 +32,7 @@ const DetectionOverlay = (() => {
     outside_scan_enabled: true,
     outside_scan_min_conf: 0.45,
     outside_scan_max_boxes: 25,
-    outside_scan_hold_ms: 600,
+    outside_scan_hold_ms: 220,
     colors: {
       car: "#29B6F6",
       truck: "#FF7043",
@@ -38,6 +41,18 @@ const DetectionOverlay = (() => {
     },
   };
   const outsideGhosts = new Map();
+
+  function detectMobileClient() {
+    try {
+      const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      const narrow = window.matchMedia && window.matchMedia("(max-width: 980px)").matches;
+      const ua = String(navigator.userAgent || "").toLowerCase();
+      const uaMobile = /android|iphone|ipad|ipod|mobile|tablet/.test(ua);
+      return Boolean(coarse || narrow || uaMobile);
+    } catch {
+      return false;
+    }
+  }
 
   function hexToPixi(hex) {
     const raw = String(hex || "").replace("#", "");
@@ -128,20 +143,44 @@ const DetectionOverlay = (() => {
 
   function initPixiRenderer() {
     if (!canvas || !window.PIXI) return false;
+    const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
+    const desktopCfg = {
+      view: canvas,
+      width: Math.max(1, canvas.width || 1),
+      height: Math.max(1, canvas.height || 1),
+      backgroundAlpha: 0,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(2, dpr),
+      powerPreference: "high-performance",
+      preference: "webgl",
+    };
+    const mobileCfg = {
+      view: canvas,
+      width: Math.max(1, canvas.width || 1),
+      height: Math.max(1, canvas.height || 1),
+      backgroundAlpha: 0,
+      antialias: false,
+      autoDensity: true,
+      resolution: 1,
+      powerPreference: "low-power",
+      preference: "webgl",
+    };
+    const tries = isMobileClient ? [mobileCfg, desktopCfg] : [desktopCfg, mobileCfg];
     try {
-      pixiApp = new window.PIXI.Application({
-        view: canvas,
-        width: Math.max(1, canvas.width || 1),
-        height: Math.max(1, canvas.height || 1),
-        backgroundAlpha: 0,
-        antialias: true,
-        autoDensity: true,
-        resolution: window.devicePixelRatio || 1,
-        powerPreference: "high-performance",
-      });
-      pixiEnabled = true;
-      console.info("[DetectionOverlay] Renderer: WebGL (PixiJS)");
-      return true;
+      for (const cfg of tries) {
+        try {
+          pixiApp = new window.PIXI.Application(cfg);
+          pixiEnabled = true;
+          const mode = isMobileClient ? "mobile" : "desktop";
+          console.info(`[DetectionOverlay] Renderer: WebGL (PixiJS, ${mode})`);
+          window.dispatchEvent(new CustomEvent("detection:renderer", { detail: { mode: "webgl", profile: mode } }));
+          return true;
+        } catch (e) {
+          pixiApp = null;
+        }
+      }
+      return false;
     } catch (err) {
       console.warn("[DetectionOverlay] Pixi init failed, falling back to 2D:", err);
       pixiEnabled = false;
@@ -205,6 +244,70 @@ const DetectionOverlay = (() => {
     const x2 = Math.round(Number(det?.x2 || 0) * 100);
     const y2 = Math.round(Number(det?.y2 || 0) * 100);
     return `b:${String(det?.cls || "vehicle")}:${x1}:${y1}:${x2}:${y2}`;
+  }
+
+  function centerOf(det) {
+    return {
+      x: (Number(det?.x1 || 0) + Number(det?.x2 || 0)) * 0.5,
+      y: (Number(det?.y1 || 0) + Number(det?.y2 || 0)) * 0.5,
+    };
+  }
+
+  function findMatchingGhostKey(det) {
+    const target = centerOf(det);
+    let bestKey = null;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const [k, v] of outsideGhosts.entries()) {
+      const gd = v?.det;
+      if (!gd) continue;
+      if (String(gd?.cls || "") !== String(det?.cls || "")) continue;
+      const c = centerOf(gd);
+      const dx = target.x - c.x;
+      const dy = target.y - c.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 0.08 && dist < bestDist) {
+        bestDist = dist;
+        bestKey = k;
+      }
+    }
+    return bestKey;
+  }
+
+  function smoothLaneDetections(detections, now) {
+    const out = [];
+    for (const det of detections) {
+      const tid = Number(det?.tracker_id);
+      if (!Number.isFinite(tid) || tid < 0) {
+        out.push(det);
+        continue;
+      }
+      const key = `lane:${tid}:${String(det?.cls || "vehicle")}`;
+      const prev = laneSmoothing.get(key);
+      if (!prev) {
+        laneSmoothing.set(key, {
+          x1: det.x1, y1: det.y1, x2: det.x2, y2: det.y2, ts: now,
+        });
+        out.push(det);
+        continue;
+      }
+      const alpha = 0.42;
+      const sm = {
+        ...det,
+        x1: prev.x1 + (det.x1 - prev.x1) * alpha,
+        y1: prev.y1 + (det.y1 - prev.y1) * alpha,
+        x2: prev.x2 + (det.x2 - prev.x2) * alpha,
+        y2: prev.y2 + (det.y2 - prev.y2) * alpha,
+      };
+      laneSmoothing.set(key, {
+        x1: sm.x1, y1: sm.y1, x2: sm.x2, y2: sm.y2, ts: now,
+      });
+      out.push(sm);
+    }
+
+    for (const [k, v] of laneSmoothing.entries()) {
+      if (!v || Number(v.ts || 0) + 1200 < now) laneSmoothing.delete(k);
+    }
+    return out;
   }
 
   function drawDetectionBox(det, bounds, opts = {}) {
@@ -310,12 +413,15 @@ const DetectionOverlay = (() => {
   function init(videoEl, canvasEl) {
     video  = videoEl;
     canvas = canvasEl;
+    isMobileClient = detectMobileClient();
     loadSettings();
 
     syncSize();
     if (!initPixiRenderer()) {
       ctx = canvas.getContext("2d");
       pixiEnabled = false;
+      console.info("[DetectionOverlay] Renderer: Canvas2D fallback");
+      window.dispatchEvent(new CustomEvent("detection:renderer", { detail: { mode: "canvas", profile: isMobileClient ? "mobile" : "desktop" } }));
     }
 
     window.addEventListener("resize", syncSize);
@@ -370,7 +476,8 @@ const DetectionOverlay = (() => {
     }
 
     const bounds = getContentBounds(video);
-    const laneMaxBoxes = Math.max(1, Math.min(15, Number(settings.max_boxes) || 10));
+    const laneHardCap = isMobileClient ? 12 : 15;
+    const laneMaxBoxes = Math.max(1, Math.min(laneHardCap, Number(settings.max_boxes) || 10));
     const laneDetections = [];
     const outsideDetections = [];
     for (const det of detections) {
@@ -378,7 +485,9 @@ const DetectionOverlay = (() => {
       else laneDetections.push(det);
     }
 
-    for (const det of laneDetections.slice(0, laneMaxBoxes)) {
+    const now = Date.now();
+    const smoothedLane = smoothLaneDetections(laneDetections.slice(0, laneMaxBoxes), now);
+    for (const det of smoothedLane) {
       drawDetectionBox(det, bounds, {
         style: settings.box_style,
         lineWidth: settings.line_width,
@@ -392,9 +501,9 @@ const DetectionOverlay = (() => {
       return;
     }
 
-    const now = Date.now();
     const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.45));
-    const outsideMax = Math.max(1, Math.min(35, Number(settings.outside_scan_max_boxes) || 25));
+    const outsideHardCap = isMobileClient ? 24 : 35;
+    const outsideMax = Math.max(1, Math.min(outsideHardCap, Number(settings.outside_scan_max_boxes) || 25));
     const holdMs = Math.max(100, Number(settings.outside_scan_hold_ms) || 600);
     const fresh = outsideDetections
       .filter((d) => Number(d?.conf || 0) >= minConf)
@@ -402,7 +511,12 @@ const DetectionOverlay = (() => {
       .slice(0, outsideMax);
 
     for (const det of fresh) {
-      outsideGhosts.set(buildGhostKey(det), { det, exp: now + holdMs });
+      const stableKey =
+        findMatchingGhostKey(det) ||
+        (Number.isFinite(Number(det?.tracker_id)) && Number(det?.tracker_id) >= 0
+          ? buildGhostKey(det)
+          : `g:${String(det?.cls || "vehicle")}:${ghostSeq++}`);
+      outsideGhosts.set(stableKey, { det, exp: now + holdMs });
     }
 
     for (const [k, v] of outsideGhosts.entries()) {

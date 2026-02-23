@@ -13,6 +13,7 @@
     hue: 0,
     blur: 0.2,
   };
+  const PUBLIC_DETECTION_SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
   async function resolveActiveCamera() {
     const { data, error } = await window.sb
       .from("cameras")
@@ -61,6 +62,12 @@
       if (!cfg || cfg.push_public === false) {
         videoEl.style.filter = "";
         return;
+      }
+      if (cfg.detection_overlay && typeof cfg.detection_overlay === "object") {
+        try {
+          localStorage.setItem(PUBLIC_DETECTION_SETTINGS_KEY, JSON.stringify(cfg.detection_overlay));
+        } catch {}
+        window.dispatchEvent(new CustomEvent("detection:settings-update", { detail: cfg.detection_overlay }));
       }
       const appearance = cfg.auto_day_night
         ? (isNightWindowNow() ? PUBLIC_NIGHT_PRESET : PUBLIC_DAY_PRESET)

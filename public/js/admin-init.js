@@ -71,6 +71,7 @@ const DETECTION_DEFAULT_SETTINGS = {
   outside_scan_min_conf: 0.45,
   outside_scan_max_boxes: 25,
   outside_scan_hold_ms: 220,
+  outside_scan_show_labels: false,
   colors: {
     car: "#29B6F6",
     truck: "#FF7043",
@@ -96,6 +97,7 @@ const DETECTION_NIGHT_SETTINGS_PRESET = {
   outside_scan_min_conf: 0.45,
   outside_scan_max_boxes: 30,
   outside_scan_hold_ms: 260,
+  outside_scan_show_labels: false,
 };
 const FEED_APPEARANCE_DAY_PRESET = {
   brightness: 102,
@@ -308,6 +310,7 @@ function readDetectionSettingsFromForm() {
     outside_scan_min_conf: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_min_conf || 0.45),
     outside_scan_max_boxes: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_max_boxes || 25),
     outside_scan_hold_ms: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_hold_ms || 220),
+    outside_scan_show_labels: Boolean(DETECTION_DEFAULT_SETTINGS.outside_scan_show_labels),
     colors: {
       car: String(getVal("det-color-car", DETECTION_DEFAULT_SETTINGS.colors.car)),
       truck: String(getVal("det-color-truck", DETECTION_DEFAULT_SETTINGS.colors.truck)),
@@ -352,6 +355,15 @@ async function loadCameraFeedAppearance() {
     const cfg = (data?.feed_appearance && typeof data.feed_appearance === "object")
       ? data.feed_appearance
       : {};
+    if (cfg.detection_overlay && typeof cfg.detection_overlay === "object") {
+      const merged = {
+        ...getDetectionSettings(),
+        ...cfg.detection_overlay,
+        colors: { ...getDetectionSettings().colors, ...(cfg.detection_overlay.colors || {}) },
+      };
+      applyDetectionSettingsToForm(merged);
+      publishDetectionSettings(merged);
+    }
     if (cfg.appearance && typeof cfg.appearance === "object") {
       applyAppearancePresetToForm(cfg.appearance);
     }
@@ -380,6 +392,20 @@ async function pushFeedAppearanceToPublic() {
     const pushPublic = document.getElementById("feed-push-public")?.value !== "0";
     const payload = {
       appearance: settings.appearance,
+      detection_overlay: {
+        box_style: settings.box_style,
+        line_width: settings.line_width,
+        fill_alpha: settings.fill_alpha,
+        max_boxes: settings.max_boxes,
+        show_labels: settings.show_labels,
+        detect_zone_only: settings.detect_zone_only,
+        colors: settings.colors,
+        outside_scan_enabled: settings.outside_scan_enabled,
+        outside_scan_min_conf: settings.outside_scan_min_conf,
+        outside_scan_max_boxes: settings.outside_scan_max_boxes,
+        outside_scan_hold_ms: settings.outside_scan_hold_ms,
+        outside_scan_show_labels: settings.outside_scan_show_labels,
+      },
       push_public: pushPublic,
       auto_day_night: autoEnabled,
       updated_at: new Date().toISOString(),

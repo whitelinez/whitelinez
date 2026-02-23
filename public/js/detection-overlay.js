@@ -33,6 +33,7 @@ const DetectionOverlay = (() => {
     outside_scan_min_conf: 0.45,
     outside_scan_max_boxes: 25,
     outside_scan_hold_ms: 220,
+    outside_scan_show_labels: false,
     colors: {
       car: "#29B6F6",
       truck: "#FF7043",
@@ -490,9 +491,10 @@ const DetectionOverlay = (() => {
     for (const det of smoothedLane) {
       drawDetectionBox(det, bounds, {
         style: settings.box_style,
-        lineWidth: settings.line_width,
-        alpha: settings.fill_alpha,
+        lineWidth: Math.max(1, Number(settings.line_width || 2) + 0.5),
+        alpha: Math.min(0.28, Math.max(0.03, Number(settings.fill_alpha || 0.10) + 0.03)),
         showLabels: settings.show_labels !== false,
+        labelBgAlpha: 0.90,
       });
     }
 
@@ -530,11 +532,11 @@ const DetectionOverlay = (() => {
     for (const g of ghosts) {
       drawDetectionBox(g.det, bounds, {
         style: "dashed",
-        lineWidth: 1.25,
-        alpha: 0.035,
-        showLabels: true,
+        lineWidth: 1.0,
+        alpha: 0.02,
+        showLabels: settings.outside_scan_show_labels === true,
         labelText: "SCAN",
-        labelBgAlpha: 0.25,
+        labelBgAlpha: 0.18,
         labelColor: "#D7E6F5",
       });
     }

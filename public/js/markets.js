@@ -43,15 +43,9 @@ const Markets = (() => {
     if (!hasInitialRender) _showSkeleton();
     try {
       await _ensureCurrentUser();
-      const { data: round, error } = await window.sb
-        .from("bet_rounds")
-        .select("*, markets(*)")
-        .in("status", ["open", "locked", "upcoming"])
-        .order("opens_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      const round = await _fetchPreferredRound();
 
-      if (error || !round) {
+      if (!round) {
         renderNoRound();
         return;
       }
@@ -74,6 +68,40 @@ const Markets = (() => {
       console.error("[Markets] Failed to load:", e);
       renderNoRound();
     }
+  }
+
+  async function _fetchPreferredRound() {
+    // 1) Prefer currently open round.
+    const { data: openRound, error: openErr } = await window.sb
+      .from("bet_rounds")
+      .select("*, markets(*)")
+      .eq("status", "open")
+      .order("opens_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!openErr && openRound) return openRound;
+
+    // 2) Then a recently locked round (shows "resolving" while settlement runs).
+    const { data: lockedRound, error: lockedErr } = await window.sb
+      .from("bet_rounds")
+      .select("*, markets(*)")
+      .eq("status", "locked")
+      .order("ends_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!lockedErr && lockedRound) return lockedRound;
+
+    // 3) Finally, next upcoming round.
+    const { data: upcomingRound, error: upcomingErr } = await window.sb
+      .from("bet_rounds")
+      .select("*, markets(*)")
+      .eq("status", "upcoming")
+      .order("opens_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!upcomingErr && upcomingRound) return upcomingRound;
+
+    return null;
   }
 
   function _showSkeleton() {
@@ -258,13 +286,18 @@ const Markets = (() => {
 
       const elapsedEl = document.getElementById("rt-elapsed");
       if (elapsedEl && opensAt) {
-        const elapsed = Math.max(0, Math.floor((now - opensAt) / 1000));
-        elapsedEl.textContent = `${fmtDuration(elapsed)} ago`;
+        const elapsedRaw = Math.floor((now - opensAt) / 1000);
+        if (!Number.isFinite(elapsedRaw) || elapsedRaw < 0) {
+          elapsedEl.textContent = "--:--";
+        } else {
+          elapsedEl.textContent = `${fmtDuration(elapsedRaw)} ago`;
+        }
       }
 
       const closesEl = document.getElementById("rt-closes");
       if (closesEl && closesAt) {
-        const diff = Math.max(0, Math.floor((closesAt - now) / 1000));
+        const diffRaw = Math.floor((closesAt - now) / 1000);
+        const diff = Number.isFinite(diffRaw) ? Math.max(0, diffRaw) : 0;
         closesEl.textContent = diff === 0 ? "Closed" : `in ${fmtDuration(diff)}`;
         if (diff === 0 && !closedFired) {
           closedFired = true;
@@ -274,7 +307,8 @@ const Markets = (() => {
 
       const endsEl = document.getElementById("rt-ends");
       if (endsEl && endsAt) {
-        const diff = Math.max(0, Math.floor((endsAt - now) / 1000));
+        const diffRaw = Math.floor((endsAt - now) / 1000);
+        const diff = Number.isFinite(diffRaw) ? Math.max(0, diffRaw) : 0;
         endsEl.textContent = diff === 0 ? "Resolving..." : `in ${fmtDuration(diff)}`;
         if (diff === 0 && !endedFired) {
           endedFired = true;

@@ -71,11 +71,15 @@ const Markets = (() => {
   }
 
   async function _fetchPreferredRound() {
+    const nowIso = new Date().toISOString();
+    const recentLockedIso = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+
     // 1) Prefer currently open round.
     const { data: openRound, error: openErr } = await window.sb
       .from("bet_rounds")
       .select("*, markets(*)")
       .eq("status", "open")
+      .gt("ends_at", nowIso)
       .order("opens_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -86,6 +90,7 @@ const Markets = (() => {
       .from("bet_rounds")
       .select("*, markets(*)")
       .eq("status", "locked")
+      .gte("ends_at", recentLockedIso)
       .order("ends_at", { ascending: false })
       .limit(1)
       .maybeSingle();

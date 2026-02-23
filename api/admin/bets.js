@@ -16,8 +16,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const mode = String(req.query?.mode || "").trim().toLowerCase();
     const limit = Number(req.query?.limit || 200);
-    const upstream = await fetch(`${railwayUrl}/admin/bets?limit=${encodeURIComponent(limit)}`, {
+    const targetUrl = mode === "validation-status"
+      ? `${railwayUrl}/admin/bets/validation-status`
+      : `${railwayUrl}/admin/bets?limit=${encodeURIComponent(limit)}`;
+    const upstream = await fetch(targetUrl, {
       method: "GET",
       headers: { Authorization: authHeader },
     });
@@ -30,4 +34,3 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: "Upstream request failed" });
   }
 }
-

@@ -9,6 +9,14 @@
  */
 
 const AdminLine = (() => {
+  const DEFAULT_COUNT_SETTINGS = {
+    min_track_frames: 3,
+    min_box_area_ratio: 0,
+    min_confidence: 0,
+    allowed_classes: [],
+    class_min_confidence: {},
+  };
+
   let canvas, ctx, video;
   let cameraId = null;
   let isSaving = false;
@@ -48,6 +56,7 @@ const AdminLine = (() => {
       canvas.addEventListener("click", handleClick);
       document.getElementById("btn-clear-line")?.addEventListener("click", clearActive);
       document.getElementById("btn-save-line")?.addEventListener("click", saveZones);
+      document.getElementById("btn-save-count-settings")?.addEventListener("click", saveCountSettingsOnly);
 
       // Zone toggle buttons
       document.getElementById("btn-zone-detect")?.addEventListener("click", () => setMode("detect"));
@@ -100,12 +109,13 @@ const AdminLine = (() => {
     try {
       const { data } = await window.sb
         .from("cameras")
-        .select("count_line, detect_zone")
+        .select("count_line, detect_zone, count_settings")
         .eq("id", cameraId)
         .single();
 
       const countLine  = data?.count_line;
       const detectZone = data?.detect_zone;
+      applyCountSettingsToForm(data?.count_settings);
 
       if (countLine?.x3 !== undefined) {
         countPoints = [
@@ -281,6 +291,7 @@ const AdminLine = (() => {
     } else if (detectPoints.length === 0) {
       updateData.detect_zone = null; // clear if empty
     }
+    updateData.count_settings = readCountSettingsFromForm();
 
     try {
       const { error } = await window.sb
@@ -297,12 +308,104 @@ const AdminLine = (() => {
     }
   }
 
+  function toBoundedNumber(raw, fallback, min, max) {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function parseAllowedClasses(raw) {
+    if (!raw) return [];
+    return String(raw)
+      .split(",")
+      .map((x) => x.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  function parseClassMinConfidence(raw) {
+    const out = {};
+    const src = String(raw || "").trim();
+    if (!src) return out;
+    src.split(",").forEach((pair) => {
+      const [cls, conf] = pair.split(":");
+      const key = String(cls || "").trim().toLowerCase();
+      if (!key) return;
+      const val = Number(conf);
+      if (!Number.isFinite(val)) return;
+      out[key] = Math.max(0, Math.min(1, val));
+    });
+    return out;
+  }
+
+  function classMinConfidenceToText(obj) {
+    if (!obj || typeof obj !== "object") return "";
+    return Object.entries(obj)
+      .filter(([k, v]) => String(k).trim() && Number.isFinite(Number(v)))
+      .map(([k, v]) => `${String(k).trim().toLowerCase()}:${Number(v)}`)
+      .join(", ");
+  }
+
+  function readCountSettingsFromForm() {
+    const getVal = (id) => document.getElementById(id)?.value ?? "";
+    return {
+      min_track_frames: Math.round(toBoundedNumber(getVal("count-min-track-frames"), 3, 1, 30)),
+      min_confidence: toBoundedNumber(getVal("count-min-confidence"), 0, 0, 1),
+      min_box_area_ratio: toBoundedNumber(getVal("count-min-box-area-ratio"), 0, 0, 1),
+      allowed_classes: parseAllowedClasses(getVal("count-allowed-classes")),
+      class_min_confidence: parseClassMinConfidence(getVal("count-class-min-confidence")),
+    };
+  }
+
+  function applyCountSettingsToForm(rawSettings) {
+    const s = {
+      ...DEFAULT_COUNT_SETTINGS,
+      ...(rawSettings && typeof rawSettings === "object" ? rawSettings : {}),
+    };
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+    setVal("count-min-track-frames", String(Math.round(toBoundedNumber(s.min_track_frames, 3, 1, 30))));
+    setVal("count-min-confidence", String(toBoundedNumber(s.min_confidence, 0, 0, 1)));
+    setVal("count-min-box-area-ratio", String(toBoundedNumber(s.min_box_area_ratio, 0, 0, 1)));
+    setVal("count-allowed-classes", Array.isArray(s.allowed_classes) ? s.allowed_classes.join(", ") : "");
+    setVal("count-class-min-confidence", classMinConfidenceToText(s.class_min_confidence));
+  }
+
+  function updateCountSettingsStatus(msg, isError = false) {
+    const el = document.getElementById("count-settings-status");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = isError ? "var(--danger)" : "var(--green)";
+  }
+
+  async function saveCountSettingsOnly() {
+    if (!cameraId || isSaving) return;
+    isSaving = true;
+    updateCountSettingsStatus("Saving...");
+    try {
+      const countSettings = readCountSettingsFromForm();
+      const { error } = await window.sb
+        .from("cameras")
+        .update({ count_settings: countSettings })
+        .eq("id", cameraId);
+      if (error) throw error;
+      updateCountSettingsStatus("Count tuning saved");
+      updateStatus("Count tuning saved - AI picks up within 30s");
+    } catch (e) {
+      console.error("[AdminLine] Count settings save failed:", e);
+      updateCountSettingsStatus(`Error: ${e.message}`, true);
+    } finally {
+      isSaving = false;
+    }
+  }
+
   function updateStatus(msg) {
     const el = document.getElementById("line-status");
     if (el) el.textContent = msg;
   }
 
-  return { init, clearActive, saveZones, refresh };
+  return { init, clearActive, saveZones, refresh, saveCountSettingsOnly };
 })();
 
 window.AdminLine = AdminLine;

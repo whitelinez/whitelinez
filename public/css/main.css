@@ -75,7 +75,7 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
   align-items: flex-end;
   line-height: 1;
-  gap: 1px;
+  gap: 0;
   text-decoration: none;
 }
 .logo img {
@@ -90,7 +90,8 @@ a:hover { text-decoration: underline; }
   color: var(--muted);
   text-transform: lowercase;
   text-align: right;
-  padding-right: 1px;
+  margin-top: -1px;
+  padding-right: 2px;
 }
 
 .auth-card .logo img {
@@ -1607,6 +1608,34 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .line-status { font-size: 0.82rem; color: var(--green); margin-left: auto; }
 
+.count-tuning-box {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.count-tuning-box h4 {
+  margin: 0 0 6px;
+}
+
+.count-tuning-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.count-tuning-wide {
+  grid-column: span 3;
+}
+
+.count-tuning-actions {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .field-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
 .field-row .field { flex: 1; min-width: 160px; }
 
@@ -2305,6 +2334,14 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .line-status {
     margin-left: 0;
     width: 100%;
+  }
+
+  .count-tuning-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .count-tuning-wide {
+    grid-column: auto;
   }
 
   .user-mgmt-row {

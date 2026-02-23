@@ -59,6 +59,37 @@
               <button id="btn-save-line" class="btn-primary" disabled>Save Zones</button>
               <span id="line-status" class="line-status"></span>
             </div>
+
+            <div class="count-tuning-box">
+              <h4>Count Tuning</h4>
+              <p class="admin-hint">Controls consistency filters for counted crossings (does not alter stream source).</p>
+              <div class="count-tuning-grid">
+                <div class="field">
+                  <label for="count-min-track-frames">Min Track Frames</label>
+                  <input id="count-min-track-frames" type="number" min="1" max="30" step="1" value="3" />
+                </div>
+                <div class="field">
+                  <label for="count-min-confidence">Min Confidence</label>
+                  <input id="count-min-confidence" type="number" min="0" max="1" step="0.01" value="0" />
+                </div>
+                <div class="field">
+                  <label for="count-min-box-area-ratio">Min Box Area Ratio</label>
+                  <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.0001" value="0" />
+                </div>
+                <div class="field count-tuning-wide">
+                  <label for="count-allowed-classes">Allowed Classes (comma-separated)</label>
+                  <input id="count-allowed-classes" type="text" placeholder="car, truck, bus, motorcycle" />
+                </div>
+                <div class="field count-tuning-wide">
+                  <label for="count-class-min-confidence">Per-Class Min Confidence</label>
+                  <input id="count-class-min-confidence" type="text" placeholder="car:0.35, truck:0.40" />
+                </div>
+              </div>
+              <div class="count-tuning-actions">
+                <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
+                <span id="count-settings-status" class="line-status"></span>
+              </div>
+            </div>
           </section>
 
           <section class="card-box">

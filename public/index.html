@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WHITELINEZ - Live Traffic Betting</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="dark">
+
+  <header class="site-header">
+    <a href="/index.html" class="logo">
+      <img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" />
+      <span class="logo-credit">created by ruel</span>
+    </a>
+    <nav>
+      <span id="nav-balance" class="nav-balance hidden"></span>
+      <span id="nav-auth">
+        <a href="/login.html" class="nav-link">Login</a>
+        <a href="/register.html" class="btn-nav-register">Register</a>
+      </span>
+      <span id="nav-user" class="hidden">
+        <a id="nav-admin-link" href="/admin.html" class="nav-link hidden">Admin</a>
+        <a href="/account.html" class="nav-icon-btn nav-avatar-btn" title="Account">
+          <img id="nav-avatar" class="nav-avatar" alt="Profile" />
+        </a>
+        <button id="btn-logout" class="nav-icon-btn nav-icon-logout" title="Logout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </span>
+    </nav>
+  </header>
+
+  <main class="main-grid">
+    <section class="stream-panel">
+        <div class="stream-wrapper">
+        <video id="live-video" muted playsinline autoplay></video>
+        <canvas id="detection-canvas" class="detection-overlay"></canvas>
+        <canvas id="zone-canvas" class="zone-overlay"></canvas>
+        <div id="fps-overlay" class="fps-overlay" aria-live="polite">FPS --.-</div>
+
+        <div id="play-overlay" class="play-overlay hidden">
+          <button id="btn-play">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 20 12 8 19 8 5"></polygon></svg>
+            Play
+          </button>
+        </div>
+
+        <div id="count-widget" class="count-widget">
+          <div class="count-widget-total">
+            <span id="cw-total">-</span>
+            <span class="cw-label">vehicles</span>
+          </div>
+          <div class="count-widget-breakdown">
+            <span class="cw-item"><svg class="vehicle-icon car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg><strong id="cw-cars">-</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="12" height="8" rx="1"></rect><path d="M14 12h4l3 3v2h-7z"></path><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg><strong id="cw-trucks">-</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon bus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="11" rx="2"></rect><path d="M3 11h18"></path><circle cx="8" cy="19" r="1.8"></circle><circle cx="16" cy="19" r="1.8"></circle></svg><strong id="cw-buses">-</strong></span>
+            <span class="cw-item"><svg class="vehicle-icon moto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"></circle><circle cx="18" cy="17" r="3"></circle><path d="M6 17l5-6h4l3 6"></path><path d="M12 11l2-3h3"></path></svg><strong id="cw-motos">-</strong></span>
+          </div>
+          <div id="cw-ws-dot" class="cw-ws-dot cw-ws-err"></div>
+        </div>
+
+        <div id="ml-hud" class="ml-hud">
+          <div class="ml-hud-head">
+            <p class="ml-hud-title">VISION HUD</p>
+            <span id="ml-hud-level" class="ml-hud-state">Idle</span>
+          </div>
+
+          <p id="ml-hud-msg" class="ml-hud-msg">Initializing live scene scan...</p>
+
+          <div class="ml-hud-chips">
+            <span class="ml-chip">
+              <span class="ml-chip-label">
+                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M3 12h18"></path>
+                  <path d="M12 3a14 14 0 0 1 0 18"></path>
+                </svg>
+                Scene
+              </span>
+              <strong id="ml-hud-profile">Scanning...</strong>
+            </span>
+            <span class="ml-chip">
+              <span class="ml-chip-label">
+                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 7v5l3 2"></path>
+                </svg>
+                Delay
+              </span>
+              <strong id="ml-hud-delay">Scanning...</strong>
+            </span>
+          </div>
+
+          <div class="ml-hud-cells">
+            <div class="ml-cell-row">
+              <span class="ml-cell-label">Confidence</span>
+              <strong id="ml-hud-conf">0%</strong>
+              <div class="ml-cell-track">
+                <div id="ml-hud-conf-bar" class="ml-cell-fill" style="--pct:0"></div>
+              </div>
+            </div>
+            <div class="ml-cell-row">
+              <span class="ml-cell-label">Scene Lock</span>
+              <strong id="ml-hud-scene-conf">0%</strong>
+              <div class="ml-cell-track">
+                <div id="ml-hud-scene-bar" class="ml-cell-fill" style="--pct:0"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ml-hud-metrics">
+            <span>
+              <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                <path d="M8 20h8"></path>
+              </svg>
+              Frames <strong id="ml-hud-frames">0</strong>
+            </span>
+            <span>
+              <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="8" cy="8" r="3"></circle>
+                <circle cx="16" cy="14" r="3"></circle>
+                <path d="M5 19c1.5-2 4.5-2 6 0"></path>
+              </svg>
+              Objects <strong id="ml-hud-dets">0</strong>
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="sidebar-tabs">
+        <button class="tab-btn active" data-tab="markets">Markets</button>
+        <button class="tab-btn" data-tab="activity">Activity</button>
+        <button class="tab-btn" data-tab="chat">Chat <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span></button>
+        <button class="tab-btn" data-tab="ml-showcase">AI</button>
+      </div>
+
+      <div id="tab-markets" class="tab-content active">
+        <div id="markets-container">
+          <p class="loading">Loading markets...</p>
+        </div>
+      </div>
+
+      <div id="tab-activity" class="tab-content">
+        <div id="activity-feed" class="activity-feed">
+          <p class="loading">Waiting for activity...</p>
+        </div>
+      </div>
+
+      <div id="tab-chat" class="tab-content">
+        <div class="chat-meta-row">
+          <span id="chat-online-count" class="chat-online-count">0 online</span>
+          <div id="chat-online-users" class="chat-online-users"></div>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="chat-input" type="text" maxlength="280" placeholder="Say something... (@username)" />
+          <button id="chat-send" class="btn-primary">Send</button>
+        </div>
+        <p id="chat-login-hint" class="chat-login-hint hidden">
+          <a href="/login.html">Login</a> to send messages
+        </p>
+      </div>
+
+      <div id="tab-ml-showcase" class="tab-content">
+        <div class="ml-showcase-head">
+          <p class="ml-showcase-eyebrow">Live AI Engine</p>
+          <h3>Real-Time Traffic Action</h3>
+          <p class="ml-showcase-sub">This section shows what the AI is seeing live on the road.<br>It counts vehicles passing through the area, measures confidence levels, and updates predictions in real time.<br><br>You&rsquo;re basically watching the system analyze traffic while users make predictions on how many vehicles will pass within a set time.<br><br>Bet smart. Watch the road. See the data live.</p>
+        </div>
+
+        <div class="ai-scene">
+          <img class="ai-scene-img" src="/img/ai.png" alt="Live AI traffic detection view" loading="lazy" />
+          <div class="ai-scene-copy">
+            <strong>Live traffic detection</strong>
+            <span>Cars, buses, and trucks are detected frame-by-frame as AI tracks live road flow.</span>
+          </div>
+        </div>
+
+        <div class="ml-showcase-grid">
+          <article class="mls-card">
+            <p class="mls-label">Live Objects (session)</p>
+            <p id="mls-live-objects" class="mls-value">0</p>
+            <p id="mls-live-rate" class="mls-sub">0.0 objects/min</p>
+          </article>
+          <article class="mls-card">
+            <p class="mls-label">Avg Confidence</p>
+            <p id="mls-live-conf" class="mls-value">-</p>
+            <p id="mls-last-seen" class="mls-sub">Waiting for telemetry...</p>
+          </article>
+          <article class="mls-card">
+            <p class="mls-label">Rows (24h)</p>
+            <p id="mls-rows-24h" class="mls-value">0</p>
+            <p id="mls-model-name" class="mls-sub">Model: -</p>
+          </article>
+        </div>
+
+        <div class="mls-bars">
+          <div class="mls-bar-row">
+            <div class="mls-bar-head"><span>Training Readiness</span><strong id="mls-readiness-text">0%</strong></div>
+            <div class="mls-bar-track"><div id="mls-readiness-fill" class="mls-bar-fill"></div></div>
+          </div>
+          <div class="mls-bar-row">
+            <div class="mls-bar-head"><span>Confidence Quality</span><strong id="mls-quality-text">0%</strong></div>
+            <div class="mls-bar-track"><div id="mls-quality-fill" class="mls-bar-fill alt"></div></div>
+          </div>
+        </div>
+
+        <div class="mls-card">
+          <div class="mls-stream-head">
+            <span class="mls-pulse"></span>
+            <strong>AI capture stream</strong>
+          </div>
+          <div id="mls-stream-list" class="mls-stream-list">
+            <p class="loading">Collecting live ML events...</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="bet-panel" class="bet-panel hidden">
+        <button id="bet-panel-back" class="bet-panel-back">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back
+        </button>
+        <h3 id="bp-title">Exact Count Bet</h3>
+        <p id="bp-market-label" class="bp-market-label"></p>
+
+        <div class="bp-field">
+          <label>Vehicle Type</label>
+          <div class="bp-pills" id="bp-vehicle-pills">
+            <button class="pill active" data-val="">All</button>
+            <button class="pill" data-val="car"><svg class="vehicle-icon car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg>Car</button>
+            <button class="pill" data-val="truck"><svg class="vehicle-icon truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="12" height="8" rx="1"></rect><path d="M14 12h4l3 3v2h-7z"></path><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg>Truck</button>
+            <button class="pill" data-val="bus"><svg class="vehicle-icon bus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="11" rx="2"></rect><path d="M3 11h18"></path><circle cx="8" cy="19" r="1.8"></circle><circle cx="16" cy="19" r="1.8"></circle></svg>Bus</button>
+            <button class="pill" data-val="motorcycle"><svg class="vehicle-icon moto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"></circle><circle cx="18" cy="17" r="3"></circle><path d="M6 17l5-6h4l3 6"></path><path d="M12 11l2-3h3"></path></svg>Moto</button>
+          </div>
+        </div>
+
+        <div class="bp-field">
+          <label>Time Window</label>
+          <div class="bp-pills" id="bp-window-pills">
+            <button class="pill" data-val="10">10s</button>
+            <button class="pill active" data-val="30">30s</button>
+            <button class="pill" data-val="60">1m</button>
+            <button class="pill" data-val="120">2m</button>
+            <button class="pill" data-val="300">5m</button>
+          </div>
+        </div>
+
+        <div class="bp-field">
+          <label for="bp-count">Exact Count</label>
+          <div class="bp-count-row">
+            <button class="btn-count-adj" id="bp-count-minus">-</button>
+            <input id="bp-count" type="number" min="0" max="999" value="5" />
+            <button class="btn-count-adj" id="bp-count-plus">+</button>
+          </div>
+        </div>
+
+        <div class="bp-field">
+          <label for="bp-amount">Amount (credits)</label>
+          <input id="bp-amount" type="number" min="1" placeholder="100" class="bp-input" />
+        </div>
+
+        <div class="bp-payout-row">
+          <span>Payout at 8x</span>
+          <strong id="bp-payout">-</strong>
+        </div>
+
+        <p id="bp-error" class="bp-error" role="alert"></p>
+        <button id="bp-submit" class="btn-primary btn-full">Place Bet</button>
+
+        <div id="bp-active-bet" class="bp-active-bet hidden">
+          <div class="bp-active-inner">
+            <span class="bp-active-label">Resolving in</span>
+            <strong id="bp-countdown" class="bp-countdown">-</strong>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.3/dist/pixi.min.js"></script>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/stream.js"></script>
+  <script src="/js/counter.js"></script>
+  <script src="/js/coord-utils.js"></script>
+  <script src="/js/zone-overlay.js"></script>
+  <script src="/js/detection-overlay.js"></script>
+  <script src="/js/floating-count.js"></script>
+  <script src="/js/ml-overlay.js"></script>
+  <script src="/js/fps-overlay.js"></script>
+  <script src="/js/ml-showcase.js"></script>
+  <script src="/js/markets.js"></script>
+  <script src="/js/bet.js"></script>
+  <script src="/js/live-bet.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/activity.js"></script>
+  <script src="/js/index-init.js"></script>
+</body>
+</html>

@@ -771,7 +771,7 @@ async function handleMlRetrain() {
   msg.style.color = "var(--muted)";
 
   try {
-    const res = await fetch("/api/admin/ml-retrain", {
+    let res = await fetch("/api/admin/ml-retrain", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -784,6 +784,21 @@ async function handleMlRetrain() {
         batch: Number.isFinite(batch) ? batch : 16,
       }),
     });
+    if (res.status === 404) {
+      res = await fetch("/api/admin/ml-jobs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminSession.access_token}`,
+        },
+        body: JSON.stringify({
+          dataset_yaml_url,
+          epochs: Number.isFinite(epochs) ? epochs : 20,
+          imgsz: Number.isFinite(imgsz) ? imgsz : 640,
+          batch: Number.isFinite(batch) ? batch : 16,
+        }),
+      });
+    }
     const payload = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to trigger retrain");
 
@@ -1636,9 +1651,14 @@ init();
     if (!box || !adminSession?.access_token) return;
 
     try {
-      const res = await fetch("/api/admin/ml-retrain?action=diagnostics", {
+      let res = await fetch("/api/admin/ml-retrain?action=diagnostics", {
         headers: { Authorization: `Bearer ${adminSession.access_token}` },
       });
+      if (res.status === 404) {
+        res = await fetch("/api/admin/ml-jobs?action=diagnostics", {
+          headers: { Authorization: `Bearer ${adminSession.access_token}` },
+        });
+      }
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load diagnostics");
 
@@ -1702,7 +1722,7 @@ init();
     msg.textContent = "Running one-click pipeline...";
 
     try {
-      const res = await fetch("/api/admin/ml-retrain?action=one-click", {
+      let res = await fetch("/api/admin/ml-retrain?action=one-click", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1715,6 +1735,21 @@ init();
           batch: Number.isFinite(batch) ? batch : 16,
         }),
       });
+      if (res.status === 404) {
+        res = await fetch("/api/admin/ml-jobs?action=one-click", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminSession.access_token}`,
+          },
+          body: JSON.stringify({
+            dataset_yaml_url,
+            epochs: Number.isFinite(epochs) ? epochs : 20,
+            imgsz: Number.isFinite(imgsz) ? imgsz : 640,
+            batch: Number.isFinite(batch) ? batch : 16,
+          }),
+        });
+      }
 
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {

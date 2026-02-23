@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       });
     } else {
       const body = typeof req.body === "string" ? req.body : JSON.stringify(req.body || {});
-      const targetPath = action === "one-click" ? "/admin/ml/one-click" : "/admin/ml/retrain";
+      const targetPath = action === "one-click" ? "/admin/ml/one-click" : "/admin/ml/retrain-async";
       upstream = await fetch(`${railwayUrl}${targetPath}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: authHeader },
@@ -51,4 +51,3 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: "Upstream request failed" });
   }
 }
-

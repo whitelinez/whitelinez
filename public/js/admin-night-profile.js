@@ -36,6 +36,74 @@
     msg.style.color = ok ? "var(--green)" : "var(--red)";
   }
 
+  function isNightWindowActive(hour, startHour, endHour) {
+    if (startHour === endHour) return true;
+    if (startHour < endHour) return hour >= startHour && hour < endHour;
+    return hour >= startHour || hour < endHour;
+  }
+
+  function updateNightProfileIndicator() {
+    const statusEl = el("night-profile-status");
+    const windowEl = el("night-profile-window");
+    if (!statusEl || !windowEl) return;
+
+    const enabled = Number(el("night-profile-enabled")?.value || 0) === 1;
+    const startHour = Number(el("night-start-hour")?.value || 18);
+    const endHour = Number(el("night-end-hour")?.value || 6);
+    const nowHour = new Date().getHours();
+    const activeNow = enabled && isNightWindowActive(nowHour, startHour, endHour);
+
+    statusEl.className = "ml-status-chip";
+    if (!enabled) {
+      statusEl.classList.add("disabled");
+      statusEl.textContent = "Disabled";
+    } else if (activeNow) {
+      statusEl.classList.add("enabled-active");
+      statusEl.textContent = "Active Now";
+    } else {
+      statusEl.classList.add("enabled-idle");
+      statusEl.textContent = "Enabled (Day)";
+    }
+    windowEl.textContent = `Window: ${startHour}:00 - ${endHour}:00 local time`;
+  }
+
+  function initMlSubnav() {
+    const nav = el("ml-subnav");
+    const panel = el("panel-ml");
+    if (!nav || !panel) return;
+
+    const buttons = Array.from(nav.querySelectorAll(".ml-subnav-btn"));
+    const sections = Array.from(panel.querySelectorAll(".ml-section"));
+    const opsGrid = el("ml-ops-grid");
+    if (!buttons.length || !sections.length) return;
+
+    function showSection(targetId) {
+      const target = sections.find((section) => section.id === targetId) || sections[0];
+      const targetInOps = !!(opsGrid && target.parentElement === opsGrid);
+
+      sections.forEach((section) => {
+        section.hidden = section !== target;
+      });
+
+      if (opsGrid) {
+        opsGrid.hidden = !targetInOps;
+        opsGrid.classList.toggle("single-view", targetInOps);
+      }
+
+      buttons.forEach((btn) => {
+        const isActive = btn.getAttribute("data-target") === target.id;
+        btn.classList.toggle("active", isActive);
+        btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => showSection(btn.getAttribute("data-target")));
+    });
+
+    showSection(buttons[0].getAttribute("data-target"));
+  }
+
   function fillForm(s) {
     if (!s) return;
     if (el("night-profile-enabled")) el("night-profile-enabled").value = s.enabled ? "1" : "0";
@@ -46,6 +114,7 @@
     if (el("night-iou")) el("night-iou").value = Number(s.iou ?? 0.45);
     if (el("night-max-det")) el("night-max-det").value = Number(s.max_det ?? 120);
     detectModeFromFields();
+    updateNightProfileIndicator();
   }
 
   function detectModeFromFields() {
@@ -136,12 +205,19 @@
     const btn = el("btn-save-night-profile");
     const presetBtn = el("btn-apply-night-preset");
     if (!btn) return;
+    initMlSubnav();
     if (presetBtn) presetBtn.addEventListener("click", applyPreset);
     ["night-yolo-conf", "night-infer-size", "night-iou", "night-max-det"].forEach((id) => {
       el(id)?.addEventListener("input", detectModeFromFields);
       el(id)?.addEventListener("change", detectModeFromFields);
     });
+    ["night-profile-enabled", "night-start-hour", "night-end-hour"].forEach((id) => {
+      el(id)?.addEventListener("input", updateNightProfileIndicator);
+      el(id)?.addEventListener("change", updateNightProfileIndicator);
+    });
     btn.addEventListener("click", saveSettings);
+    updateNightProfileIndicator();
+    setInterval(updateNightProfileIndicator, 60_000);
     loadSettings();
   });
 })();

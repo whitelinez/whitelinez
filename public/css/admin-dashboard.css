@@ -466,6 +466,76 @@
   margin-bottom: 12px;
 }
 
+.ml-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: #11161d;
+}
+
+.ml-subnav-btn {
+  border: 1px solid var(--admin-border);
+  background: #18212c;
+  color: #c8d7ea;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.ml-subnav-btn:hover {
+  border-color: rgba(15, 185, 177, 0.45);
+  color: #e8fbff;
+}
+
+.ml-subnav-btn.active {
+  border-color: rgba(15, 185, 177, 0.65);
+  background: rgba(15, 185, 177, 0.18);
+  color: #d8fffc;
+}
+
+.ml-section[hidden] {
+  display: none !important;
+}
+
+.ml-status-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9db0c6;
+  background: rgba(137, 154, 178, 0.12);
+}
+
+.ml-status-chip.enabled-active {
+  color: #9af5d4;
+  background: rgba(25, 214, 146, 0.15);
+  border-color: rgba(25, 214, 146, 0.35);
+}
+
+.ml-status-chip.enabled-idle {
+  color: #f6cd93;
+  background: rgba(241, 179, 124, 0.18);
+  border-color: rgba(241, 179, 124, 0.35);
+}
+
+.ml-status-chip.disabled {
+  color: #ffafbe;
+  background: rgba(235, 95, 118, 0.2);
+  border-color: rgba(235, 95, 118, 0.42);
+}
+
 .ml-core-card {
   background: #11161d;
   border: 1px solid var(--admin-border);
@@ -492,6 +562,17 @@
   border: 1px solid var(--admin-border);
   border-radius: 9px;
   padding: 10px;
+}
+
+.ml-pipeline-item.is-actionable {
+  cursor: pointer;
+}
+
+.ml-pipeline-item.is-actionable:hover,
+.ml-pipeline-item.is-actionable:focus-visible {
+  border-color: rgba(15, 185, 177, 0.65);
+  box-shadow: 0 0 0 2px rgba(15, 185, 177, 0.16);
+  outline: none;
 }
 
 .ml-pipeline-item.status-ok {
@@ -601,6 +682,14 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));
   gap: 12px;
+}
+
+.ml-ops-grid.single-view {
+  grid-template-columns: 1fr;
+}
+
+.ml-ops-grid.single-view .card-box.slim {
+  margin-top: 0;
 }
 
 .ml-progress-fill {
@@ -811,6 +900,16 @@
 }
 
 @media (max-width: 640px) {
+  .ml-subnav {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .ml-subnav-btn {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+
   .overview-metrics-primary,
   .overview-metrics-secondary {
     grid-template-columns: 1fr;

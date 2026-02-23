@@ -194,7 +194,17 @@
           <p>Core workflow: capture traffic frames, build dataset, retrain automatically, and promote better models.</p>
         </div>
 
-        <div class="ml-core-grid">
+        <div class="ml-subnav" id="ml-subnav">
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-overview">Pipeline</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-kpis">KPI</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-readiness">Readiness</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-night">Night Profile</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-oneclick">One-Click</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-jobs">Jobs</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-capture">Capture Logs</button>
+        </div>
+
+        <div class="ml-core-grid ml-section" id="ml-sec-overview">
           <div class="ml-core-card">
             <h3>Live ML Pipeline</h3>
             <div class="ml-pipeline-grid">
@@ -229,7 +239,7 @@
           </div>
         </div>
 
-        <div class="ml-kpi-grid">
+        <div class="ml-kpi-grid ml-section" id="ml-sec-kpis">
           <article class="ml-kpi-card">
             <p class="ml-kpi-label">Total Dataset Rows</p>
             <p id="ml-kpi-total" class="ml-kpi-value">-</p>
@@ -252,15 +262,15 @@
           </article>
         </div>
 
-        <div class="ml-ops-grid">
-          <div class="ml-progress-wrap">
+        <div class="ml-ops-grid" id="ml-ops-grid">
+          <div class="ml-progress-wrap ml-section" id="ml-sec-readiness">
             <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
             <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
             <p id="ml-progress-hint" class="admin-hint"></p>
             <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
           </div>
 
-          <div class="ml-control-wrap">
+          <div class="ml-control-wrap ml-section" id="ml-sec-night">
             <h3>Training Controls</h3>
             <div class="field">
               <label for="ml-dataset-yaml">Dataset YAML URL</label>
@@ -279,7 +289,11 @@
             </div>
 
             <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
-              <h4 style="margin:0 0 8px;">Night Tracking Profile</h4>
+              <h4 style="margin:0 0 8px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span>Night Tracking Profile</span>
+                <span id="night-profile-status" class="ml-status-chip">Unknown</span>
+              </h4>
+              <p id="night-profile-window" class="muted" style="font-size:0.8rem; margin:0 0 8px;">Window: --</p>
               <div class="field-row">
                 <div class="field" style="max-width:170px">
                   <label for="night-profile-enabled">Enable Night Profile</label>
@@ -330,7 +344,7 @@
             </div>
           </div>
 
-          <div class="card-box slim">
+          <div class="card-box slim ml-section" id="ml-sec-oneclick">
             <h3>One-Click Model Pipeline</h3>
             <p class="muted" style="font-size:0.82rem; margin-bottom:8px;">
               Runs export -> train -> candidate promotion path and reports exactly what is missing or failing.
@@ -344,11 +358,11 @@
             </div>
           </div>
 
-          <div class="card-box slim">
+          <div class="card-box slim ml-section" id="ml-sec-jobs">
             <h3>Latest Jobs and Models</h3>
             <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
           </div>
-          <div class="card-box slim">
+          <div class="card-box slim ml-section" id="ml-sec-capture">
             <h3>Live Capture Logs</h3>
             <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>
             <div class="ml-control-actions" style="margin-top:10px;">

@@ -336,6 +336,12 @@ function renderMlVisualSummary(totalRows, rows24h, avgConf, activeModel, latestT
   const day = Number(rows24h || 0);
   const conf = Number(avgConf || 0);
   const level = datasetLevel(total, day, conf);
+  const totalPct = total > 0 ? (total / 50000) * 100 : 0;
+  const dayPct = day > 0 ? (day / 5000) * 100 : 0;
+  const confPct = conf > 0 ? (conf / 0.55) * 100 : 0;
+  const dayGap = day - 5000;
+  const hasModel = String(activeModel || "").trim() && String(activeModel || "").trim().toLowerCase() !== "none";
+  const momentumText = day >= 5000 ? `Above target by ${dayGap.toLocaleString()} rows` : `Below target by ${Math.abs(dayGap).toLocaleString()} rows`;
 
   const totalKpi = document.getElementById("ml-kpi-total");
   const dayKpi = document.getElementById("ml-kpi-24h");
@@ -350,9 +356,11 @@ function renderMlVisualSummary(totalRows, rows24h, avgConf, activeModel, latestT
   if (totalKpi) totalKpi.textContent = total.toLocaleString();
   if (dayKpi) dayKpi.textContent = day.toLocaleString();
   if (confKpi) confKpi.textContent = total > 0 ? `${(conf * 100).toFixed(1)}%` : "-";
-  if (totalSub) totalSub.textContent = `Target: 50,000 (${((total / 50000) * 100).toFixed(1)}%)`;
-  if (daySub) daySub.textContent = `Target: 5,000/day (${((day / 5000) * 100).toFixed(1)}%)`;
-  if (confSub) confSub.textContent = `Target: 55%+ (${((conf / 0.55) * 100).toFixed(1)}%)`;
+  if (totalSub) totalSub.textContent = `Target 50,000 | ${totalPct.toFixed(1)}% complete`;
+  if (daySub) daySub.textContent = `Target 5,000/day | ${dayPct.toFixed(1)}% (${momentumText})`;
+  if (confSub) confSub.textContent = total > 0
+    ? `Target 55%+ | ${(conf * 100).toFixed(1)}% current`
+    : "Need telemetry before confidence can be measured";
   if (levelKpi) {
     levelKpi.textContent = level.label;
     levelKpi.className = `ml-kpi-level level-${level.key}`;
@@ -383,7 +391,7 @@ function renderMlVisualSummary(totalRows, rows24h, avgConf, activeModel, latestT
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Active Model</span>
-          <span class="round-row-meta">${escHtml(activeModel || "none")}</span>
+          <span class="round-row-meta"><span class="round-badge ${hasModel ? "round-open" : "round-locked"}">${hasModel ? "ACTIVE" : "NONE"}</span> ${escHtml(activeModel || "none")}</span>
         </div>
       </div>
       <div class="round-row">
@@ -395,7 +403,7 @@ function renderMlVisualSummary(totalRows, rows24h, avgConf, activeModel, latestT
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Collection Momentum</span>
-          <span class="round-row-meta">${day >= 5000 ? "Healthy daily intake" : "Below daily target, keep capture running"}</span>
+          <span class="round-row-meta"><span class="round-badge ${day >= 5000 ? "round-open" : "round-locked"}">${day >= 5000 ? "ON TRACK" : "LOW"}</span> ${momentumText}</span>
         </div>
       </div>
     `;
@@ -613,13 +621,13 @@ async function loadMlUsage() {
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Last Training Job</span>
-          <span class="round-row-meta">${lastJob ? `${lastJob.job_type} / ${lastJob.status} (${fmtAgo(lastJob.created_at)})` : "No jobs yet"}</span>
+          <span class="round-row-meta">${lastJob ? `${String(lastJob.job_type || "-").toUpperCase()} | ${String(lastJob.status || "-").toUpperCase()} | ${fmtAgo(lastJob.created_at)}` : "No training jobs yet"}</span>
         </div>
       </div>
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Last Model Entry</span>
-          <span class="round-row-meta">${lastModel ? `${lastModel.model_name || "-"} / ${lastModel.status || "-"} (${fmtAgo(lastModel.created_at)})` : "No models yet"}</span>
+          <span class="round-row-meta">${lastModel ? `${lastModel.model_name || "-"} | ${String(lastModel.status || "-").toUpperCase()} | ${fmtAgo(lastModel.created_at)}` : "No model entries yet"}</span>
         </div>
       </div>
     `;
@@ -652,7 +660,6 @@ async function loadMlCaptureStatus() {
       uploadSuccessTotal: Number(payload?.upload_success_total || 0),
       uploadFailTotal: Number(payload?.upload_fail_total || 0),
     };
-    const counters = `saved=${mlCaptureStats.captureTotal} upload_ok=${mlCaptureStats.uploadSuccessTotal} upload_fail=${mlCaptureStats.uploadFailTotal}`;
 
     const rows = events.slice().reverse().slice(0, 40).map((evt) => {
       const ts = evt?.ts ? `${new Date(evt.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} (${fmtAgo(evt.ts)})` : "-";
@@ -674,13 +681,13 @@ async function loadMlCaptureStatus() {
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Live Capture</span>
-          <span class="round-row-meta">capture=${captureState} upload=${uploadState} classes=${escHtml(classes)}</span>
+          <span class="round-row-meta">Capture: ${captureState} | Upload: ${uploadState} | Classes: ${escHtml(classes)}</span>
         </div>
       </div>
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Counters</span>
-          <span class="round-row-meta">${escHtml(counters)}</span>
+          <span class="round-row-meta">${mlCaptureStats.captureTotal.toLocaleString()} saved | ${mlCaptureStats.uploadSuccessTotal.toLocaleString()} uploaded | ${mlCaptureStats.uploadFailTotal.toLocaleString()} failed</span>
         </div>
       </div>
       ${rows || `<p class="muted" style="font-size:0.82rem;">No capture events yet.</p>`}
@@ -1441,19 +1448,32 @@ init();
     if (el && value) el.textContent = value;
   }
 
+  function parseLatestTrainingText(rawText) {
+    const textValue = String(rawText || "").trim();
+    if (!textValue) return "No training job found";
+    const parts = textValue.split("/");
+    if (parts.length < 2) return textValue;
+    const jobType = String(parts[0] || "").trim();
+    const statusWithTime = String(parts.slice(1).join("/") || "").trim();
+    return `${jobType.toUpperCase()} | ${statusWithTime}`;
+  }
+
   function syncMlPipelineCards() {
     const total = text("ml-points-total") || text("ml-kpi-total") || "-";
     const day = text("ml-points-24h") || text("ml-kpi-24h") || "-";
     const model = text("ml-model-active") || "none";
+    const modelText = model && model !== "-" && model.toLowerCase() !== "none"
+      ? model
+      : "No active model selected";
 
-    set("ml-pipe-dataset-value", `${total} rows • 24h ${day}`);
-    set("ml-pipe-model-value", model && model !== "-" ? model : "No active model yet");
+    set("ml-pipe-dataset-value", `${total} total | ${day} in last 24h`);
+    set("ml-pipe-model-value", modelText);
 
     const usage = document.getElementById("ml-usage");
     if (usage) {
       const firstMeta = usage.querySelector(".round-row .round-row-meta");
       if (firstMeta && firstMeta.textContent) {
-        set("ml-pipe-training-value", firstMeta.textContent.trim());
+        set("ml-pipe-training-value", parseLatestTrainingText(firstMeta.textContent.trim()));
       }
     }
 
@@ -1462,7 +1482,7 @@ init();
     const upOk = Number(captureState.uploadSuccessTotal || 0);
     const upFail = Number(captureState.uploadFailTotal || 0);
     if (saved > 0 || upOk > 0 || upFail > 0) {
-      set("ml-pipe-capture-value", `saved=${saved} upload_ok=${upOk} upload_fail=${upFail}`);
+      set("ml-pipe-capture-value", `${saved.toLocaleString()} saved | ${upOk.toLocaleString()} uploaded | ${upFail.toLocaleString()} failed`);
     }
   }
 
@@ -1471,6 +1491,67 @@ init();
 })();
 // ML pipeline stage health badges (live)
 (function mlPipelineStageHealthInit() {
+  const STAGE_ACTIONS = {
+    capture: { target: "ml-sec-capture", hint: "Open Capture Logs" },
+    dataset: { target: "ml-sec-kpis", hint: "Open Dataset KPI" },
+    training: { target: "ml-sec-night", hint: "Open Training Controls" },
+    model: { target: "ml-sec-oneclick", hint: "Open One-Click Model Pipeline" },
+  };
+
+  function openMlSection(targetId) {
+    document.querySelector('.admin-nav-btn[data-panel="ml"]')?.click();
+    document.querySelector(`#ml-subnav .ml-subnav-btn[data-target="${targetId}"]`)?.click();
+  }
+
+  function updateCardActionability(stage) {
+    const card = document.getElementById(`ml-pipeline-${stage}`);
+    const action = STAGE_ACTIONS[stage];
+    if (!card || !action) return;
+
+    const inactive = !card.classList.contains("status-ok");
+    card.classList.toggle("is-actionable", inactive);
+    card.setAttribute("tabindex", inactive ? "0" : "-1");
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-disabled", inactive ? "false" : "true");
+    card.title = inactive ? `${action.hint} (click)` : "";
+  }
+
+  function wireCardActions() {
+    Object.keys(STAGE_ACTIONS).forEach((stage) => {
+      const card = document.getElementById(`ml-pipeline-${stage}`);
+      if (!card || card.dataset.wiredAction === "1") return;
+      card.dataset.wiredAction = "1";
+
+      const runAction = () => {
+        if (!card.classList.contains("is-actionable")) return;
+        const action = STAGE_ACTIONS[stage];
+        openMlSection(action.target);
+
+        if (stage === "training") {
+          const retrainBtn = document.getElementById("btn-ml-retrain");
+          if (retrainBtn && window.confirm("Training is not active. Start retrain now?")) {
+            retrainBtn.click();
+          }
+        }
+
+        if (stage === "model") {
+          const oneClickBtn = document.getElementById("btn-ml-one-click");
+          if (oneClickBtn && window.confirm("No active model detected. Run one-click model pipeline now?")) {
+            oneClickBtn.click();
+          }
+        }
+      };
+
+      card.addEventListener("click", runAction);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          runAction();
+        }
+      });
+    });
+  }
+
   function readNum(id) {
     const el = document.getElementById(id);
     if (!el) return NaN;
@@ -1528,8 +1609,14 @@ init();
     } else {
       setStage("model", "ok", "Active");
     }
+
+    updateCardActionability("capture");
+    updateCardActionability("dataset");
+    updateCardActionability("training");
+    updateCardActionability("model");
   }
 
+  document.addEventListener("DOMContentLoaded", wireCardActions);
   setInterval(syncStageHealth, 2500);
   setTimeout(syncStageHealth, 400);
 })();

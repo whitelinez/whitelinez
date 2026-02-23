@@ -203,7 +203,7 @@ const ZoneOverlay = (() => {
   }
 
   function applyVehicleOcclusion() {
-    if (!ctx || overlaySettings.ground_overlay_enabled === false) return;
+    if (!ctx) return;
     if (!Array.isArray(latestDetections) || latestDetections.length === 0) return;
     const bounds = getContentBounds(video);
     const cut = Math.max(0, Math.min(0.85, Number(overlaySettings.ground_occlusion_cutout) || 0.38));

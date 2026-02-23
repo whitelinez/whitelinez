@@ -35,6 +35,7 @@ const DetectionOverlay = (() => {
     outside_scan_hold_ms: 220,
     outside_scan_show_labels: true,
     ground_overlay_enabled: true,
+    show_ground_plane_public: false,
     ground_overlay_alpha: 0.16,
     ground_grid_density: 6,
     ground_occlusion_cutout: 0.38,
@@ -284,6 +285,18 @@ const DetectionOverlay = (() => {
     g.moveTo(x + c, y + h); g.lineTo(x, y + h); g.lineTo(x, y + h - c);
   }
 
+  function canUseUnsafeEval() {
+    try {
+      // Pixi shader bootstrap uses Function/eval under the hood unless unsafe-eval is allowed.
+      // Probe once so we can skip noisy init failures when CSP forbids it.
+      // eslint-disable-next-line no-new-func
+      const fn = new Function("return 1;");
+      return fn() === 1;
+    } catch {
+      return false;
+    }
+  }
+
   function initPixiRenderer() {
     if (!canvas) {
       console.warn("[DetectionOverlay] Pixi init skipped: missing canvas");
@@ -306,6 +319,10 @@ const DetectionOverlay = (() => {
     }
     if (!hasWebGL) {
       console.warn("[DetectionOverlay] WebGL unsupported/blocked on this browser context");
+    }
+    if (!canUseUnsafeEval()) {
+      console.warn("[DetectionOverlay] Pixi init skipped: CSP blocks unsafe-eval; using Canvas2D fallback");
+      return false;
     }
     const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
     const desktopCfg = {
@@ -493,12 +510,15 @@ const DetectionOverlay = (() => {
     const color = opts.color || settings.colors?.[det.cls] || "#66BB6A";
     const lineWidth = Math.max(1, Number(opts.lineWidth ?? settings.line_width) || 1.5);
     const alpha = Math.max(0, Math.min(0.45, Number(opts.alpha ?? settings.fill_alpha) || 0));
+    const doFill = opts.fill !== false;
     const style = String(opts.style || settings.box_style || "solid");
     const showLabels = opts.showLabels !== false;
     const labelText = opts.labelText;
 
-    ctx.fillStyle = hexToRgba(color, alpha);
-    ctx.fillRect(p1.x, p1.y, bw, bh);
+    if (doFill) {
+      ctx.fillStyle = hexToRgba(color, alpha);
+      ctx.fillRect(p1.x, p1.y, bw, bh);
+    }
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
     if (style === "dashed") ctx.setLineDash([8, 4]);
@@ -540,13 +560,16 @@ const DetectionOverlay = (() => {
     const colorNum = hexToPixi(color);
     const lineWidth = Math.max(1, Number(opts.lineWidth ?? settings.line_width) || 1.5);
     const alpha = Math.max(0, Math.min(0.45, Number(opts.alpha ?? settings.fill_alpha) || 0));
+    const doFill = opts.fill !== false;
     const style = String(opts.style || settings.box_style || "solid");
     const showLabels = opts.showLabels !== false;
     const labelText = opts.labelText;
 
-    g.beginFill(colorNum, alpha);
-    g.drawRect(p1.x, p1.y, bw, bh);
-    g.endFill();
+    if (doFill) {
+      g.beginFill(colorNum, alpha);
+      g.drawRect(p1.x, p1.y, bw, bh);
+      g.endFill();
+    }
 
     if (style === "corner") {
       drawCornerBoxPixi(g, p1.x, p1.y, bw, bh, colorNum, lineWidth);
@@ -652,8 +675,10 @@ const DetectionOverlay = (() => {
     else if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     else return;
     const bounds = getContentBounds(video);
-    if (pixiEnabled) drawGroundOverlayPixi(bounds);
-    else drawGroundOverlayCanvas(bounds, detections);
+    if (settings.show_ground_plane_public === true) {
+      if (pixiEnabled) drawGroundOverlayPixi(bounds);
+      else drawGroundOverlayCanvas(bounds, detections);
+    }
     if (!detections.length) {
       if (pixiEnabled) endPixiFrame();
       return;
@@ -715,10 +740,11 @@ const DetectionOverlay = (() => {
       drawDetectionBox(g.det, bounds, {
         style: "dashed",
         lineWidth: 1.0,
-        alpha: 0.02,
+        alpha: 0,
+        fill: false,
         showLabels: settings.outside_scan_show_labels === true,
         labelText: "SCAN",
-        labelBgAlpha: 0.18,
+        labelBgAlpha: 0.10,
         labelColor: "#D7E6F5",
       });
     }

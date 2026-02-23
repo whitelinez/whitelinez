@@ -998,6 +998,19 @@ function renderHealthOverview(health, errMsg = "") {
 
   const statusText = (ok) => ok ? "OK" : "Down";
   const dot = (ok) => `<span class="health-dot ${ok ? "ok" : "down"}"></span>${statusText(ok)}`;
+  const weather = health.weather_api || {};
+  const weatherStatus = String(weather.status || "not_checked");
+  const weatherOk = weatherStatus === "ok";
+  const weatherLabel =
+    weatherStatus === "ok" ? "OK" :
+    weatherStatus === "stale" ? "Stale" :
+    weatherStatus === "error" ? "Error" : "Not checked";
+  const weatherAge = Number.isFinite(Number(weather.cache_age_sec))
+    ? `${Number(weather.cache_age_sec)}s ago`
+    : "-";
+  const weatherMeta = weather?.latest
+    ? `${String(weather.latest.lighting || "-")} / ${String(weather.latest.weather || "-")}`
+    : (weather.last_error ? "fetch failed" : "waiting");
 
   box.innerHTML = `
     <div class="health-grid">
@@ -1032,6 +1045,14 @@ function renderHealthOverview(health, errMsg = "") {
       <div class="health-item">
         <p class="health-item-title">Active Round</p>
         <p class="health-item-value">${health.active_round_id ? `${String(health.active_round_status || "active").toUpperCase()} (${String(health.active_round_id).slice(0, 8)}...)` : "none"}</p>
+      </div>
+      <div class="health-item">
+        <p class="health-item-title">Weather API</p>
+        <p class="health-item-value"><span class="health-dot ${weatherOk ? "ok" : "down"}"></span>${weatherLabel} (${weatherAge})</p>
+      </div>
+      <div class="health-item">
+        <p class="health-item-title">Weather Snapshot</p>
+        <p class="health-item-value">${weatherMeta}</p>
       </div>
     </div>
   `;

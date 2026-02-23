@@ -63,16 +63,80 @@
         </div>
 
         <div id="ml-hud" class="ml-hud">
-          <p class="ml-hud-title">AI Learning</p>
-          <p id="ml-hud-msg" class="ml-hud-msg">Vehicle vision sharpens as more scenes are observed.</p>
-          <p class="ml-hud-warning" role="note">Camera conditions can reduce detection quality. Scene and weather are estimated live from the video feed.</p>
-          <div class="ml-hud-stats">
-            <span>Status: <strong id="ml-hud-level">Warmup</strong></span>
-            <span>Samples Processed: <strong id="ml-hud-frames">0</strong></span>
-            <span>Objects Detected: <strong id="ml-hud-dets">0</strong></span>
-            <span>Average Confidence: <strong id="ml-hud-conf">-</strong></span>
-            <span>Scene / Weather: <strong id="ml-hud-profile">-</strong></span>
-            <span>Data Delay: <strong id="ml-hud-delay">-</strong></span>
+          <div class="ml-hud-head">
+            <p class="ml-hud-title">VISION HUD</p>
+            <span id="ml-hud-level" class="ml-hud-state">Idle</span>
+          </div>
+
+          <p id="ml-hud-msg" class="ml-hud-msg">Initializing live scene scan...</p>
+
+          <div class="ml-hud-chips">
+            <span class="ml-chip">
+              <span class="ml-chip-label">
+                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M3 12h18"></path>
+                  <path d="M12 3a14 14 0 0 1 0 18"></path>
+                </svg>
+                Scene
+              </span>
+              <strong id="ml-hud-profile">Scanning...</strong>
+            </span>
+            <span class="ml-chip">
+              <span class="ml-chip-label">
+                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 7v5l3 2"></path>
+                </svg>
+                Delay
+              </span>
+              <strong id="ml-hud-delay">Scanning...</strong>
+            </span>
+          </div>
+
+          <div class="ml-hud-bars">
+            <div class="ml-bar-row">
+              <span class="ml-bar-label">
+                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 18h3"></path>
+                  <path d="M8 14h3"></path>
+                  <path d="M13 10h3"></path>
+                  <path d="M18 6h3"></path>
+                </svg>
+                Model Confidence
+              </span>
+              <strong id="ml-hud-conf">0%</strong>
+              <div class="ml-bar-track"><div id="ml-hud-conf-bar" class="ml-bar-fill"></div></div>
+            </div>
+            <div class="ml-bar-row">
+              <span class="ml-bar-label">
+                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 11V8a4 4 0 1 1 8 0v3"></path>
+                  <rect x="6" y="11" width="12" height="10" rx="2"></rect>
+                </svg>
+                Scene Lock
+              </span>
+              <strong id="ml-hud-scene-conf">0%</strong>
+              <div class="ml-bar-track"><div id="ml-hud-scene-bar" class="ml-bar-fill alt"></div></div>
+            </div>
+          </div>
+
+          <div class="ml-hud-metrics">
+            <span>
+              <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                <path d="M8 20h8"></path>
+              </svg>
+              Frames <strong id="ml-hud-frames">0</strong>
+            </span>
+            <span>
+              <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="8" cy="8" r="3"></circle>
+                <circle cx="16" cy="14" r="3"></circle>
+                <path d="M5 19c1.5-2 4.5-2 6 0"></path>
+              </svg>
+              Objects <strong id="ml-hud-dets">0</strong>
+            </span>
           </div>
         </div>
 

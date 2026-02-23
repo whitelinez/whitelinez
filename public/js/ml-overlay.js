@@ -150,48 +150,78 @@ const MlOverlay = (() => {
     return { label: "Warming up", msg: "Early learning stage. Confidence will increase as data accumulates." };
   }
 
+  function mapSceneValue(value, fallback) {
+    const v = String(value || "").trim().toLowerCase();
+    if (!v || v === "unknown" || v === "none" || v === "null") return fallback;
+    return v.replaceAll("_", " ");
+  }
+
+  function getSceneDisplay() {
+    const lighting = mapSceneValue(state.sceneLighting, "scanning");
+    const weather = mapSceneValue(state.sceneWeather, "scanning");
+    const confPct = Math.round(Math.max(0, Math.min(1, Number(state.sceneConfidence) || 0)) * 100);
+    const hasRealScene = lighting !== "scanning" || weather !== "scanning";
+    if (!hasRealScene && state.frames === 0) return "Idle";
+    if (!hasRealScene || confPct < 18) return "Scanning...";
+    const title = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    return `${title(lighting)} | ${title(weather)}`;
+  }
+
+  function getHudState(avgConf) {
+    const sceneText = getSceneDisplay();
+    if (state.frames === 0) return "Idle";
+    if (sceneText === "Scanning..." || state.lastDelayMs == null) return "Scanning";
+    const lighting = mapSceneValue(state.sceneLighting, "scanning");
+    if (lighting === "night") return "Night";
+    if (lighting === "day") return "Day";
+    if (Number.isFinite(avgConf) && avgConf >= 0.56 && state.detections > 150) return "Ready";
+    return "Scanning";
+  }
+
+  function percent(n) {
+    const v = Math.max(0, Math.min(100, Number(n) || 0));
+    return `${Math.round(v)}%`;
+  }
+
   function render() {
     const titleEl = document.querySelector(".ml-hud-title");
     const levelEl = document.getElementById("ml-hud-level");
     const msgEl = document.getElementById("ml-hud-msg");
-    const warnEl = document.querySelector(".ml-hud-warning");
     const framesEl = document.getElementById("ml-hud-frames");
     const detsEl = document.getElementById("ml-hud-dets");
     const confEl = document.getElementById("ml-hud-conf");
     const sceneEl = document.getElementById("ml-hud-profile");
     const delayEl = document.getElementById("ml-hud-delay");
-    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl) return;
+    const confBarEl = document.getElementById("ml-hud-conf-bar");
+    const sceneBarEl = document.getElementById("ml-hud-scene-bar");
+    const sceneConfEl = document.getElementById("ml-hud-scene-conf");
+    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl || !confBarEl || !sceneBarEl || !sceneConfEl) return;
 
     const level = getLevel();
     const avgConf = getAvgConf();
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
-    const title = isMobile ? "Live Vision Status" : "Live AI Vision Status";
-    const loopTag = state.modelLoop === "active"
-      ? (isMobile ? "" : " | retrain loop on")
-      : "";
-    const compactLabel = isMobile
-      ? level.label.replace("Stabilizing", "Stable").replace("Warming up", "Warmup")
-      : level.label;
-    const modeLabel = state.runtimeProfile
-      ? state.runtimeProfile.replaceAll("_", " ")
-      : "balanced mode";
-    const sceneLabel = `${state.sceneLighting} | ${state.sceneWeather}`;
+    const title = isMobile ? "VISION" : "LIVE VISION HUD";
+    const hudState = getHudState(avgConf);
+    const modeLabel = state.runtimeProfile ? state.runtimeProfile.replaceAll("_", " ") : "balanced";
+    const sceneLabel = getSceneDisplay();
     const delayText = Number.isFinite(state.lastDelayMs)
       ? `${Math.round(state.lastDelayMs)}ms`
-      : "-";
+      : (state.frames > 0 ? "Scanning..." : "Idle");
     const reasonText = state.runtimeReason ? state.runtimeReason.replaceAll("_", " ") : "";
-    const sceneConfidenceText = Number.isFinite(state.sceneConfidence)
-      ? `${Math.round((state.sceneConfidence || 0) * 100)}%`
-      : "-";
-    const showNightWarning = false;
+    const confPct = avgConf == null ? 0 : Math.max(0, Math.min(100, avgConf * 100));
+    const scenePct = Math.max(0, Math.min(100, (Number(state.sceneConfidence) || 0) * 100));
 
     titleEl.textContent = title;
-    levelEl.textContent = `${compactLabel}${loopTag}`;
-    msgEl.textContent = `${level.msg} Scene: ${sceneLabel} (${sceneConfidenceText} confidence). Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
-    if (warnEl) warnEl.style.display = showNightWarning ? "block" : "none";
+    levelEl.textContent = hudState;
+    levelEl.classList.toggle("is-live", hudState === "Day" || hudState === "Ready");
+    levelEl.classList.toggle("is-scan", hudState === "Scanning");
+    msgEl.textContent = `${level.label}. Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
-    confEl.textContent = avgConf == null ? "-" : `${(avgConf * 100).toFixed(1)}%`;
+    confEl.textContent = percent(confPct);
+    confBarEl.style.width = `${confPct.toFixed(1)}%`;
+    sceneConfEl.textContent = percent(scenePct);
+    sceneBarEl.style.width = `${scenePct.toFixed(1)}%`;
     sceneEl.textContent = sceneLabel;
     delayEl.textContent = delayText;
   }

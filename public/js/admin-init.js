@@ -490,7 +490,7 @@ function renderHealthOverview(health, errMsg = "") {
       </div>
       <div class="health-item">
         <p class="health-item-title">Active Round</p>
-        <p class="health-item-value">${health.active_round_id ? String(health.active_round_id).slice(0, 8) + "..." : "none"}</p>
+        <p class="health-item-value">${health.active_round_id ? `${String(health.active_round_status || "active").toUpperCase()} (${String(health.active_round_id).slice(0, 8)}...)` : "none"}</p>
       </div>
     </div>
   `;
@@ -1272,18 +1272,37 @@ async function handleSetAdmin() {
   }
 }
 
+async function fetchAllAdminUsers(jwt) {
+  const perPage = 200;
+  const maxPages = 10;
+  const byId = new Map();
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const res = await fetch(`/api/admin/set-role?page=${page}&per_page=${perPage}`, {
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load users");
+
+    const pageUsers = Array.isArray(payload?.users) ? payload.users : [];
+    for (const u of pageUsers) {
+      const key = String(u?.id || "").trim();
+      if (!key) continue;
+      if (!byId.has(key)) byId.set(key, u);
+    }
+
+    if (pageUsers.length < perPage) break;
+  }
+
+  return Array.from(byId.values());
+}
+
 async function loadRegisteredUsers() {
   const box = document.getElementById("registered-users");
   if (!box || !adminSession?.access_token) return;
 
   try {
-    const res = await fetch("/api/admin/set-role?per_page=500", {
-      headers: { Authorization: `Bearer ${adminSession.access_token}` },
-    });
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to load users");
-
-    const users = payload?.users || [];
+    const users = await fetchAllAdminUsers(adminSession.access_token);
     if (!users.length) {
       box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No registered users found.</p>`;
       return;
@@ -1292,7 +1311,9 @@ async function loadRegisteredUsers() {
     box.innerHTML = users.map((u) => {
       const email = escHtml(u.email || "no-email");
       const uid = escHtml(String(u.id || "").slice(0, 8));
-      const role = escHtml(String(u.role || "user").toUpperCase());
+      const roleValue = String(u.role || "user").toLowerCase();
+      const role = escHtml(roleValue.toUpperCase());
+      const roleClass = roleValue === "admin" ? "round-open" : "round-upcoming";
       const username = u.username ? `@${escHtml(String(u.username))}` : "";
       const created = u.created_at
         ? new Date(u.created_at).toLocaleString([], {
@@ -1317,20 +1338,16 @@ async function loadRegisteredUsers() {
       const lastBetAt = bs.last_bet_at ? fmtAgo(bs.last_bet_at) : "never";
 
       return `
-        <div class="round-row">
-          <div class="round-row-info">
-            <span class="round-row-id">${email}</span>
-            <span class="round-row-meta">
-              <span class="round-badge ${String(u.role || "user").toLowerCase() === "admin" ? "round-open" : "round-upcoming"}">${role}</span>
-              ${username ? `${username} • ` : ""}id ${uid}... • joined ${created} • last sign-in ${lastSignIn}
-            </span>
-            <span class="round-row-meta">
-              bets ${betCount} • staked ${totalStaked.toLocaleString()} • W ${wonCount} / L ${lostCount} / P ${pendingCount}
-            </span>
-            <span class="round-row-meta">
-              latest: ${lastBetLabel} • stake ${lastBetAmount} • ${lastBetStatus} • ${lastBetAt}
-            </span>
+        <div class="user-card">
+          <div class="user-card-top">
+            <div>
+              <p class="user-email">${email}</p>
+              <p class="user-meta">${username ? `${username} | ` : ""}ID ${uid}... | Joined ${created} | Last sign-in ${lastSignIn}</p>
+            </div>
+            <span class="round-badge ${roleClass}">${role}</span>
           </div>
+          <p class="user-stats">Bets ${betCount} | Staked ${totalStaked.toLocaleString()} | W ${wonCount} | L ${lostCount} | P ${pendingCount}</p>
+          <p class="user-latest">Latest: ${lastBetLabel} | Stake ${lastBetAmount} | ${lastBetStatus} | ${lastBetAt}</p>
         </div>
       `;
     }).join("");
@@ -1652,5 +1669,7 @@ init();
     setInterval(loadMlDiagnosticsPanel, 20000);
   });
 })();
+
+
 
 

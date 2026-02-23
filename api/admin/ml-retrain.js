@@ -4,6 +4,10 @@
  * - POST ?action=one-click : run one-click pipeline
  * - POST (default) : trigger retrain
  */
+export const config = {
+  maxDuration: 300,
+};
+
 export default async function handler(req, res) {
   const method = req.method || "GET";
   if (!["GET", "POST"].includes(method)) {

@@ -254,9 +254,106 @@
   color: var(--admin-muted);
 }
 
+.overview-dashboard {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.overview-metrics-primary,
+.overview-metrics-secondary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overview-metrics-primary .stat-card,
+.overview-metrics-secondary .stat-card {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  min-height: 84px;
+}
+
+.overview-metrics-primary .stat-card {
+  background:
+    linear-gradient(180deg, rgba(15,185,177,0.16), rgba(15,185,177,0.06)),
+    var(--admin-surface-2);
+  border-color: rgba(15,185,177,0.35);
+}
+
+.overview-metrics-primary .stat-val {
+  font-size: clamp(1.5rem, 2.1vw, 2rem);
+  color: #e9fffd;
+}
+
+.overview-metrics-secondary .stat-card {
+  min-height: 70px;
+  background: rgba(255,255,255,0.02);
+}
+
+.overview-metrics-secondary .stat-val {
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  color: #f2f7ff;
+}
+
+.overview-metrics-secondary .stat-label {
+  font-size: 10px;
+}
+
+.overview-bottom {
+  margin-top: 10px;
+  align-items: start;
+}
+
+.overview-feed-card {
+  min-height: 320px;
+}
+
+.overview-feed-card #health-overview,
+.overview-feed-card #recent-rounds {
+  max-height: 256px;
+}
+
 .data-list {
   max-height: 340px;
   overflow: auto;
+}
+
+.user-card {
+  background: #11161d;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.user-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.user-email {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f2f8ff;
+}
+
+.user-meta,
+.user-stats,
+.user-latest {
+  margin: 0;
+  font-size: 12px;
+  color: var(--admin-muted);
+  line-height: 1.45;
+}
+
+.user-stats {
+  color: #cdd8e7;
 }
 
 .data-list.tall {
@@ -682,6 +779,11 @@
     grid-template-columns: repeat(2, minmax(120px, 1fr));
   }
 
+  .overview-metrics-primary,
+  .overview-metrics-secondary {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
   .overview-grid,
   .rounds-grid {
     grid-template-columns: 1fr;
@@ -709,8 +811,27 @@
 }
 
 @media (max-width: 640px) {
+  .overview-metrics-primary,
+  .overview-metrics-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-metrics-primary .stat-card,
+  .overview-metrics-secondary .stat-card {
+    min-height: 64px;
+  }
+
+  .overview-feed-card {
+    min-height: 260px;
+  }
+
   .ml-pipeline-grid {
     grid-template-columns: 1fr;
+  }
+
+  .user-card-top {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

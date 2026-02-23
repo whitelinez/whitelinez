@@ -148,23 +148,40 @@
           </section>
         </div>
 
-        <div class="stats-grid compact" style="margin-top:12px;">
-          <div class="stat-card"><div class="stat-val" id="stat-count">-</div><div class="stat-label">Live Count</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-round">-</div><div class="stat-label">Round Status</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-bets">-</div><div class="stat-label">Bets Placed</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">WS Users</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
-          <div class="stat-card"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
+        <div class="overview-dashboard">
+          <div class="overview-metrics-primary">
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-count">-</div>
+              <div class="stat-label">Live Count</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-round">-</div>
+              <div class="stat-label">Round Status</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-bets">-</div>
+              <div class="stat-label">Bets Placed</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-users">-</div>
+              <div class="stat-label">WS Users</div>
+            </div>
+          </div>
+
+          <div class="overview-metrics-secondary">
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
+          </div>
         </div>
 
-        <div class="overview-grid" style="margin-top:12px;">
-          <div class="card-box">
+        <div class="overview-grid overview-bottom">
+          <div class="card-box overview-feed-card">
             <h3>System Health</h3>
             <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
           </div>
-          <div class="card-box">
+          <div class="card-box overview-feed-card">
             <h3>Recent Rounds</h3>
             <div id="recent-rounds" class="rounds-list data-list"><p class="loading">Loading...</p></div>
           </div>

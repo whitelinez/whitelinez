@@ -6,6 +6,7 @@
 let adminSession = null;
 let latestCaptureUploadError = null;
 let mlCaptureStats = { captureTotal: 0, uploadSuccessTotal: 0, uploadFailTotal: 0 };
+let capturePaused = false;
 let adminLiveWs = null;
 let adminLiveWsTimer = null;
 let adminLiveWsBackoffMs = 2000;
@@ -1044,11 +1045,16 @@ async function loadMlCaptureStatus() {
     const classes = (payload?.capture_classes || []).join(", ") || "-";
     const captureState = payload?.capture_enabled ? "ON" : "OFF";
     const uploadState = payload?.upload_enabled ? "ON" : "OFF";
+    capturePaused = !!payload?.capture_paused;
     mlCaptureStats = {
       captureTotal: Number(payload?.capture_total || 0),
       uploadSuccessTotal: Number(payload?.upload_success_total || 0),
       uploadFailTotal: Number(payload?.upload_fail_total || 0),
     };
+    const pauseBtn = document.getElementById("btn-toggle-capture-pause");
+    if (pauseBtn) {
+      pauseBtn.textContent = capturePaused ? "Resume Capture" : "Pause Capture";
+    }
 
     const rows = events.slice().reverse().slice(0, 40).map((evt) => {
       const ts = evt?.ts ? `${new Date(evt.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} (${fmtAgo(evt.ts)})` : "-";
@@ -1070,7 +1076,7 @@ async function loadMlCaptureStatus() {
       <div class="round-row">
         <div class="round-row-info">
           <span class="round-row-id">Live Capture</span>
-          <span class="round-row-meta">Capture: ${captureState} | Upload: ${uploadState} | Classes: ${escHtml(classes)}</span>
+          <span class="round-row-meta">Capture: ${captureState} | Upload: ${uploadState} | Paused: ${capturePaused ? "YES" : "NO"} | Classes: ${escHtml(classes)}</span>
         </div>
       </div>
       <div class="round-row">
@@ -1132,6 +1138,45 @@ async function copyLatestCaptureError() {
   } catch {
     msgEl.style.color = "var(--red)";
     msgEl.textContent = "Copy failed. Open browser console logs.";
+  }
+}
+
+async function toggleCapturePause() {
+  const btn = document.getElementById("btn-toggle-capture-pause");
+  const msgEl = document.getElementById("ml-capture-pause-msg");
+  if (!btn || !adminSession?.access_token) return;
+
+  const nextPaused = !capturePaused;
+  btn.disabled = true;
+  if (msgEl) {
+    msgEl.style.color = "var(--muted)";
+    msgEl.textContent = nextPaused ? "Pausing capture..." : "Resuming capture...";
+  }
+
+  try {
+    const res = await fetch("/api/admin/ml-capture-status", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminSession.access_token}`,
+      },
+      body: JSON.stringify({ paused: nextPaused }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to update capture state");
+    capturePaused = !!payload?.capture_paused;
+    if (msgEl) {
+      msgEl.style.color = "var(--green)";
+      msgEl.textContent = capturePaused ? "Capture paused." : "Capture resumed.";
+    }
+    await loadMlCaptureStatus();
+  } catch (e) {
+    if (msgEl) {
+      msgEl.style.color = "var(--red)";
+      msgEl.textContent = e?.message || "Could not update capture state.";
+    }
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1846,6 +1891,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-session-start")?.addEventListener("click", handleStartSession);
   document.getElementById("btn-ml-retrain")?.addEventListener("click", handleMlRetrain);
   document.getElementById("btn-ml-train-captures")?.addEventListener("click", handleMlTrainCaptures);
+  document.getElementById("btn-toggle-capture-pause")?.addEventListener("click", toggleCapturePause);
   document.getElementById("btn-copy-capture-error")?.addEventListener("click", copyLatestCaptureError);
 
   // Market type visibility

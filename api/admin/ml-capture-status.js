@@ -3,7 +3,7 @@
  * Proxy ML capture/upload status from Railway backend.
  */
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  if (!["GET", "PATCH"].includes(req.method)) return res.status(405).json({ error: "Method not allowed" });
 
   const railwayUrl = process.env.RAILWAY_BACKEND_URL;
   if (!railwayUrl) return res.status(500).json({ error: "Server misconfiguration" });
@@ -15,9 +15,17 @@ export default async function handler(req, res) {
 
   try {
     const limit = Number(req.query?.limit || 30);
-    const upstream = await fetch(`${railwayUrl}/admin/ml/capture-status?limit=${encodeURIComponent(limit)}`, {
-      method: "GET",
-      headers: { Authorization: authHeader },
+    const isPatch = req.method === "PATCH";
+    const upstreamUrl = isPatch
+      ? `${railwayUrl}/admin/ml/capture-status`
+      : `${railwayUrl}/admin/ml/capture-status?limit=${encodeURIComponent(limit)}`;
+    const upstream = await fetch(upstreamUrl, {
+      method: req.method,
+      headers: {
+        Authorization: authHeader,
+        ...(isPatch ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(isPatch ? { body: JSON.stringify(req.body || {}) } : {}),
     });
     const raw = await upstream.text();
     let data;
@@ -28,4 +36,3 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: "Upstream request failed" });
   }
 }
-

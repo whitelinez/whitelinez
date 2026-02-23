@@ -164,7 +164,7 @@ const AdminLine = (() => {
       }
 
       redraw();
-      updateStatus("Zones loaded — click to redraw active zone");
+      updateZoneValidityStatus("Zones loaded — click to redraw active zone");
     } catch (e) {
       console.warn("[AdminLine] Could not load zones:", e);
     }
@@ -187,10 +187,7 @@ const AdminLine = (() => {
 
     redraw();
 
-    const saveBtn = document.getElementById("btn-save-line");
-    if ((countPoints.length >= COUNT_MIN_POINTS || detectPoints.length >= 3) && saveBtn) {
-      saveBtn.removeAttribute("disabled");
-    }
+    updateZoneValidityStatus();
   }
 
   function toCanvas(rp) {
@@ -274,11 +271,16 @@ const AdminLine = (() => {
     if (activeMode === "detect") detectPoints = [];
     else countPoints = [];
     redraw();
-    updateStatus("Zone cleared");
+    updateZoneValidityStatus("Zone cleared");
   }
 
   async function saveZones() {
     if (isSaving) return;
+    const validity = getZoneValidity();
+    if (!validity.ok) {
+      updateStatus(`Fix zone before save: ${validity.errors[0]}`);
+      return;
+    }
     isSaving = true;
     updateStatus("Saving...");
 
@@ -448,6 +450,87 @@ const AdminLine = (() => {
   function updateStatus(msg) {
     const el = document.getElementById("line-status");
     if (el) el.textContent = msg;
+  }
+
+  function samePoint(a, b) {
+    return Math.abs(a.rx - b.rx) < 1e-9 && Math.abs(a.ry - b.ry) < 1e-9;
+  }
+
+  function hasDuplicatePoints(pts) {
+    for (let i = 0; i < pts.length; i += 1) {
+      for (let j = i + 1; j < pts.length; j += 1) {
+        if (samePoint(pts[i], pts[j])) return true;
+      }
+    }
+    return false;
+  }
+
+  function ccw(a, b, c) {
+    return (c.ry - a.ry) * (b.rx - a.rx) > (b.ry - a.ry) * (c.rx - a.rx);
+  }
+
+  function segmentsIntersect(a, b, c, d) {
+    return ccw(a, c, d) !== ccw(b, c, d) && ccw(a, b, c) !== ccw(a, b, d);
+  }
+
+  function polygonSelfIntersects(pts) {
+    const n = pts.length;
+    if (n < 4) return false;
+    for (let i = 0; i < n; i += 1) {
+      const a1 = pts[i];
+      const a2 = pts[(i + 1) % n];
+      for (let j = i + 1; j < n; j += 1) {
+        const b1 = pts[j];
+        const b2 = pts[(j + 1) % n];
+
+        // Adjacent edges share a vertex and are allowed.
+        if (i === j) continue;
+        if ((i + 1) % n === j) continue;
+        if (i === (j + 1) % n) continue;
+
+        if (segmentsIntersect(a1, a2, b1, b2)) return true;
+      }
+    }
+    return false;
+  }
+
+  function getZoneValidity() {
+    const errors = [];
+
+    if (countPoints.length === 2 && samePoint(countPoints[0], countPoints[1])) {
+      errors.push("Count line points cannot be identical.");
+    }
+    if (countPoints.length >= 3) {
+      if (hasDuplicatePoints(countPoints)) errors.push("Count zone has duplicate points.");
+      if (polygonSelfIntersects(countPoints)) errors.push("Count zone polygon is self-intersecting.");
+    }
+
+    if (detectPoints.length >= 3) {
+      if (hasDuplicatePoints(detectPoints)) errors.push("Detect zone has duplicate points.");
+      if (polygonSelfIntersects(detectPoints)) errors.push("Detect zone polygon is self-intersecting.");
+    }
+
+    return { ok: errors.length === 0, errors };
+  }
+
+  function updateZoneValidityStatus(prefixMsg = "") {
+    const validity = getZoneValidity();
+    const saveBtn = document.getElementById("btn-save-line");
+    const canSave = validity.ok && (countPoints.length >= COUNT_MIN_POINTS || detectPoints.length >= 3);
+    if (saveBtn) {
+      if (canSave) saveBtn.removeAttribute("disabled");
+      else saveBtn.setAttribute("disabled", "disabled");
+    }
+    if (prefixMsg) {
+      if (!validity.ok) updateStatus(`${prefixMsg}. ${validity.errors[0]}`);
+      else updateStatus(prefixMsg);
+      return;
+    }
+    if (!validity.ok) {
+      updateStatus(`Zone warning: ${validity.errors[0]}`);
+    } else if (countPoints.length || detectPoints.length) {
+      updateStatus("Zone ready to save");
+    }
   }
 
   return { init, clearActive, saveZones, refresh, saveCountSettingsOnly };

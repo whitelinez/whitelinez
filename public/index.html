@@ -11,7 +11,10 @@
 <body class="dark">
 
   <header class="site-header">
-    <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" /></a>
+    <a href="/index.html" class="logo">
+      <img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" />
+      <span class="logo-credit">created by ruel</span>
+    </a>
     <nav>
       <span id="nav-balance" class="nav-balance hidden"></span>
       <span id="nav-auth">
@@ -36,7 +39,6 @@
         <video id="live-video" muted playsinline autoplay></video>
         <canvas id="detection-canvas" class="detection-overlay"></canvas>
         <canvas id="zone-canvas" class="zone-overlay"></canvas>
-        <div class="creator-tag" aria-label="creator credit">created by ruel</div>
         <div id="fps-overlay" class="fps-overlay" aria-live="polite">FPS --.-</div>
 
         <div id="play-overlay" class="play-overlay hidden">
@@ -96,9 +98,13 @@
       </div>
 
       <div id="tab-chat" class="tab-content">
+        <div class="chat-meta-row">
+          <span id="chat-online-count" class="chat-online-count">0 online</span>
+          <div id="chat-online-users" class="chat-online-users"></div>
+        </div>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input-row">
-          <input id="chat-input" type="text" maxlength="280" placeholder="Say something..." />
+          <input id="chat-input" type="text" maxlength="280" placeholder="Say something... (@username)" />
           <button id="chat-send" class="btn-primary">Send</button>
         </div>
         <p id="chat-login-hint" class="chat-login-hint hidden">

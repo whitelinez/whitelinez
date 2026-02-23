@@ -11,6 +11,28 @@ let adminLiveWsTimer = null;
 let adminLiveWsBackoffMs = 2000;
 const DEFAULT_ML_DATASET_YAML_URL = "https://zaxycvrbdzkptjzrcxel.supabase.co/storage/v1/object/public/ml-datasets/datasets/whitelinez/data-v3.yaml";
 const ML_DATASET_URL_STORAGE_KEY = "whitelinez.ml.dataset_yaml_url";
+const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v1";
+const DETECTION_DEFAULT_SETTINGS = {
+  box_style: "solid",
+  line_width: 1.5,
+  fill_alpha: 0.09,
+  max_boxes: 120,
+  show_labels: true,
+  detect_zone_only: false,
+  colors: {
+    car: "#29B6F6",
+    truck: "#FF7043",
+    bus: "#AB47BC",
+    motorcycle: "#FFD600",
+  },
+  appearance: {
+    brightness: 100,
+    contrast: 100,
+    saturate: 100,
+    hue: 0,
+    blur: 0,
+  },
+};
 
 // ── Guardrail constants ────────────────────────────────────────────────────────
 const MIN_DURATION_MIN      = 5;
@@ -121,6 +143,203 @@ function fmtLocal(d) { return d.toLocaleTimeString([], { hour: "2-digit", minute
 function fmtDurationMin(min) {
   if (min >= 60) { const h = Math.floor(min/60); const m = min%60; return m === 0 ? `${h}h` : `${h}h ${m}m`; }
   return `${min}m`;
+}
+function getDetectionSettings() {
+  try {
+    const raw = localStorage.getItem(DETECTION_SETTINGS_STORAGE_KEY);
+    if (!raw) return { ...DETECTION_DEFAULT_SETTINGS, colors: { ...DETECTION_DEFAULT_SETTINGS.colors } };
+    const parsed = JSON.parse(raw);
+    return {
+      ...DETECTION_DEFAULT_SETTINGS,
+      ...parsed,
+      colors: { ...DETECTION_DEFAULT_SETTINGS.colors, ...(parsed?.colors || {}) },
+      appearance: { ...DETECTION_DEFAULT_SETTINGS.appearance, ...(parsed?.appearance || {}) },
+    };
+  } catch {
+    return { ...DETECTION_DEFAULT_SETTINGS, colors: { ...DETECTION_DEFAULT_SETTINGS.colors } };
+  }
+}
+function publishDetectionSettings(settings) {
+  applyAdminVideoAppearance(settings);
+  window.dispatchEvent(new CustomEvent("detection:settings-update", { detail: settings }));
+}
+function buildAdminVideoFilter(settings) {
+  const a = settings?.appearance || {};
+  const brightness = Math.max(50, Math.min(180, Number(a.brightness) || 100));
+  const contrast = Math.max(50, Math.min(200, Number(a.contrast) || 100));
+  const saturate = Math.max(0, Math.min(220, Number(a.saturate) || 100));
+  const hue = Math.max(0, Math.min(360, Number(a.hue) || 0));
+  const blur = Math.max(0, Math.min(4, Number(a.blur) || 0));
+  return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) hue-rotate(${hue}deg) blur(${blur.toFixed(1)}px)`;
+}
+function updateAppearanceLabels(settings) {
+  const a = settings?.appearance || {};
+  const setText = (id, value) => {
+    const n = document.getElementById(id);
+    if (n) n.textContent = value;
+  };
+  setText("det-video-brightness-val", `${Math.round(Number(a.brightness) || 100)}%`);
+  setText("det-video-contrast-val", `${Math.round(Number(a.contrast) || 100)}%`);
+  setText("det-video-saturate-val", `${Math.round(Number(a.saturate) || 100)}%`);
+  setText("det-video-hue-val", `${Math.round(Number(a.hue) || 0)}deg`);
+  setText("det-video-blur-val", `${(Number(a.blur) || 0).toFixed(1)}px`);
+}
+function applyAdminVideoAppearance(settings) {
+  const video = document.getElementById("admin-video");
+  if (!video) return;
+  video.style.filter = buildAdminVideoFilter(settings || getDetectionSettings());
+}
+function applyDetectionSettingsToForm(settings) {
+  const s = settings || getDetectionSettings();
+  const setVal = (id, v) => { const n = document.getElementById(id); if (n) n.value = v; };
+  setVal("det-box-style", s.box_style);
+  setVal("det-line-width", String(s.line_width));
+  setVal("det-fill-alpha", String(s.fill_alpha));
+  setVal("det-max-boxes", String(s.max_boxes));
+  setVal("det-show-labels", s.show_labels ? "1" : "0");
+  setVal("det-show-zone-only", s.detect_zone_only ? "1" : "0");
+  setVal("det-color-car", s.colors?.car || DETECTION_DEFAULT_SETTINGS.colors.car);
+  setVal("det-color-truck", s.colors?.truck || DETECTION_DEFAULT_SETTINGS.colors.truck);
+  setVal("det-color-bus", s.colors?.bus || DETECTION_DEFAULT_SETTINGS.colors.bus);
+  setVal("det-color-motorcycle", s.colors?.motorcycle || DETECTION_DEFAULT_SETTINGS.colors.motorcycle);
+  setVal("det-video-brightness", String(s.appearance?.brightness ?? DETECTION_DEFAULT_SETTINGS.appearance.brightness));
+  setVal("det-video-contrast", String(s.appearance?.contrast ?? DETECTION_DEFAULT_SETTINGS.appearance.contrast));
+  setVal("det-video-saturate", String(s.appearance?.saturate ?? DETECTION_DEFAULT_SETTINGS.appearance.saturate));
+  setVal("det-video-hue", String(s.appearance?.hue ?? DETECTION_DEFAULT_SETTINGS.appearance.hue));
+  setVal("det-video-blur", String(s.appearance?.blur ?? DETECTION_DEFAULT_SETTINGS.appearance.blur));
+  updateAppearanceLabels(s);
+  applyAdminVideoAppearance(s);
+}
+function readDetectionSettingsFromForm() {
+  const getVal = (id, fallback = "") => document.getElementById(id)?.value ?? fallback;
+  return {
+    box_style: String(getVal("det-box-style", "solid")),
+    line_width: Math.max(1, Math.min(5, Number(getVal("det-line-width", "1.5")) || 1.5)),
+    fill_alpha: Math.max(0, Math.min(0.45, Number(getVal("det-fill-alpha", "0.09")) || 0.09)),
+    max_boxes: Math.max(1, Math.min(200, Number(getVal("det-max-boxes", "120")) || 120)),
+    show_labels: String(getVal("det-show-labels", "1")) === "1",
+    detect_zone_only: String(getVal("det-show-zone-only", "0")) === "1",
+    colors: {
+      car: String(getVal("det-color-car", DETECTION_DEFAULT_SETTINGS.colors.car)),
+      truck: String(getVal("det-color-truck", DETECTION_DEFAULT_SETTINGS.colors.truck)),
+      bus: String(getVal("det-color-bus", DETECTION_DEFAULT_SETTINGS.colors.bus)),
+      motorcycle: String(getVal("det-color-motorcycle", DETECTION_DEFAULT_SETTINGS.colors.motorcycle)),
+    },
+    appearance: {
+      brightness: Math.max(50, Math.min(180, Number(getVal("det-video-brightness", "100")) || 100)),
+      contrast: Math.max(50, Math.min(200, Number(getVal("det-video-contrast", "100")) || 100)),
+      saturate: Math.max(0, Math.min(220, Number(getVal("det-video-saturate", "100")) || 100)),
+      hue: Math.max(0, Math.min(360, Number(getVal("det-video-hue", "0")) || 0)),
+      blur: Math.max(0, Math.min(4, Number(getVal("det-video-blur", "0")) || 0)),
+    },
+  };
+}
+function saveDetectionSettings() {
+  const settings = readDetectionSettingsFromForm();
+  localStorage.setItem(DETECTION_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  publishDetectionSettings(settings);
+  const msg = document.getElementById("det-settings-msg");
+  if (msg) {
+    msg.style.color = "var(--green)";
+    msg.textContent = "Saved. Overlay + appearance settings apply immediately.";
+  }
+}
+function resetDetectionSettings() {
+  localStorage.setItem(DETECTION_SETTINGS_STORAGE_KEY, JSON.stringify(DETECTION_DEFAULT_SETTINGS));
+  applyDetectionSettingsToForm(DETECTION_DEFAULT_SETTINGS);
+  publishDetectionSettings(DETECTION_DEFAULT_SETTINGS);
+  const msg = document.getElementById("det-settings-msg");
+  if (msg) {
+    msg.style.color = "var(--muted)";
+    msg.textContent = "Defaults restored.";
+  }
+}
+async function loadDetectionStatus() {
+  const setText = (id, value) => {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+  };
+  try {
+    const [latestResp, healthResp] = await Promise.all([
+      window.sb
+        .from("ml_detection_events")
+        .select("captured_at, detections_count, avg_confidence, model_name")
+        .order("captured_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      fetch("/api/health").catch(() => null),
+    ]);
+
+    const latest = latestResp?.data || null;
+    const modelName = latest?.model_name || "none";
+    const avgConf = Number(latest?.avg_confidence || 0);
+    setText("det-status-model", modelName);
+    setText("det-status-conf", latest ? `${(avgConf * 100).toFixed(1)}%` : "-");
+    setText("det-status-last", latest?.captured_at ? fmtAgo(latest.captured_at) : "No telemetry");
+
+    if (healthResp && healthResp.ok) {
+      const health = await healthResp.json();
+      setText("det-runtime-ai", health.ai_task_running ? "Running" : "Stopped");
+      setText("det-runtime-stream", health.stream_url ? "Connected" : "Missing stream URL");
+    } else {
+      setText("det-runtime-ai", "Unavailable");
+      setText("det-runtime-stream", "Unavailable");
+    }
+
+    if (adminSession?.access_token) {
+      const nightRes = await fetch("/api/admin/ml-night-profile", {
+        headers: { Authorization: `Bearer ${adminSession.access_token}` },
+      });
+      if (nightRes.ok) {
+        const night = await nightRes.json();
+        const enabled = !!night?.enabled;
+        const nowHour = new Date().getHours();
+        const startHour = Number(night?.start_hour ?? 18);
+        const endHour = Number(night?.end_hour ?? 6);
+        const inNightWindow = enabled && (startHour === endHour
+          ? true
+          : startHour < endHour
+            ? (nowHour >= startHour && nowHour < endHour)
+            : (nowHour >= startHour || nowHour < endHour));
+        setText("det-runtime-night", enabled ? (inNightWindow ? "Enabled (active now)" : "Enabled (day window)") : "Disabled");
+        setText("det-runtime-focus", inNightWindow
+          ? "Full-feed scan with night-tuned thresholds"
+          : "Full-feed scan with day profile");
+      }
+    }
+  } catch {
+    setText("det-status-model", "-");
+    setText("det-status-conf", "-");
+    setText("det-status-last", "Unavailable");
+    setText("det-runtime-ai", "Unavailable");
+    setText("det-runtime-stream", "Unavailable");
+    setText("det-runtime-night", "Unavailable");
+  }
+}
+function initDetectionStudio() {
+  applyDetectionSettingsToForm(getDetectionSettings());
+  publishDetectionSettings(getDetectionSettings());
+
+  document.getElementById("btn-det-save")?.addEventListener("click", saveDetectionSettings);
+  document.getElementById("btn-det-reset")?.addEventListener("click", resetDetectionSettings);
+
+  [
+    "det-box-style", "det-line-width", "det-fill-alpha", "det-max-boxes",
+    "det-show-labels", "det-show-zone-only", "det-color-car", "det-color-truck",
+    "det-color-bus", "det-color-motorcycle", "det-video-brightness", "det-video-contrast",
+    "det-video-saturate", "det-video-hue", "det-video-blur",
+  ].forEach((id) => {
+    const emit = () => {
+      const s = readDetectionSettingsFromForm();
+      updateAppearanceLabels(s);
+      publishDetectionSettings(s);
+    };
+    document.getElementById(id)?.addEventListener("input", emit);
+    document.getElementById(id)?.addEventListener("change", emit);
+  });
+
+  loadDetectionStatus();
+  setInterval(loadDetectionStatus, 10000);
 }
 
 function isValidCountLine(line) {
@@ -846,6 +1065,50 @@ async function handleMlRetrain() {
   }
 }
 
+async function handleMlTrainCaptures() {
+  const btn = document.getElementById("btn-ml-train-captures");
+  const msg = document.getElementById("ml-control-msg");
+  const epochsEl = document.getElementById("ml-epochs");
+  const imgszEl = document.getElementById("ml-imgsz");
+  const batchEl = document.getElementById("ml-batch");
+  if (!btn || !msg || !adminSession?.access_token) return;
+
+  const epochs = Number(epochsEl?.value || 20);
+  const imgsz = Number(imgszEl?.value || 640);
+  const batch = Number(batchEl?.value || 16);
+
+  btn.disabled = true;
+  msg.textContent = "Starting live-capture training...";
+  msg.style.color = "var(--muted)";
+
+  try {
+    const res = await fetch("/api/admin/ml-jobs?action=train-captures", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminSession.access_token}`,
+      },
+      body: JSON.stringify({
+        epochs: Number.isFinite(epochs) ? epochs : 20,
+        imgsz: Number.isFinite(imgsz) ? imgsz : 640,
+        batch: Number.isFinite(batch) ? batch : 16,
+      }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to queue live-capture training");
+
+    msg.textContent = payload?.message || "Live-capture training queued.";
+    msg.style.color = "var(--green)";
+    loadMlUsage();
+    loadMlProgress();
+  } catch (e) {
+    msg.textContent = e?.message || "Live-capture training failed.";
+    msg.style.color = "var(--red)";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── Recent rounds ─────────────────────────────────────────────────────────────
 async function loadRecentRounds() {
   const container = document.getElementById("recent-rounds");
@@ -1408,6 +1671,7 @@ async function init() {
   adminSession = await Auth.requireAdmin("/index.html");
   if (!adminSession) return;
   initMlDatasetUrlField();
+  initDetectionStudio();
 
   const { data: cameras } = await window.sb.from("cameras").select("id").eq("is_active", true).limit(1);
   const cameraId = cameras?.[0]?.id;
@@ -1444,6 +1708,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
   document.getElementById("btn-session-start")?.addEventListener("click", handleStartSession);
   document.getElementById("btn-ml-retrain")?.addEventListener("click", handleMlRetrain);
+  document.getElementById("btn-ml-train-captures")?.addEventListener("click", handleMlTrainCaptures);
   document.getElementById("btn-copy-capture-error")?.addEventListener("click", copyLatestCaptureError);
 
   // Market type visibility
@@ -1561,14 +1826,14 @@ init();
 
         if (stage === "training") {
           const retrainBtn = document.getElementById("btn-ml-retrain");
-          if (retrainBtn && window.confirm("Training is not active. Start retrain now?")) {
+          if (retrainBtn) {
             retrainBtn.click();
           }
         }
 
         if (stage === "model") {
           const oneClickBtn = document.getElementById("btn-ml-one-click");
-          if (oneClickBtn && window.confirm("No active model detected. Run one-click model pipeline now?")) {
+          if (oneClickBtn) {
             oneClickBtn.click();
           }
         }

@@ -301,6 +301,12 @@
   font-size: 10px;
 }
 
+.detection-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 10px;
+}
+
 .overview-bottom {
   margin-top: 10px;
   align-items: start;
@@ -941,6 +947,10 @@
   .ml-health-grid {
     grid-template-columns: 1fr;
   }
+
+  .detection-status-grid {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -956,6 +966,10 @@
 
   .overview-metrics-primary,
   .overview-metrics-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .detection-status-grid {
     grid-template-columns: 1fr;
   }
 

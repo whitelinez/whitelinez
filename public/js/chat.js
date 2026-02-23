@@ -6,11 +6,16 @@
 
 const Chat = (() => {
   let _channel = null;
+  let _presenceChannel = null;
   let _userSession = null;
   let _username = "User";
   const _profileByUserId = new Map();
+  const _onlineUsers = new Map();
   const MAX_MESSAGES = 100;
   let _unread = 0;
+  let _presenceInitialized = false;
+  let _lastRoundEvent = null;
+  let _boundRoundUpdates = false;
 
   function defaultAvatar(seed) {
     const src = String(seed || "whitelinez-user");
@@ -76,7 +81,11 @@ const Chat = (() => {
     _showSkeleton();
     _loadHistory();
     _subscribe();
+    _subscribePresence();
     _bindTabIndicator();
+    _bindRoundAnnouncements();
+    _bindOnlineMentionClicks();
+    _renderOnlineUi();
 
     document.getElementById("chat-send")?.addEventListener("click", send);
     document.getElementById("chat-input")?.addEventListener("keydown", (e) => {
@@ -137,6 +146,115 @@ const Chat = (() => {
     const container = document.getElementById("chat-messages");
     if (!container) return;
     container.innerHTML = `<div class="empty-state">No messages yet.<br><span>Start the conversation.</span></div>`;
+  }
+
+  function _bindOnlineMentionClicks() {
+    const list = document.getElementById("chat-online-users");
+    if (!list || list.dataset.wired === "1") return;
+    list.dataset.wired = "1";
+    list.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mention]");
+      if (!btn) return;
+      _insertMention(btn.dataset.mention || "");
+    });
+  }
+
+  function _insertMention(name) {
+    const cleaned = String(name || "").replace(/\s+/g, "");
+    if (!cleaned) return;
+    const input = document.getElementById("chat-input");
+    if (!input) return;
+    const token = `@${cleaned}`;
+    const existing = input.value.trim();
+    input.value = existing ? `${existing} ${token} ` : `${token} `;
+    input.focus();
+  }
+
+  function _normalizeName(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
+  function _renderOnlineUi() {
+    const countEl = document.getElementById("chat-online-count");
+    const listEl = document.getElementById("chat-online-users");
+    const online = [..._onlineUsers.values()];
+    if (countEl) countEl.textContent = `${online.length} online`;
+    if (!listEl) return;
+    if (!online.length) {
+      listEl.innerHTML = "";
+      return;
+    }
+    listEl.innerHTML = online
+      .slice(0, 10)
+      .map((name) => `<button type="button" class="chat-online-user" data-mention="${escAttr(name)}">@${esc(name)}</button>`)
+      .join("");
+  }
+
+  function _subscribePresence() {
+    if (_presenceChannel) window.sb.removeChannel(_presenceChannel);
+    _presenceInitialized = false;
+    _onlineUsers.clear();
+    _renderOnlineUi();
+
+    const presenceKey = _userSession?.user?.id || `guest-${Math.random().toString(36).slice(2)}`;
+    _presenceChannel = window.sb
+      .channel("chat-presence", { config: { presence: { key: presenceKey } } })
+      .on("presence", { event: "sync" }, () => {
+        const state = _presenceChannel?.presenceState?.() || {};
+        const nowOnline = new Map();
+
+        Object.values(state).forEach((entries) => {
+          if (!Array.isArray(entries)) return;
+          entries.forEach((entry) => {
+            const uid = String(entry?.user_id || "").trim();
+            const uname = String(entry?.username || "").trim();
+            if (!uid || !uname) return; // only logged-in tracked users
+            if (!nowOnline.has(uid)) nowOnline.set(uid, uname);
+          });
+        });
+
+        if (_presenceInitialized) {
+          for (const [uid, name] of nowOnline.entries()) {
+            if (!_onlineUsers.has(uid)) _addSystemMessage(`${name} joined`);
+          }
+        }
+
+        _onlineUsers.clear();
+        nowOnline.forEach((name, uid) => _onlineUsers.set(uid, name));
+        _renderOnlineUi();
+        _presenceInitialized = true;
+      })
+      .subscribe(async (status) => {
+        if (status !== "SUBSCRIBED") return;
+        if (!_userSession?.user?.id) return;
+        await _presenceChannel.track({
+          user_id: _userSession.user.id,
+          username: _username,
+          online_at: new Date().toISOString(),
+        });
+      });
+  }
+
+  function _bindRoundAnnouncements() {
+    if (_boundRoundUpdates) return;
+    _boundRoundUpdates = true;
+    window.addEventListener("round:update", (e) => {
+      const round = e.detail || null;
+      const current = round ? {
+        id: round.id || null,
+        status: String(round.status || "").toLowerCase(),
+        opens_at: round.opens_at || null,
+      } : null;
+      const prev = _lastRoundEvent;
+      const becameOpen = !!current
+        && current.status === "open"
+        && !!prev
+        && (prev.id !== current.id || prev.status !== "open");
+      if (becameOpen) {
+        _addSystemMessage("New round started. Bets are now open.");
+      }
+      _lastRoundEvent = current;
+    });
   }
 
   async function _loadProfiles(userIds) {
@@ -230,6 +348,17 @@ const Chat = (() => {
       container.removeChild(container.firstChild);
     }
 
+    if (msg.system) {
+      const time = msg.created_at
+        ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "";
+      const div = document.createElement("div");
+      div.className = "chat-msg system";
+      div.innerHTML = `<span>${esc(msg.content || "")}</span>${time ? `<span class="chat-time">${time}</span>` : ""}`;
+      container.appendChild(div);
+      return;
+    }
+
     const profile = msg.user_id ? _profileByUserId.get(msg.user_id) : null;
     const username = profile?.username || msg.username || "User";
     const avatar = isAllowedAvatarUrl(profile?.avatar_url)
@@ -245,10 +374,32 @@ const Chat = (() => {
       <img class="chat-avatar" src="${escAttr(avatar)}" alt="${escAttr(username)}" />
       <div class="chat-body">
         <div class="chat-head"><span class="chat-user">${esc(username)}</span><span class="chat-time">${time}</span></div>
-        <div class="chat-text">${esc(msg.content)}</div>
+        <div class="chat-text">${_formatContent(msg.content)}</div>
       </div>
     `;
     container.appendChild(div);
+  }
+
+  function _formatContent(content) {
+    const raw = esc(content || "");
+    const self = _normalizeName(_username);
+    return raw.replace(/(^|[\s(])@([a-zA-Z0-9_.-]{1,32})/g, (full, lead, mention) => {
+      const cls = _normalizeName(mention) === self ? "chat-mention chat-mention-self" : "chat-mention";
+      return `${lead}<span class="${cls}">@${mention}</span>`;
+    });
+  }
+
+  function _addSystemMessage(text) {
+    renderMsg({
+      system: true,
+      content: text,
+      created_at: new Date().toISOString(),
+    });
+    _scrollToBottom();
+    if (!_isChatTabActive()) {
+      _unread += 1;
+      _renderUnread();
+    }
   }
 
   function _scrollToBottom() {

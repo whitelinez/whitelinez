@@ -3,6 +3,7 @@
  * - GET (default): list ML jobs
  * - GET ?action=diagnostics: fetch diagnostics
  * - POST ?action=one-click: run one-click pipeline
+ * - POST ?action=train-captures: run training for live-capture dataset
  * - POST (default): trigger retrain
  */
 export default async function handler(req, res) {
@@ -38,7 +39,9 @@ export default async function handler(req, res) {
       }
     } else {
       const body = typeof req.body === "string" ? req.body : JSON.stringify(req.body || {});
-      const targetPath = action === "one-click" ? "/admin/ml/one-click" : "/admin/ml/retrain-async";
+      let targetPath = "/admin/ml/retrain-async";
+      if (action === "one-click") targetPath = "/admin/ml/one-click";
+      if (action === "train-captures") targetPath = "/admin/ml/train-captures-async";
       upstream = await fetch(`${railwayUrl}${targetPath}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: authHeader },

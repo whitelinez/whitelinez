@@ -1,6 +1,6 @@
 /**
- * ml-overlay.js - Subtle live ML progress overlay for the public stream.
- * Uses count:update payloads to show session learning signal and confidence trend.
+ * ml-overlay.js - Live vision status overlay for the public stream.
+ * Uses count:update payloads + scene inference for user-friendly status text.
  */
 
 const MlOverlay = (() => {
@@ -15,24 +15,15 @@ const MlOverlay = (() => {
     runtimeProfile: "",
     runtimeReason: "",
     lastDelayMs: null,
+    sceneLighting: "unknown",
+    sceneWeather: "unknown",
+    sceneConfidence: 0,
   };
 
   let _bound = false;
   let _pollTimer = null;
   let _titleTimer = null;
   let _titleIndex = 0;
-
-  const TITLE_MESSAGES_DESKTOP = [
-    "AI Learning",
-    "Learning vehicle patterns",
-    "Count accuracy improves",
-  ];
-
-  const TITLE_MESSAGES_MOBILE = [
-    "AI Learning",
-    "Learning vehicles",
-    "Count improving",
-  ];
 
   function init() {
     if (_bound) return;
@@ -43,10 +34,6 @@ const MlOverlay = (() => {
     seedFromTelemetry();
     pollHealth();
     _pollTimer = setInterval(pollHealth, 20000);
-    _titleTimer = setInterval(() => {
-      _titleIndex = (_titleIndex + 1) % TITLE_MESSAGES_DESKTOP.length;
-      render();
-    }, 7000);
     render();
   }
 
@@ -104,6 +91,14 @@ const MlOverlay = (() => {
     const reason = String(data?.runtime_profile_reason || "").trim();
     if (profile) state.runtimeProfile = profile;
     if (reason) state.runtimeReason = reason;
+    const sceneLighting = String(data?.scene_lighting || "").trim();
+    const sceneWeather = String(data?.scene_weather || "").trim();
+    const sceneConfidence = Number(data?.scene_confidence);
+    if (sceneLighting) state.sceneLighting = sceneLighting;
+    if (sceneWeather) state.sceneWeather = sceneWeather;
+    if (Number.isFinite(sceneConfidence)) {
+      state.sceneConfidence = Math.max(0, Math.min(1, sceneConfidence));
+    }
 
     const ts = Date.parse(String(data?.captured_at || ""));
     if (Number.isFinite(ts)) {
@@ -163,47 +158,46 @@ const MlOverlay = (() => {
     const framesEl = document.getElementById("ml-hud-frames");
     const detsEl = document.getElementById("ml-hud-dets");
     const confEl = document.getElementById("ml-hud-conf");
-    const profileEl = document.getElementById("ml-hud-profile");
+    const sceneEl = document.getElementById("ml-hud-profile");
     const delayEl = document.getElementById("ml-hud-delay");
-    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !profileEl || !delayEl) return;
+    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl) return;
 
     const level = getLevel();
     const avgConf = getAvgConf();
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
-    const titleMessages = isMobile ? TITLE_MESSAGES_MOBILE : TITLE_MESSAGES_DESKTOP;
-    const title = titleMessages[_titleIndex % titleMessages.length];
+    const title = isMobile ? "Live Vision Status" : "Live AI Vision Status";
     const loopTag = state.modelLoop === "active"
       ? (isMobile ? "" : " | retrain loop on")
       : "";
     const compactLabel = isMobile
       ? level.label.replace("Stabilizing", "Stable").replace("Warming up", "Warmup")
       : level.label;
-    const nowHour = new Date().getHours();
-    const showNightWarning = nowHour >= 18 || nowHour < 6;
-    const profileLabel = state.runtimeProfile
+    const modeLabel = state.runtimeProfile
       ? state.runtimeProfile.replaceAll("_", " ")
-      : "default";
+      : "balanced mode";
+    const sceneLabel = `${state.sceneLighting} | ${state.sceneWeather}`;
     const delayText = Number.isFinite(state.lastDelayMs)
       ? `${Math.round(state.lastDelayMs)}ms`
       : "-";
-    const reasonText = state.runtimeReason
-      ? ` | ${state.runtimeReason.replaceAll("_", " ")}`
-      : "";
+    const reasonText = state.runtimeReason ? state.runtimeReason.replaceAll("_", " ") : "";
+    const sceneConfidenceText = Number.isFinite(state.sceneConfidence)
+      ? `${Math.round((state.sceneConfidence || 0) * 100)}%`
+      : "-";
+    const showNightWarning = false;
 
     titleEl.textContent = title;
     levelEl.textContent = `${compactLabel}${loopTag}`;
-    msgEl.textContent = `${level.msg} Runtime: ${profileLabel}${reasonText}.`;
+    msgEl.textContent = `${level.msg} Scene: ${sceneLabel} (${sceneConfidenceText} confidence). Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     if (warnEl) warnEl.style.display = showNightWarning ? "block" : "none";
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
     confEl.textContent = avgConf == null ? "-" : `${(avgConf * 100).toFixed(1)}%`;
-    profileEl.textContent = profileLabel;
+    sceneEl.textContent = sceneLabel;
     delayEl.textContent = delayText;
   }
 
   function destroy() {
     if (_pollTimer) clearInterval(_pollTimer);
-    if (_titleTimer) clearInterval(_titleTimer);
     _pollTimer = null;
     _titleTimer = null;
     _bound = false;

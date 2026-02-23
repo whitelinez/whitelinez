@@ -71,7 +71,17 @@ const DETECTION_DEFAULT_SETTINGS = {
   outside_scan_min_conf: 0.45,
   outside_scan_max_boxes: 25,
   outside_scan_hold_ms: 220,
-  outside_scan_show_labels: false,
+  outside_scan_show_labels: true,
+  ground_overlay_enabled: true,
+  ground_overlay_alpha: 0.16,
+  ground_grid_density: 6,
+  ground_occlusion_cutout: 0.38,
+  ground_quad: {
+    x1: 0.34, y1: 0.58,
+    x2: 0.78, y2: 0.58,
+    x3: 0.98, y3: 0.98,
+    x4: 0.08, y4: 0.98,
+  },
   colors: {
     car: "#29B6F6",
     truck: "#FF7043",
@@ -97,7 +107,11 @@ const DETECTION_NIGHT_SETTINGS_PRESET = {
   outside_scan_min_conf: 0.45,
   outside_scan_max_boxes: 30,
   outside_scan_hold_ms: 260,
-  outside_scan_show_labels: false,
+  outside_scan_show_labels: true,
+  ground_overlay_enabled: true,
+  ground_overlay_alpha: 0.18,
+  ground_grid_density: 6,
+  ground_occlusion_cutout: 0.42,
 };
 const FEED_APPEARANCE_DAY_PRESET = {
   brightness: 102,
@@ -289,6 +303,18 @@ function applyDetectionSettingsToForm(settings) {
   setVal("det-color-truck", s.colors?.truck || DETECTION_DEFAULT_SETTINGS.colors.truck);
   setVal("det-color-bus", s.colors?.bus || DETECTION_DEFAULT_SETTINGS.colors.bus);
   setVal("det-color-motorcycle", s.colors?.motorcycle || DETECTION_DEFAULT_SETTINGS.colors.motorcycle);
+  setVal("det-ground-enabled", s.ground_overlay_enabled === false ? "0" : "1");
+  setVal("det-ground-alpha", String(s.ground_overlay_alpha ?? DETECTION_DEFAULT_SETTINGS.ground_overlay_alpha));
+  setVal("det-ground-grid", String(s.ground_grid_density ?? DETECTION_DEFAULT_SETTINGS.ground_grid_density));
+  setVal("det-ground-cutout", String(s.ground_occlusion_cutout ?? DETECTION_DEFAULT_SETTINGS.ground_occlusion_cutout));
+  setVal("det-ground-x1", String(s.ground_quad?.x1 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.x1));
+  setVal("det-ground-y1", String(s.ground_quad?.y1 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.y1));
+  setVal("det-ground-x2", String(s.ground_quad?.x2 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.x2));
+  setVal("det-ground-y2", String(s.ground_quad?.y2 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.y2));
+  setVal("det-ground-x3", String(s.ground_quad?.x3 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.x3));
+  setVal("det-ground-y3", String(s.ground_quad?.y3 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.y3));
+  setVal("det-ground-x4", String(s.ground_quad?.x4 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.x4));
+  setVal("det-ground-y4", String(s.ground_quad?.y4 ?? DETECTION_DEFAULT_SETTINGS.ground_quad.y4));
   setVal("det-video-brightness", String(s.appearance?.brightness ?? DETECTION_DEFAULT_SETTINGS.appearance.brightness));
   setVal("det-video-contrast", String(s.appearance?.contrast ?? DETECTION_DEFAULT_SETTINGS.appearance.contrast));
   setVal("det-video-saturate", String(s.appearance?.saturate ?? DETECTION_DEFAULT_SETTINGS.appearance.saturate));
@@ -311,6 +337,20 @@ function readDetectionSettingsFromForm() {
     outside_scan_max_boxes: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_max_boxes || 25),
     outside_scan_hold_ms: Number(DETECTION_DEFAULT_SETTINGS.outside_scan_hold_ms || 220),
     outside_scan_show_labels: Boolean(DETECTION_DEFAULT_SETTINGS.outside_scan_show_labels),
+    ground_overlay_enabled: String(getVal("det-ground-enabled", "1")) === "1",
+    ground_overlay_alpha: Math.max(0, Math.min(0.45, Number(getVal("det-ground-alpha", String(DETECTION_DEFAULT_SETTINGS.ground_overlay_alpha))) || DETECTION_DEFAULT_SETTINGS.ground_overlay_alpha)),
+    ground_grid_density: Math.max(2, Math.min(16, Number(getVal("det-ground-grid", String(DETECTION_DEFAULT_SETTINGS.ground_grid_density))) || DETECTION_DEFAULT_SETTINGS.ground_grid_density)),
+    ground_occlusion_cutout: Math.max(0, Math.min(0.85, Number(getVal("det-ground-cutout", String(DETECTION_DEFAULT_SETTINGS.ground_occlusion_cutout))) || DETECTION_DEFAULT_SETTINGS.ground_occlusion_cutout)),
+    ground_quad: {
+      x1: Math.max(0, Math.min(1, Number(getVal("det-ground-x1", String(DETECTION_DEFAULT_SETTINGS.ground_quad.x1))) || DETECTION_DEFAULT_SETTINGS.ground_quad.x1)),
+      y1: Math.max(0, Math.min(1, Number(getVal("det-ground-y1", String(DETECTION_DEFAULT_SETTINGS.ground_quad.y1))) || DETECTION_DEFAULT_SETTINGS.ground_quad.y1)),
+      x2: Math.max(0, Math.min(1, Number(getVal("det-ground-x2", String(DETECTION_DEFAULT_SETTINGS.ground_quad.x2))) || DETECTION_DEFAULT_SETTINGS.ground_quad.x2)),
+      y2: Math.max(0, Math.min(1, Number(getVal("det-ground-y2", String(DETECTION_DEFAULT_SETTINGS.ground_quad.y2))) || DETECTION_DEFAULT_SETTINGS.ground_quad.y2)),
+      x3: Math.max(0, Math.min(1, Number(getVal("det-ground-x3", String(DETECTION_DEFAULT_SETTINGS.ground_quad.x3))) || DETECTION_DEFAULT_SETTINGS.ground_quad.x3)),
+      y3: Math.max(0, Math.min(1, Number(getVal("det-ground-y3", String(DETECTION_DEFAULT_SETTINGS.ground_quad.y3))) || DETECTION_DEFAULT_SETTINGS.ground_quad.y3)),
+      x4: Math.max(0, Math.min(1, Number(getVal("det-ground-x4", String(DETECTION_DEFAULT_SETTINGS.ground_quad.x4))) || DETECTION_DEFAULT_SETTINGS.ground_quad.x4)),
+      y4: Math.max(0, Math.min(1, Number(getVal("det-ground-y4", String(DETECTION_DEFAULT_SETTINGS.ground_quad.y4))) || DETECTION_DEFAULT_SETTINGS.ground_quad.y4)),
+    },
     colors: {
       car: String(getVal("det-color-car", DETECTION_DEFAULT_SETTINGS.colors.car)),
       truck: String(getVal("det-color-truck", DETECTION_DEFAULT_SETTINGS.colors.truck)),
@@ -405,6 +445,11 @@ async function pushFeedAppearanceToPublic() {
         outside_scan_max_boxes: settings.outside_scan_max_boxes,
         outside_scan_hold_ms: settings.outside_scan_hold_ms,
         outside_scan_show_labels: settings.outside_scan_show_labels,
+        ground_overlay_enabled: settings.ground_overlay_enabled,
+        ground_overlay_alpha: settings.ground_overlay_alpha,
+        ground_grid_density: settings.ground_grid_density,
+        ground_occlusion_cutout: settings.ground_occlusion_cutout,
+        ground_quad: settings.ground_quad,
       },
       push_public: pushPublic,
       auto_day_night: autoEnabled,
@@ -556,6 +601,9 @@ function initDetectionStudio() {
     "det-show-labels", "det-show-zone-only", "det-color-car", "det-color-truck",
     "det-color-bus", "det-color-motorcycle", "det-video-brightness", "det-video-contrast",
     "det-video-saturate", "det-video-hue", "det-video-blur",
+    "det-ground-enabled", "det-ground-alpha", "det-ground-grid", "det-ground-cutout",
+    "det-ground-x1", "det-ground-y1", "det-ground-x2", "det-ground-y2",
+    "det-ground-x3", "det-ground-y3", "det-ground-x4", "det-ground-y4",
   ].forEach((id) => {
     const emit = () => {
       const s = readDetectionSettingsFromForm();

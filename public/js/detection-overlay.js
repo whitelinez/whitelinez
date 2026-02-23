@@ -33,7 +33,17 @@ const DetectionOverlay = (() => {
     outside_scan_min_conf: 0.45,
     outside_scan_max_boxes: 25,
     outside_scan_hold_ms: 220,
-    outside_scan_show_labels: false,
+    outside_scan_show_labels: true,
+    ground_overlay_enabled: true,
+    ground_overlay_alpha: 0.16,
+    ground_grid_density: 6,
+    ground_occlusion_cutout: 0.38,
+    ground_quad: {
+      x1: 0.34, y1: 0.58,
+      x2: 0.78, y2: 0.58,
+      x3: 0.98, y3: 0.98,
+      x4: 0.08, y4: 0.98,
+    },
     colors: {
       car: "#29B6F6",
       truck: "#FF7043",
@@ -120,6 +130,138 @@ const DetectionOverlay = (() => {
     return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, Number(alpha) || 0))})`;
   }
 
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function getGroundQuadPixels(bounds) {
+    const q = settings.ground_quad || {};
+    const pts = [
+      { x: Number(q.x1), y: Number(q.y1) },
+      { x: Number(q.x2), y: Number(q.y2) },
+      { x: Number(q.x3), y: Number(q.y3) },
+      { x: Number(q.x4), y: Number(q.y4) },
+    ];
+    if (!pts.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))) return null;
+    if (!pts.every((p) => p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1)) return null;
+    return pts.map((p) => contentToPixel(p.x, p.y, bounds));
+  }
+
+  function drawGroundOverlayCanvas(bounds, detections) {
+    if (!ctx || settings.ground_overlay_enabled === false) return;
+    const quad = getGroundQuadPixels(bounds);
+    if (!quad) return;
+
+    const alpha = Math.max(0, Math.min(0.45, Number(settings.ground_overlay_alpha) || 0.16));
+    const gridDensity = Math.max(2, Math.min(16, Number(settings.ground_grid_density) || 6));
+
+    const p1 = quad[0];
+    const p2 = quad[1];
+    const p3 = quad[2];
+    const p4 = quad[3];
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p4.x, p4.y);
+    ctx.closePath();
+    ctx.fillStyle = hexToRgba("#17d1ff", alpha * 0.55);
+    ctx.fill();
+    ctx.strokeStyle = hexToRgba("#33d8ff", Math.min(0.9, alpha + 0.25));
+    ctx.lineWidth = 1.25;
+    ctx.stroke();
+
+    ctx.strokeStyle = hexToRgba("#36ccff", Math.min(0.9, alpha + 0.14));
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    for (let i = 1; i <= gridDensity; i += 1) {
+      const t = i / (gridDensity + 1);
+      const pt = Math.pow(t, 1.25);
+      const lx = lerp(p1.x, p4.x, pt);
+      const ly = lerp(p1.y, p4.y, pt);
+      const rx = lerp(p2.x, p3.x, pt);
+      const ry = lerp(p2.y, p3.y, pt);
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(rx, ry);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    const cxTop = { x: (p1.x + p2.x) * 0.5, y: (p1.y + p2.y) * 0.5 };
+    const cxBot = { x: (p4.x + p3.x) * 0.5, y: (p4.y + p3.y) * 0.5 };
+    ctx.strokeStyle = hexToRgba("#86e8ff", Math.min(0.95, alpha + 0.3));
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cxTop.x, cxTop.y);
+    ctx.lineTo(cxBot.x, cxBot.y);
+    ctx.stroke();
+
+    const cut = Math.max(0, Math.min(0.85, Number(settings.ground_occlusion_cutout) || 0.38));
+    if (cut > 0 && Array.isArray(detections) && detections.length) {
+      for (const det of detections) {
+        const dp1 = contentToPixel(det.x1, det.y1, bounds);
+        const dp2 = contentToPixel(det.x2, det.y2, bounds);
+        const bw = dp2.x - dp1.x;
+        const bh = dp2.y - dp1.y;
+        if (bw < 3 || bh < 3) continue;
+        const ch = bh * cut;
+        const cy = dp2.y - ch;
+        ctx.clearRect(dp1.x - 1, cy, bw + 2, ch + 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawGroundOverlayPixi(bounds) {
+    if (!pixiEnabled || !pixiApp || settings.ground_overlay_enabled === false) return;
+    const quad = getGroundQuadPixels(bounds);
+    if (!quad) return;
+    const alpha = Math.max(0, Math.min(0.45, Number(settings.ground_overlay_alpha) || 0.16));
+    const gridDensity = Math.max(2, Math.min(16, Number(settings.ground_grid_density) || 6));
+    const colorMain = 0x17d1ff;
+    const colorGrid = 0x36ccff;
+    const g = getPixiGraphic();
+    if (!g) return;
+
+    const p1 = quad[0];
+    const p2 = quad[1];
+    const p3 = quad[2];
+    const p4 = quad[3];
+
+    g.beginFill(colorMain, alpha * 0.55);
+    g.moveTo(p1.x, p1.y);
+    g.lineTo(p2.x, p2.y);
+    g.lineTo(p3.x, p3.y);
+    g.lineTo(p4.x, p4.y);
+    g.lineTo(p1.x, p1.y);
+    g.endFill();
+
+    g.lineStyle(1.25, colorMain, Math.min(0.95, alpha + 0.28));
+    g.moveTo(p1.x, p1.y); g.lineTo(p2.x, p2.y);
+    g.lineTo(p3.x, p3.y); g.lineTo(p4.x, p4.y); g.lineTo(p1.x, p1.y);
+
+    g.lineStyle(1, colorGrid, Math.min(0.95, alpha + 0.16));
+    for (let i = 1; i <= gridDensity; i += 1) {
+      const t = i / (gridDensity + 1);
+      const pt = Math.pow(t, 1.25);
+      const lx = lerp(p1.x, p4.x, pt);
+      const ly = lerp(p1.y, p4.y, pt);
+      const rx = lerp(p2.x, p3.x, pt);
+      const ry = lerp(p2.y, p3.y, pt);
+      g.moveTo(lx, ly);
+      g.lineTo(rx, ry);
+    }
+
+    const cxTop = { x: (p1.x + p2.x) * 0.5, y: (p1.y + p2.y) * 0.5 };
+    const cxBot = { x: (p4.x + p3.x) * 0.5, y: (p4.y + p3.y) * 0.5 };
+    g.lineStyle(1.4, 0x86e8ff, Math.min(0.95, alpha + 0.3));
+    g.moveTo(cxTop.x, cxTop.y);
+    g.lineTo(cxBot.x, cxBot.y);
+  }
+
   function drawCornerBox(x, y, w, h, color, lineWidth) {
     const c = Math.max(6, Math.min(20, Math.floor(Math.min(w, h) * 0.2)));
     ctx.strokeStyle = color;
@@ -143,7 +285,28 @@ const DetectionOverlay = (() => {
   }
 
   function initPixiRenderer() {
-    if (!canvas || !window.PIXI) return false;
+    if (!canvas) {
+      console.warn("[DetectionOverlay] Pixi init skipped: missing canvas");
+      return false;
+    }
+    if (!window.PIXI) {
+      console.warn("[DetectionOverlay] Pixi init skipped: PIXI not loaded (CDN blocked or script failed)");
+      return false;
+    }
+    let hasWebGL = false;
+    try {
+      const probe = document.createElement("canvas");
+      hasWebGL = Boolean(
+        probe.getContext("webgl2", { failIfMajorPerformanceCaveat: true }) ||
+        probe.getContext("webgl", { failIfMajorPerformanceCaveat: true }) ||
+        probe.getContext("experimental-webgl", { failIfMajorPerformanceCaveat: true })
+      );
+    } catch {
+      hasWebGL = false;
+    }
+    if (!hasWebGL) {
+      console.warn("[DetectionOverlay] WebGL unsupported/blocked on this browser context");
+    }
     const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
     const desktopCfg = {
       view: canvas,
@@ -169,6 +332,7 @@ const DetectionOverlay = (() => {
     };
     const tries = isMobileClient ? [mobileCfg, desktopCfg] : [desktopCfg, mobileCfg];
     try {
+      let lastErr = null;
       for (const cfg of tries) {
         try {
           pixiApp = new window.PIXI.Application(cfg);
@@ -178,8 +342,12 @@ const DetectionOverlay = (() => {
           window.dispatchEvent(new CustomEvent("detection:renderer", { detail: { mode: "webgl", profile: mode } }));
           return true;
         } catch (e) {
+          lastErr = e;
           pixiApp = null;
         }
+      }
+      if (lastErr) {
+        console.warn("[DetectionOverlay] Pixi WebGL init failed:", lastErr);
       }
       return false;
     } catch (err) {
@@ -421,7 +589,19 @@ const DetectionOverlay = (() => {
     if (!initPixiRenderer()) {
       ctx = canvas.getContext("2d");
       pixiEnabled = false;
-      console.info("[DetectionOverlay] Renderer: Canvas2D fallback");
+      const hasPixi = Boolean(window.PIXI);
+      let webglAvailable = false;
+      try {
+        const probe = document.createElement("canvas");
+        webglAvailable = Boolean(
+          probe.getContext("webgl2") ||
+          probe.getContext("webgl") ||
+          probe.getContext("experimental-webgl")
+        );
+      } catch {
+        webglAvailable = false;
+      }
+      console.info(`[DetectionOverlay] Renderer: Canvas2D fallback (PIXI=${hasPixi}, WebGL=${webglAvailable})`);
       window.dispatchEvent(new CustomEvent("detection:renderer", { detail: { mode: "canvas", profile: isMobileClient ? "mobile" : "desktop" } }));
     }
 
@@ -471,12 +651,14 @@ const DetectionOverlay = (() => {
     if (pixiEnabled) beginPixiFrame();
     else if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     else return;
+    const bounds = getContentBounds(video);
+    if (pixiEnabled) drawGroundOverlayPixi(bounds);
+    else drawGroundOverlayCanvas(bounds, detections);
     if (!detections.length) {
       if (pixiEnabled) endPixiFrame();
       return;
     }
 
-    const bounds = getContentBounds(video);
     const laneHardCap = isMobileClient ? 12 : 15;
     const laneMaxBoxes = Math.max(1, Math.min(laneHardCap, Number(settings.max_boxes) || 10));
     const laneDetections = [];

@@ -64,10 +64,14 @@
         return;
       }
       if (cfg.detection_overlay && typeof cfg.detection_overlay === "object") {
+        const publicOverlayCfg = {
+          ...cfg.detection_overlay,
+          outside_scan_show_labels: true,
+        };
         try {
-          localStorage.setItem(PUBLIC_DETECTION_SETTINGS_KEY, JSON.stringify(cfg.detection_overlay));
+          localStorage.setItem(PUBLIC_DETECTION_SETTINGS_KEY, JSON.stringify(publicOverlayCfg));
         } catch {}
-        window.dispatchEvent(new CustomEvent("detection:settings-update", { detail: cfg.detection_overlay }));
+        window.dispatchEvent(new CustomEvent("detection:settings-update", { detail: publicOverlayCfg }));
       }
       const appearance = cfg.auto_day_night
         ? (isNightWindowNow() ? PUBLIC_NIGHT_PRESET : PUBLIC_DAY_PRESET)

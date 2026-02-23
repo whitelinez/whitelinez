@@ -1,11 +1,13 @@
 /**
  * admin-line.js — Dual zone canvas editor for admin.
- * Two modes toggled by buttons:
+ * Three modes toggled by buttons:
  *   - DETECT ZONE (cyan): bounding-box filter zone
  *   - COUNT ZONE (yellow): crossing/counting zone
+ *   - GROUND QUAD (aqua): perspective quad for ground overlay
  * Click points to define zones:
  *   - Detect: unlimited points (more complex polygon)
  *   - Count: fixed 4 points (counting polygon)
+ *   - Ground: fixed 4 points (top-left -> top-right -> bottom-right -> bottom-left)
  */
 
 const AdminLine = (() => {
@@ -39,15 +41,18 @@ const AdminLine = (() => {
   let isSaving = false;
   let isInitialized = false;
 
-  // Active mode: "detect" | "count"
+  // Active mode: "detect" | "count" | "ground"
   let activeMode = "count";
 
   // Points per zone
   let detectPoints = [];  // [{rx, ry}]
   let countPoints  = [];  // [{rx, ry}]
+  let groundPoints = [];  // [{rx, ry}]
   const DETECT_MAX_POINTS = Number.POSITIVE_INFINITY;
   const COUNT_MAX_POINTS = 4;
   const COUNT_MIN_POINTS = 2;
+  const GROUND_MAX_POINTS = 4;
+  const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v4";
 
   function init(videoEl, canvasEl, camId) {
     video    = videoEl;
@@ -87,6 +92,7 @@ const AdminLine = (() => {
       // Zone toggle buttons
       document.getElementById("btn-zone-detect")?.addEventListener("click", () => setMode("detect"));
       document.getElementById("btn-zone-count")?.addEventListener("click",  () => setMode("count"));
+      document.getElementById("btn-zone-ground")?.addEventListener("click", () => setMode("ground"));
       isInitialized = true;
     }
 
@@ -100,14 +106,19 @@ const AdminLine = (() => {
   function setMode(mode) {
     activeMode = mode;
     updateModeUI();
-    updateStatus(`Editing: ${mode === "detect" ? "DETECT ZONE (cyan)" : "COUNT ZONE (yellow)"}`);
+    let label = "COUNT ZONE (yellow)";
+    if (mode === "detect") label = "DETECT ZONE (cyan)";
+    if (mode === "ground") label = "GROUND QUAD (aqua)";
+    updateStatus(`Editing: ${label}`);
   }
 
   function updateModeUI() {
     const btnDetect = document.getElementById("btn-zone-detect");
     const btnCount  = document.getElementById("btn-zone-count");
+    const btnGround = document.getElementById("btn-zone-ground");
     if (btnDetect) btnDetect.classList.toggle("active", activeMode === "detect");
     if (btnCount)  btnCount.classList.toggle("active",  activeMode === "count");
+    if (btnGround) btnGround.classList.toggle("active", activeMode === "ground");
   }
 
   function syncSize() {
@@ -137,7 +148,7 @@ const AdminLine = (() => {
       try {
         const primary = await window.sb
           .from("cameras")
-          .select("count_line, detect_zone, count_settings")
+          .select("count_line, detect_zone, count_settings, feed_appearance")
           .eq("id", cameraId)
           .single();
         if (primary.error) throw primary.error;
@@ -145,7 +156,7 @@ const AdminLine = (() => {
       } catch {
         const fallback = await window.sb
           .from("cameras")
-          .select("count_line, detect_zone")
+          .select("count_line, detect_zone, feed_appearance")
           .eq("id", cameraId)
           .single();
         if (fallback.error) throw fallback.error;
@@ -154,6 +165,7 @@ const AdminLine = (() => {
 
       const countLine  = data?.count_line;
       const detectZone = data?.detect_zone;
+      const feedAppearance = data?.feed_appearance || {};
       applyCountSettingsToForm(data?.count_settings);
 
       if (countLine?.x3 !== undefined) {
@@ -188,6 +200,22 @@ const AdminLine = (() => {
         ];
       }
 
+      const groundQuad = feedAppearance?.detection_overlay?.ground_quad;
+      if (groundQuad && typeof groundQuad === "object") {
+        const pts = [
+          { rx: Number(groundQuad.x1), ry: Number(groundQuad.y1) },
+          { rx: Number(groundQuad.x2), ry: Number(groundQuad.y2) },
+          { rx: Number(groundQuad.x3), ry: Number(groundQuad.y3) },
+          { rx: Number(groundQuad.x4), ry: Number(groundQuad.y4) },
+        ];
+        if (pts.every((p) => Number.isFinite(p.rx) && Number.isFinite(p.ry))) {
+          groundPoints = pts;
+          applyGroundQuadToControls(groundPoints);
+        }
+      } else {
+        groundPoints = readGroundQuadFromControls();
+      }
+
       redraw();
       updateZoneValidityStatus("Zones loaded — click to redraw active zone");
     } catch (e) {
@@ -202,9 +230,21 @@ const AdminLine = (() => {
     const bounds = getContentBounds(video);
     const { x: rx, y: ry } = pixelToContent(px, py, bounds);
 
-    const maxPts = activeMode === "detect" ? DETECT_MAX_POINTS : COUNT_MAX_POINTS;
+    const maxPts =
+      activeMode === "detect"
+        ? DETECT_MAX_POINTS
+        : activeMode === "ground"
+          ? GROUND_MAX_POINTS
+          : COUNT_MAX_POINTS;
     if (activeMode === "detect") {
       detectPoints.push({ rx, ry });
+    } else if (activeMode === "ground") {
+      if (groundPoints.length >= maxPts) groundPoints = [];
+      groundPoints.push({ rx, ry });
+      if (groundPoints.length === GROUND_MAX_POINTS) {
+        applyGroundQuadToControls(groundPoints);
+        updateStatus("Ground quad updated. Click Save Detection Settings to persist.");
+      }
     } else {
       if (countPoints.length >= maxPts) countPoints = [];
       countPoints.push({ rx, ry });
@@ -236,6 +276,11 @@ const AdminLine = (() => {
     // Draw count zone (yellow)
     if (countPoints.length > 0) {
       _drawPoints(countPoints, "#FFD600", "COUNT ZONE");
+    }
+
+    // Draw ground quad (aqua)
+    if (groundPoints.length > 0) {
+      _drawPoints(groundPoints, "#36CCFF", "GROUND QUAD");
     }
   }
 
@@ -294,6 +339,10 @@ const AdminLine = (() => {
 
   function clearActive() {
     if (activeMode === "detect") detectPoints = [];
+    else if (activeMode === "ground") {
+      groundPoints = [];
+      applyGroundQuadToControls(groundPoints);
+    }
     else countPoints = [];
     redraw();
     updateZoneValidityStatus("Zone cleared");
@@ -556,6 +605,48 @@ const AdminLine = (() => {
     } else if (countPoints.length || detectPoints.length) {
       updateStatus("Zone ready to save");
     }
+  }
+
+  function readGroundQuadFromControls() {
+    const getNum = (id, fallback) => {
+      const val = Number(document.getElementById(id)?.value);
+      if (!Number.isFinite(val)) return fallback;
+      return Math.max(0, Math.min(1, val));
+    };
+    return [
+      { rx: getNum("det-ground-x1", 0.34), ry: getNum("det-ground-y1", 0.58) },
+      { rx: getNum("det-ground-x2", 0.78), ry: getNum("det-ground-y2", 0.58) },
+      { rx: getNum("det-ground-x3", 0.98), ry: getNum("det-ground-y3", 0.98) },
+      { rx: getNum("det-ground-x4", 0.08), ry: getNum("det-ground-y4", 0.98) },
+    ];
+  }
+
+  function applyGroundQuadToControls(points) {
+    const pts = Array.isArray(points) && points.length >= 4 ? points.slice(0, 4) : readGroundQuadFromControls();
+    const setVal = (id, val) => {
+      const node = document.getElementById(id);
+      if (node) node.value = String(Math.max(0, Math.min(1, Number(val) || 0)).toFixed(3));
+    };
+    setVal("det-ground-x1", pts[0].rx); setVal("det-ground-y1", pts[0].ry);
+    setVal("det-ground-x2", pts[1].rx); setVal("det-ground-y2", pts[1].ry);
+    setVal("det-ground-x3", pts[2].rx); setVal("det-ground-y3", pts[2].ry);
+    setVal("det-ground-x4", pts[3].rx); setVal("det-ground-y4", pts[3].ry);
+
+    try {
+      const raw = localStorage.getItem(DETECTION_SETTINGS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const next = {
+        ...parsed,
+        ground_quad: {
+          x1: pts[0].rx, y1: pts[0].ry,
+          x2: pts[1].rx, y2: pts[1].ry,
+          x3: pts[2].rx, y3: pts[2].ry,
+          x4: pts[3].rx, y4: pts[3].ry,
+        },
+      };
+      localStorage.setItem(DETECTION_SETTINGS_STORAGE_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("detection:settings-update", { detail: next }));
+    } catch {}
   }
 
   return { init, clearActive, saveZones, refresh, saveCountSettingsOnly };

@@ -54,6 +54,7 @@
               <div class="zone-toggle-group">
                 <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
                 <button id="btn-zone-count" class="zone-toggle count active">Count</button>
+                <button id="btn-zone-ground" class="zone-toggle">Ground Quad</button>
               </div>
               <button id="btn-clear-line" class="btn-secondary">Clear</button>
               <button id="btn-save-line" class="btn-primary" disabled>Save Zones</button>
@@ -622,6 +623,63 @@
                   <option value="0">No (Full Feed)</option>
                   <option value="1" selected>Yes (Visual Filter)</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field" style="max-width:220px">
+                <label for="det-ground-enabled">Ground Overlay</label>
+                <select id="det-ground-enabled">
+                  <option value="1">Enabled</option>
+                  <option value="0">Disabled</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:220px">
+                <label for="det-ground-alpha">Ground Opacity</label>
+                <input id="det-ground-alpha" type="range" min="0" max="0.45" step="0.01" value="0.16" />
+              </div>
+              <div class="field" style="max-width:220px">
+                <label for="det-ground-grid">Ground Grid Density</label>
+                <input id="det-ground-grid" type="number" min="2" max="16" value="6" />
+              </div>
+              <div class="field" style="max-width:220px">
+                <label for="det-ground-cutout">Vehicle Cutout</label>
+                <input id="det-ground-cutout" type="range" min="0" max="0.85" step="0.01" value="0.38" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x1">Quad X1 (top-left)</label>
+                <input id="det-ground-x1" type="number" min="0" max="1" step="0.01" value="0.34" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y1">Quad Y1</label>
+                <input id="det-ground-y1" type="number" min="0" max="1" step="0.01" value="0.58" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x2">Quad X2 (top-right)</label>
+                <input id="det-ground-x2" type="number" min="0" max="1" step="0.01" value="0.78" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y2">Quad Y2</label>
+                <input id="det-ground-y2" type="number" min="0" max="1" step="0.01" value="0.58" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x3">Quad X3 (bottom-right)</label>
+                <input id="det-ground-x3" type="number" min="0" max="1" step="0.01" value="0.98" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y3">Quad Y3</label>
+                <input id="det-ground-y3" type="number" min="0" max="1" step="0.01" value="0.98" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x4">Quad X4 (bottom-left)</label>
+                <input id="det-ground-x4" type="number" min="0" max="1" step="0.01" value="0.08" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y4">Quad Y4</label>
+                <input id="det-ground-y4" type="number" min="0" max="1" step="0.01" value="0.98" />
               </div>
             </div>
 

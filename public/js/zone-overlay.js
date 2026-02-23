@@ -7,6 +7,11 @@ const ZoneOverlay = (() => {
   let canvas, ctx, video;
   let countLine = null;
   let detectZone = null;
+  let latestDetections = [];
+  let overlaySettings = {
+    ground_overlay_enabled: true,
+    ground_occlusion_cutout: 0.38,
+  };
   let confirmedTotal = 0;
   let flashTimer = null;
   let isFlashing = false;
@@ -14,7 +19,7 @@ const ZoneOverlay = (() => {
   async function resolveActiveCamera() {
     const { data, error } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, count_line, detect_zone")
+      .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance")
       .eq("is_active", true);
     if (error) throw error;
     const cams = Array.isArray(data) ? data : [];
@@ -59,6 +64,7 @@ const ZoneOverlay = (() => {
       const detail = e.detail || {};
       const crossings = detail.new_crossings ?? 0;
       confirmedTotal = Number(detail.confirmed_crossings_total ?? confirmedTotal ?? 0);
+      latestDetections = Array.isArray(detail.detections) ? detail.detections : [];
       if (crossings > 0) flash();
       else draw();
     });
@@ -75,6 +81,12 @@ const ZoneOverlay = (() => {
       const cam = await resolveActiveCamera();
       countLine = cam?.count_line ?? null;
       detectZone = cam?.detect_zone ?? null;
+      const detOverlay = cam?.feed_appearance?.detection_overlay || {};
+      overlaySettings = {
+        ...overlaySettings,
+        ground_overlay_enabled: detOverlay.ground_overlay_enabled !== false,
+        ground_occlusion_cutout: Number(detOverlay.ground_occlusion_cutout ?? overlaySettings.ground_occlusion_cutout),
+      };
       draw();
     } catch (e) {
       console.warn("[ZoneOverlay] Failed to load zones:", e);
@@ -162,6 +174,7 @@ const ZoneOverlay = (() => {
         ctx.textBaseline = "middle";
         ctx.fillText(label, cx, cy);
       }
+      applyVehicleOcclusion();
       return;
     }
 
@@ -185,6 +198,25 @@ const ZoneOverlay = (() => {
         ctx.textBaseline = "middle";
         ctx.fillText(label, mx, my);
       }
+      applyVehicleOcclusion();
+    }
+  }
+
+  function applyVehicleOcclusion() {
+    if (!ctx || overlaySettings.ground_overlay_enabled === false) return;
+    if (!Array.isArray(latestDetections) || latestDetections.length === 0) return;
+    const bounds = getContentBounds(video);
+    const cut = Math.max(0, Math.min(0.85, Number(overlaySettings.ground_occlusion_cutout) || 0.38));
+    if (cut <= 0) return;
+    for (const det of latestDetections) {
+      const dp1 = contentToPixel(det?.x1, det?.y1, bounds);
+      const dp2 = contentToPixel(det?.x2, det?.y2, bounds);
+      const bw = dp2.x - dp1.x;
+      const bh = dp2.y - dp1.y;
+      if (bw < 3 || bh < 3) continue;
+      const ch = bh * cut;
+      const cy = dp2.y - ch;
+      ctx.clearRect(dp1.x - 1, cy, bw + 2, ch + 2);
     }
   }
 

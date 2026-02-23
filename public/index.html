@@ -65,14 +65,14 @@
         <div id="ml-hud" class="ml-hud">
           <p class="ml-hud-title">AI Learning</p>
           <p id="ml-hud-msg" class="ml-hud-msg">Vehicle vision sharpens as more scenes are observed.</p>
-          <p class="ml-hud-warning" role="note">Warning: After 6 PM, AI detection quality can drop. We are actively improving it with ongoing model training.</p>
+          <p class="ml-hud-warning" role="note">Camera conditions can reduce detection quality. Scene and weather are estimated live from the video feed.</p>
           <div class="ml-hud-stats">
-            <span>L: <strong id="ml-hud-level">Warmup</strong></span>
-            <span>S: <strong id="ml-hud-frames">0</strong></span>
-            <span>O: <strong id="ml-hud-dets">0</strong></span>
-            <span>C: <strong id="ml-hud-conf">-</strong></span>
-            <span>P: <strong id="ml-hud-profile">-</strong></span>
-            <span>D: <strong id="ml-hud-delay">-</strong></span>
+            <span>Status: <strong id="ml-hud-level">Warmup</strong></span>
+            <span>Samples Processed: <strong id="ml-hud-frames">0</strong></span>
+            <span>Objects Detected: <strong id="ml-hud-dets">0</strong></span>
+            <span>Average Confidence: <strong id="ml-hud-conf">-</strong></span>
+            <span>Scene / Weather: <strong id="ml-hud-profile">-</strong></span>
+            <span>Data Delay: <strong id="ml-hud-delay">-</strong></span>
           </div>
         </div>
 

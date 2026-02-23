@@ -94,30 +94,20 @@
             </span>
           </div>
 
-          <div class="ml-hud-bars">
-            <div class="ml-bar-row">
-              <span class="ml-bar-label">
-                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 18h3"></path>
-                  <path d="M8 14h3"></path>
-                  <path d="M13 10h3"></path>
-                  <path d="M18 6h3"></path>
-                </svg>
-                Model Confidence
-              </span>
+          <div class="ml-hud-cells">
+            <div class="ml-cell-row">
+              <span class="ml-cell-label">Confidence</span>
               <strong id="ml-hud-conf">0%</strong>
-              <div class="ml-bar-track"><div id="ml-hud-conf-bar" class="ml-bar-fill"></div></div>
+              <div class="ml-cell-track">
+                <div id="ml-hud-conf-bar" class="ml-cell-fill" style="--pct:0"></div>
+              </div>
             </div>
-            <div class="ml-bar-row">
-              <span class="ml-bar-label">
-                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M8 11V8a4 4 0 1 1 8 0v3"></path>
-                  <rect x="6" y="11" width="12" height="10" rx="2"></rect>
-                </svg>
-                Scene Lock
-              </span>
+            <div class="ml-cell-row">
+              <span class="ml-cell-label">Scene Lock</span>
               <strong id="ml-hud-scene-conf">0%</strong>
-              <div class="ml-bar-track"><div id="ml-hud-scene-bar" class="ml-bar-fill alt"></div></div>
+              <div class="ml-cell-track">
+                <div id="ml-hud-scene-bar" class="ml-cell-fill" style="--pct:0"></div>
+              </div>
             </div>
           </div>
 

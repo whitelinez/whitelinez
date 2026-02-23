@@ -219,9 +219,9 @@ const MlOverlay = (() => {
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
     confEl.textContent = percent(confPct);
-    confBarEl.style.width = `${confPct.toFixed(1)}%`;
+    confBarEl.style.setProperty("--pct", confPct.toFixed(1));
     sceneConfEl.textContent = percent(scenePct);
-    sceneBarEl.style.width = `${scenePct.toFixed(1)}%`;
+    sceneBarEl.style.setProperty("--pct", scenePct.toFixed(1));
     sceneEl.textContent = sceneLabel;
     delayEl.textContent = delayText;
   }

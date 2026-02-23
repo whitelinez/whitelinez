@@ -107,11 +107,24 @@ const AdminLine = (() => {
   async function loadExistingZones() {
     if (!cameraId) return;
     try {
-      const { data } = await window.sb
-        .from("cameras")
-        .select("count_line, detect_zone, count_settings")
-        .eq("id", cameraId)
-        .single();
+      let data = null;
+      try {
+        const primary = await window.sb
+          .from("cameras")
+          .select("count_line, detect_zone, count_settings")
+          .eq("id", cameraId)
+          .single();
+        if (primary.error) throw primary.error;
+        data = primary.data;
+      } catch {
+        const fallback = await window.sb
+          .from("cameras")
+          .select("count_line, detect_zone")
+          .eq("id", cameraId)
+          .single();
+        if (fallback.error) throw fallback.error;
+        data = fallback.data;
+      }
 
       const countLine  = data?.count_line;
       const detectZone = data?.detect_zone;
@@ -294,11 +307,27 @@ const AdminLine = (() => {
     updateData.count_settings = readCountSettingsFromForm();
 
     try {
-      const { error } = await window.sb
+      let err = null;
+      const primary = await window.sb
         .from("cameras")
         .update(updateData)
         .eq("id", cameraId);
-      if (error) throw error;
+      err = primary.error || null;
+
+      if (err) {
+        const msg = String(err.message || "").toLowerCase();
+        if (msg.includes("count_settings") || msg.includes("column")) {
+          const fallbackPayload = { ...updateData };
+          delete fallbackPayload.count_settings;
+          const fallback = await window.sb
+            .from("cameras")
+            .update(fallbackPayload)
+            .eq("id", cameraId);
+          err = fallback.error || null;
+        }
+      }
+
+      if (err) throw err;
       updateStatus("Zones saved ✓ — AI picks up within 30s");
     } catch (e) {
       console.error("[AdminLine] Save failed:", e);
@@ -389,7 +418,15 @@ const AdminLine = (() => {
         .from("cameras")
         .update({ count_settings: countSettings })
         .eq("id", cameraId);
-      if (error) throw error;
+      if (error) {
+        const msg = String(error.message || "").toLowerCase();
+        if (msg.includes("count_settings") || msg.includes("column")) {
+          updateCountSettingsStatus("count_settings column missing in DB. Run latest schema.", true);
+          updateStatus("Zones still save. Apply schema to enable count tuning save.");
+          return;
+        }
+        throw error;
+      }
       updateCountSettingsStatus("Count tuning saved");
       updateStatus("Count tuning saved - AI picks up within 30s");
     } catch (e) {

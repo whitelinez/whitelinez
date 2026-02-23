@@ -13,6 +13,31 @@
     hue: 0,
     blur: 0.2,
   };
+  async function resolveActiveCamera() {
+    const { data, error } = await window.sb
+      .from("cameras")
+      .select("id, ipcam_alias, created_at, feed_appearance")
+      .eq("is_active", true);
+    if (error) throw error;
+    const cams = Array.isArray(data) ? data : [];
+    if (!cams.length) return null;
+    const rank = (cam) => {
+      const alias = String(cam?.ipcam_alias || "").trim();
+      if (!alias) return 0;
+      if (alias.toLowerCase() === "your-alias") return 1;
+      return 2;
+    };
+    cams.sort((a, b) => {
+      const ar = rank(a);
+      const br = rank(b);
+      if (ar !== br) return br - ar;
+      const at = Date.parse(a?.created_at || 0) || 0;
+      const bt = Date.parse(b?.created_at || 0) || 0;
+      if (at !== bt) return bt - at;
+      return String(b?.id || "").localeCompare(String(a?.id || ""));
+    });
+    return cams[0] || null;
+  }
 
   function isNightWindowNow() {
     const h = new Date().getHours();
@@ -29,12 +54,7 @@
   async function applyPublicFeedAppearance(videoEl) {
     if (!videoEl || !window.sb) return;
     try {
-      const { data: cam } = await window.sb
-        .from("cameras")
-        .select("feed_appearance")
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle();
+      const cam = await resolveActiveCamera();
       const cfg = cam?.feed_appearance && typeof cam.feed_appearance === "object"
         ? cam.feed_appearance
         : null;

@@ -11,6 +11,32 @@ const ZoneOverlay = (() => {
   let flashTimer = null;
   let isFlashing = false;
 
+  async function resolveActiveCamera() {
+    const { data, error } = await window.sb
+      .from("cameras")
+      .select("id, ipcam_alias, created_at, count_line, detect_zone")
+      .eq("is_active", true);
+    if (error) throw error;
+    const cams = Array.isArray(data) ? data : [];
+    if (!cams.length) return null;
+    const rank = (cam) => {
+      const alias = String(cam?.ipcam_alias || "").trim();
+      if (!alias) return 0;
+      if (alias.toLowerCase() === "your-alias") return 1;
+      return 2;
+    };
+    cams.sort((a, b) => {
+      const ar = rank(a);
+      const br = rank(b);
+      if (ar !== br) return br - ar;
+      const at = Date.parse(a?.created_at || 0) || 0;
+      const bt = Date.parse(b?.created_at || 0) || 0;
+      if (at !== bt) return bt - at;
+      return String(b?.id || "").localeCompare(String(a?.id || ""));
+    });
+    return cams[0] || null;
+  }
+
   function init(videoEl, canvasEl) {
     video = videoEl;
     canvas = canvasEl;
@@ -46,14 +72,9 @@ const ZoneOverlay = (() => {
 
   async function loadAndDraw() {
     try {
-      const { data } = await window.sb
-        .from("cameras")
-        .select("count_line, detect_zone")
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle();
-      countLine = data?.count_line ?? null;
-      detectZone = data?.detect_zone ?? null;
+      const cam = await resolveActiveCamera();
+      countLine = cam?.count_line ?? null;
+      detectZone = cam?.detect_zone ?? null;
       draw();
     } catch (e) {
       console.warn("[ZoneOverlay] Failed to load zones:", e);
@@ -171,4 +192,3 @@ const ZoneOverlay = (() => {
 })();
 
 window.ZoneOverlay = ZoneOverlay;
-

@@ -32,7 +32,10 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Missing Bearer token" });
   }
 
-  const routeParts = Array.isArray(req.query?.route) ? req.query.route : [];
+  const rawRoute = req.query?.route;
+  const routeParts = Array.isArray(rawRoute)
+    ? rawRoute
+    : (typeof rawRoute === "string" && rawRoute.trim() ? [rawRoute] : []);
   if (!routeParts.length) {
     return res.status(400).json({ error: "Missing admin route" });
   }

@@ -260,6 +260,57 @@
               <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
               <span id="ml-control-msg" class="muted"></span>
             </div>
+
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+              <h4 style="margin:0 0 8px;">Night Tracking Profile</h4>
+              <div class="field-row">
+                <div class="field" style="max-width:170px">
+                  <label for="night-profile-enabled">Enable Night Profile</label>
+                  <select id="night-profile-enabled">
+                    <option value="1">Enabled</option>
+                    <option value="0">Disabled</option>
+                  </select>
+                </div>
+                <div class="field" style="max-width:130px">
+                  <label for="night-start-hour">Start Hour</label>
+                  <input id="night-start-hour" type="number" min="0" max="23" value="18" />
+                </div>
+                <div class="field" style="max-width:130px">
+                  <label for="night-end-hour">End Hour</label>
+                  <input id="night-end-hour" type="number" min="0" max="23" value="6" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field" style="max-width:190px">
+                  <label for="night-profile-mode">Night Preset</label>
+                  <select id="night-profile-mode">
+                    <option value="conservative">Conservative</option>
+                    <option value="aggressive">Aggressive</option>
+                  </select>
+                </div>
+                <div class="field" style="max-width:130px">
+                  <label for="night-yolo-conf">Night Conf</label>
+                  <input id="night-yolo-conf" type="number" min="0.01" max="0.99" step="0.01" value="0.30" />
+                </div>
+                <div class="field" style="max-width:150px">
+                  <label for="night-infer-size">Night Infer Size</label>
+                  <input id="night-infer-size" type="number" min="320" max="1280" step="32" value="640" />
+                </div>
+                <div class="field" style="max-width:120px">
+                  <label for="night-iou">Night IOU</label>
+                  <input id="night-iou" type="number" min="0.05" max="0.95" step="0.01" value="0.45" />
+                </div>
+                <div class="field" style="max-width:130px">
+                  <label for="night-max-det">Night Max Det</label>
+                  <input id="night-max-det" type="number" min="10" max="500" value="120" />
+                </div>
+              </div>
+              <div class="ml-control-actions">
+                <button id="btn-apply-night-preset" class="btn-secondary" type="button">Apply Preset</button>
+                <button id="btn-save-night-profile" class="btn-secondary" type="button">Save Night Profile</button>
+                <span id="night-profile-msg" class="muted"></span>
+              </div>
+            </div>
           </div>
 
           <div class="card-box slim">
@@ -331,5 +382,6 @@
   <script src="/js/coord-utils.js"></script>
   <script src="/js/admin-line.js"></script>
   <script src="/js/admin-init.js"></script>
+  <script src="/js/admin-night-profile.js"></script>
 </body>
 </html>

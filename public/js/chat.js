@@ -1,14 +1,17 @@
 /**
  * chat.js - Global chat via Supabase realtime.
- * Guests can read. Logged-in users can send.
+ * Guests and logged-in users can send.
  * Avatar and display names are sourced from public profiles table.
  */
 
 const Chat = (() => {
+  const GUEST_ID_STORAGE_KEY = "whitelinez.chat.guest_id";
+  const GUEST_NAME_STORAGE_KEY = "whitelinez.chat.guest_name";
   let _channel = null;
   let _presenceChannel = null;
   let _userSession = null;
   let _username = "User";
+  let _guestId = "";
   const _profileByUserId = new Map();
   const _onlineUsers = new Map();
   const MAX_MESSAGES = 100;
@@ -71,12 +74,21 @@ const Chat = (() => {
         username: _username,
         avatar_url: ownAvatar,
       });
-      hint?.classList.add("hidden");
-      if (inputRow) inputRow.style.display = "";
+      _guestId = "";
+      if (hint) {
+        hint.innerHTML = "";
+        hint.classList.add("hidden");
+      }
     } else {
-      hint?.classList.remove("hidden");
-      if (inputRow) inputRow.style.display = "none";
+      const guest = _getOrCreateGuestIdentity();
+      _guestId = guest.id;
+      _username = guest.username;
+      if (hint) {
+        hint.classList.remove("hidden");
+        hint.innerHTML = `Chatting as <strong>${esc(_username)}</strong>. <a href="/login.html">Login</a> to keep a profile.`;
+      }
     }
+    if (inputRow) inputRow.style.display = "";
 
     _showSkeleton();
     _loadHistory();
@@ -196,7 +208,7 @@ const Chat = (() => {
     _onlineUsers.clear();
     _renderOnlineUi();
 
-    const presenceKey = _userSession?.user?.id || `guest-${Math.random().toString(36).slice(2)}`;
+    const presenceKey = _userSession?.user?.id || _guestId || _getOrCreateGuestIdentity().id;
     _presenceChannel = window.sb
       .channel("chat-presence", { config: { presence: { key: presenceKey } } })
       .on("presence", { event: "sync" }, () => {
@@ -206,18 +218,12 @@ const Chat = (() => {
         Object.values(state).forEach((entries) => {
           if (!Array.isArray(entries)) return;
           entries.forEach((entry) => {
-            const uid = String(entry?.user_id || "").trim();
+            const uid = String(entry?.user_id || entry?.guest_id || "").trim();
             const uname = String(entry?.username || "").trim();
-            if (!uid || !uname) return; // only logged-in tracked users
+            if (!uid || !uname) return;
             if (!nowOnline.has(uid)) nowOnline.set(uid, uname);
           });
         });
-
-        if (_presenceInitialized) {
-          for (const [uid, name] of nowOnline.entries()) {
-            if (!_onlineUsers.has(uid)) _addSystemMessage(`${name} joined`);
-          }
-        }
 
         _onlineUsers.clear();
         nowOnline.forEach((name, uid) => _onlineUsers.set(uid, name));
@@ -226,12 +232,19 @@ const Chat = (() => {
       })
       .subscribe(async (status) => {
         if (status !== "SUBSCRIBED") return;
-        if (!_userSession?.user?.id) return;
-        await _presenceChannel.track({
-          user_id: _userSession.user.id,
-          username: _username,
-          online_at: new Date().toISOString(),
-        });
+        const payload = _userSession?.user?.id
+          ? {
+              user_id: _userSession.user.id,
+              username: _username,
+              online_at: new Date().toISOString(),
+            }
+          : {
+              guest_id: _guestId || _getOrCreateGuestIdentity().id,
+              username: _username,
+              is_guest: true,
+              online_at: new Date().toISOString(),
+            };
+        await _presenceChannel.track(payload);
       });
   }
 
@@ -408,7 +421,6 @@ const Chat = (() => {
   }
 
   async function send() {
-    if (!_userSession) return;
     const input = document.getElementById("chat-input");
     if (!input) return;
     const content = input.value.trim();
@@ -418,11 +430,24 @@ const Chat = (() => {
     input.disabled = true;
 
     try {
-      const { error } = await window.sb.from("messages").insert({
-        user_id: _userSession.user.id,
+      const payload = {
         username: _username,
         content,
-      });
+      };
+      if (_userSession?.user?.id) {
+        payload.user_id = _userSession.user.id;
+      } else if (_guestId) {
+        payload.guest_id = _guestId;
+      }
+      let { error } = await window.sb.from("messages").insert(payload);
+      if (error && String(error.message || "").toLowerCase().includes("guest_id")) {
+        const retry = await window.sb.from("messages").insert({
+          user_id: payload.user_id || null,
+          username: payload.username,
+          content: payload.content,
+        });
+        error = retry.error;
+      }
       if (error) throw error;
     } catch (e) {
       console.error("[Chat] Send failed:", e);
@@ -447,6 +472,24 @@ const Chat = (() => {
       .replace(/\"/g, "&quot;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  }
+
+  function _getOrCreateGuestIdentity() {
+    let id = "";
+    let name = "";
+    try {
+      id = String(localStorage.getItem(GUEST_ID_STORAGE_KEY) || "").trim();
+      name = String(localStorage.getItem(GUEST_NAME_STORAGE_KEY) || "").trim();
+    } catch {}
+    if (!id) {
+      id = `guest-${Math.random().toString(36).slice(2, 10)}`;
+      try { localStorage.setItem(GUEST_ID_STORAGE_KEY, id); } catch {}
+    }
+    if (!name) {
+      name = `Guest-${id.slice(-4).toUpperCase()}`;
+      try { localStorage.setItem(GUEST_NAME_STORAGE_KEY, name); } catch {}
+    }
+    return { id, username: name };
   }
 
   return { init };

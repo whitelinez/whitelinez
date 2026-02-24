@@ -11,6 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="stylesheet" href="/css/admin-dashboard.css" />
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="dark admin-page">
 
@@ -253,7 +255,11 @@
             </div>
             <div class="stat-card is-primary">
               <div class="stat-val" id="stat-users">-</div>
-              <div class="stat-label">WS Users</div>
+              <div class="stat-label">Online Users</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-visits">-</div>
+              <div class="stat-label">Visits (Runtime)</div>
             </div>
           </div>
 
@@ -273,6 +279,10 @@
           <div class="card-box overview-feed-card">
             <h3>Recent Rounds</h3>
             <div id="recent-rounds" class="rounds-list data-list"><p class="loading">Loading...</p></div>
+          </div>
+          <div class="card-box overview-feed-card">
+            <h3>Active Connections</h3>
+            <div id="active-users-list" class="rounds-list data-list"><p class="loading">Loading active users...</p></div>
           </div>
         </div>
       </section>

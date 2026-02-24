@@ -698,13 +698,15 @@ async function loadStats() {
     const betsEl = document.getElementById("stat-bets");
     if (betsEl) betsEl.textContent = betCount ?? "—";
 
-    // WS users from health endpoint (best effort)
+    // WS users + visits from health endpoint (best effort)
     try {
       const h = await fetch("/api/health");
       if (h.ok) {
         const hData = await h.json();
         const usersEl = document.getElementById("stat-users");
-        if (usersEl) usersEl.textContent = hData.user_ws_connections ?? "—";
+        if (usersEl) usersEl.textContent = Number(hData.total_ws_connections ?? 0).toLocaleString();
+        const visitsEl = document.getElementById("stat-visits");
+        if (visitsEl) visitsEl.textContent = Number(hData.public_ws_total_visits ?? 0).toLocaleString();
         renderHealthOverview(hData);
       } else {
         renderHealthOverview(null, `HTTP ${h.status}`);
@@ -1040,7 +1042,11 @@ function renderHealthOverview(health, errMsg = "") {
       </div>
       <div class="health-item">
         <p class="health-item-title">Public WS / User WS</p>
-        <p class="health-item-value">${health.public_ws_connections ?? 0} / ${health.user_ws_connections ?? 0}</p>
+        <p class="health-item-value">${health.public_ws_connections ?? 0} / ${health.user_ws_connections ?? 0} users (${health.user_ws_sockets ?? 0} sockets)</p>
+      </div>
+      <div class="health-item">
+        <p class="health-item-title">Public Visits (Runtime)</p>
+        <p class="health-item-value">${Number(health.public_ws_total_visits ?? 0).toLocaleString()}</p>
       </div>
       <div class="health-item">
         <p class="health-item-title">Active Round</p>
@@ -1057,6 +1063,86 @@ function renderHealthOverview(health, errMsg = "") {
     </div>
   `;
 }
+
+function shortUserAgent(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "-";
+  return value.length > 58 ? `${value.slice(0, 58)}...` : value;
+}
+
+function fmtConnectedAt(iso) {
+  if (!iso) return "-";
+  try {
+    return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch {
+    return "-";
+  }
+}
+
+async function loadActiveUsers() {
+  const box = document.getElementById("active-users-list");
+  if (!box || !adminSession) return;
+
+  try {
+    const headers = await getAdminHeaders();
+    const res = await fetch("/api/admin/active-users", { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const online = data?.online_now || {};
+    const visits = data?.visit_totals || {};
+    const publicClients = Array.isArray(data?.active_public_clients) ? data.active_public_clients : [];
+    const authUsers = Array.isArray(data?.active_authenticated_users) ? data.active_authenticated_users : [];
+    const recentEvents = Array.isArray(data?.recent_events) ? data.recent_events.slice(-6).reverse() : [];
+
+    const publicRows = publicClients.slice(0, 8).map((entry) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Guest/Public WS</span>
+          <span class="round-row-meta">${escHtml(entry.ip || "-")} | ${fmtConnectedAt(entry.connected_at)} | ${escHtml(shortUserAgent(entry.user_agent))}</span>
+        </div>
+      </div>
+    `).join("");
+
+    const authRows = authUsers.slice(0, 8).map((entry) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">User ${escHtml(String(entry.user_id || "").slice(0, 8))}... (${Number(entry.socket_count || 0)} sockets)</span>
+          <span class="round-row-meta">Last ${fmtConnectedAt(entry.last_connected_at)} | IPs: ${escHtml((entry.ips || []).join(", ") || "-")}</span>
+        </div>
+      </div>
+    `).join("");
+
+    const eventRows = recentEvents.map((event) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(String(event.channel || "").toUpperCase())} ${escHtml(String(event.event || "").toUpperCase())}</span>
+          <span class="round-row-meta">${fmtConnectedAt(event.at)} | ${escHtml(event.ip || "-")}</span>
+        </div>
+      </div>
+    `).join("");
+
+    box.innerHTML = `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Online Now</span>
+          <span class="round-row-meta">Public ${Number(online.public_ws_connections || 0)} | Auth Users ${Number(online.account_ws_users || 0)} | Total WS ${Number(online.total_ws_connections || 0)}</span>
+        </div>
+      </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">Visit Totals (Runtime)</span>
+          <span class="round-row-meta">Public ${Number(visits.public_ws_connections_total || 0).toLocaleString()} | Account ${Number(visits.account_ws_connections_total || 0).toLocaleString()} | Combined ${Number(visits.combined_ws_connections_total || 0).toLocaleString()}</span>
+        </div>
+      </div>
+      ${publicRows || `<p class="muted" style="font-size:0.82rem;">No active public clients.</p>`}
+      ${authRows || `<p class="muted" style="font-size:0.82rem;">No active authenticated users.</p>`}
+      ${eventRows || `<p class="muted" style="font-size:0.82rem;">No recent connect/disconnect events.</p>`}
+    `;
+  } catch (e) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Active user feed unavailable.</p>`;
+  }
+}
+
 async function loadMlProgress() {
   const totalEl = document.getElementById("ml-points-total");
   const dayEl = document.getElementById("ml-points-24h");
@@ -2116,6 +2202,7 @@ async function init() {
   loadRecentBets();
   loadRoundSessions();
   loadRegisteredUsers();
+  loadActiveUsers();
   setInterval(loadStats, 10_000);
   setInterval(loadMlProgress, 15_000);
   setInterval(loadMlUsage, 20_000);
@@ -2124,6 +2211,7 @@ async function init() {
   setInterval(loadRecentBets, 15_000);
   setInterval(loadRoundSessions, 15_000);
   setInterval(loadRegisteredUsers, 30_000);
+  setInterval(loadActiveUsers, 10_000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2479,6 +2567,12 @@ init();
     setInterval(loadMlDiagnosticsPanel, 20000);
   });
 })();
+
+
+
+
+
+
 
 
 

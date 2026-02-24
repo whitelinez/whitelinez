@@ -23,6 +23,12 @@ const MlOverlay = (() => {
     crossingRatePerMin: 0,
     lastTickMs: null,
     lastCrossingTotal: null,
+    measuredFps: 0,
+    inferenceFps: 0,
+    queueDepth: 0,
+    latencyMs: 0,
+    activeTracks: 0,
+    idSwitchCountEst: 0,
   };
 
   let _bound = false;
@@ -113,6 +119,19 @@ const MlOverlay = (() => {
     if (Number.isFinite(sceneConfidence)) {
       state.sceneConfidence = Math.max(0, Math.min(1, sceneConfidence));
     }
+    const aiMetrics = data?.ai_metrics || {};
+    const mfps = Number(aiMetrics.measured_fps);
+    const ifps = Number(aiMetrics.inference_fps);
+    const qd = Number(aiMetrics.queue_depth);
+    const lat = Number(aiMetrics.latency_ms);
+    const trk = Number(aiMetrics.tracker_active_tracks);
+    const ids = Number(aiMetrics.id_switch_count_est);
+    if (Number.isFinite(mfps)) state.measuredFps = Math.max(0, mfps);
+    if (Number.isFinite(ifps)) state.inferenceFps = Math.max(0, ifps);
+    if (Number.isFinite(qd)) state.queueDepth = Math.max(0, qd);
+    if (Number.isFinite(lat)) state.latencyMs = Math.max(0, lat);
+    if (Number.isFinite(trk)) state.activeTracks = Math.max(0, trk);
+    if (Number.isFinite(ids)) state.idSwitchCountEst = Math.max(0, ids);
 
     const inCount = Number(data?.count_in);
     const outCount = Number(data?.count_out);
@@ -272,6 +291,9 @@ const MlOverlay = (() => {
     }
 
     lines.push(modelLoop === "active" ? "Model retrain active" : "Model retrain idle");
+    lines.push(
+      `Feed ${state.measuredFps.toFixed(1)}fps | Infer ${state.inferenceFps.toFixed(1)}fps | Queue ${Math.round(state.queueDepth)} | Tracks ${Math.round(state.activeTracks)} | IDS~${Math.round(state.idSwitchCountEst)} | Lat ${Math.round(state.latencyMs)}ms`
+    );
     return lines.join(" | ");
   }
 

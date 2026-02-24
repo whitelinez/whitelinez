@@ -56,6 +56,18 @@ a:hover { text-decoration: underline; }
   background: linear-gradient(180deg, #3a4a60, #273548);
 }
 
+/* Number inputs: remove spinner/scroll controls for cleaner UI */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .site-header {
   display: flex;
@@ -588,30 +600,172 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .round-timing {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px;
+  border: 1px solid rgba(0,188,212,0.25);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 18% 30%, rgba(0,188,212,0.14), transparent 40%),
+    radial-gradient(circle at 80% 78%, rgba(0,188,212,0.12), transparent 45%),
+    #091018;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 12px 24px rgba(0,0,0,0.35);
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.round-timing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0,188,212,0.25) 0.8px, transparent 0.8px);
+  background-size: 8px 8px;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.neo-timer-meta {
+  min-width: 120px;
+  display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 8px 0;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  margin-bottom: 10px;
+  z-index: 1;
 }
 .timing-row {
   display: flex;
   justify-content: space-between;
   font-size: 0.8rem;
+  gap: 8px;
 }
 .timing-row span  { color: var(--muted); }
-.timing-row strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+.timing-row strong { color: #bff8ff; font-variant-numeric: tabular-nums; }
+
+.neo-timer-dial {
+  width: 158px;
+  height: 158px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+.neo-timer-ring {
+  --timer-progress: 0;
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from -90deg,
+      rgba(0, 242, 255, 0.95) calc(var(--timer-progress) * 360deg),
+      rgba(255,255,255,0.08) 0
+    );
+  transition: background .35s ease;
+  animation: neoRingSpin 9s linear infinite;
+  box-shadow: 0 0 24px rgba(0, 242, 255, 0.28), inset 0 0 18px rgba(0, 242, 255, 0.12);
+}
+
+.neo-timer-ring::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: rgba(7, 11, 18, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.neo-timer-ring[data-tone="danger"] {
+  box-shadow: 0 0 24px rgba(255, 79, 79, 0.32), inset 0 0 18px rgba(255, 79, 79, 0.16);
+  background:
+    conic-gradient(
+      from -90deg,
+      rgba(255, 84, 84, 0.95) calc(var(--timer-progress) * 360deg),
+      rgba(255,255,255,0.08) 0
+    );
+}
+
+.neo-timer-ring[data-tone="closed"] {
+  box-shadow: 0 0 22px rgba(148, 163, 184, 0.24), inset 0 0 14px rgba(148, 163, 184, 0.14);
+  background:
+    conic-gradient(
+      from -90deg,
+      rgba(148, 163, 184, 0.88) calc(var(--timer-progress) * 360deg),
+      rgba(255,255,255,0.08) 0
+    );
+}
+
+.neo-timer-core {
+  position: relative;
+  z-index: 1;
+  width: 122px;
+  height: 122px;
+  border-radius: 50%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.neo-timer-main-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(186, 248, 255, 0.8);
+}
+
+.neo-timer-main-time {
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
+  color: #e7fbff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 16px rgba(0, 242, 255, 0.28);
+}
+
+@keyframes neoRingSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 .round-guide {
   margin: 0 0 10px;
-  padding: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius);
-  background: rgba(0,188,212,0.06);
+  padding: 10px 10px 9px;
+  border: 1px solid rgba(0, 188, 212, 0.28);
+  border-radius: 10px;
+  background:
+    linear-gradient(170deg, rgba(2, 24, 34, 0.92), rgba(8, 15, 24, 0.92)),
+    radial-gradient(circle at 14% 10%, rgba(0, 242, 255, 0.2), transparent 35%);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.round-guide::before,
+.round-guide::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0, 242, 255, 0.9);
+  pointer-events: none;
+}
+
+.round-guide::before {
+  top: 7px;
+  left: 7px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.round-guide::after {
+  right: 7px;
+  bottom: 7px;
+  border-left: 0;
+  border-top: 0;
 }
 
 .round-guide-head {
@@ -621,19 +775,41 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   gap: 8px;
 }
 
+.round-guide-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.round-guide-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6cf3ff;
+  filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.35));
+}
+
+.round-guide-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
 .round-guide-title {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: #baf8ff;
+  color: #dcfbff;
+  letter-spacing: 0.02em;
 }
 
 .round-guide-toggle {
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(186, 248, 255, 0.45);
-  background: rgba(186, 248, 255, 0.08);
-  color: #baf8ff;
-  font-size: 0.72rem;
+  border: 1px solid rgba(0, 242, 255, 0.5);
+  background: rgba(0, 242, 255, 0.12);
+  color: #bff9ff;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
@@ -642,9 +818,17 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 
 .round-guide-line {
-  font-size: 0.77rem;
-  color: #cfe7ee;
+  font-size: 0.75rem;
+  color: #d7eaf4;
   line-height: 1.45;
+}
+
+.round-guide-line.is-meta {
+  color: #9deef7;
+  font-size: 0.71rem;
+  border-top: 1px dashed rgba(157, 238, 247, 0.24);
+  margin-top: 3px;
+  padding-top: 5px;
 }
 
 .user-round-bet {

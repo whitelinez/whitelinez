@@ -263,7 +263,7 @@ async function loadHistory() {
   let data = [];
   let error = null;
   try {
-    const res = await fetch("/api/bets/history?limit=100", {
+    const res = await fetch("/api/bets/place?mode=history&limit=100", {
       headers: { Authorization: `Bearer ${jwt}` },
     });
     const payload = await res.json();

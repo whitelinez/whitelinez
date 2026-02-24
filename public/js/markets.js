@@ -700,7 +700,7 @@ const Markets = (() => {
         round_id: String(currentRound.id),
         limit: "20",
       });
-      const res = await fetch(`/api/bets/my-round?${qs.toString()}`, {
+      const res = await fetch(`/api/bets/place?mode=my-round&${qs.toString()}`, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       const payload = await res.json();

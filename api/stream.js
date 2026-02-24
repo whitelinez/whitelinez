@@ -27,8 +27,12 @@ export default async function handler(req, res) {
   }
 
   const token = generateHmacToken(secret);
+  const aliasRaw = String(req.query?.alias || "").trim();
+  const alias = /^[A-Za-z0-9_-]+$/.test(aliasRaw) ? aliasRaw : "";
   const backendHttpBase = railwayUrl.replace(/\/+$/, "");
-  const manifestUrl = `${backendHttpBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`;
+  const manifestUrl =
+    `${backendHttpBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`
+    + (alias ? `&alias=${encodeURIComponent(alias)}` : "");
 
   // Fetch backend-generated manifest (backend handles ipcamlive URL + rewrite)
   try {

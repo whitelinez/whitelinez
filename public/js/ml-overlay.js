@@ -267,9 +267,9 @@ const MlOverlay = (() => {
           : "Scene lock stable";
 
     titleEl.textContent = title;
-    levelEl.textContent = hudState;
-    levelEl.classList.toggle("is-live", hudState === "Day" || hudState === "Ready");
-    levelEl.classList.toggle("is-scan", hudState === "Scanning");
+    levelEl.textContent = sceneLabel;
+    levelEl.classList.toggle("is-live", sceneLabel !== "Scanning..." && sceneLabel !== "Idle");
+    levelEl.classList.toggle("is-scan", sceneLabel === "Scanning..." || sceneLabel === "Idle");
     levelEl.classList.toggle("is-delay", false);
     msgEl.textContent = `${level.label}. Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     framesEl.textContent = state.frames.toLocaleString();
@@ -278,10 +278,10 @@ const MlOverlay = (() => {
     confBarEl.style.setProperty("--pct", confPct.toFixed(1));
     sceneConfEl.textContent = percent(scenePct);
     sceneBarEl.style.setProperty("--pct", scenePct.toFixed(1));
-    sceneEl.textContent = sceneLabel;
-    delayEl.textContent = percent(scenePct);
+    sceneEl.textContent = state.detections.toLocaleString();
+    delayEl.textContent = percent(confPct);
     if (sceneIconEl) {
-      sceneIconEl.textContent = `${weatherIcon(state.sceneWeather)} ${lightingIcon(state.sceneLighting)}`;
+      sceneIconEl.textContent = "OBJ";
     }
     if (verboseEl) {
       const modelState = state.modelLoop === "active" ? "retrain on" : "retrain idle";

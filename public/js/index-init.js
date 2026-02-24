@@ -276,6 +276,7 @@ function _connectUserWs(session) {
         if (data.type === "balance") {
           window.dispatchEvent(new CustomEvent("balance:update", { detail: data.balance }));
         } else if (data.type === "bet_resolved") {
+          if (data.user_id && String(data.user_id) !== String(session?.user?.id || "")) return;
           window.dispatchEvent(new CustomEvent("bet:resolved", { detail: data }));
         }
       } catch {}

@@ -20,9 +20,11 @@ const Markets = (() => {
   let hasInitialRender = false;
   let lastUserBetMarkup = "";
   let latestResolvedCard = null;
+  let roundGuideCollapsed = false;
   const dismissedResolvedBetIds = new Set();
   const RESOLVED_CARD_STORAGE_KEY = "wlz_round_result_card_v1";
   const DISMISSED_RESOLVED_STORAGE_KEY = "wlz_round_result_dismissed_v1";
+  const ROUND_GUIDE_COLLAPSE_KEY = "wlz_round_guide_collapsed_v1";
 
   const USER_BET_POLL_MS = 5000;
   const NIGHT_PAUSE_START_HOUR = 18;
@@ -255,33 +257,33 @@ const Markets = (() => {
 
     if (marketType === "over_under") {
       return {
-        title: "How this round works",
-        summary: `Total vehicle count is tracked from round start to round end.`,
-        winRule: `Pick OVER to win if final count is above ${threshold}. Pick UNDER to win if final count is below ${threshold}. EXACT wins only on exactly ${threshold}.`,
+        title: "How This Round Works",
+        summary: `Count starts at 0 when the round opens and tracks new vehicles only.`,
+        winRule: `Guess OVER if final count finishes above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins only on exactly ${threshold}.`,
       };
     }
 
     if (marketType === "vehicle_count") {
       const clsLabel = _vehicleClassLabel(vehicleClass);
       return {
-        title: "How this round works",
-        summary: `Only ${clsLabel.toLowerCase()} are tracked this round.`,
-        winRule: `Pick OVER if final ${clsLabel.toLowerCase()} count is above ${threshold}. Pick UNDER if below ${threshold}. EXACT wins on exactly ${threshold}.`,
+        title: "How This Round Works",
+        summary: `Count starts at 0 and tracks only new ${clsLabel.toLowerCase()} this round.`,
+        winRule: `Guess OVER if final ${clsLabel.toLowerCase()} count finishes above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins on exactly ${threshold}.`,
       };
     }
 
     if (marketType === "vehicle_type") {
       return {
-        title: "How this round works",
-        summary: "All vehicle classes are counted from round start to round end.",
-        winRule: "Pick the class you think finishes with the highest total.",
+        title: "How This Round Works",
+        summary: "All vehicle classes are tracked from 0 during this round.",
+        winRule: "Guess the vehicle class that finishes with the highest round total.",
       };
     }
 
     return {
-      title: "How this round works",
-      summary: "Place a bet on the outcome you think will happen.",
-      winRule: "If your selected outcome matches round result, your bet wins.",
+      title: "How This Round Works",
+      summary: "Choose one outcome before bets close.",
+      winRule: "If your guess matches the final result, your bet wins.",
     };
   }
 
@@ -332,9 +334,14 @@ const Markets = (() => {
         ${endsAt ? `<div class="timing-row"><span>Round ends</span><strong id="rt-ends"></strong></div>` : ""}
       </div>
       <div class="round-guide" role="note" aria-live="polite">
-        <p class="round-guide-title">${guide.title}</p>
-        <p class="round-guide-line">${guide.summary}</p>
-        <p class="round-guide-line">${guide.winRule}</p>
+        <div class="round-guide-head">
+          <p class="round-guide-title">${guide.title}</p>
+          <button id="round-guide-toggle" class="round-guide-toggle" type="button">${roundGuideCollapsed ? "Show" : "Hide"}</button>
+        </div>
+        <div id="round-guide-body" class="round-guide-body${roundGuideCollapsed ? " collapsed" : ""}">
+          <p class="round-guide-line">${guide.summary}</p>
+          <p class="round-guide-line">${guide.winRule}</p>
+        </div>
       </div>
       <div id="user-round-bet" class="user-round-bet hidden"></div>
       <div class="market-list" id="market-list">
@@ -355,6 +362,9 @@ const Markets = (() => {
     document.getElementById("btn-open-live-bet")?.addEventListener("click", () => {
       LiveBet.open(currentRound);
     });
+    document.getElementById("round-guide-toggle")?.addEventListener("click", () => {
+      _setRoundGuideCollapsed(!roundGuideCollapsed);
+    });
 
     _renderUserRoundBet();
     _stopNextRoundCountdown();
@@ -368,6 +378,7 @@ const Markets = (() => {
     const beginnerLabel = _friendlyMarketLabel(round, market);
     return `
       <div class="market-card"
+           data-can-bet="${isOpen ? "1" : "0"}"
            data-market-id="${market.id}"
            data-label="${escAttr(beginnerLabel)}"
            data-odds="${market.odds}">
@@ -376,9 +387,28 @@ const Markets = (() => {
         <div class="market-odds-note">Odds rate: ${odds.toFixed(2)}x payout multiplier</div>
         <div class="market-staked">${(market.total_staked || 0).toLocaleString()} staked</div>
         ${isOpen
-          ? `<button class="btn-bet">Bet This Outcome</button>`
+          ? `<button class="btn-bet">Guess This Outcome</button>`
           : `<span class="market-closed">Closed</span>`}
       </div>`;
+  }
+
+  function _loadRoundGuidePref() {
+    try {
+      roundGuideCollapsed = localStorage.getItem(ROUND_GUIDE_COLLAPSE_KEY) === "1";
+    } catch {
+      roundGuideCollapsed = false;
+    }
+  }
+
+  function _setRoundGuideCollapsed(next) {
+    roundGuideCollapsed = !!next;
+    try {
+      localStorage.setItem(ROUND_GUIDE_COLLAPSE_KEY, roundGuideCollapsed ? "1" : "0");
+    } catch {}
+    const body = document.getElementById("round-guide-body");
+    const toggle = document.getElementById("round-guide-toggle");
+    if (body) body.classList.toggle("collapsed", roundGuideCollapsed);
+    if (toggle) toggle.textContent = roundGuideCollapsed ? "Show" : "Hide";
   }
 
   function updateRoundStrip(round) {
@@ -760,6 +790,15 @@ const Markets = (() => {
 
     const baselineDb = Number(bet?.baseline_count);
     const baselineDerived = Number(bet?._derived_baseline_count);
+    const betStatus = String(bet?.status || "").toLowerCase();
+    if (
+      betStatus === "pending"
+      && Number.isFinite(baselineDb)
+      && baselineDb <= 0
+      && !Number.isFinite(baselineDerived)
+    ) {
+      return null;
+    }
     let baseline = Number.isFinite(baselineDb) ? baselineDb : NaN;
     if (Number.isFinite(baselineDerived)) {
       baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineDerived) : baselineDerived;
@@ -805,6 +844,15 @@ const Markets = (() => {
     }
     const baselineDb = Number(bet?.baseline_count);
     const baselineDerived = Number(bet?._derived_baseline_count);
+    const betStatus = String(bet?.status || "").toLowerCase();
+    if (
+      betStatus === "pending"
+      && Number.isFinite(baselineDb)
+      && baselineDb <= 0
+      && !Number.isFinite(baselineDerived)
+    ) {
+      return null;
+    }
     let baseline = Number.isFinite(baselineDb) ? baselineDb : NaN;
     if (Number.isFinite(baselineDerived)) {
       baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineDerived) : baselineDerived;
@@ -894,7 +942,7 @@ const Markets = (() => {
       const payout = Number(active?.potential_payout || 0);
       const stake = Number(active?.amount || 0);
       body = `
-        <div class="user-round-bet-row"><span>Your pick</span><strong>${(active?.markets?.label || "Market bet")}</strong></div>
+        <div class="user-round-bet-row"><span>Your guess</span><strong>${(active?.markets?.label || "Market bet")}</strong></div>
         <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>Odds</span><strong>${odds ? odds.toFixed(2) + "x" : "—"}</strong></div>
         <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
@@ -914,7 +962,7 @@ const Markets = (() => {
       const payout = Number(active?.potential_payout || 0);
       const stake = Number(active?.amount || 0);
       body = `
-        <div class="user-round-bet-row"><span>Your pick</span><strong>Exact ${target} (${cls})</strong></div>
+        <div class="user-round-bet-row"><span>Your guess</span><strong>Exact ${target} (${cls})</strong></div>
         <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>Window progress</span><strong>${liveText}</strong></div>
@@ -952,6 +1000,7 @@ const Markets = (() => {
   }
 
   function init() {
+    _loadRoundGuidePref();
     initTabs();
     loadMarkets();
 
@@ -1050,10 +1099,11 @@ const Markets = (() => {
     const container = document.getElementById("markets-container");
     if (container) {
       container.addEventListener("click", (e) => {
-        const btn = e.target.closest(".btn-bet");
-        if (!btn) return;
-        const card = btn.closest(".market-card");
+        const target = e.target.closest(".btn-bet, .market-card");
+        if (!target) return;
+        const card = target.closest(".market-card");
         if (!card) return;
+        if (card.dataset.canBet !== "1") return;
         Bet.openModal(
           card.dataset.marketId,
           card.dataset.label,

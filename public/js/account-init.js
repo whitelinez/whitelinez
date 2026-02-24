@@ -256,9 +256,11 @@ function renderHistoryRows(data) {
 }
 
 async function loadHistory() {
+  if (!currentSession?.user?.id) return;
   const { data, error } = await window.sb
     .from("bets")
     .select("id, bet_type, amount, potential_payout, status, vehicle_class, exact_count, window_duration_sec, actual_count, placed_at, resolved_at, markets(label, odds, outcome_key)")
+    .eq("user_id", currentSession.user.id)
     .order("placed_at", { ascending: false })
     .limit(100);
 
@@ -314,6 +316,7 @@ function connectAccountWs(jwt) {
         balanceEl.textContent = Number(data.balance || 0).toLocaleString();
       }
       if (data.type === "bet_resolved") {
+        if (data.user_id && String(data.user_id) !== String(currentSession?.user?.id || "")) return;
         loadHistory();
       }
     };

@@ -27,8 +27,8 @@ const Bet = (() => {
       <div class="modal-backdrop" id="bmi-backdrop"></div>
       <div class="modal-box">
         <button class="modal-close" id="bmi-close" aria-label="Close">✕</button>
-        <h3>Place Your Pick</h3>
-        <p class="modal-label">Outcome: ${esc(label)}</p>
+        <h3>Place Your Guess</h3>
+        <p class="modal-label">Your guess: ${esc(label)}</p>
         <p class="modal-label">Quick rule: payout = stake x odds rate.</p>
         <div class="modal-row">
           <span>Payout rate</span>

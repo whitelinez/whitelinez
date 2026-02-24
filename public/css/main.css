@@ -614,10 +614,31 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   gap: 4px;
 }
 
+.round-guide-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .round-guide-title {
   font-size: 0.8rem;
   font-weight: 700;
   color: #baf8ff;
+}
+
+.round-guide-toggle {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(186, 248, 255, 0.45);
+  background: rgba(186, 248, 255, 0.08);
+  color: #baf8ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.round-guide-body.collapsed {
+  display: none;
 }
 
 .round-guide-line {
@@ -764,6 +785,11 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   transition: border-color .15s;
 }
 .market-card:hover { border-color: var(--muted); }
+.market-card[data-can-bet="1"] { cursor: pointer; }
+.market-card[data-can-bet="1"]:hover {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 0, 0.22);
+}
 
 .market-label  { font-weight: 600; font-size: 0.9rem; }
 .market-payout {

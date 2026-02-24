@@ -2900,3 +2900,79 @@ button {
   width: 26px;
   height: 26px;
 }
+/* Final mobile HUD clamp: force compact size in bottom-right */
+@media (max-width: 640px) {
+  .ml-hud {
+    width: min(118px, 46vw) !important;
+    max-width: 118px !important;
+    right: 4px !important;
+    bottom: 4px !important;
+    padding: 1px !important;
+    border-radius: 0 !important;
+    z-index: 8;
+  }
+
+  .ml-hud-head {
+    margin-bottom: 2px;
+    gap: 3px;
+  }
+
+  .ml-hud-title {
+    font-size: 0.4rem !important;
+    letter-spacing: 0.08em;
+  }
+
+  .ml-hud-state {
+    font-size: 0.4rem !important;
+    padding: 1px 3px !important;
+  }
+
+  .ml-hud-msg,
+  .ml-hud-verbose {
+    font-size: 0.36rem !important;
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+
+  .ml-hud-chips,
+  .ml-hud-cells {
+    gap: 2px !important;
+  }
+
+  .ml-chip {
+    padding: 2px 3px !important;
+    font-size: 0.34rem;
+  }
+
+  .ml-cell-track {
+    height: 4px !important;
+  }
+
+  .ml-cell-row strong {
+    font-size: 0.42rem !important;
+  }
+
+  .ml-hud-metrics {
+    font-size: 0.4rem !important;
+    gap: 3px;
+  }
+
+  .ml-ico {
+    width: 6px !important;
+    height: 6px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .ml-hud {
+    width: min(104px, 44vw) !important;
+    max-width: 104px !important;
+    right: 3px !important;
+    bottom: 3px !important;
+  }
+
+  .ml-hud-verbose,
+  .ml-hud-metrics {
+    display: none;
+  }
+}

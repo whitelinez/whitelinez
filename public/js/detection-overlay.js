@@ -200,19 +200,7 @@ const DetectionOverlay = (() => {
     ctx.lineTo(cxBot.x, cxBot.y);
     ctx.stroke();
 
-    const cut = Math.max(0, Math.min(0.85, Number(settings.ground_occlusion_cutout) || 0.38));
-    if (cut > 0 && Array.isArray(detections) && detections.length) {
-      for (const det of detections) {
-        const dp1 = contentToPixel(det.x1, det.y1, bounds);
-        const dp2 = contentToPixel(det.x2, det.y2, bounds);
-        const bw = dp2.x - dp1.x;
-        const bh = dp2.y - dp1.y;
-        if (bw < 3 || bh < 3) continue;
-        const ch = bh * cut;
-        const cy = dp2.y - ch;
-        ctx.clearRect(dp1.x - 1, cy, bw + 2, ch + 2);
-      }
-    }
+    // Keep the ground projection visually behind overlays; do not punch holes under boxes.
     ctx.restore();
   }
 
@@ -693,13 +681,13 @@ const DetectionOverlay = (() => {
       else laneDetections.push(det);
     }
 
-    const now = Date.now();
-    const smoothedLane = smoothLaneDetections(laneDetections.slice(0, laneMaxBoxes), now);
-    for (const det of smoothedLane) {
+    const liveLane = laneDetections.slice(0, laneMaxBoxes);
+    for (const det of liveLane) {
       drawDetectionBox(det, bounds, {
         style: settings.box_style,
-        lineWidth: Math.max(1, Number(settings.line_width || 2) + 0.5),
-        alpha: Math.min(0.28, Math.max(0.03, Number(settings.fill_alpha || 0.10) + 0.03)),
+        lineWidth: Math.max(1, Number(settings.line_width || 2)),
+        alpha: 0,
+        fill: false,
         showLabels: settings.show_labels !== false,
         labelBgAlpha: 0.90,
       });
@@ -713,31 +701,13 @@ const DetectionOverlay = (() => {
     const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.45));
     const outsideHardCap = isMobileClient ? 24 : 35;
     const outsideMax = Math.max(1, Math.min(outsideHardCap, Number(settings.outside_scan_max_boxes) || 25));
-    const holdMs = Math.max(100, Number(settings.outside_scan_hold_ms) || 600);
     const fresh = outsideDetections
       .filter((d) => Number(d?.conf || 0) >= minConf)
       .sort((a, b) => Number(b?.conf || 0) - Number(a?.conf || 0))
       .slice(0, outsideMax);
 
     for (const det of fresh) {
-      const stableKey =
-        findMatchingGhostKey(det) ||
-        (Number.isFinite(Number(det?.tracker_id)) && Number(det?.tracker_id) >= 0
-          ? buildGhostKey(det)
-          : `g:${String(det?.cls || "vehicle")}:${ghostSeq++}`);
-      outsideGhosts.set(stableKey, { det, exp: now + holdMs });
-    }
-
-    for (const [k, v] of outsideGhosts.entries()) {
-      if (!v || !v.det || Number(v.exp || 0) < now) outsideGhosts.delete(k);
-    }
-
-    const ghosts = Array.from(outsideGhosts.values())
-      .sort((a, b) => Number(b.det?.conf || 0) - Number(a.det?.conf || 0))
-      .slice(0, outsideMax);
-
-    for (const g of ghosts) {
-      drawDetectionBox(g.det, bounds, {
+      drawDetectionBox(det, bounds, {
         style: "dashed",
         lineWidth: 1.0,
         alpha: 0,

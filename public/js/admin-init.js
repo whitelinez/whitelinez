@@ -2445,7 +2445,10 @@ init();
       }
 
       const state = payload?.result?.status || "completed";
-      if (state === "skipped") {
+      if (state === "queued") {
+        msg.style.color = "var(--green)";
+        msg.textContent = "One-click pipeline queued. Watch Latest Jobs for progress.";
+      } else if (state === "skipped") {
         msg.style.color = "#f1b37c";
         msg.textContent = payload?.result?.reason || "Pipeline skipped by guardrails.";
       } else {

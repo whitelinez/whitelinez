@@ -115,6 +115,7 @@ const MlOverlay = (() => {
       const payload = await res.json();
       state.modelLoop = payload?.ml_retrain_task_running ? "active" : "idle";
       const latest = payload?.latest_ml_detection || null;
+      const wx = payload?.weather_api?.latest || null;
       const conf = Number(latest?.avg_confidence);
       if (Number.isFinite(conf) && conf >= 0 && conf <= 1 && state.confCount === 0) {
         // Seed confidence immediately after deploy/reload even before first WS frame.
@@ -124,6 +125,20 @@ const MlOverlay = (() => {
       const latestTs = Date.parse(String(latest?.captured_at || ""));
       if (Number.isFinite(latestTs)) {
         state.lastCaptureTsMs = Math.max(state.lastCaptureTsMs || 0, latestTs);
+      }
+
+      // Fallback to weather API when WS scene fields are missing/unknown.
+      if (wx && typeof wx === "object") {
+        const light = String(wx.lighting || "").trim();
+        const weather = String(wx.weather || "").trim();
+        const sceneConf = Number(wx.confidence);
+        const currLight = mapSceneValue(state.sceneLighting, "scanning");
+        const currWeather = mapSceneValue(state.sceneWeather, "scanning");
+        if ((currLight === "scanning" || currLight === "unknown") && light) state.sceneLighting = light;
+        if ((currWeather === "scanning" || currWeather === "unknown") && weather) state.sceneWeather = weather;
+        if (Number.isFinite(sceneConf) && sceneConf >= 0 && sceneConf <= 1 && (!Number.isFinite(state.sceneConfidence) || state.sceneConfidence <= 0)) {
+          state.sceneConfidence = sceneConf;
+        }
       }
       render();
     } catch {
@@ -159,23 +174,39 @@ const MlOverlay = (() => {
     return v.replaceAll("_", " ");
   }
 
+  function sceneTitle(s) {
+    const v = String(s || "").trim();
+    return v ? (v.charAt(0).toUpperCase() + v.slice(1)) : "Scanning";
+  }
+
+  function weatherIcon(weather) {
+    const w = mapSceneValue(weather, "scanning");
+    if (w.includes("rain")) return "\u{1F327}";
+    if (w.includes("cloud")) return "\u2601";
+    if (w.includes("sun") || w.includes("clear")) return "\u2600";
+    return "\u26C5";
+  }
+
+  function lightingIcon(lighting) {
+    const l = mapSceneValue(lighting, "scanning");
+    if (l === "night") return "\u{1F319}";
+    if (l === "day") return "\u2600";
+    return "\u25CC";
+  }
+
   function getSceneDisplay() {
     const lighting = mapSceneValue(state.sceneLighting, "scanning");
     const weather = mapSceneValue(state.sceneWeather, "scanning");
-    const confPct = Math.round(Math.max(0, Math.min(1, Number(state.sceneConfidence) || 0)) * 100);
     const hasRealScene = lighting !== "scanning" || weather !== "scanning";
     if (!hasRealScene && state.frames === 0) return "Idle";
-    if (!hasRealScene || confPct < 18) return "Scanning...";
-    const title = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-    return `${title(lighting)} | ${title(weather)}`;
+    if (!hasRealScene) return "Scanning...";
+    return `${sceneTitle(lighting)} | ${sceneTitle(weather)}`;
   }
 
   function getHudState(avgConf) {
     const sceneText = getSceneDisplay();
-    const delayMs = getDelayMs();
     if (state.frames === 0) return "Idle";
-    if (sceneText === "Scanning..." || !Number.isFinite(delayMs)) return "Scanning";
-    if (delayMs >= 5000) return "Delayed";
+    if (sceneText === "Scanning...") return "Scanning";
     const lighting = mapSceneValue(state.sceneLighting, "scanning");
     if (lighting === "night") return "Night";
     if (lighting === "day") return "Day";
@@ -208,6 +239,7 @@ const MlOverlay = (() => {
     const detsEl = document.getElementById("ml-hud-dets");
     const confEl = document.getElementById("ml-hud-conf");
     const sceneEl = document.getElementById("ml-hud-profile");
+    const sceneIconEl = document.getElementById("ml-hud-scene-icon");
     const delayEl = document.getElementById("ml-hud-delay");
     const confBarEl = document.getElementById("ml-hud-conf-bar");
     const sceneBarEl = document.getElementById("ml-hud-scene-bar");
@@ -238,7 +270,7 @@ const MlOverlay = (() => {
     levelEl.textContent = hudState;
     levelEl.classList.toggle("is-live", hudState === "Day" || hudState === "Ready");
     levelEl.classList.toggle("is-scan", hudState === "Scanning");
-    levelEl.classList.toggle("is-delay", hudState === "Delayed");
+    levelEl.classList.toggle("is-delay", false);
     msgEl.textContent = `${level.label}. Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
@@ -247,10 +279,13 @@ const MlOverlay = (() => {
     sceneConfEl.textContent = percent(scenePct);
     sceneBarEl.style.setProperty("--pct", scenePct.toFixed(1));
     sceneEl.textContent = sceneLabel;
-    delayEl.textContent = delayText;
+    delayEl.textContent = percent(scenePct);
+    if (sceneIconEl) {
+      sceneIconEl.textContent = `${weatherIcon(state.sceneWeather)} ${lightingIcon(state.sceneLighting)}`;
+    }
     if (verboseEl) {
       const modelState = state.modelLoop === "active" ? "retrain on" : "retrain idle";
-      verboseEl.textContent = `${lockText} | ${modelState} | delay ${delayText}`;
+      verboseEl.textContent = `${lockText} | ${modelState} | scene ${percent(scenePct)}`;
     }
   }
 

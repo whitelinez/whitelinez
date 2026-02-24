@@ -2976,3 +2976,144 @@ button {
     display: none;
   }
 }
+
+/* Final mobile HUD clamp v2: hide both bars and shrink footprint */
+.ml-chip-icon {
+  display: inline-block;
+  min-width: 1.6em;
+  text-align: center;
+  margin-right: 4px;
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .ml-hud {
+    width: min(102px, 40vw) !important;
+    max-width: 102px !important;
+    right: 3px !important;
+    bottom: 3px !important;
+    padding: 1px !important;
+  }
+
+  .ml-hud-cells {
+    display: none !important;
+  }
+
+  .ml-hud-msg,
+  .ml-hud-verbose {
+    display: none !important;
+  }
+
+  .ml-hud-chips {
+    gap: 1px !important;
+  }
+
+  .ml-chip {
+    padding: 1px 2px !important;
+  }
+
+  .ml-chip-label,
+  .ml-hud-title,
+  .ml-hud-state,
+  .ml-hud-metrics {
+    font-size: 0.36rem !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .ml-hud {
+    width: min(92px, 38vw) !important;
+    max-width: 92px !important;
+    right: 2px !important;
+    bottom: 2px !important;
+  }
+
+  .ml-hud-metrics {
+    display: none !important;
+  }
+}
+
+/* Account page mobile layout */
+@media (max-width: 640px) {
+  .account-page .site-header nav {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .account-page .site-header nav a,
+  .account-page .site-header nav button {
+    font-size: 0.78rem;
+    padding: 6px 8px;
+  }
+
+  .account-page .account-main {
+    margin: 16px auto;
+    padding: 0 10px;
+    gap: 16px;
+  }
+
+  .account-page .account-profile-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .account-page .profile-avatar-wrap {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .account-page .profile-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .account-page .profile-avatar-btn {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+
+  .account-page .profile-fields {
+    min-width: 0;
+  }
+
+  .account-page .profile-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .account-page #btn-save-profile {
+    width: 100%;
+  }
+
+  .account-page .account-balance-card {
+    padding: 16px 12px;
+  }
+
+  .account-page .balance-value {
+    font-size: clamp(2rem, 11vw, 2.6rem);
+  }
+
+  .account-page .account-history h2 {
+    margin-bottom: 10px;
+  }
+
+  .account-page .history-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .account-page .pending-card {
+    padding: 10px;
+  }
+
+  .account-page .pending-row {
+    font-size: 0.78rem;
+  }
+}

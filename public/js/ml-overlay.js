@@ -14,7 +14,7 @@ const MlOverlay = (() => {
     seededFromTelemetry: false,
     runtimeProfile: "",
     runtimeReason: "",
-    lastDelayMs: null,
+    lastCaptureTsMs: null,
     sceneLighting: "unknown",
     sceneWeather: "unknown",
     sceneConfidence: 0,
@@ -102,8 +102,7 @@ const MlOverlay = (() => {
 
     const ts = Date.parse(String(data?.captured_at || ""));
     if (Number.isFinite(ts)) {
-      const delay = Date.now() - ts;
-      state.lastDelayMs = Math.max(0, delay);
+      state.lastCaptureTsMs = ts;
     }
 
     render();
@@ -121,6 +120,10 @@ const MlOverlay = (() => {
         // Seed confidence immediately after deploy/reload even before first WS frame.
         state.confSum = conf;
         state.confCount = 1;
+      }
+      const latestTs = Date.parse(String(latest?.captured_at || ""));
+      if (Number.isFinite(latestTs)) {
+        state.lastCaptureTsMs = Math.max(state.lastCaptureTsMs || 0, latestTs);
       }
       render();
     } catch {
@@ -169,8 +172,10 @@ const MlOverlay = (() => {
 
   function getHudState(avgConf) {
     const sceneText = getSceneDisplay();
+    const delayMs = getDelayMs();
     if (state.frames === 0) return "Idle";
-    if (sceneText === "Scanning..." || state.lastDelayMs == null) return "Scanning";
+    if (sceneText === "Scanning..." || !Number.isFinite(delayMs)) return "Scanning";
+    if (delayMs >= 5000) return "Delayed";
     const lighting = mapSceneValue(state.sceneLighting, "scanning");
     if (lighting === "night") return "Night";
     if (lighting === "day") return "Day";
@@ -181,6 +186,18 @@ const MlOverlay = (() => {
   function percent(n) {
     const v = Math.max(0, Math.min(100, Number(n) || 0));
     return `${Math.round(v)}%`;
+  }
+
+  function getDelayMs() {
+    if (!Number.isFinite(state.lastCaptureTsMs)) return null;
+    return Math.max(0, Date.now() - state.lastCaptureTsMs);
+  }
+
+  function formatDelay(ms) {
+    if (!Number.isFinite(ms)) return state.frames > 0 ? "Scanning..." : "Idle";
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    if (ms < 10_000) return `${(ms / 1000).toFixed(1)}s`;
+    return `${Math.round(ms / 1000)}s`;
   }
 
   function render() {
@@ -195,6 +212,7 @@ const MlOverlay = (() => {
     const confBarEl = document.getElementById("ml-hud-conf-bar");
     const sceneBarEl = document.getElementById("ml-hud-scene-bar");
     const sceneConfEl = document.getElementById("ml-hud-scene-conf");
+    const verboseEl = document.getElementById("ml-hud-verbose");
     if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl || !confBarEl || !sceneBarEl || !sceneConfEl) return;
 
     const level = getLevel();
@@ -204,17 +222,23 @@ const MlOverlay = (() => {
     const hudState = getHudState(avgConf);
     const modeLabel = state.runtimeProfile ? state.runtimeProfile.replaceAll("_", " ") : "balanced";
     const sceneLabel = getSceneDisplay();
-    const delayText = Number.isFinite(state.lastDelayMs)
-      ? `${Math.round(state.lastDelayMs)}ms`
-      : (state.frames > 0 ? "Scanning..." : "Idle");
+    const delayMs = getDelayMs();
+    const delayText = formatDelay(delayMs);
     const reasonText = state.runtimeReason ? state.runtimeReason.replaceAll("_", " ") : "";
     const confPct = avgConf == null ? 0 : Math.max(0, Math.min(100, avgConf * 100));
     const scenePct = Math.max(0, Math.min(100, (Number(state.sceneConfidence) || 0) * 100));
+    const lockText =
+      scenePct < 18
+        ? "Scene lock scanning"
+        : scenePct < 55
+          ? "Scene lock settling"
+          : "Scene lock stable";
 
     titleEl.textContent = title;
     levelEl.textContent = hudState;
     levelEl.classList.toggle("is-live", hudState === "Day" || hudState === "Ready");
     levelEl.classList.toggle("is-scan", hudState === "Scanning");
+    levelEl.classList.toggle("is-delay", hudState === "Delayed");
     msgEl.textContent = `${level.label}. Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
@@ -224,6 +248,10 @@ const MlOverlay = (() => {
     sceneBarEl.style.setProperty("--pct", scenePct.toFixed(1));
     sceneEl.textContent = sceneLabel;
     delayEl.textContent = delayText;
+    if (verboseEl) {
+      const modelState = state.modelLoop === "active" ? "retrain on" : "retrain idle";
+      verboseEl.textContent = `${lockText} | ${modelState} | delay ${delayText}`;
+    }
   }
 
   function destroy() {

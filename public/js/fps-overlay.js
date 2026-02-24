@@ -71,8 +71,8 @@ const FpsOverlay = (() => {
     _el.textContent = fps == null ? "FPS --.-" : `FPS ${fps.toFixed(1)}`;
     _el.classList.remove("fps-good", "fps-warn", "fps-bad");
     if (fps == null) return;
-    if (fps < 8) _el.classList.add("fps-bad");
-    else if (fps < 14) _el.classList.add("fps-warn");
+    if (fps <= 18) _el.classList.add("fps-bad");
+    else if (fps < 19) _el.classList.add("fps-warn");
     else _el.classList.add("fps-good");
   }
 

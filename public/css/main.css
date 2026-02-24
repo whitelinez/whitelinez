@@ -260,30 +260,37 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   bottom: 10px;
   z-index: 8;
   padding: 2px 6px;
-  border: none;
-  background: transparent;
+  border: 1px solid rgba(112, 201, 133, 0.65);
+  background: rgba(12, 26, 18, 0.25);
   color: #8dff9e;
   font-family: "Courier New", "Consolas", monospace;
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
+  clip-path: polygon(0 50%, 8% 0, 100% 0, 94% 100%, 0 100%);
   text-shadow: 0 0 8px rgba(28, 255, 74, 0.45), 0 1px 3px rgba(0,0,0,0.65);
   pointer-events: none;
 }
 
 .fps-overlay.fps-good {
   color: #8dff9e;
+  border-color: rgba(112, 201, 133, 0.75);
+  background: rgba(12, 26, 18, 0.25);
   text-shadow: 0 0 8px rgba(28, 255, 74, 0.45), 0 1px 3px rgba(0,0,0,0.65);
 }
 
 .fps-overlay.fps-warn {
   color: #ffe877;
+  border-color: rgba(255, 232, 119, 0.7);
+  background: rgba(35, 30, 10, 0.25);
   text-shadow: 0 0 8px rgba(255, 232, 119, 0.4), 0 1px 3px rgba(0,0,0,0.65);
 }
 
 .fps-overlay.fps-bad {
   color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.72);
+  background: rgba(42, 14, 14, 0.27);
   text-shadow: 0 0 8px rgba(255, 80, 80, 0.46), 0 1px 3px rgba(0,0,0,0.65);
 }
 
@@ -2235,6 +2242,12 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   border-color: rgba(225, 185, 74, 0.7);
 }
 
+.ml-hud-state.is-delay {
+  color: #ffd7d7;
+  background: rgba(120, 34, 34, 0.32);
+  border-color: rgba(255, 116, 116, 0.72);
+}
+
 .ml-hud-msg {
   margin: 0 0 5px;
   font-size: 0.52rem;
@@ -2242,6 +2255,18 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   color: rgba(206, 232, 241, 0.84);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   display: none;
+}
+
+.ml-hud-verbose {
+  margin: 0 0 3px;
+  font-size: 0.42rem;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  color: rgba(255, 238, 185, 0.8);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ml-hud-chips {
@@ -2420,6 +2445,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .ml-hud-state {
     font-size: 0.43rem;
     padding: 1px 4px;
+  }
+  .ml-hud-verbose {
+    margin-bottom: 2px;
+    font-size: 0.38rem;
   }
   .ml-hud-metrics {
     font-size: 0.42rem;

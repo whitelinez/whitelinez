@@ -40,6 +40,7 @@ const AdminLine = (() => {
   let cameraId = null;
   let isSaving = false;
   let isInitialized = false;
+  let feedAppearanceCache = {};
 
   // Active mode: "detect" | "count" | "ground"
   let activeMode = "count";
@@ -48,10 +49,15 @@ const AdminLine = (() => {
   let detectPoints = [];  // [{rx, ry}]
   let countPoints  = [];  // [{rx, ry}]
   let groundPoints = [];  // [{rx, ry}]
+  let showGuides = true;
+  let snapToGuides = true;
+  let autoGroundFromZones = true;
   const DETECT_MAX_POINTS = Number.POSITIVE_INFINITY;
   const COUNT_MAX_POINTS = 4;
   const COUNT_MIN_POINTS = 2;
   const GROUND_MAX_POINTS = 4;
+  const GUIDE_ROWS = 8;
+  const GUIDE_SNAP_PX = 14;
   const DETECTION_SETTINGS_STORAGE_KEY = "whitelinez.detection.overlay_settings.v4";
 
   function init(videoEl, canvasEl, camId) {
@@ -93,6 +99,8 @@ const AdminLine = (() => {
       document.getElementById("btn-zone-detect")?.addEventListener("click", () => setMode("detect"));
       document.getElementById("btn-zone-count")?.addEventListener("click",  () => setMode("count"));
       document.getElementById("btn-zone-ground")?.addEventListener("click", () => setMode("ground"));
+      document.getElementById("btn-zone-guides")?.addEventListener("click", toggleGuides);
+      document.getElementById("btn-zone-snap")?.addEventListener("click", toggleSnap);
       isInitialized = true;
     }
 
@@ -108,7 +116,7 @@ const AdminLine = (() => {
     updateModeUI();
     let label = "COUNT ZONE (yellow)";
     if (mode === "detect") label = "DETECT ZONE (cyan)";
-    if (mode === "ground") label = "GROUND QUAD (aqua)";
+    if (mode === "ground") label = "3D MASK / GROUND (aqua)";
     updateStatus(`Editing: ${label}`);
   }
 
@@ -116,9 +124,34 @@ const AdminLine = (() => {
     const btnDetect = document.getElementById("btn-zone-detect");
     const btnCount  = document.getElementById("btn-zone-count");
     const btnGround = document.getElementById("btn-zone-ground");
+    const btnGuides = document.getElementById("btn-zone-guides");
+    const btnSnap = document.getElementById("btn-zone-snap");
     if (btnDetect) btnDetect.classList.toggle("active", activeMode === "detect");
     if (btnCount)  btnCount.classList.toggle("active",  activeMode === "count");
     if (btnGround) btnGround.classList.toggle("active", activeMode === "ground");
+    if (btnGuides) {
+      btnGuides.classList.toggle("active", showGuides);
+      btnGuides.textContent = showGuides ? "Guides On" : "Guides Off";
+      btnGuides.setAttribute("aria-pressed", showGuides ? "true" : "false");
+    }
+    if (btnSnap) {
+      btnSnap.classList.toggle("active", snapToGuides);
+      btnSnap.textContent = snapToGuides ? "Snap On" : "Snap Off";
+      btnSnap.setAttribute("aria-pressed", snapToGuides ? "true" : "false");
+    }
+  }
+
+  function toggleGuides() {
+    showGuides = !showGuides;
+    updateModeUI();
+    redraw();
+    updateStatus(showGuides ? "Perspective guides enabled" : "Perspective guides hidden");
+  }
+
+  function toggleSnap() {
+    snapToGuides = !snapToGuides;
+    updateModeUI();
+    updateStatus(snapToGuides ? "Snap-to-guides enabled" : "Snap-to-guides disabled");
   }
 
   function syncSize() {
@@ -166,6 +199,7 @@ const AdminLine = (() => {
       const countLine  = data?.count_line;
       const detectZone = data?.detect_zone;
       const feedAppearance = data?.feed_appearance || {};
+      feedAppearanceCache = feedAppearance && typeof feedAppearance === "object" ? { ...feedAppearance } : {};
       applyCountSettingsToForm(data?.count_settings);
 
       if (countLine?.x3 !== undefined) {
@@ -225,8 +259,15 @@ const AdminLine = (() => {
 
   function handleClick(e) {
     const rect  = canvas.getBoundingClientRect();
-    const px    = e.clientX - rect.left;
-    const py    = e.clientY - rect.top;
+    let px    = e.clientX - rect.left;
+    let py    = e.clientY - rect.top;
+    if (snapToGuides && showGuides && activeMode !== "ground") {
+      const snapped = snapPointToGuides(px, py);
+      if (snapped) {
+        px = snapped.x;
+        py = snapped.y;
+      }
+    }
     const bounds = getContentBounds(video);
     const { x: rx, y: ry } = pixelToContent(px, py, bounds);
 
@@ -243,13 +284,16 @@ const AdminLine = (() => {
       groundPoints.push({ rx, ry });
       if (groundPoints.length === GROUND_MAX_POINTS) {
         applyGroundQuadToControls(groundPoints);
-        updateStatus("Ground quad updated. Click Save Detection Settings to persist.");
+        updateStatus("3D mask updated. Click Save Zones to persist.");
       }
     } else {
       if (countPoints.length >= maxPts) countPoints = [];
       countPoints.push({ rx, ry });
     }
 
+    if (autoGroundFromZones && activeMode !== "ground") {
+      autoUpdateGroundFromZones();
+    }
     redraw();
 
     updateZoneValidityStatus();
@@ -267,6 +311,7 @@ const AdminLine = (() => {
     }
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPerspectiveGuides();
 
     // Draw detect zone (cyan)
     if (detectPoints.length > 0) {
@@ -282,6 +327,157 @@ const AdminLine = (() => {
     if (groundPoints.length > 0) {
       _drawPoints(groundPoints, "#36CCFF", "GROUND QUAD");
     }
+  }
+
+  function drawPerspectiveGuides() {
+    if (!showGuides || !ctx) return;
+    const geom = getGuideGeometry();
+    if (!geom) return;
+    const { tl, tr, br, bl } = geom;
+
+    // Baseline road plane fill (very subtle).
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tl.x, tl.y);
+    ctx.lineTo(tr.x, tr.y);
+    ctx.lineTo(br.x, br.y);
+    ctx.lineTo(bl.x, bl.y);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(54, 204, 255, 0.05)";
+    ctx.fill();
+
+    // Outer rails.
+    ctx.strokeStyle = "rgba(140, 224, 255, 0.55)";
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([6, 4]);
+    drawLine(tl, bl);
+    drawLine(tr, br);
+    ctx.setLineDash([]);
+
+    // Perspective row guides inside the quad.
+    for (let i = 1; i < GUIDE_ROWS; i += 1) {
+      const t = i / GUIDE_ROWS;
+      const u = t * t; // denser near horizon.
+      const l = lerpPoint(tl, bl, u);
+      const r = lerpPoint(tr, br, u);
+      ctx.strokeStyle = "rgba(140, 224, 255, 0.22)";
+      ctx.lineWidth = 1;
+      drawLine(l, r);
+    }
+
+    // Center guide.
+    const topMid = lerpPoint(tl, tr, 0.5);
+    const botMid = lerpPoint(bl, br, 0.5);
+    ctx.strokeStyle = "rgba(255, 214, 0, 0.36)";
+    ctx.lineWidth = 1.1;
+    ctx.setLineDash([4, 4]);
+    drawLine(topMid, botMid);
+    ctx.setLineDash([]);
+
+    // Vanishing point + horizon helper.
+    const vp = lineIntersection(tl, bl, tr, br);
+    if (vp && Number.isFinite(vp.x) && Number.isFinite(vp.y)) {
+      ctx.strokeStyle = "rgba(255, 214, 0, 0.32)";
+      ctx.lineWidth = 1;
+      drawLine({ x: 0, y: vp.y }, { x: canvas.width, y: vp.y });
+      ctx.beginPath();
+      ctx.arc(vp.x, vp.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 214, 0, 0.78)";
+      ctx.fill();
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("VP", vp.x + 6, vp.y - 4);
+    }
+    ctx.restore();
+  }
+
+  function getGuideGeometry() {
+    const src = groundPoints.length >= 4 ? groundPoints.slice(0, 4) : readGroundQuadFromControls();
+    if (!Array.isArray(src) || src.length < 4) return null;
+    const quad = src.map(toCanvas);
+    if (quad.some((p) => !Number.isFinite(p.x) || !Number.isFinite(p.y))) return null;
+    return { tl: quad[0], tr: quad[1], br: quad[2], bl: quad[3] };
+  }
+
+  function getGuideSegments() {
+    const geom = getGuideGeometry();
+    if (!geom) return [];
+    const { tl, tr, br, bl } = geom;
+    const topMid = lerpPoint(tl, tr, 0.5);
+    const botMid = lerpPoint(bl, br, 0.5);
+    const segs = [
+      { a: tl, b: bl, kind: "left rail" },
+      { a: tr, b: br, kind: "right rail" },
+      { a: topMid, b: botMid, kind: "center line" },
+    ];
+    for (let i = 0; i <= GUIDE_ROWS; i += 1) {
+      const t = i / GUIDE_ROWS;
+      const u = t * t;
+      segs.push({
+        a: lerpPoint(tl, bl, u),
+        b: lerpPoint(tr, br, u),
+        kind: "grid row",
+      });
+    }
+    return segs;
+  }
+
+  function snapPointToGuides(px, py) {
+    const p = { x: px, y: py };
+    const segments = getGuideSegments();
+    if (!segments.length) return null;
+
+    let best = null;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const seg of segments) {
+      const proj = projectPointToSegment(p, seg.a, seg.b);
+      if (!proj) continue;
+      if (proj.dist < bestDist) {
+        bestDist = proj.dist;
+        best = { x: proj.x, y: proj.y, kind: seg.kind };
+      }
+    }
+    if (!best || bestDist > GUIDE_SNAP_PX) return null;
+    return best;
+  }
+
+  function projectPointToSegment(p, a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < 1e-6) return null;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+    const x = a.x + t * dx;
+    const y = a.y + t * dy;
+    const dist = Math.hypot(p.x - x, p.y - y);
+    return { x, y, dist };
+  }
+
+  function drawLine(a, b) {
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  function lerpPoint(a, b, t) {
+    return {
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t,
+    };
+  }
+
+  function lineIntersection(p1, p2, p3, p4) {
+    const x1 = p1.x; const y1 = p1.y;
+    const x2 = p2.x; const y2 = p2.y;
+    const x3 = p3.x; const y3 = p3.y;
+    const x4 = p4.x; const y4 = p4.y;
+    const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(den) < 1e-8) return null;
+    const numX = (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4);
+    const numY = (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4);
+    return { x: numX / den, y: numY / den };
   }
 
   function _drawPoints(pts, color, label) {
@@ -389,6 +585,22 @@ const AdminLine = (() => {
       updateData.detect_zone = null; // clear if empty
     }
     updateData.count_settings = readCountSettingsFromForm();
+    const groundFromControls = readGroundQuadFromControls();
+    const finalGround = (groundPoints.length >= 4 ? groundPoints : groundFromControls).slice(0, 4);
+    updateData.feed_appearance = {
+      ...(feedAppearanceCache && typeof feedAppearanceCache === "object" ? feedAppearanceCache : {}),
+      detection_overlay: {
+        ...(feedAppearanceCache?.detection_overlay && typeof feedAppearanceCache.detection_overlay === "object"
+          ? feedAppearanceCache.detection_overlay
+          : {}),
+        ground_quad: {
+          x1: finalGround[0]?.rx ?? 0.34, y1: finalGround[0]?.ry ?? 0.58,
+          x2: finalGround[1]?.rx ?? 0.78, y2: finalGround[1]?.ry ?? 0.58,
+          x3: finalGround[2]?.rx ?? 0.98, y3: finalGround[2]?.ry ?? 0.98,
+          x4: finalGround[3]?.rx ?? 0.08, y4: finalGround[3]?.ry ?? 0.98,
+        },
+      },
+    };
 
     try {
       let err = null;
@@ -400,9 +612,10 @@ const AdminLine = (() => {
 
       if (err) {
         const msg = String(err.message || "").toLowerCase();
-        if (msg.includes("count_settings") || msg.includes("column")) {
+        if (msg.includes("count_settings") || msg.includes("feed_appearance") || msg.includes("column")) {
           const fallbackPayload = { ...updateData };
           delete fallbackPayload.count_settings;
+          delete fallbackPayload.feed_appearance;
           const fallback = await window.sb
             .from("cameras")
             .update(fallbackPayload)
@@ -412,7 +625,8 @@ const AdminLine = (() => {
       }
 
       if (err) throw err;
-      updateStatus("Zones saved ✓ — AI picks up within 30s");
+      feedAppearanceCache = updateData.feed_appearance;
+      updateStatus("Count + Detect + 3D mask saved ✓ — AI picks up within 30s");
     } catch (e) {
       console.error("[AdminLine] Save failed:", e);
       updateStatus(`Error: ${e.message}`);
@@ -619,6 +833,48 @@ const AdminLine = (() => {
       { rx: getNum("det-ground-x3", 0.98), ry: getNum("det-ground-y3", 0.98) },
       { rx: getNum("det-ground-x4", 0.08), ry: getNum("det-ground-y4", 0.98) },
     ];
+  }
+
+  function autoUpdateGroundFromZones() {
+    const derived = deriveGroundFromZones();
+    if (!derived) return;
+    groundPoints = derived;
+    applyGroundQuadToControls(groundPoints);
+  }
+
+  function deriveGroundFromZones() {
+    if (countPoints.length >= 4) {
+      return countPoints.slice(0, 4).map((p) => ({ rx: p.rx, ry: p.ry }));
+    }
+
+    const source = detectPoints.length >= 4
+      ? detectPoints
+      : (detectPoints.length >= 3 && countPoints.length >= 2 ? [...detectPoints, ...countPoints] : []);
+    if (source.length < 4) return null;
+
+    const pts = source.map((p) => ({ rx: clamp01(p.rx), ry: clamp01(p.ry) }));
+    const byY = [...pts].sort((a, b) => a.ry - b.ry);
+    const band = Math.max(2, Math.ceil(pts.length * 0.35));
+    const topPool = byY.slice(0, band);
+    const bottomPool = byY.slice(Math.max(0, byY.length - band));
+
+    const topLeft = topPool.reduce((m, p) => (p.rx < m.rx ? p : m), topPool[0]);
+    const topRight = topPool.reduce((m, p) => (p.rx > m.rx ? p : m), topPool[0]);
+    const bottomLeft = bottomPool.reduce((m, p) => (p.rx < m.rx ? p : m), bottomPool[0]);
+    const bottomRight = bottomPool.reduce((m, p) => (p.rx > m.rx ? p : m), bottomPool[0]);
+    const quad = [topLeft, topRight, bottomRight, bottomLeft].map((p) => ({ rx: p.rx, ry: p.ry }));
+
+    // Reject inverted quads.
+    const topY = (quad[0].ry + quad[1].ry) * 0.5;
+    const bottomY = (quad[2].ry + quad[3].ry) * 0.5;
+    if (topY >= bottomY) return null;
+    return quad;
+  }
+
+  function clamp01(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(1, n));
   }
 
   function applyGroundQuadToControls(points) {

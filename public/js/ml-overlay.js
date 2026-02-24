@@ -219,6 +219,36 @@ const MlOverlay = (() => {
     return `${Math.round(v)}%`;
   }
 
+  function getVerboseScript({ confPct, scenePct, detections, frames, modelLoop }) {
+    const lines = [];
+    if (frames < 8) {
+      lines.push("Scanning vehicles live");
+    } else if (detections < 40) {
+      lines.push("Building traffic baseline");
+    } else {
+      lines.push("Tracking vehicles in lane");
+    }
+
+    if (confPct < 40) {
+      lines.push("Improving confidence for better detections");
+    } else if (confPct < 65) {
+      lines.push("Confidence is stabilizing");
+    } else {
+      lines.push("Confidence stable for live detections");
+    }
+
+    if (scenePct < 35) {
+      lines.push("Scene lock calibrating");
+    } else if (scenePct < 70) {
+      lines.push("Scene lock settling");
+    } else {
+      lines.push("Scene lock stable");
+    }
+
+    lines.push(modelLoop === "active" ? "Model retrain active" : "Model retrain idle");
+    return lines.join(" | ");
+  }
+
   function getDelayMs() {
     if (!Number.isFinite(state.lastCaptureTsMs)) return null;
     return Math.max(0, Date.now() - state.lastCaptureTsMs);
@@ -259,13 +289,6 @@ const MlOverlay = (() => {
     const reasonText = state.runtimeReason ? state.runtimeReason.replaceAll("_", " ") : "";
     const confPct = avgConf == null ? 0 : Math.max(0, Math.min(100, avgConf * 100));
     const scenePct = Math.max(0, Math.min(100, (Number(state.sceneConfidence) || 0) * 100));
-    const lockText =
-      scenePct < 18
-        ? "Scene lock scanning"
-        : scenePct < 55
-          ? "Scene lock settling"
-          : "Scene lock stable";
-
     titleEl.textContent = title;
     levelEl.textContent = sceneLabel;
     levelEl.classList.toggle("is-live", sceneLabel !== "Scanning..." && sceneLabel !== "Idle");
@@ -284,8 +307,13 @@ const MlOverlay = (() => {
       sceneIconEl.textContent = "OBJ";
     }
     if (verboseEl) {
-      const modelState = state.modelLoop === "active" ? "retrain on" : "retrain idle";
-      verboseEl.textContent = `${lockText} | ${modelState} | scene ${percent(scenePct)}`;
+      verboseEl.textContent = getVerboseScript({
+        confPct,
+        scenePct,
+        detections: state.detections,
+        frames: state.frames,
+        modelLoop: state.modelLoop,
+      });
     }
   }
 

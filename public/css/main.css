@@ -3004,6 +3004,21 @@ button {
     display: none !important;
   }
 
+  .ml-hud-verbose {
+    display: block !important;
+    margin: 2px 0 1px;
+    font-size: 0.34rem !important;
+    line-height: 1.25;
+    color: rgba(214, 245, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ml-hud-msg {
+    display: none !important;
+  }
+
   .ml-hud-chips {
     gap: 1px !important;
   }

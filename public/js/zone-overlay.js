@@ -5,6 +5,10 @@
 
 const ZoneOverlay = (() => {
   let canvas, ctx, video;
+  let pixiApp = null;
+  let pixiEnabled = false;
+  let pixiGraphics = null;
+  let pixiTexts = [];
   let countLine = null;
   let detectZone = null;
   let latestDetections = [];
@@ -15,6 +19,79 @@ const ZoneOverlay = (() => {
   let confirmedTotal = 0;
   let flashTimer = null;
   let isFlashing = false;
+
+  function hexToPixi(hex) {
+    const raw = String(hex || "").replace("#", "");
+    const safe = raw.length === 3
+      ? raw.split("").map((c) => c + c).join("")
+      : raw.padEnd(6, "0").slice(0, 6);
+    const n = Number.parseInt(safe, 16);
+    return Number.isFinite(n) ? n : 0x66bb6a;
+  }
+
+  function initPixiRenderer() {
+    if (!canvas || !window.PIXI) return false;
+    let hasWebGL = false;
+    try {
+      const probe = document.createElement("canvas");
+      hasWebGL = Boolean(
+        probe.getContext("webgl2", { failIfMajorPerformanceCaveat: true }) ||
+        probe.getContext("webgl", { failIfMajorPerformanceCaveat: true }) ||
+        probe.getContext("experimental-webgl", { failIfMajorPerformanceCaveat: true })
+      );
+    } catch {
+      hasWebGL = false;
+    }
+    if (!hasWebGL) return false;
+
+    try {
+      pixiApp = new window.PIXI.Application({
+        view: canvas,
+        width: Math.max(1, canvas.width || 1),
+        height: Math.max(1, canvas.height || 1),
+        backgroundAlpha: 0,
+        antialias: true,
+        autoDensity: true,
+        resolution: Math.max(1, window.devicePixelRatio || 1),
+        powerPreference: "high-performance",
+      });
+      pixiGraphics = new window.PIXI.Graphics();
+      pixiApp.stage.addChild(pixiGraphics);
+      pixiEnabled = true;
+      return true;
+    } catch {
+      pixiApp = null;
+      pixiGraphics = null;
+      pixiEnabled = false;
+      return false;
+    }
+  }
+
+  function clearPixiTexts() {
+    if (!pixiApp || !pixiTexts.length) return;
+    for (const t of pixiTexts) {
+      try {
+        pixiApp.stage.removeChild(t);
+        t.destroy();
+      } catch {}
+    }
+    pixiTexts = [];
+  }
+
+  function addPixiLabel(text, x, y, color) {
+    if (!pixiApp || !text) return;
+    const node = new window.PIXI.Text(String(text), {
+      fontFamily: "Manrope, sans-serif",
+      fontWeight: "700",
+      fontSize: 12,
+      fill: color,
+    });
+    node.anchor.set(0.5, 0.5);
+    node.x = x;
+    node.y = y;
+    pixiApp.stage.addChild(node);
+    pixiTexts.push(node);
+  }
 
   async function resolveActiveCamera() {
     const { data, error } = await window.sb
@@ -45,9 +122,12 @@ const ZoneOverlay = (() => {
   function init(videoEl, canvasEl) {
     video = videoEl;
     canvas = canvasEl;
-    ctx = canvas.getContext("2d");
 
     syncSize();
+    if (!initPixiRenderer()) {
+      ctx = canvas.getContext("2d");
+      pixiEnabled = false;
+    }
     window.addEventListener("resize", () => {
       syncSize();
       draw();
@@ -74,6 +154,9 @@ const ZoneOverlay = (() => {
     if (!video || !canvas) return;
     canvas.width = video.clientWidth;
     canvas.height = video.clientHeight;
+    if (pixiEnabled && pixiApp?.renderer) {
+      pixiApp.renderer.resize(Math.max(1, canvas.width), Math.max(1, canvas.height));
+    }
   }
 
   async function loadAndDraw() {
@@ -104,6 +187,10 @@ const ZoneOverlay = (() => {
   }
 
   function draw() {
+    if (pixiEnabled && pixiGraphics) {
+      drawPixi();
+      return;
+    }
     if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -117,6 +204,24 @@ const ZoneOverlay = (() => {
     if (countLine) {
       const color = isFlashing ? "#00FF88" : "#FFD600";
       _drawZone(countLine, color, isFlashing, String(confirmedTotal), pt);
+    }
+  }
+
+  function drawPixi() {
+    if (!pixiGraphics || !canvas) return;
+    pixiGraphics.clear();
+    clearPixiTexts();
+
+    const bounds = getContentBounds(video);
+    const pt = (rx, ry) => contentToPixel(rx, ry, bounds);
+
+    if (detectZone) {
+      _drawZonePixi(detectZone, "#00BCD4", false, "", pt);
+    }
+
+    if (countLine) {
+      const color = isFlashing ? "#00FF88" : "#FFD600";
+      _drawZonePixi(countLine, color, isFlashing, String(confirmedTotal), pt);
     }
   }
 
@@ -158,13 +263,6 @@ const ZoneOverlay = (() => {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      poly.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      });
-
       if (label) {
         const cx = poly.reduce((s, p) => s + p.x, 0) / poly.length;
         const cy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
@@ -199,6 +297,47 @@ const ZoneOverlay = (() => {
         ctx.fillText(label, mx, my);
       }
       applyVehicleOcclusion();
+    }
+  }
+
+  function _drawZonePixi(zone, color, flashing, label, pt) {
+    const poly = _toPoints(zone, pt);
+    const colorNum = hexToPixi(color);
+    if (poly && poly.length >= 3) {
+      const fillAlpha = flashing
+        ? 0.16
+        : color === "#00BCD4"
+          ? 0.08
+          : 0.10;
+
+      pixiGraphics.beginFill(colorNum, fillAlpha);
+      pixiGraphics.lineStyle(flashing ? 3 : 2, colorNum, 1);
+      pixiGraphics.moveTo(poly[0].x, poly[0].y);
+      for (let i = 1; i < poly.length; i += 1) {
+        pixiGraphics.lineTo(poly[i].x, poly[i].y);
+      }
+      pixiGraphics.lineTo(poly[0].x, poly[0].y);
+      pixiGraphics.endFill();
+
+      if (label) {
+        const cx = poly.reduce((s, p) => s + p.x, 0) / poly.length;
+        const cy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
+        addPixiLabel(label, cx, cy, colorNum);
+      }
+      return;
+    }
+
+    if (zone && zone.x1 !== undefined) {
+      const p1 = pt(zone.x1, zone.y1);
+      const p2 = pt(zone.x2, zone.y2);
+      pixiGraphics.lineStyle(flashing ? 4 : 3, colorNum, 1);
+      pixiGraphics.moveTo(p1.x, p1.y);
+      pixiGraphics.lineTo(p2.x, p2.y);
+      if (label) {
+        const mx = (p1.x + p2.x) / 2;
+        const my = (p1.y + p2.y) / 2 - 10;
+        addPixiLabel(label, mx, my, colorNum);
+      }
     }
   }
 

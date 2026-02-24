@@ -18,6 +18,7 @@ const MlOverlay = (() => {
     sceneLighting: "unknown",
     sceneWeather: "unknown",
     sceneConfidence: 0,
+    liveObjectsNow: 0,
   };
 
   let _bound = false;
@@ -78,6 +79,7 @@ const MlOverlay = (() => {
     state.frames += 1;
     const dets = Array.isArray(data?.detections) ? data.detections : [];
     state.detections += dets.length;
+    state.liveObjectsNow = Math.max(0, Math.round((state.liveObjectsNow * 0.45) + (dets.length * 0.55)));
 
     for (const d of dets) {
       const conf = Number(d?.conf);
@@ -301,11 +303,12 @@ const MlOverlay = (() => {
     confBarEl.style.setProperty("--pct", confPct.toFixed(1));
     sceneConfEl.textContent = percent(scenePct);
     sceneBarEl.style.setProperty("--pct", scenePct.toFixed(1));
-    sceneEl.textContent = state.detections.toLocaleString();
     delayEl.textContent = percent(confPct);
-    if (sceneIconEl) {
-      sceneIconEl.textContent = "OBJ";
-    }
+    const liveObjPct = Math.max(0, Math.min(100, (Number(state.liveObjectsNow) / 12) * 100));
+    sceneEl.style.setProperty("--pct", liveObjPct.toFixed(1));
+    delayEl.style.setProperty("--pct", confPct.toFixed(1));
+    sceneEl.textContent = String(state.liveObjectsNow);
+    if (sceneIconEl) sceneIconEl.textContent = "";
     if (verboseEl) {
       verboseEl.textContent = getVerboseScript({
         confPct,

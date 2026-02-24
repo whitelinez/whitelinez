@@ -2301,6 +2301,26 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-size: 0.52rem;
   color: #fff7dc;
   text-shadow: 0 0 5px rgba(255, 214, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.42);
+  position: relative;
+  display: inline-block;
+  min-width: 2.6em;
+  padding: 0 3px;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: color 0.22s ease;
+}
+
+.ml-chip strong::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--pct, 0) * 1%);
+  background: linear-gradient(90deg, rgba(255, 214, 0, 0.20) 0%, rgba(255, 214, 0, 0.46) 100%);
+  opacity: 0.9;
+  transition: width 0.25s ease, opacity 0.25s ease;
+  pointer-events: none;
 }
 
 .ml-hud-cells {
@@ -2391,15 +2411,18 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .ml-hud-metrics {
   display: flex;
   justify-content: space-between;
-  gap: 5px;
+  gap: 6px;
   font-size: 0.46rem;
   color: rgba(255, 228, 146, 0.84);
 }
 
 .ml-hud-metrics span {
   display: inline-flex;
+  flex: 1 1 0;
   align-items: center;
+  justify-content: space-between;
   gap: 4px;
+  min-width: 0;
 }
 
 .ml-hud-metrics strong {

@@ -254,6 +254,55 @@
   color: var(--admin-muted);
 }
 
+.audience-kpis {
+  margin-bottom: 10px;
+}
+
+.audience-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.audience-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.aud-page-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.aud-page-label {
+  font-size: 0.82rem;
+  color: var(--admin-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.aud-page-value {
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+}
+
+.aud-page-bar {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.aud-page-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(15,185,177,0.92), rgba(255,214,0,0.92));
+}
+
 .overview-dashboard {
   margin-top: 12px;
   display: grid;

@@ -11,6 +11,8 @@ let adminLiveWs = null;
 let adminLiveWsTimer = null;
 let adminLiveWsBackoffMs = 2000;
 let activeCameraId = null;
+let audienceSnapshot = null;
+let audienceSnapshotAt = 0;
 
 async function getAdminJwt() {
   const jwt = await Auth.getJwt();
@@ -1084,10 +1086,8 @@ async function loadActiveUsers() {
   if (!box || !adminSession) return;
 
   try {
-    const headers = await getAdminHeaders();
-    const res = await fetch("/api/admin/set-role?mode=active-users", { headers });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const data = await fetchAudienceSnapshot();
+    if (!data) throw new Error("No audience payload");
     const online = data?.online_now || {};
     const visits = data?.visit_totals || {};
     const db = data?.db || {};
@@ -1191,6 +1191,163 @@ async function loadActiveUsers() {
     `;
   } catch (e) {
     box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Active user feed unavailable.</p>`;
+  }
+}
+
+async function fetchAudienceSnapshot(force = false) {
+  const now = Date.now();
+  if (!force && audienceSnapshot && now - audienceSnapshotAt < 8000) {
+    return audienceSnapshot;
+  }
+  const headers = await getAdminHeaders();
+  const res = await fetch("/api/admin/set-role?mode=active-users", { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  audienceSnapshot = data || {};
+  audienceSnapshotAt = now;
+  return audienceSnapshot;
+}
+
+function _audSourceFilter() {
+  const el = document.getElementById("aud-source-filter");
+  const v = String(el?.value || "all").trim().toLowerCase();
+  return v || "all";
+}
+
+function _renderAudienceTopPages(topPages, recentViews, sourceFilter) {
+  const box = document.getElementById("aud-top-pages");
+  if (!box) return;
+  let pages = Array.isArray(topPages) ? [...topPages] : [];
+
+  if (sourceFilter !== "all") {
+    const counts = {};
+    (recentViews || [])
+      .filter((row) => String(row?.source || "").toLowerCase() === sourceFilter)
+      .forEach((row) => {
+        const path = String(row?.page_path || "/").trim() || "/";
+        counts[path] = (counts[path] || 0) + 1;
+      });
+    pages = Object.entries(counts)
+      .map(([page_path, views]) => ({ page_path, views }))
+      .sort((a, b) => Number(b.views || 0) - Number(a.views || 0))
+      .slice(0, 10);
+  }
+
+  if (!pages.length) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No page stats for this filter.</p>`;
+    return;
+  }
+  const maxViews = Math.max(...pages.map((p) => Number(p.views || 0)), 1);
+  box.innerHTML = pages
+    .map((p) => {
+      const views = Number(p.views || 0);
+      const width = Math.max(6, Math.round((views / maxViews) * 100));
+      return `
+        <div class="aud-page-row">
+          <span class="aud-page-label" title="${escHtml(p.page_path || "/")}">${escHtml(p.page_path || "/")}</span>
+          <span class="aud-page-value">${views.toLocaleString()}</span>
+          <div class="aud-page-bar"><div class="aud-page-fill" style="width:${width}%"></div></div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function _renderAudienceRecentViews(recentViews, sourceFilter) {
+  const box = document.getElementById("aud-recent-views");
+  if (!box) return;
+  const rows = (recentViews || [])
+    .filter((row) => sourceFilter === "all" || String(row?.source || "").toLowerCase() === sourceFilter)
+    .slice(0, 14);
+
+  if (!rows.length) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No recent views for this filter.</p>`;
+    return;
+  }
+
+  box.innerHTML = rows
+    .map((view) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(view.page_path || "/")} <span class="round-badge round-upcoming">${escHtml(view.source || "web")}</span></span>
+          <span class="round-row-meta">${fmtAgo(view.viewed_at)} | ${escHtml(view.user_id ? "registered-user" : (view.guest_id || "guest"))}</span>
+        </div>
+      </div>
+    `)
+    .join("");
+}
+
+function _renderAudienceGuests(guestRecent) {
+  const box = document.getElementById("aud-guest-activity");
+  if (!box) return;
+  const rows = (guestRecent || []).slice(0, 14);
+  if (!rows.length) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No guest activity yet.</p>`;
+    return;
+  }
+  box.innerHTML = rows
+    .map((guest) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(guest.username || guest.guest_id || "guest")} <span class="round-badge round-open">${Number(guest.messages || 0)} msgs</span></span>
+          <span class="round-row-meta">last ${fmtAgo(guest.last_seen)} | ${escHtml(String(guest.last_message || "").slice(0, 90))}</span>
+        </div>
+      </div>
+    `)
+    .join("");
+}
+
+function _renderAudienceUsers(users) {
+  const box = document.getElementById("aud-registered-users");
+  if (!box) return;
+  const rows = (users || []).slice(0, 14);
+  if (!rows.length) {
+    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">No registered user activity yet.</p>`;
+    return;
+  }
+  box.innerHTML = rows
+    .map((user) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(user.username || "user")} (${escHtml(String(user.user_id || "").slice(0, 8))}...)</span>
+          <span class="round-row-meta">updated ${fmtAgo(user.updated_at || user.created_at)}</span>
+        </div>
+      </div>
+    `)
+    .join("");
+}
+
+async function loadAudiencePanel(force = false) {
+  if (!adminSession) return;
+  try {
+    const data = await fetchAudienceSnapshot(force);
+    const db = data?.db || {};
+    const sourceFilter = _audSourceFilter();
+    const topPages = Array.isArray(db?.site_views_top_pages_24h) ? db.site_views_top_pages_24h : [];
+    const recentViews = Array.isArray(db?.site_views_recent) ? db.site_views_recent : [];
+    const guestRecent = Array.isArray(db?.guest_recent) ? db.guest_recent : [];
+    const recentUsers = Array.isArray(db?.registered_users_recent) ? db.registered_users_recent : [];
+
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    setText("aud-kpi-views-total", Number(db.site_views_total || 0).toLocaleString());
+    setText("aud-kpi-views-24h", Number(db.site_views_24h || 0).toLocaleString());
+    setText("aud-kpi-guests-total", Number(db.guests_total || 0).toLocaleString());
+    setText("aud-kpi-guests-24h", Number(db.guests_24h || 0).toLocaleString());
+    setText("aud-kpi-users-total", Number(db.registered_users_total || 0).toLocaleString());
+
+    _renderAudienceTopPages(topPages, recentViews, sourceFilter);
+    _renderAudienceRecentViews(recentViews, sourceFilter);
+    _renderAudienceGuests(guestRecent);
+    _renderAudienceUsers(recentUsers);
+  } catch (e) {
+    const ids = ["aud-top-pages", "aud-recent-views", "aud-guest-activity", "aud-registered-users"];
+    ids.forEach((id) => {
+      const box = document.getElementById(id);
+      if (box) box.innerHTML = `<p class="muted" style="font-size:0.82rem;">Audience data unavailable.</p>`;
+    });
   }
 }
 
@@ -2254,6 +2411,7 @@ async function init() {
   loadRoundSessions();
   loadRegisteredUsers();
   loadActiveUsers();
+  loadAudiencePanel(true);
   setInterval(loadStats, 10_000);
   setInterval(loadMlProgress, 15_000);
   setInterval(loadMlUsage, 20_000);
@@ -2263,6 +2421,7 @@ async function init() {
   setInterval(loadRoundSessions, 15_000);
   setInterval(loadRegisteredUsers, 30_000);
   setInterval(loadActiveUsers, 10_000);
+  setInterval(loadAudiencePanel, 12_000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2275,6 +2434,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-ml-train-captures")?.addEventListener("click", handleMlTrainCaptures);
   document.getElementById("btn-toggle-capture-pause")?.addEventListener("click", toggleCapturePause);
   document.getElementById("btn-copy-capture-error")?.addEventListener("click", copyLatestCaptureError);
+  document.getElementById("aud-refresh-btn")?.addEventListener("click", () => loadAudiencePanel(true));
+  document.getElementById("aud-source-filter")?.addEventListener("change", () => loadAudiencePanel(false));
+  window.addEventListener("admin:panel-change", (e) => {
+    const panel = String(e?.detail?.panel || "");
+    if (panel === "audience") loadAudiencePanel(true);
+  });
 
   // Market type visibility
   document.getElementById("market-type")?.addEventListener("change", (e) => {

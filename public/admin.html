@@ -33,6 +33,7 @@
     <button class="admin-nav-btn" data-panel="detection">Detection</button>
     <button class="admin-nav-btn" data-panel="bets">Bets</button>
     <button class="admin-nav-btn" data-panel="users">Users</button>
+    <button class="admin-nav-btn" data-panel="audience">Audience</button>
   </nav>
 
   <div class="admin-shell">
@@ -737,6 +738,78 @@
           <h3>Registered Users</h3>
           <div id="registered-users" class="rounds-list data-list tall">
             <p class="loading">Loading users...</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="panel-audience">
+        <div class="panel-head">
+          <h2>Audience Intelligence</h2>
+          <p>Guests, registered users, and site-view behavior in one place.</p>
+        </div>
+
+        <div class="overview-metrics-primary audience-kpis">
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-views-total">-</div>
+            <div class="stat-label">Total Site Views</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-views-24h">-</div>
+            <div class="stat-label">Views (24h)</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-guests-total">-</div>
+            <div class="stat-label">Guests (Total)</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-guests-24h">-</div>
+            <div class="stat-label">Guests (24h)</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-users-total">-</div>
+            <div class="stat-label">Registered Users</div>
+          </div>
+        </div>
+
+        <div class="audience-toolbar">
+          <div class="field" style="max-width:200px;">
+            <label for="aud-source-filter">Source Filter</label>
+            <select id="aud-source-filter">
+              <option value="all">All Sources</option>
+              <option value="web">Web</option>
+              <option value="vercel">Vercel</option>
+            </select>
+          </div>
+          <button id="aud-refresh-btn" class="btn-secondary" type="button">Refresh Audience</button>
+        </div>
+
+        <div class="overview-grid audience-grid">
+          <div class="card-box">
+            <h3>Top Pages (24h)</h3>
+            <div id="aud-top-pages" class="rounds-list data-list">
+              <p class="loading">Loading top pages...</p>
+            </div>
+          </div>
+
+          <div class="card-box">
+            <h3>Recent Site Views</h3>
+            <div id="aud-recent-views" class="rounds-list data-list">
+              <p class="loading">Loading recent site views...</p>
+            </div>
+          </div>
+
+          <div class="card-box">
+            <h3>Guest Activity</h3>
+            <div id="aud-guest-activity" class="rounds-list data-list">
+              <p class="loading">Loading guest activity...</p>
+            </div>
+          </div>
+
+          <div class="card-box">
+            <h3>Recent Registered Users</h3>
+            <div id="aud-registered-users" class="rounds-list data-list">
+              <p class="loading">Loading users...</p>
+            </div>
           </div>
         </div>
       </section>

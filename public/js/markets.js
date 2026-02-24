@@ -799,18 +799,20 @@ const Markets = (() => {
 
     const baselineDb = Number(bet?.baseline_count);
     const baselineDerived = Number(bet?._derived_baseline_count);
+    const baselineFallback = Number(bet?._fallback_baseline_count);
     const betStatus = String(bet?.status || "").toLowerCase();
-    if (
-      betStatus === "pending"
-      && Number.isFinite(baselineDb)
-      && baselineDb <= 0
-      && !Number.isFinite(baselineDerived)
-    ) {
-      return null;
-    }
     let baseline = Number.isFinite(baselineDb) ? baselineDb : NaN;
     if (Number.isFinite(baselineDerived)) {
       baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineDerived) : baselineDerived;
+    }
+    if (Number.isFinite(baselineFallback)) {
+      baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineFallback) : baselineFallback;
+    }
+    if (betStatus === "pending" && (!Number.isFinite(baseline) || baseline <= 0)) {
+      // Keep UX deterministic: when backend baseline is still syncing, anchor
+      // to the first seen live count so user progress starts at 0.
+      bet._fallback_baseline_count = Math.max(0, currentRaw);
+      baseline = Number(bet._fallback_baseline_count);
     }
     if (!Number.isFinite(baseline)) return null;
 
@@ -853,18 +855,18 @@ const Markets = (() => {
     }
     const baselineDb = Number(bet?.baseline_count);
     const baselineDerived = Number(bet?._derived_baseline_count);
+    const baselineFallback = Number(bet?._fallback_baseline_count);
     const betStatus = String(bet?.status || "").toLowerCase();
-    if (
-      betStatus === "pending"
-      && Number.isFinite(baselineDb)
-      && baselineDb <= 0
-      && !Number.isFinite(baselineDerived)
-    ) {
-      return null;
-    }
     let baseline = Number.isFinite(baselineDb) ? baselineDb : NaN;
     if (Number.isFinite(baselineDerived)) {
       baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineDerived) : baselineDerived;
+    }
+    if (Number.isFinite(baselineFallback)) {
+      baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineFallback) : baselineFallback;
+    }
+    if (betStatus === "pending" && (!Number.isFinite(baseline) || baseline <= 0)) {
+      bet._fallback_baseline_count = Math.max(0, currentRaw);
+      baseline = Number(bet._fallback_baseline_count);
     }
     if (!Number.isFinite(baseline)) return null;
     return Math.max(0, currentRaw - baseline);

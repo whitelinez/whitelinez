@@ -21,7 +21,6 @@ const DetectionOverlay = (() => {
   let lastFrameKey = "";
   let ghostSeq = 0;
   const laneSmoothing = new Map();
-  let latestMeasuredFps = 15;
 
   let settings = {
     box_style: "solid",
@@ -465,37 +464,13 @@ const DetectionOverlay = (() => {
         out.push(det);
         continue;
       }
-      const alpha = 0.70;
-      const fps = Math.max(8, Math.min(60, Number(latestMeasuredFps) || 15));
-      const maxCenterShift = Math.max(0.012, 0.22 / fps);
-      const prevCx = (Number(prev.x1) + Number(prev.x2)) * 0.5;
-      const prevCy = (Number(prev.y1) + Number(prev.y2)) * 0.5;
-      const nextCx = (Number(det.x1) + Number(det.x2)) * 0.5;
-      const nextCy = (Number(det.y1) + Number(det.y2)) * 0.5;
-      const dx = nextCx - prevCx;
-      const dy = nextCy - prevCy;
-      const dist = Math.sqrt((dx * dx) + (dy * dy));
-      let clampedX1 = det.x1;
-      let clampedY1 = det.y1;
-      let clampedX2 = det.x2;
-      let clampedY2 = det.y2;
-      if (dist > maxCenterShift) {
-        const ratio = maxCenterShift / Math.max(dist, 1e-6);
-        const cCx = prevCx + (dx * ratio);
-        const cCy = prevCy + (dy * ratio);
-        const w = Math.max(0.001, Number(det.x2) - Number(det.x1));
-        const h = Math.max(0.001, Number(det.y2) - Number(det.y1));
-        clampedX1 = cCx - (w * 0.5);
-        clampedY1 = cCy - (h * 0.5);
-        clampedX2 = cCx + (w * 0.5);
-        clampedY2 = cCy + (h * 0.5);
-      }
+      const alpha = 0.42;
       const sm = {
         ...det,
-        x1: Math.max(0, Math.min(1, prev.x1 + (clampedX1 - prev.x1) * alpha)),
-        y1: Math.max(0, Math.min(1, prev.y1 + (clampedY1 - prev.y1) * alpha)),
-        x2: Math.max(0, Math.min(1, prev.x2 + (clampedX2 - prev.x2) * alpha)),
-        y2: Math.max(0, Math.min(1, prev.y2 + (clampedY2 - prev.y2) * alpha)),
+        x1: prev.x1 + (det.x1 - prev.x1) * alpha,
+        y1: prev.y1 + (det.y1 - prev.y1) * alpha,
+        x2: prev.x2 + (det.x2 - prev.x2) * alpha,
+        y2: prev.y2 + (det.y2 - prev.y2) * alpha,
       };
       laneSmoothing.set(key, {
         x1: sm.x1, y1: sm.y1, x2: sm.x2, y2: sm.y2, ts: now,
@@ -646,8 +621,6 @@ const DetectionOverlay = (() => {
 
     window.addEventListener("count:update", (e) => {
       latestDetections = e.detail?.detections ?? [];
-      const mfps = Number(e.detail?.ai_metrics?.measured_fps);
-      if (Number.isFinite(mfps) && mfps > 0) latestMeasuredFps = mfps;
       const nextKey = buildFrameKey(latestDetections);
       if (nextKey !== lastFrameKey) {
         forceRender = true;

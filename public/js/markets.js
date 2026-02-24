@@ -690,15 +690,24 @@ const Markets = (() => {
     }
 
     try {
-      const { data } = await window.sb
-        .from("bets")
-        .select("id, round_id, bet_type, status, amount, potential_payout, exact_count, actual_count, vehicle_class, window_duration_sec, window_start, baseline_count, placed_at, resolved_at, markets(label, odds, outcome_key)")
-        .eq("user_id", currentUserId)
-        .eq("round_id", currentRound.id)
-        .order("placed_at", { ascending: false })
-        .limit(20);
-
-      userRoundBets = data || [];
+      const jwt = await Auth.getJwt();
+      if (!jwt) {
+        userRoundBets = [];
+        _renderUserRoundBet();
+        return;
+      }
+      const qs = new URLSearchParams({
+        round_id: String(currentRound.id),
+        limit: "20",
+      });
+      const res = await fetch(`/api/bets/my-round?${qs.toString()}`, {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        throw new Error(payload?.detail || payload?.error || "Round bet load failed");
+      }
+      userRoundBets = Array.isArray(payload) ? payload : [];
       if (optimisticPendingBet?.id) {
         const matched = userRoundBets.some((b) => String(b?.id || "") === String(optimisticPendingBet.id));
         if (matched) optimisticPendingBet = null;

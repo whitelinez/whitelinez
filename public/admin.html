@@ -52,6 +52,8 @@
               <div class="stream-canvas-wrapper">
                 <video id="admin-video" muted playsinline autoplay></video>
                 <canvas id="line-canvas"></canvas>
+              </div>
+              <div class="zone-controls-dock">
                 <div class="admin-line-controls">
                   <div class="zone-toggle-group">
                     <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
@@ -64,97 +66,101 @@
                   <button id="btn-save-line" class="btn-primary" type="button" disabled>Save Zones</button>
                   <span id="line-status" class="line-status"></span>
                 </div>
-              </div>
-            </div>
 
-            <div class="count-tuning-box compact-controls">
-              <h4>Count Tuning</h4>
-              <p class="admin-hint">Simple controls for stable counting.</p>
-              <div class="count-tuning-grid">
-                <div class="field">
-                  <label for="count-min-track-frames">Min Track Frames</label>
-                  <input id="count-min-track-frames" type="number" min="1" max="30" step="1" value="6" />
+                <div class="count-tuning-box compact-controls appearance-controls">
+                  <h4>Feed Appearance</h4>
+                  <p class="admin-hint">Compact sliders to tune this camera while drawing.</p>
+                  <div class="field-row simplified-field-row">
+                    <div class="field" style="max-width:220px">
+                      <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
+                      <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
+                    </div>
+                    <div class="field" style="max-width:220px">
+                      <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
+                      <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
+                    </div>
+                    <div class="field" style="max-width:220px">
+                      <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
+                      <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
+                    </div>
+                  </div>
+                  <div class="field-row simplified-field-row">
+                    <div class="field" style="max-width:220px">
+                      <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
+                      <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
+                    </div>
+                    <div class="field" style="max-width:220px">
+                      <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
+                      <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
+                    </div>
+                  </div>
+                  <div class="field-row simplified-field-row">
+                    <div class="field" style="max-width:210px">
+                      <label for="feed-push-public">Push To Public View</label>
+                      <select id="feed-push-public">
+                        <option value="1">Enabled</option>
+                        <option value="0">Disabled</option>
+                      </select>
+                    </div>
+                    <div class="field" style="max-width:210px">
+                      <label for="feed-auto-preset">Auto Day/Night Preset</label>
+                      <select id="feed-auto-preset">
+                        <option value="0">Disabled</option>
+                        <option value="1">Enabled</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="count-tuning-actions">
+                    <button id="btn-feed-preset-day" class="btn-secondary" type="button">Day Preset</button>
+                    <button id="btn-feed-preset-night" class="btn-secondary" type="button">Night Preset</button>
+                    <button id="btn-feed-apply-auto" class="btn-secondary" type="button">Auto Now</button>
+                    <button id="btn-video-push-public" class="btn-primary" type="button">Push To Public</button>
+                    <span id="feed-settings-msg" class="line-status"></span>
+                  </div>
                 </div>
-                <div class="field">
-                  <label for="count-min-confidence">Min Confidence</label>
-                  <input id="count-min-confidence" type="number" min="0" max="1" step="0.05" value="0.30" />
-                </div>
-                <div class="field">
-                  <label for="count-min-box-area-ratio">Min Object Size</label>
-                  <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.001" value="0.004" />
-                </div>
-                <div class="field count-tuning-wide">
-                  <label for="count-allowed-classes">Allowed Classes</label>
-                  <input id="count-allowed-classes" type="text" value="car, truck, bus, motorcycle" placeholder="car, truck, bus, motorcycle" />
-                </div>
-                <div class="field count-tuning-wide">
-                  <label for="count-class-min-confidence">Class Confidence Rules</label>
-                  <input id="count-class-min-confidence" type="text" value="car:0.30, truck:0.42, bus:0.45, motorcycle:0.32" placeholder="car:0.35, truck:0.40" />
-                </div>
-              </div>
-            <div class="count-tuning-actions">
-                <button id="btn-count-preset-balanced" class="btn-secondary" type="button">Preset A (Balanced)</button>
-                <button id="btn-count-preset-night" class="btn-secondary" type="button">Preset B (Night)</button>
-                <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
-                <span id="count-settings-status" class="line-status"></span>
-              </div>
-            </div>
 
-            <div class="count-tuning-box compact-controls">
-              <h4>Feed Appearance</h4>
-              <p class="admin-hint">Tune while the live screen stays visible above.</p>
-              <div class="field-row simplified-field-row">
-                <div class="field" style="max-width:220px">
-                  <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
-                  <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
+                <div class="count-tuning-box compact-controls">
+                  <h4>Count Tuning</h4>
+                  <p class="admin-hint">Simple controls for stable counting.</p>
+                  <div class="count-tuning-grid">
+                    <div class="field">
+                      <label for="count-min-track-frames">Min Track Frames</label>
+                      <input id="count-min-track-frames" type="number" min="1" max="30" step="1" value="6" />
+                    </div>
+                    <div class="field">
+                      <label for="count-min-confidence">Min Confidence</label>
+                      <input id="count-min-confidence" type="number" min="0" max="1" step="0.05" value="0.30" />
+                    </div>
+                    <div class="field">
+                      <label for="count-min-box-area-ratio">Min Object Size</label>
+                      <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.001" value="0.004" />
+                    </div>
+                    <div class="field count-tuning-wide">
+                      <label for="count-allowed-classes">Allowed Classes</label>
+                      <input id="count-allowed-classes" type="text" value="car, truck, bus, motorcycle" placeholder="car, truck, bus, motorcycle" />
+                    </div>
+                    <div class="field count-tuning-wide">
+                      <label for="count-class-min-confidence">Class Confidence Rules</label>
+                      <input id="count-class-min-confidence" type="text" value="car:0.30, truck:0.42, bus:0.45, motorcycle:0.32" placeholder="car:0.35, truck:0.40" />
+                    </div>
+                  </div>
+                  <div class="count-tuning-actions">
+                    <button id="btn-count-preset-balanced" class="btn-secondary" type="button">Preset A (Balanced)</button>
+                    <button id="btn-count-preset-night" class="btn-secondary" type="button">Preset B (Night)</button>
+                    <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
+                    <span id="count-settings-status" class="line-status"></span>
+                  </div>
                 </div>
-                <div class="field" style="max-width:220px">
-                  <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
-                  <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
-                </div>
-                <div class="field" style="max-width:220px">
-                  <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
-                  <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
-                </div>
-              </div>
-              <div class="field-row simplified-field-row">
-                <div class="field" style="max-width:220px">
-                  <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
-                  <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
-                </div>
-                <div class="field" style="max-width:220px">
-                  <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
-                  <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
-                </div>
-              </div>
-              <div class="field-row simplified-field-row">
-                <div class="field" style="max-width:210px">
-                  <label for="feed-push-public">Push To Public View</label>
-                  <select id="feed-push-public">
-                    <option value="1">Enabled</option>
-                    <option value="0">Disabled</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:210px">
-                  <label for="feed-auto-preset">Auto Day/Night Preset</label>
-                  <select id="feed-auto-preset">
-                    <option value="0">Disabled</option>
-                    <option value="1">Enabled</option>
-                  </select>
-                </div>
-              </div>
-              <div class="count-tuning-actions">
-                <button id="btn-feed-preset-day" class="btn-secondary" type="button">Apply Day Preset</button>
-                <button id="btn-feed-preset-night" class="btn-secondary" type="button">Apply Night Preset</button>
-                <button id="btn-feed-apply-auto" class="btn-secondary" type="button">Apply Auto Preset Now</button>
-                <button id="btn-video-push-public" class="btn-primary" type="button">Push Appearance To Public</button>
-                <span id="feed-settings-msg" class="line-status"></span>
               </div>
             </div>
           </section>
+        </div>
 
-          <section class="card-box card-box-secondary">
-            <h3>Create Round</h3>
+        <section class="card-box card-box-secondary round-ops-section">
+          <h3>Round Operations</h3>
+          <div class="round-ops-grid">
+            <div class="round-create-pane">
+              <h4>Create Round</h4>
             <form id="round-form">
               <div class="field-row">
                 <div class="field">
@@ -212,10 +218,11 @@
               <p id="round-success" class="auth-success" role="status"></p>
               <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
             </form>
+            </div>
 
-            <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
-              <h4 style="margin:0 0 8px;">Session Loop</h4>
-              <p class="admin-hint" style="margin-bottom:8px;">Auto-run rounds continuously for a fixed session window.</p>
+            <div class="round-session-pane">
+              <h4>Session Loop</h4>
+              <p class="admin-hint">Auto-run rounds continuously for a fixed session window.</p>
               <div class="field-row">
                 <div class="field" style="max-width:180px">
                   <label for="session-duration">Session Duration (min)</label>
@@ -238,8 +245,8 @@
                 <p class="loading">Loading sessions...</p>
               </div>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
         <div class="overview-dashboard">
           <div class="overview-metrics-primary">

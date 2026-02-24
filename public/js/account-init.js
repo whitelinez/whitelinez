@@ -257,12 +257,24 @@ function renderHistoryRows(data) {
 
 async function loadHistory() {
   if (!currentSession?.user?.id) return;
-  const { data, error } = await window.sb
-    .from("bets")
-    .select("id, bet_type, amount, potential_payout, status, vehicle_class, exact_count, window_duration_sec, actual_count, placed_at, resolved_at, markets(label, odds, outcome_key)")
-    .eq("user_id", currentSession.user.id)
-    .order("placed_at", { ascending: false })
-    .limit(100);
+  const jwt = await Auth.getJwt();
+  if (!jwt) return;
+
+  let data = [];
+  let error = null;
+  try {
+    const res = await fetch("/api/bets/history?limit=100", {
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      error = new Error(payload?.detail || payload?.error || "History load failed");
+    } else {
+      data = Array.isArray(payload) ? payload : [];
+    }
+  } catch (err) {
+    error = err;
+  }
 
   const pending = (data || []).filter((b) => b.status === "pending");
   renderPending(pending);

@@ -275,6 +275,35 @@ const MlOverlay = (() => {
     return lines.join(" | ");
   }
 
+  function getTrafficLoadSummary(crossRate, profile, reason) {
+    const rate = Math.max(0, Number(crossRate) || 0);
+    const p = String(profile || "").trim().toLowerCase();
+    const r = String(reason || "").trim().toLowerCase();
+
+    let load = "Light";
+    if (rate >= 12) load = "Heavy";
+    else if (rate >= 5) load = "Moderate";
+
+    let msg = `Traffic is ${load.toLowerCase()} right now.`;
+    if (load === "Heavy") {
+      msg = "Heavy flow detected. Tight profile tuning helps prevent missed vehicles.";
+    } else if (load === "Moderate") {
+      msg = "Moderate flow. Runtime profile should stay balanced for stable counts.";
+    }
+
+    if (p.includes("heavy")) {
+      msg = `Heavy profile active (${p.replaceAll("_", " ")}). Optimized for dense traffic.`;
+    } else if (r.includes("heavy")) {
+      msg = `Profile switched for heavy traffic (${r.replaceAll("_", " ")}).`;
+    } else if (p.includes("glare")) {
+      msg = "Glare profile active to reduce false positives in harsh lighting.";
+    } else if (p.includes("night")) {
+      msg = "Night profile active for low-light traffic detection.";
+    }
+
+    return { load, msg };
+  }
+
   function getDelayMs() {
     if (!Number.isFinite(state.lastCaptureTsMs)) return null;
     return Math.max(0, Date.now() - state.lastCaptureTsMs);
@@ -298,10 +327,10 @@ const MlOverlay = (() => {
     const sceneIconEl = document.getElementById("ml-hud-scene-icon");
     const delayEl = document.getElementById("ml-hud-delay");
     const confBarEl = document.getElementById("ml-hud-conf-bar");
-    const sceneBarEl = document.getElementById("ml-hud-scene-bar");
     const sceneConfEl = document.getElementById("ml-hud-scene-conf");
+    const trafficMsgEl = document.getElementById("ml-hud-traffic-msg");
     const verboseEl = document.getElementById("ml-hud-verbose");
-    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl || !confBarEl || !sceneBarEl || !sceneConfEl) return;
+    if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl || !confBarEl || !sceneConfEl) return;
 
     const level = getLevel();
     const avgConf = getAvgConf();
@@ -326,12 +355,12 @@ const MlOverlay = (() => {
     const detRate = Math.max(0, Number(state.detRatePerMin) || 0);
     const crossRate = Math.max(0, Number(state.crossingRatePerMin) || 0);
     const detRatePct = Math.max(0, Math.min(100, (detRate / 45) * 100));
-    const crossRatePct = Math.max(0, Math.min(100, (crossRate / 18) * 100));
+    const trafficLoad = getTrafficLoadSummary(crossRate, state.runtimeProfile, state.runtimeReason);
 
     confEl.textContent = `${detRate.toFixed(1)}/m`;
     confBarEl.style.setProperty("--pct", detRatePct.toFixed(1));
-    sceneConfEl.textContent = `${crossRate.toFixed(1)}/m`;
-    sceneBarEl.style.setProperty("--pct", crossRatePct.toFixed(1));
+    sceneConfEl.textContent = trafficLoad.load;
+    if (trafficMsgEl) trafficMsgEl.textContent = trafficLoad.msg;
     delayEl.textContent = percent(confPct);
     const liveObjPct = Math.max(0, Math.min(100, (Number(state.liveObjectsNow) / 12) * 100));
     sceneEl.style.setProperty("--pct", liveObjPct.toFixed(1));

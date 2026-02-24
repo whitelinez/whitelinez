@@ -21,25 +21,14 @@ const Markets = (() => {
   let lastUserBetMarkup = "";
   let latestResolvedCard = null;
   let roundGuideCollapsed = false;
-  let userBetSyncing = false;
-  let lastNonEmptyUserRoundBets = [];
-  let lastNonEmptyUserRoundBetsAt = 0;
   const dismissedResolvedBetIds = new Set();
   const RESOLVED_CARD_STORAGE_KEY = "wlz_round_result_card_v1";
   const DISMISSED_RESOLVED_STORAGE_KEY = "wlz_round_result_dismissed_v1";
   const ROUND_GUIDE_COLLAPSE_KEY = "wlz_round_guide_collapsed_v1";
 
   const USER_BET_POLL_MS = 5000;
-  const USER_BET_STALE_HOLD_MS = 20000;
   const NIGHT_PAUSE_START_HOUR = 18;
   const NIGHT_RESUME_HOUR = 6;
-
-  function _cloneBetRows(rows) {
-    return (rows || []).map((b) => ({
-      ...b,
-      markets: b?.markets ? { ...b.markets } : null,
-    }));
-  }
 
   function initTabs() {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -57,7 +46,6 @@ const Markets = (() => {
     if (!hasInitialRender) _showSkeleton();
     try {
       await _ensureCurrentUser();
-      const prevRound = currentRound;
       const round = await _fetchPreferredRound();
 
       if (!round) {
@@ -72,13 +60,9 @@ const Markets = (() => {
         _resetRoundLiveState();
       }
 
-      const sameRoundId = !!prevRound && prevRound.id === round.id;
-      const sameRoundStatus = !!prevRound && String(prevRound.status || "") === String(round.status || "");
       currentRound = round;
       LiveBet.setRound(round);
-      if (!(sameRoundId && sameRoundStatus)) {
-        renderRound(round);
-      }
+      renderRound(round);
       updateRoundStrip(round);
       await _ensureRoundBaseline(round);
       await _loadUserRoundBets();
@@ -274,9 +258,8 @@ const Markets = (() => {
     if (marketType === "over_under") {
       return {
         title: "How This Round Works",
-        summary: "AI scan starts this round from 0 and tracks only new crossings in the count zone.",
-        winRule: `Guess OVER if final count is above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins only on exactly ${threshold}.`,
-        scanRule: "Scan mode: zone-locked detection with confidence filtering is active.",
+        summary: `Count starts at 0 when the round opens and tracks new vehicles only.`,
+        winRule: `Guess OVER if final count finishes above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins only on exactly ${threshold}.`,
       };
     }
 
@@ -284,26 +267,23 @@ const Markets = (() => {
       const clsLabel = _vehicleClassLabel(vehicleClass);
       return {
         title: "How This Round Works",
-        summary: `AI scan starts this round from 0 and tracks only new ${clsLabel.toLowerCase()} in the count zone.`,
-        winRule: `Guess OVER if final ${clsLabel.toLowerCase()} count is above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins on exactly ${threshold}.`,
-        scanRule: "Scan mode: class-filtered detection with confidence filtering is active.",
+        summary: `Count starts at 0 and tracks only new ${clsLabel.toLowerCase()} this round.`,
+        winRule: `Guess OVER if final ${clsLabel.toLowerCase()} count finishes above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins on exactly ${threshold}.`,
       };
     }
 
     if (marketType === "vehicle_type") {
       return {
         title: "How This Round Works",
-        summary: "AI scan starts from 0 and tracks all vehicle classes in this round window.",
+        summary: "All vehicle classes are tracked from 0 during this round.",
         winRule: "Guess the vehicle class that finishes with the highest round total.",
-        scanRule: "Scan mode: multi-class tracking with zone validation is active.",
       };
     }
 
     return {
       title: "How This Round Works",
-      summary: "Choose one outcome before guesses lock.",
-      winRule: "If your guess matches the final result, your ticket wins.",
-      scanRule: "Scan mode: live detection and crossing validation is active.",
+      summary: "Choose one outcome before bets close.",
+      winRule: "If your guess matches the final result, your bet wins.",
     };
   }
 
@@ -348,41 +328,19 @@ const Markets = (() => {
         <span class="round-badge round-${round.status}">${round.status.toUpperCase()}</span>
         <span class="round-type">${round.market_type.replace(/_/g, " ")}</span>
       </div>
-      <div class="round-timing neo-timer">
-        <div class="neo-timer-meta">
-          ${opensAt ? `<div class="timing-row"><span>Started</span><strong id="rt-elapsed"></strong></div>` : ""}
-          ${closesAt ? `<div class="timing-row"><span>Guesses lock</span><strong id="rt-closes"></strong></div>` : ""}
-          ${endsAt ? `<div class="timing-row"><span>Round ends</span><strong id="rt-ends"></strong></div>` : ""}
-        </div>
-        <div class="neo-timer-dial">
-          <div class="neo-timer-ring" id="rt-ring"></div>
-          <div class="neo-timer-core">
-            <div class="neo-timer-main-label" id="rt-main-label">Round timer</div>
-            <div class="neo-timer-main-time" id="rt-main-time">--:--</div>
-          </div>
-        </div>
+      <div class="round-timing">
+        ${opensAt ? `<div class="timing-row"><span>Started</span><strong id="rt-elapsed"></strong></div>` : ""}
+        ${closesAt ? `<div class="timing-row"><span>Bets close</span><strong id="rt-closes"></strong></div>` : ""}
+        ${endsAt ? `<div class="timing-row"><span>Round ends</span><strong id="rt-ends"></strong></div>` : ""}
       </div>
       <div class="round-guide" role="note" aria-live="polite">
         <div class="round-guide-head">
-          <div class="round-guide-heading">
-            <span class="round-guide-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 8V4h4"></path>
-                <path d="M21 8V4h-4"></path>
-                <path d="M3 16v4h4"></path>
-                <path d="M21 16v4h-4"></path>
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 9v3l2 2"></path>
-              </svg>
-            </span>
-            <p class="round-guide-title">${guide.title}</p>
-          </div>
+          <p class="round-guide-title">${guide.title}</p>
           <button id="round-guide-toggle" class="round-guide-toggle" type="button">${roundGuideCollapsed ? "Show" : "Hide"}</button>
         </div>
         <div id="round-guide-body" class="round-guide-body${roundGuideCollapsed ? " collapsed" : ""}">
           <p class="round-guide-line">${guide.summary}</p>
           <p class="round-guide-line">${guide.winRule}</p>
-          <p class="round-guide-line is-meta">${guide.scanRule || ""}</p>
         </div>
       </div>
       <div id="user-round-bet" class="user-round-bet hidden"></div>
@@ -393,7 +351,7 @@ const Markets = (() => {
       <div style="margin-top:12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top:10px;">
         <button class="btn-live-bet btn-full" id="btn-open-live-bet">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-          Exact Count Challenge (8x)
+          Exact Count Live Bet (8x)
         </button>
       </div>` : ""}
     `;
@@ -425,9 +383,9 @@ const Markets = (() => {
            data-label="${escAttr(beginnerLabel)}"
            data-odds="${market.odds}">
         <div class="market-label">${beginnerLabel}</div>
-        <div class="market-payout">Guess 100 -> ${payout100.toLocaleString()} credits</div>
-        <div class="market-odds-note">Reward rate: ${odds.toFixed(2)}x</div>
-        <div class="market-staked">${(market.total_staked || 0).toLocaleString()} in play</div>
+        <div class="market-payout">Bet 100 → ${payout100.toLocaleString()} credits</div>
+        <div class="market-odds-note">Odds rate: ${odds.toFixed(2)}x payout multiplier</div>
+        <div class="market-staked">${(market.total_staked || 0).toLocaleString()} staked</div>
         ${isOpen
           ? `<button class="btn-bet">Guess This Outcome</button>`
           : `<span class="market-closed">Closed</span>`}
@@ -500,54 +458,6 @@ const Markets = (() => {
     let closedFired = false;
     let endedFired = false;
 
-    const updateMainTimer = (nowMs) => {
-      const ring = document.getElementById("rt-ring");
-      const mainLabel = document.getElementById("rt-main-label");
-      const mainTime = document.getElementById("rt-main-time");
-      if (!ring || !mainLabel || !mainTime) return;
-
-      let label = "Round";
-      let shown = "--:--";
-      let progress = 0;
-      let tone = "idle";
-
-      if (closesAt) {
-        const closeTotal = opensAt ? Math.max(1, Math.floor((closesAt - opensAt) / 1000)) : null;
-        const closeLeft = Math.max(0, Math.floor((closesAt - nowMs) / 1000));
-        if (closeLeft > 0) {
-          label = "Guesses lock in";
-          shown = fmtDuration(closeLeft);
-          if (Number.isFinite(closeTotal) && closeTotal > 0) {
-            progress = Math.max(0, Math.min(1, 1 - (closeLeft / closeTotal)));
-          }
-          tone = closeLeft <= 10 ? "danger" : "live";
-        } else {
-          label = "Guessing";
-          shown = "Closed";
-          progress = 1;
-          tone = "closed";
-        }
-      }
-
-      if (endsAt && (!closesAt || (closesAt && nowMs >= closesAt.getTime()))) {
-        const endTotal = opensAt ? Math.max(1, Math.floor((endsAt - opensAt) / 1000)) : null;
-        const endLeft = Math.max(0, Math.floor((endsAt - nowMs) / 1000));
-        label = endLeft > 0 ? "Round ends in" : "Round";
-        shown = endLeft > 0 ? fmtDuration(endLeft) : "Resolving";
-        if (Number.isFinite(endTotal) && endTotal > 0) {
-          progress = Math.max(0, Math.min(1, 1 - (endLeft / endTotal)));
-        } else if (endLeft <= 0) {
-          progress = 1;
-        }
-        tone = endLeft <= 8 ? "danger" : (endLeft <= 0 ? "closed" : "live");
-      }
-
-      mainLabel.textContent = label;
-      mainTime.textContent = shown;
-      ring.style.setProperty("--timer-progress", String(progress));
-      ring.setAttribute("data-tone", tone);
-    };
-
     timersInterval = setInterval(() => {
       const now = Date.now();
 
@@ -582,11 +492,7 @@ const Markets = (() => {
           setTimeout(loadMarkets, 4000);
         }
       }
-
-      updateMainTimer(now);
     }, 1000);
-
-    updateMainTimer(Date.now());
   }
 
   async function _ensureCurrentUser() {
@@ -599,9 +505,6 @@ const Markets = (() => {
     roundBaseline = null;
     userRoundBets = [];
     optimisticPendingBet = null;
-    userBetSyncing = false;
-    lastNonEmptyUserRoundBets = [];
-    lastNonEmptyUserRoundBetsAt = 0;
   }
 
   function _loadPersistedResolvedCard() {
@@ -782,17 +685,14 @@ const Markets = (() => {
     if (!box) return;
     if (!currentRound || !currentUserId) {
       userRoundBets = [];
-      userBetSyncing = false;
       _renderUserRoundBet();
       return;
     }
 
     try {
-      userBetSyncing = true;
       const jwt = await Auth.getJwt();
       if (!jwt) {
         userRoundBets = [];
-        userBetSyncing = false;
         _renderUserRoundBet();
         return;
       }
@@ -807,38 +707,18 @@ const Markets = (() => {
       if (!res.ok) {
         throw new Error(payload?.detail || payload?.error || "Round bet load failed");
       }
-      const incoming = Array.isArray(payload) ? payload : [];
-      if (incoming.length) {
-        userRoundBets = incoming;
-        lastNonEmptyUserRoundBets = _cloneBetRows(incoming);
-        lastNonEmptyUserRoundBetsAt = Date.now();
-      } else {
-        const canHoldPrevious =
-          _shouldUseRoundRelativeCounts(currentRound)
-          && lastNonEmptyUserRoundBets.length
-          && (Date.now() - lastNonEmptyUserRoundBetsAt) <= USER_BET_STALE_HOLD_MS;
-        userRoundBets = canHoldPrevious ? _cloneBetRows(lastNonEmptyUserRoundBets) : [];
-      }
+      userRoundBets = Array.isArray(payload) ? payload : [];
       if (optimisticPendingBet?.id) {
         const matched = userRoundBets.some((b) => String(b?.id || "") === String(optimisticPendingBet.id));
         if (matched) optimisticPendingBet = null;
       }
-      const hasPending = userRoundBets.some((b) => String(b?.status || "").toLowerCase() === "pending");
-      const hasRecentSnapshot = (Date.now() - lastNonEmptyUserRoundBetsAt) <= USER_BET_STALE_HOLD_MS;
-      if (!hasPending && !hasRecentSnapshot) {
+      if (!userRoundBets.some((b) => String(b?.status || "").toLowerCase() === "pending")) {
         optimisticPendingBet = null;
       }
       await _hydrateBetBaselines(userRoundBets);
-      userBetSyncing = false;
       _renderUserRoundBet();
     } catch (err) {
-      userBetSyncing = false;
       console.warn("[Markets] User bet load failed:", err);
-      // Keep the last stable card instead of dropping UI on transient request failures.
-      if (lastNonEmptyUserRoundBets.length && !userRoundBets.length) {
-        userRoundBets = _cloneBetRows(lastNonEmptyUserRoundBets);
-      }
-      _renderUserRoundBet();
     }
   }
 
@@ -920,23 +800,19 @@ const Markets = (() => {
     const baselineDb = Number(bet?.baseline_count);
     const baselineDerived = Number(bet?._derived_baseline_count);
     const baselineFallback = Number(bet?._fallback_baseline_count);
-    const baselineLocked = Number(bet?._locked_baseline_count);
     const betStatus = String(bet?.status || "").toLowerCase();
-    let baseline = Number.isFinite(baselineLocked) ? baselineLocked : NaN;
-    if (!Number.isFinite(baseline)) {
-      if (Number.isFinite(baselineDb) && baselineDb > 0) baseline = baselineDb;
-      else if (Number.isFinite(baselineDerived) && baselineDerived > 0) baseline = baselineDerived;
-      else if (Number.isFinite(baselineFallback) && baselineFallback > 0) baseline = baselineFallback;
-      else if (Number.isFinite(baselineDb) && baselineDb === 0) baseline = 0;
-      else if (Number.isFinite(baselineDerived) && baselineDerived === 0) baseline = 0;
-      else if (Number.isFinite(baselineFallback) && baselineFallback === 0) baseline = 0;
+    let baseline = Number.isFinite(baselineDb) ? baselineDb : NaN;
+    if (Number.isFinite(baselineDerived)) {
+      baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineDerived) : baselineDerived;
     }
-    if (betStatus === "pending") {
-      if (!Number.isFinite(baseline)) {
-        // Anchor once; do not re-base on later poll cycles.
-        baseline = Math.max(0, currentRaw);
-      }
-      bet._locked_baseline_count = baseline;
+    if (Number.isFinite(baselineFallback)) {
+      baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineFallback) : baselineFallback;
+    }
+    if (betStatus === "pending" && (!Number.isFinite(baseline) || baseline <= 0)) {
+      // Keep UX deterministic: when backend baseline is still syncing, anchor
+      // to the first seen live count so user progress starts at 0.
+      bet._fallback_baseline_count = Math.max(0, currentRaw);
+      baseline = Number(bet._fallback_baseline_count);
     }
     if (!Number.isFinite(baseline)) return null;
 
@@ -980,20 +856,17 @@ const Markets = (() => {
     const baselineDb = Number(bet?.baseline_count);
     const baselineDerived = Number(bet?._derived_baseline_count);
     const baselineFallback = Number(bet?._fallback_baseline_count);
-    const baselineLocked = Number(bet?._locked_baseline_count);
     const betStatus = String(bet?.status || "").toLowerCase();
-    let baseline = Number.isFinite(baselineLocked) ? baselineLocked : NaN;
-    if (!Number.isFinite(baseline)) {
-      if (Number.isFinite(baselineDb) && baselineDb > 0) baseline = baselineDb;
-      else if (Number.isFinite(baselineDerived) && baselineDerived > 0) baseline = baselineDerived;
-      else if (Number.isFinite(baselineFallback) && baselineFallback > 0) baseline = baselineFallback;
-      else if (Number.isFinite(baselineDb) && baselineDb === 0) baseline = 0;
-      else if (Number.isFinite(baselineDerived) && baselineDerived === 0) baseline = 0;
-      else if (Number.isFinite(baselineFallback) && baselineFallback === 0) baseline = 0;
+    let baseline = Number.isFinite(baselineDb) ? baselineDb : NaN;
+    if (Number.isFinite(baselineDerived)) {
+      baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineDerived) : baselineDerived;
     }
-    if (betStatus === "pending") {
-      if (!Number.isFinite(baseline)) baseline = Math.max(0, currentRaw);
-      bet._locked_baseline_count = baseline;
+    if (Number.isFinite(baselineFallback)) {
+      baseline = Number.isFinite(baseline) ? Math.max(baseline, baselineFallback) : baselineFallback;
+    }
+    if (betStatus === "pending" && (!Number.isFinite(baseline) || baseline <= 0)) {
+      bet._fallback_baseline_count = Math.max(0, currentRaw);
+      baseline = Number(bet._fallback_baseline_count);
     }
     if (!Number.isFinite(baseline)) return null;
     return Math.max(0, currentRaw - baseline);
@@ -1080,13 +953,13 @@ const Markets = (() => {
       const payout = Number(active?.potential_payout || 0);
       const stake = Number(active?.amount || 0);
       body = `
-        <div class="user-round-bet-row"><span>Your guess</span><strong>${(active?.markets?.label || "Round guess")}</strong></div>
-        <div class="user-round-bet-row"><span>Play</span><strong>${stake.toLocaleString()} credits</strong></div>
+        <div class="user-round-bet-row"><span>Your guess</span><strong>${(active?.markets?.label || "Market bet")}</strong></div>
+        <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>Odds</span><strong>${odds ? odds.toFixed(2) + "x" : "—"}</strong></div>
-        <div class="user-round-bet-row"><span>Potential reward</span><strong>${payout.toLocaleString()} credits</strong></div>
+        <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>${progressLabel}</span><strong>${progressText}</strong></div>
         <div class="user-round-bet-row"><span>Live likelihood</span><strong>${liveEdge}</strong></div>
-        ${active?._optimistic ? `<div class="user-round-bet-row"><span>Status</span><strong>Syncing ticket...</strong></div>` : ""}
+        ${active?._optimistic ? `<div class="user-round-bet-row"><span>Validation</span><strong>Syncing ticket...</strong></div>` : ""}
         <div class="user-round-bet-note">${_marketHint(selection, progress, threshold)}</div>
       `;
     } else if (active?.bet_type === "exact_count") {
@@ -1101,10 +974,10 @@ const Markets = (() => {
       const stake = Number(active?.amount || 0);
       body = `
         <div class="user-round-bet-row"><span>Your guess</span><strong>Exact ${target} (${cls})</strong></div>
-        <div class="user-round-bet-row"><span>Play</span><strong>${stake.toLocaleString()} credits</strong></div>
-        <div class="user-round-bet-row"><span>Potential reward</span><strong>${payout.toLocaleString()} credits</strong></div>
+        <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
+        <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
         <div class="user-round-bet-row"><span>Window progress</span><strong>${liveText}</strong></div>
-        ${active?._optimistic ? `<div class="user-round-bet-row"><span>Status</span><strong>Syncing ticket...</strong></div>` : ""}
+        ${active?._optimistic ? `<div class="user-round-bet-row"><span>Validation</span><strong>Syncing ticket...</strong></div>` : ""}
         <div class="user-round-bet-note">${hint}</div>
       `;
     }
@@ -1122,10 +995,9 @@ const Markets = (() => {
 
     const markup = `
       <div class="user-round-bet-head">
-        <span>Your Round Ticket</span>
-        <span class="badge badge-pending">${pendingCount} active</span>
+        <span>Your Bet Status</span>
+        <span class="badge badge-pending">${pendingCount} pending</span>
       </div>
-      ${userBetSyncing ? `<div class="user-round-bet-row"><span>Sync</span><strong>Refreshing ticket...</strong></div>` : ""}
       <div class="user-round-bet-row"><span>Receipt</span><strong>#${String(active?.id || "").slice(0, 8)}</strong></div>
       ${body}
       ${resolvedBlock}
@@ -1201,7 +1073,7 @@ const Markets = (() => {
         resolved_at: null,
         markets: d.bet_type === "market"
           ? {
-              label: d.market_label || "Round guess",
+              label: d.market_label || "Market bet",
               odds: Number(d.market_odds || 0) || 0,
               outcome_key: null,
             }

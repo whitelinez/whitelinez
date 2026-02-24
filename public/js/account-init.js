@@ -224,7 +224,7 @@ function renderPending(pending) {
   if (!container) return;
 
   if (!pending.length) {
-    container.innerHTML = `<p class="muted">No pending tickets.</p>`;
+    container.innerHTML = `<p class="muted">No pending bets.</p>`;
     return;
   }
 
@@ -235,8 +235,8 @@ function renderPending(pending) {
         <span class="pending-time">${new Date(b.placed_at).toLocaleString()}</span>
       </div>
       <div class="pending-detail">${formatBetDetail(b)}</div>
-      <div class="pending-row"><span>Play</span><strong>${(b.amount || 0).toLocaleString()}</strong></div>
-      <div class="pending-row"><span>Potential Reward</span><strong>${(b.potential_payout || 0).toLocaleString()}</strong></div>
+      <div class="pending-row"><span>Stake</span><strong>${(b.amount || 0).toLocaleString()}</strong></div>
+      <div class="pending-row"><span>Potential Payout</span><strong>${(b.potential_payout || 0).toLocaleString()}</strong></div>
       <div class="pending-row"><span>Outcome</span><strong>${formatOutcome(b)}</strong></div>
     </div>
   `).join("");
@@ -284,7 +284,7 @@ async function loadHistory() {
 
   const resolved = (data || []).filter((b) => b.status !== "pending");
   if (error || !resolved.length) {
-    container.innerHTML = `<p class="muted">No resolved rounds yet. <a href="/index.html">Make your first guess!</a></p>`;
+    container.innerHTML = `<p class="muted">No resolved bets yet. <a href="/index.html">Place your first bet!</a></p>`;
     return;
   }
 
@@ -293,9 +293,9 @@ async function loadHistory() {
       <thead>
         <tr>
           <th>Date</th>
-          <th>Guess</th>
-          <th>Play</th>
-          <th>Reward</th>
+          <th>Bet</th>
+          <th>Stake</th>
+          <th>Payout</th>
           <th>Outcome</th>
           <th>Status</th>
         </tr>

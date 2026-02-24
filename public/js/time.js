@@ -60,7 +60,7 @@ const TimeUtil = (() => {
     if (closesAt && nowMs < closesAt.getTime()) {
       return {
         badge: "OPEN",
-        label: "Guesses lock in",
+        label: "Bets close in",
         seconds: secondsUntil(closesAt, nowMs),
       };
     }

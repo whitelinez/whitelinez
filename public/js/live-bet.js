@@ -43,7 +43,7 @@ const LiveBet = (() => {
     document.getElementById("bp-error").textContent = "";
     document.getElementById("bp-amount").value = "";
     document.getElementById("bp-count").value = "5";
-    document.getElementById("bp-payout").textContent = "-";
+    document.getElementById("bp-payout").textContent = "—";
     _hideBpActiveBet();
 
     // Reset pills
@@ -93,18 +93,18 @@ const LiveBet = (() => {
     if (!_round) { errorEl.textContent = "No active round"; return; }
     if (!amount || amount <= 0) { errorEl.textContent = "Enter a valid amount"; return; }
     if (isNaN(exact) || exact < 0) { errorEl.textContent = "Enter a valid count"; return; }
-    if (String(_round.status || "").toLowerCase() !== "open") { errorEl.textContent = "Round is not open for guesses"; return; }
+    if (String(_round.status || "").toLowerCase() !== "open") { errorEl.textContent = "Round is not open for betting"; return; }
     if (_round.closes_at) {
       const closesAt = new Date(_round.closes_at).getTime();
       if (Number.isFinite(closesAt) && Date.now() >= closesAt) {
-        errorEl.textContent = "Guess window has closed";
+        errorEl.textContent = "Betting window has closed";
         return;
       }
     }
     if (_round.ends_at) {
       const endsAt = new Date(_round.ends_at).getTime();
       if (Number.isFinite(endsAt) && (Date.now() + (_windowSec * 1000)) > endsAt) {
-        errorEl.textContent = "Selected window runs past round end";
+        errorEl.textContent = "Selected live bet window extends past round end";
         return;
       }
     }
@@ -137,7 +137,7 @@ const LiveBet = (() => {
 
       const data = await res.json();
       if (!res.ok) {
-        errorEl.textContent = data.detail || "Guess failed";
+        errorEl.textContent = data.detail || "Bet failed";
         return;
       }
 
@@ -155,10 +155,10 @@ const LiveBet = (() => {
       }));
 
     } catch (e) {
-      errorEl.textContent = "Network error - try again";
+      errorEl.textContent = "Network error — try again";
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = submitBtn.dataset.defaultHtml || "Submit Guess";
+      submitBtn.innerHTML = submitBtn.dataset.defaultHtml || "Place Live Bet";
     }
   }
 

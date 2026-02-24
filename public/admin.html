@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — WHITELINEZ</title>
+  <title>Admin - WHITELINEZ</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="shortcut icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="stylesheet" href="/css/admin-dashboard.css" />
   <script src="/js/vercel-analytics-init.js"></script>
@@ -16,145 +16,34 @@
 </head>
 <body class="dark admin-page">
 
-<!-- Mobile overlay -->
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-<div class="admin-layout">
-
-  <!-- ── Sidebar ─────────────────────────────────────────────── -->
-  <aside class="admin-sidebar" id="admin-sidebar">
-    <div class="sidebar-header">
-      <a href="/index.html" class="sidebar-logo">
-        <img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" />
-        <span class="admin-badge">Admin</span>
-      </a>
-      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Close sidebar">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 4L4 12M4 4l8 8"/>
-        </svg>
-      </button>
+  <header class="site-header admin-header">
+    <div class="admin-header-left">
+      <a href="/index.html" class="logo"><img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" /></a>
+      <span class="admin-badge">Admin</span>
     </div>
-
-    <nav class="sidebar-nav">
-      <span class="sidebar-section-label">Operations</span>
-
-      <button class="admin-nav-btn active" data-panel="overview">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="1" y="1" width="6" height="6" rx="1.2"/>
-          <rect x="9" y="1" width="6" height="6" rx="1.2"/>
-          <rect x="1" y="9" width="6" height="6" rx="1.2"/>
-          <rect x="9" y="9" width="6" height="6" rx="1.2"/>
-        </svg>
-        <span>Overview</span>
-      </button>
-
-      <button class="admin-nav-btn" data-panel="bets">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M2 13V8M5.5 13V5M9 13V7M12.5 13V2"/>
-        </svg>
-        <span>Bets</span>
-      </button>
-
-      <span class="sidebar-section-label">Intelligence</span>
-
-      <button class="admin-nav-btn" data-panel="ml">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="4" y="4" width="8" height="8" rx="1"/>
-          <path d="M4 6H2M4 10H2M12 6h2M12 10h2M6 4V2M10 4V2M6 12v2M10 12v2"/>
-        </svg>
-        <span>ML Control</span>
-      </button>
-
-      <button class="admin-nav-btn" data-panel="detection">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z"/>
-          <circle cx="8" cy="8" r="2"/>
-        </svg>
-        <span>Detection</span>
-      </button>
-
-      <span class="sidebar-section-label">People</span>
-
-      <button class="admin-nav-btn" data-panel="audience">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M3 13c-1.8-1.8-2-5.2 0-7.6M13 13c1.8-1.8 2-5.2 0-7.6"/>
-          <path d="M5.5 11c-1-1-1.2-3.2 0-4.6M10.5 11c1-1 1.2-3.2 0-4.6"/>
-          <circle cx="8" cy="8" r="1.2"/>
-        </svg>
-        <span>Audience</span>
-      </button>
-
-      <button class="admin-nav-btn" data-panel="users">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <circle cx="8" cy="5" r="2.8"/>
-          <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
-        </svg>
-        <span>Users</span>
-      </button>
+    <nav class="admin-header-actions">
+      <a href="/index.html" class="nav-link">Public View</a>
+      <button id="btn-logout" class="nav-icon-btn admin-logout-btn" title="Logout">Logout</button>
     </nav>
+  </header>
 
-    <div class="sidebar-footer">
-      <a href="/index.html" class="sidebar-action-link">Public View</a>
-      <button id="btn-logout" class="sidebar-logout-btn">Logout</button>
-    </div>
-  </aside>
+  <nav class="admin-topnav">
+    <button class="admin-nav-btn active" data-panel="overview"><span>Overview</span><small>Operate</small></button>
+    <button class="admin-nav-btn" data-panel="ml"><span>ML Control</span><small>Train</small></button>
+    <button class="admin-nav-btn" data-panel="detection"><span>Detection</span><small>Visuals</small></button>
+    <button class="admin-nav-btn" data-panel="bets"><span>Bets</span><small>Markets</small></button>
+    <button class="admin-nav-btn" data-panel="users"><span>Users</span><small>Access</small></button>
+    <button class="admin-nav-btn" data-panel="audience"><span>Audience</span><small>Traffic</small></button>
+  </nav>
 
-  <!-- ── Main ──────────────────────────────────────────────────── -->
-  <main class="admin-main">
-
-    <!-- Mobile topbar -->
-    <div class="admin-topbar">
-      <button class="topbar-hamburger" id="topbar-hamburger" aria-label="Open menu">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M2 4h12M2 8h12M2 12h12"/>
-        </svg>
-      </button>
-      <span class="topbar-title">WHITELINEZ Admin</span>
-    </div>
-
-    <div class="admin-workspace">
-
-      <!-- ═══════════════════════════════════════════════════════
-           OVERVIEW PANEL
-           ═══════════════════════════════════════════════════════ -->
+  <div class="admin-shell">
+    <main class="admin-workspace">
       <section class="admin-panel active" id="panel-overview">
         <div class="panel-head">
           <h2>Overview</h2>
-          <p>Zone setup, round control, and live telemetry.</p>
+          <p>Main actions: zone setup and round control.</p>
         </div>
 
-        <!-- KPIs (top) -->
-        <div class="overview-metrics-primary">
-          <div class="stat-card is-primary">
-            <div class="stat-val" id="stat-count">-</div>
-            <div class="stat-label">Live Count</div>
-          </div>
-          <div class="stat-card is-primary">
-            <div class="stat-val" id="stat-round">-</div>
-            <div class="stat-label">Round Status</div>
-          </div>
-          <div class="stat-card is-primary">
-            <div class="stat-val" id="stat-bets">-</div>
-            <div class="stat-label">Bets Placed</div>
-          </div>
-          <div class="stat-card is-primary">
-            <div class="stat-val" id="stat-users">-</div>
-            <div class="stat-label">Online Users</div>
-          </div>
-          <div class="stat-card is-primary">
-            <div class="stat-val" id="stat-visits">-</div>
-            <div class="stat-label">Visits (Runtime)</div>
-          </div>
-        </div>
-
-        <div class="overview-metrics-secondary">
-          <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
-          <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
-          <div class="stat-card is-secondary"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
-          <div class="stat-card is-secondary"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
-        </div>
-
-        <!-- Zone Editor -->
         <div class="overview-grid main-actions-grid workflow-grid">
           <section class="card-box card-box-priority">
             <h3>Zone Editor</h3>
@@ -180,40 +69,40 @@
 
                 <div class="count-tuning-box compact-controls appearance-controls">
                   <h4>Feed Appearance</h4>
-                  <p class="admin-hint">Tune camera while drawing zones.</p>
+                  <p class="admin-hint">Compact sliders to tune this camera while drawing.</p>
                   <div class="field-row simplified-field-row">
-                    <div class="field" style="max-width:210px">
+                    <div class="field" style="max-width:220px">
                       <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
                       <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
                     </div>
-                    <div class="field" style="max-width:210px">
+                    <div class="field" style="max-width:220px">
                       <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
                       <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
                     </div>
-                    <div class="field" style="max-width:210px">
+                    <div class="field" style="max-width:220px">
                       <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
                       <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
                     </div>
                   </div>
                   <div class="field-row simplified-field-row">
-                    <div class="field" style="max-width:210px">
+                    <div class="field" style="max-width:220px">
                       <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
                       <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
                     </div>
-                    <div class="field" style="max-width:210px">
+                    <div class="field" style="max-width:220px">
                       <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
                       <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
                     </div>
                   </div>
                   <div class="field-row simplified-field-row">
-                    <div class="field" style="max-width:200px">
+                    <div class="field" style="max-width:210px">
                       <label for="feed-push-public">Push To Public View</label>
                       <select id="feed-push-public">
                         <option value="1">Enabled</option>
                         <option value="0">Disabled</option>
                       </select>
                     </div>
-                    <div class="field" style="max-width:200px">
+                    <div class="field" style="max-width:210px">
                       <label for="feed-auto-preset">Auto Day/Night Preset</label>
                       <select id="feed-auto-preset">
                         <option value="0">Disabled</option>
@@ -232,7 +121,7 @@
 
                 <div class="count-tuning-box compact-controls">
                   <h4>Count Tuning</h4>
-                  <p class="admin-hint">Controls for stable counting.</p>
+                  <p class="admin-hint">Simple controls for stable counting.</p>
                   <div class="count-tuning-grid">
                     <div class="field">
                       <label for="count-min-track-frames">Min Track Frames</label>
@@ -256,7 +145,7 @@
                     </div>
                   </div>
                   <div class="count-tuning-actions">
-                    <button id="btn-count-preset-balanced" class="btn-secondary" type="button">Preset A</button>
+                    <button id="btn-count-preset-balanced" class="btn-secondary" type="button">Preset A (Balanced)</button>
                     <button id="btn-count-preset-night" class="btn-secondary" type="button">Preset B (Night)</button>
                     <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
                     <span id="count-settings-status" class="line-status"></span>
@@ -267,88 +156,91 @@
           </section>
         </div>
 
-        <!-- Round Operations -->
         <section class="card-box card-box-secondary round-ops-section">
           <h3>Round Operations</h3>
           <div class="round-ops-grid">
             <div class="round-create-pane">
               <h4>Create Round</h4>
-              <form id="round-form">
-                <div class="field-row">
-                  <div class="field">
-                    <label for="market-type">Bet Type</label>
-                    <select id="market-type">
-                      <option value="over_under">Over / Under — total vehicles</option>
-                      <option value="vehicle_count">Count — specific vehicle type</option>
-                      <option value="vehicle_type">Type Leader — which type wins</option>
-                    </select>
-                  </div>
-                  <div class="field" id="vehicle-class-field" style="display:none">
-                    <label for="vehicle-class">Vehicle Type</label>
-                    <select id="vehicle-class">
-                      <option value="car">Cars</option>
-                      <option value="truck">Trucks</option>
-                      <option value="bus">Buses</option>
-                      <option value="motorcycle">Motorcycles</option>
-                    </select>
-                  </div>
-                  <div class="field" id="threshold-field">
-                    <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
-                    <input id="threshold" type="number" min="1" value="20" />
-                  </div>
+            <form id="round-form">
+              <div class="field-row">
+                <div class="field">
+                  <label for="market-type">Bet Type</label>
+                  <select id="market-type">
+                    <option value="over_under">Over / Under - total vehicles</option>
+                    <option value="vehicle_count">Count - specific vehicle type</option>
+                    <option value="vehicle_type">Type Leader - which type wins</option>
+                  </select>
                 </div>
-                <div class="field-row">
-                  <div class="field">
-                    <label for="starts-at">Round Starts <small class="muted">(local time)</small></label>
-                    <input id="starts-at" type="datetime-local" required />
-                  </div>
-                  <div class="field" style="max-width:120px">
-                    <label for="duration">Duration (min)</label>
-                    <input id="duration" type="number" min="5" max="480" value="10" />
-                  </div>
-                  <div class="field" style="max-width:140px">
-                    <label for="bet-cutoff">Close bets (min before end)</label>
-                    <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
-                  </div>
+                <div class="field" id="vehicle-class-field" style="display:none">
+                  <label for="vehicle-class">Vehicle Type</label>
+                  <select id="vehicle-class">
+                    <option value="car">Cars</option>
+                    <option value="truck">Trucks</option>
+                    <option value="bus">Buses</option>
+                    <option value="motorcycle">Motorcycles</option>
+                  </select>
                 </div>
-                <div class="computed-times" id="computed-times" style="display:none">
-                  <span>Bets close: <strong id="computed-closes">-</strong></span>
-                  <span>Round ends: <strong id="computed-ends">-</strong></span>
+                <div class="field" id="threshold-field">
+                  <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
+                  <input id="threshold" type="number" min="1" value="20" />
                 </div>
-                <div id="round-preview" class="round-preview hidden">
-                  <div class="preview-row"><span>Duration</span><strong id="prev-duration">-</strong></div>
-                  <div class="preview-row"><span>Avg zone flow (this hour)</span><strong id="prev-rate">-</strong></div>
-                  <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">-</strong></div>
-                  <div id="prev-warning" class="preview-warning hidden"></div>
-                  <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="starts-at">Round Starts <small class="muted">(local time)</small></label>
+                  <input id="starts-at" type="datetime-local" required />
                 </div>
-                <p id="round-error" class="auth-error" role="alert"></p>
-                <p id="round-success" class="auth-success" role="status"></p>
-                <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
-              </form>
+                <div class="field" style="max-width:130px">
+                  <label for="duration">Duration (min)</label>
+                  <input id="duration" type="number" min="5" max="480" value="10" />
+                </div>
+                <div class="field" style="max-width:150px">
+                  <label for="bet-cutoff">Close bets (min before end)</label>
+                  <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
+                </div>
+              </div>
+
+              <div class="computed-times" id="computed-times" style="display:none">
+                <span>Bets close: <strong id="computed-closes">-</strong></span>
+                <span>Round ends: <strong id="computed-ends">-</strong></span>
+              </div>
+
+              <div id="round-preview" class="round-preview hidden">
+                <div class="preview-row"><span>Duration</span><strong id="prev-duration">-</strong></div>
+                <div class="preview-row"><span>Avg zone flow (this hour)</span><strong id="prev-rate">-</strong></div>
+                <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">-</strong></div>
+                <div id="prev-warning" class="preview-warning hidden"></div>
+                <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
+              </div>
+
+              <p id="round-error" class="auth-error" role="alert"></p>
+              <p id="round-success" class="auth-success" role="status"></p>
+              <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
+            </form>
             </div>
 
             <div class="round-session-pane">
               <h4>Session Loop</h4>
               <p class="admin-hint">Auto-run rounds continuously for a fixed session window.</p>
               <div class="field-row">
-                <div class="field" style="max-width:160px">
+                <div class="field" style="max-width:180px">
                   <label for="session-duration">Session Duration (min)</label>
                   <input id="session-duration" type="number" min="10" max="1440" value="120" />
                 </div>
-                <div class="field" style="max-width:155px">
+                <div class="field" style="max-width:170px">
                   <label for="session-interval">Interval Between Rounds (min)</label>
                   <input id="session-interval" type="number" min="0" max="120" value="2" />
                 </div>
-                <div class="field" style="max-width:135px">
+                <div class="field" style="max-width:150px">
                   <label for="session-max-rounds">Max Rounds (optional)</label>
                   <input id="session-max-rounds" type="number" min="1" max="500" placeholder="no limit" />
                 </div>
               </div>
-              <div style="display:flex;gap:8px;margin-top:6px;">
+              <div style="display:flex; gap:8px; margin-top:6px;">
                 <button type="button" id="btn-session-start" class="btn-primary">Start Session</button>
               </div>
-              <p id="session-status" class="auth-success" role="status" style="min-height:18px;margin-top:6px;"></p>
+              <p id="session-status" class="auth-success" role="status" style="min-height:18px; margin-top:6px;"></p>
               <div id="session-list" class="rounds-list data-list" style="margin-top:8px;">
                 <p class="loading">Loading sessions...</p>
               </div>
@@ -356,7 +248,38 @@
           </div>
         </section>
 
-        <!-- Bottom row: Health + Rounds + Connections -->
+        <div class="overview-dashboard">
+          <div class="overview-metrics-primary">
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-count">-</div>
+              <div class="stat-label">Live Count</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-round">-</div>
+              <div class="stat-label">Round Status</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-bets">-</div>
+              <div class="stat-label">Bets Placed</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-users">-</div>
+              <div class="stat-label">Online Users</div>
+            </div>
+            <div class="stat-card is-primary">
+              <div class="stat-val" id="stat-visits">-</div>
+              <div class="stat-label">Visits (Runtime)</div>
+            </div>
+          </div>
+
+          <div class="overview-metrics-secondary">
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-total">-</div><div class="stat-label">Telemetry Rows</div></div>
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
+            <div class="stat-card is-secondary"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
+          </div>
+        </div>
+
         <div class="overview-grid overview-bottom">
           <div class="card-box overview-feed-card">
             <h3>System Health and Recovery</h3>
@@ -373,25 +296,22 @@
         </div>
       </section>
 
-      <!-- ═══════════════════════════════════════════════════════
-           ML CONTROL PANEL
-           ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-ml">
         <div class="panel-head">
           <h2>ML Control</h2>
-          <p>Capture frames, build dataset, retrain, and promote better models.</p>
+          <p>Core workflow: capture traffic frames, build dataset, retrain automatically, and promote better models.</p>
         </div>
 
         <div class="ml-subnav" id="ml-subnav">
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-overview">Pipeline</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-kpis">KPI</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-readiness">Readiness</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-night">Training Controls</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-night">Night Profile</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-oneclick">One-Click</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-jobs">Jobs</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-capture">Capture Logs</button>
         </div>
 
-        <!-- Pipeline overview -->
         <div class="ml-core-grid ml-section" id="ml-sec-overview">
           <div class="ml-core-card">
             <h3>Live ML Pipeline</h3>
@@ -418,6 +338,7 @@
               </article>
             </div>
           </div>
+
           <div class="ml-core-card">
             <h3>Mission Focus</h3>
             <div id="ml-glance-summary" class="rounds-list data-list">
@@ -426,7 +347,6 @@
           </div>
         </div>
 
-        <!-- KPIs -->
         <div class="ml-kpi-grid ml-section" id="ml-sec-kpis">
           <article class="ml-kpi-card">
             <p class="ml-kpi-label">Total Dataset Rows</p>
@@ -451,7 +371,6 @@
         </div>
 
         <div class="ml-ops-grid" id="ml-ops-grid">
-          <!-- Readiness -->
           <div class="ml-progress-wrap ml-section" id="ml-sec-readiness">
             <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
             <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
@@ -459,82 +378,69 @@
             <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
           </div>
 
-          <!-- Training Controls (Night Profile + Adaptive Runtime + One-Click merged) -->
           <div class="ml-control-wrap ml-section" id="ml-sec-night">
             <h3>Training Controls</h3>
             <div class="field">
               <label for="ml-dataset-yaml">Dataset YAML URL</label>
               <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
             </div>
+
             <div class="field-row">
               <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
               <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
               <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
             </div>
+
             <div class="ml-control-actions">
               <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
               <button id="btn-ml-train-captures" class="btn-secondary" type="button">Train New Captures</button>
               <span id="ml-control-msg" class="muted"></span>
             </div>
 
-            <!-- One-Click merged in (was standalone section) -->
-            <div class="ml-oneclick-merged">
-              <h4>One-Click Model Pipeline</h4>
-              <p class="muted" style="font-size:0.8rem;margin-bottom:8px;">Runs export → train → candidate promotion and reports what is missing or failing.</p>
-              <div class="ml-control-actions" style="margin-bottom:8px;">
-                <button id="btn-ml-one-click" class="btn-secondary" type="button">Run One-Click</button>
-                <span id="ml-one-click-msg" class="muted"></span>
-              </div>
-              <div id="ml-diagnostics" class="rounds-list data-list">
-                <p class="loading">Loading diagnostics...</p>
-              </div>
-            </div>
-
-            <!-- Night Profile -->
-            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--abr);">
-              <h4 style="margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--am);font-weight:700;">
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+              <h4 style="margin:0 0 8px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
                 <span>Night Tracking Profile</span>
                 <span id="night-profile-status" class="ml-status-chip">Unknown</span>
               </h4>
-              <p id="night-profile-window" class="muted" style="font-size:0.78rem;margin:0 0 8px;">Window: --</p>
+              <p id="night-profile-window" class="muted" style="font-size:0.8rem; margin:0 0 8px;">Window: --</p>
               <div class="field-row">
-                <div class="field" style="max-width:160px">
+                <div class="field" style="max-width:170px">
                   <label for="night-profile-enabled">Enable Night Profile</label>
                   <select id="night-profile-enabled">
                     <option value="1">Enabled</option>
                     <option value="0">Disabled</option>
                   </select>
                 </div>
-                <div class="field" style="max-width:120px">
+                <div class="field" style="max-width:130px">
                   <label for="night-start-hour">Start Hour</label>
                   <input id="night-start-hour" type="number" min="0" max="23" value="18" />
                 </div>
-                <div class="field" style="max-width:120px">
+                <div class="field" style="max-width:130px">
                   <label for="night-end-hour">End Hour</label>
                   <input id="night-end-hour" type="number" min="0" max="23" value="6" />
                 </div>
               </div>
               <div class="field-row">
-                <div class="field" style="max-width:175px">
+                <div class="field" style="max-width:190px">
                   <label for="night-profile-mode">Night Preset</label>
                   <select id="night-profile-mode">
                     <option value="conservative">Conservative</option>
                     <option value="aggressive">Aggressive</option>
                   </select>
                 </div>
-                <div class="field" style="max-width:120px">
+                <div class="field" style="max-width:130px">
                   <label for="night-yolo-conf">Night Conf</label>
                   <input id="night-yolo-conf" type="number" min="0.01" max="0.99" step="0.01" value="0.30" />
                 </div>
-                <div class="field" style="max-width:140px">
+                <div class="field" style="max-width:150px">
                   <label for="night-infer-size">Night Infer Size</label>
                   <input id="night-infer-size" type="number" min="320" max="1280" step="32" value="640" />
                 </div>
-                <div class="field" style="max-width:110px">
+                <div class="field" style="max-width:120px">
                   <label for="night-iou">Night IOU</label>
                   <input id="night-iou" type="number" min="0.05" max="0.95" step="0.01" value="0.45" />
                 </div>
-                <div class="field" style="max-width:120px">
+                <div class="field" style="max-width:130px">
                   <label for="night-max-det">Night Max Det</label>
                   <input id="night-max-det" type="number" min="10" max="500" value="120" />
                 </div>
@@ -559,40 +465,41 @@
               </div>
             </div>
 
-            <!-- Adaptive Runtime -->
-            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--abr);">
-              <h4 style="margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--am);font-weight:700;">
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+              <h4 style="margin:0 0 8px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
                 <span>Adaptive Runtime Profile</span>
                 <span id="runtime-profile-status" class="ml-status-chip">Unknown</span>
               </h4>
-              <p id="runtime-profile-live" class="muted" style="font-size:0.78rem;margin:0 0 8px;">Waiting for live runtime state...</p>
+              <p id="runtime-profile-live" class="muted" style="font-size:0.8rem; margin:0 0 8px;">Waiting for live runtime state...</p>
+
               <div class="field-row">
-                <div class="field" style="max-width:160px">
+                <div class="field" style="max-width:170px">
                   <label for="runtime-profile-mode">Mode</label>
                   <select id="runtime-profile-mode">
                     <option value="auto">Auto</option>
                     <option value="manual">Manual</option>
                   </select>
                 </div>
-                <div class="field" style="max-width:210px">
+                <div class="field" style="max-width:220px">
                   <label for="runtime-manual-profile">Manual Profile</label>
                   <select id="runtime-manual-profile"></select>
                 </div>
-                <div class="field" style="max-width:200px">
+                <div class="field" style="max-width:210px">
                   <label for="runtime-manual-until">Manual Until (optional)</label>
                   <input id="runtime-manual-until" type="datetime-local" />
                 </div>
               </div>
+
               <div class="field-row">
-                <div class="field" style="max-width:170px">
+                <div class="field" style="max-width:180px">
                   <label for="runtime-autotune-interval">Autotune Interval (sec)</label>
                   <input id="runtime-autotune-interval" type="number" min="5" max="300" value="20" />
                 </div>
-                <div class="field" style="max-width:165px">
+                <div class="field" style="max-width:180px">
                   <label for="runtime-cooldown-sec">Switch Cooldown (sec)</label>
                   <input id="runtime-cooldown-sec" type="number" min="15" max="3600" value="600" />
                 </div>
-                <div class="field" style="max-width:165px">
+                <div class="field" style="max-width:180px">
                   <label for="runtime-stream-grab-latest">Stream Grab Latest</label>
                   <select id="runtime-stream-grab-latest">
                     <option value="1">Enabled</option>
@@ -600,22 +507,34 @@
                   </select>
                 </div>
               </div>
+
               <div class="ml-control-actions">
                 <button id="btn-save-runtime-profile" class="btn-secondary" type="button">Save Runtime Profile</button>
                 <button id="btn-runtime-force-auto" class="btn-secondary" type="button">Force Auto</button>
                 <span id="runtime-profile-msg" class="muted"></span>
               </div>
-              <p id="runtime-profile-error" class="auth-error" role="alert" style="display:none;margin-top:8px;"></p>
+              <p id="runtime-profile-error" class="auth-error" role="alert" style="display:none; margin-top:8px;"></p>
             </div>
           </div>
 
-          <!-- Jobs -->
+          <div class="card-box slim ml-section" id="ml-sec-oneclick">
+            <h3>One-Click Model Pipeline</h3>
+            <p class="muted" style="font-size:0.82rem; margin-bottom:8px;">
+              Runs export -> train -> candidate promotion path and reports exactly what is missing or failing.
+            </p>
+            <div class="ml-control-actions" style="margin-bottom:10px;">
+              <button id="btn-ml-one-click" class="btn-primary" type="button">One-Click Get Model</button>
+              <span id="ml-one-click-msg" class="muted"></span>
+            </div>
+            <div id="ml-diagnostics" class="rounds-list data-list">
+              <p class="loading">Loading diagnostics...</p>
+            </div>
+          </div>
+
           <div class="card-box slim ml-section" id="ml-sec-jobs">
             <h3>Latest Jobs and Models</h3>
             <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
           </div>
-
-          <!-- Capture Logs -->
           <div class="card-box slim ml-section" id="ml-sec-capture">
             <h3>Live Capture Logs</h3>
             <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>
@@ -629,9 +548,6 @@
         </div>
       </section>
 
-      <!-- ═══════════════════════════════════════════════════════
-           DETECTION PANEL
-           ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-detection">
         <div class="panel-head">
           <h2>Detection Studio</h2>
@@ -673,7 +589,7 @@
           <section class="card-box card-box-secondary">
             <h3>Overlay Customization</h3>
             <div class="field-row">
-              <div class="field" style="max-width:170px">
+              <div class="field" style="max-width:180px">
                 <label for="det-box-style">Box Style</label>
                 <select id="det-box-style">
                   <option value="solid">Solid</option>
@@ -681,34 +597,48 @@
                   <option value="corner">Corner</option>
                 </select>
               </div>
-              <div class="field" style="max-width:160px">
+              <div class="field" style="max-width:180px">
                 <label for="det-line-width">Line Width</label>
                 <input id="det-line-width" type="range" min="1" max="5" step="0.5" value="2" />
               </div>
-              <div class="field" style="max-width:160px">
+              <div class="field" style="max-width:180px">
                 <label for="det-fill-alpha">Fill Opacity</label>
                 <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.05" value="0.10" />
               </div>
-              <div class="field" style="max-width:160px">
+              <div class="field" style="max-width:180px">
                 <label for="det-max-boxes">Max Boxes</label>
                 <input id="det-max-boxes" type="number" min="1" max="40" value="10" />
               </div>
             </div>
+
             <div class="field-row">
-              <div class="field" style="max-width:160px"><label for="det-color-car">Car Color</label><input id="det-color-car" type="color" value="#29B6F6" /></div>
-              <div class="field" style="max-width:160px"><label for="det-color-truck">Truck Color</label><input id="det-color-truck" type="color" value="#FF7043" /></div>
-              <div class="field" style="max-width:160px"><label for="det-color-bus">Bus Color</label><input id="det-color-bus" type="color" value="#AB47BC" /></div>
-              <div class="field" style="max-width:160px"><label for="det-color-motorcycle">Motorcycle Color</label><input id="det-color-motorcycle" type="color" value="#FFD600" /></div>
+              <div class="field" style="max-width:180px">
+                <label for="det-color-car">Car Color</label>
+                <input id="det-color-car" type="color" value="#29B6F6" />
+              </div>
+              <div class="field" style="max-width:180px">
+                <label for="det-color-truck">Truck Color</label>
+                <input id="det-color-truck" type="color" value="#FF7043" />
+              </div>
+              <div class="field" style="max-width:180px">
+                <label for="det-color-bus">Bus Color</label>
+                <input id="det-color-bus" type="color" value="#AB47BC" />
+              </div>
+              <div class="field" style="max-width:180px">
+                <label for="det-color-motorcycle">Motorcycle Color</label>
+                <input id="det-color-motorcycle" type="color" value="#FFD600" />
+              </div>
             </div>
+
             <div class="field-row">
-              <div class="field" style="max-width:190px">
+              <div class="field" style="max-width:210px">
                 <label for="det-show-labels">Show Labels</label>
                 <select id="det-show-labels">
                   <option value="1">Enabled</option>
                   <option value="0">Disabled</option>
                 </select>
               </div>
-              <div class="field" style="max-width:245px">
+              <div class="field" style="max-width:260px">
                 <label for="det-show-zone-only">Render Boxes In Detect Zone Only</label>
                 <select id="det-show-zone-only">
                   <option value="0">No (Full Feed)</option>
@@ -716,37 +646,64 @@
                 </select>
               </div>
             </div>
+
             <div class="field-row">
-              <div class="field" style="max-width:200px">
+              <div class="field" style="max-width:220px">
                 <label for="det-ground-enabled">Ground Overlay</label>
                 <select id="det-ground-enabled">
                   <option value="1">Enabled</option>
                   <option value="0">Disabled</option>
                 </select>
               </div>
-              <div class="field" style="max-width:200px">
+              <div class="field" style="max-width:220px">
                 <label for="det-ground-alpha">Ground Opacity</label>
                 <input id="det-ground-alpha" type="range" min="0" max="0.45" step="0.05" value="0.16" />
               </div>
-              <div class="field" style="max-width:200px">
+              <div class="field" style="max-width:220px">
                 <label for="det-ground-grid">Ground Grid Density</label>
                 <input id="det-ground-grid" type="number" min="2" max="16" value="6" />
               </div>
-              <div class="field" style="max-width:200px">
+              <div class="field" style="max-width:220px">
                 <label for="det-ground-cutout">Vehicle Cutout</label>
                 <input id="det-ground-cutout" type="range" min="0" max="0.85" step="0.05" value="0.38" />
               </div>
             </div>
+
             <div class="field-row">
-              <div class="field" style="max-width:148px"><label for="det-ground-x1">Quad X1 (top-left)</label><input id="det-ground-x1" type="number" min="0" max="1" step="0.05" value="0.34" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-y1">Quad Y1</label><input id="det-ground-y1" type="number" min="0" max="1" step="0.05" value="0.58" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-x2">Quad X2 (top-right)</label><input id="det-ground-x2" type="number" min="0" max="1" step="0.05" value="0.78" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-y2">Quad Y2</label><input id="det-ground-y2" type="number" min="0" max="1" step="0.05" value="0.58" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-x3">Quad X3 (bottom-right)</label><input id="det-ground-x3" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-y3">Quad Y3</label><input id="det-ground-y3" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-x4">Quad X4 (bottom-left)</label><input id="det-ground-x4" type="number" min="0" max="1" step="0.05" value="0.08" /></div>
-              <div class="field" style="max-width:148px"><label for="det-ground-y4">Quad Y4</label><input id="det-ground-y4" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x1">Quad X1 (top-left)</label>
+                <input id="det-ground-x1" type="number" min="0" max="1" step="0.05" value="0.34" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y1">Quad Y1</label>
+                <input id="det-ground-y1" type="number" min="0" max="1" step="0.05" value="0.58" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x2">Quad X2 (top-right)</label>
+                <input id="det-ground-x2" type="number" min="0" max="1" step="0.05" value="0.78" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y2">Quad Y2</label>
+                <input id="det-ground-y2" type="number" min="0" max="1" step="0.05" value="0.58" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x3">Quad X3 (bottom-right)</label>
+                <input id="det-ground-x3" type="number" min="0" max="1" step="0.05" value="0.98" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y3">Quad Y3</label>
+                <input id="det-ground-y3" type="number" min="0" max="1" step="0.05" value="0.98" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-x4">Quad X4 (bottom-left)</label>
+                <input id="det-ground-x4" type="number" min="0" max="1" step="0.05" value="0.08" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-ground-y4">Quad Y4</label>
+                <input id="det-ground-y4" type="number" min="0" max="1" step="0.05" value="0.98" />
+              </div>
             </div>
+
             <div class="ml-control-actions">
               <button id="btn-det-preset-balanced" class="btn-secondary" type="button">Preset A Overlay</button>
               <button id="btn-det-preset-night" class="btn-secondary" type="button">Preset B Overlay</button>
@@ -758,15 +715,12 @@
         </div>
       </section>
 
-      <!-- ═══════════════════════════════════════════════════════
-           BETS PANEL
-           ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-bets">
         <div class="panel-head">
           <h2>Recent Bets</h2>
           <p>Latest bettor activity and stake details.</p>
         </div>
-        <div class="card-box slim" style="margin-bottom:12px;margin-top:0;">
+        <div class="card-box slim" style="margin-bottom:12px;">
           <h3>Bet Validation Status</h3>
           <div id="bet-validation-status" class="rounds-list data-list">
             <p class="loading">Loading validation metrics...</p>
@@ -775,9 +729,27 @@
         <div id="recent-bets" class="rounds-list data-list tall"><p class="loading">Loading...</p></div>
       </section>
 
-      <!-- ═══════════════════════════════════════════════════════
-           AUDIENCE PANEL
-           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-users">
+        <div class="panel-head">
+          <h2>User Management</h2>
+          <p>View registered users and grant admin role by email.</p>
+        </div>
+        <div class="user-mgmt-row">
+          <div class="field">
+            <label for="admin-email-input">User Email</label>
+            <input id="admin-email-input" type="email" placeholder="user@example.com" />
+          </div>
+          <button id="btn-set-admin" class="btn-primary">Set Admin</button>
+        </div>
+        <p id="user-mgmt-msg" style="font-size:0.82rem; margin-top:8px; color: var(--green);"></p>
+        <div class="card-box slim" style="margin-top:12px;">
+          <h3>Registered Users</h3>
+          <div id="registered-users" class="rounds-list data-list tall">
+            <p class="loading">Loading users...</p>
+          </div>
+        </div>
+      </section>
+
       <section class="admin-panel" id="panel-audience">
         <div class="panel-head">
           <h2>Audience Intelligence</h2>
@@ -785,15 +757,30 @@
         </div>
 
         <div class="overview-metrics-primary audience-kpis">
-          <div class="stat-card is-primary"><div class="stat-val" id="aud-kpi-views-total">-</div><div class="stat-label">Total Site Views</div></div>
-          <div class="stat-card is-primary"><div class="stat-val" id="aud-kpi-views-24h">-</div><div class="stat-label">Views (24h)</div></div>
-          <div class="stat-card is-primary"><div class="stat-val" id="aud-kpi-guests-total">-</div><div class="stat-label">Guests (Total)</div></div>
-          <div class="stat-card is-primary"><div class="stat-val" id="aud-kpi-guests-24h">-</div><div class="stat-label">Guests (24h)</div></div>
-          <div class="stat-card is-primary"><div class="stat-val" id="aud-kpi-users-total">-</div><div class="stat-label">Registered Users</div></div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-views-total">-</div>
+            <div class="stat-label">Total Site Views</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-views-24h">-</div>
+            <div class="stat-label">Views (24h)</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-guests-total">-</div>
+            <div class="stat-label">Guests (Total)</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-guests-24h">-</div>
+            <div class="stat-label">Guests (24h)</div>
+          </div>
+          <div class="stat-card is-primary">
+            <div class="stat-val" id="aud-kpi-users-total">-</div>
+            <div class="stat-label">Registered Users</div>
+          </div>
         </div>
 
         <div class="audience-toolbar">
-          <div class="field" style="max-width:190px;">
+          <div class="field" style="max-width:200px;">
             <label for="aud-source-filter">Source Filter</label>
             <select id="aud-source-filter">
               <option value="all">All Sources</option>
@@ -807,75 +794,47 @@
         <div class="overview-grid audience-grid">
           <div class="card-box">
             <h3>Top Pages (24h)</h3>
-            <div id="aud-top-pages" class="rounds-list data-list"><p class="loading">Loading top pages...</p></div>
+            <div id="aud-top-pages" class="rounds-list data-list">
+              <p class="loading">Loading top pages...</p>
+            </div>
           </div>
+
           <div class="card-box">
             <h3>Recent Site Views</h3>
-            <div id="aud-recent-views" class="rounds-list data-list"><p class="loading">Loading recent site views...</p></div>
+            <div id="aud-recent-views" class="rounds-list data-list">
+              <p class="loading">Loading recent site views...</p>
+            </div>
           </div>
+
           <div class="card-box">
             <h3>Guest Activity</h3>
-            <div id="aud-guest-activity" class="rounds-list data-list"><p class="loading">Loading guest activity...</p></div>
+            <div id="aud-guest-activity" class="rounds-list data-list">
+              <p class="loading">Loading guest activity...</p>
+            </div>
           </div>
+
           <div class="card-box">
             <h3>Recent Registered Users</h3>
-            <div id="aud-registered-users" class="rounds-list data-list"><p class="loading">Loading users...</p></div>
+            <div id="aud-registered-users" class="rounds-list data-list">
+              <p class="loading">Loading users...</p>
+            </div>
           </div>
         </div>
       </section>
+    </main>
+  </div>
 
-      <!-- ═══════════════════════════════════════════════════════
-           USERS PANEL
-           ═══════════════════════════════════════════════════════ -->
-      <section class="admin-panel" id="panel-users">
-        <div class="panel-head">
-          <h2>User Management</h2>
-          <p>View registered users and grant admin role by email.</p>
-        </div>
-        <div class="user-mgmt-row">
-          <div class="field">
-            <label for="admin-email-input">User Email</label>
-            <input id="admin-email-input" type="email" placeholder="user@example.com" />
-          </div>
-          <button id="btn-set-admin" class="btn-primary">Set Admin</button>
-        </div>
-        <p id="user-mgmt-msg" style="font-size:0.82rem;margin-top:6px;color:var(--ok);"></p>
-        <div class="card-box slim" style="margin-top:12px;">
-          <h3>Registered Users</h3>
-          <div id="registered-users" class="rounds-list data-list tall"><p class="loading">Loading users...</p></div>
-        </div>
-      </section>
-
-    </div><!-- .admin-workspace -->
-  </main>
-</div><!-- .admin-layout -->
-
-<!-- Sidebar toggle script (inline, tiny) -->
-<script>
-(function(){
-  var sidebar  = document.getElementById('admin-sidebar');
-  var overlay  = document.getElementById('sidebar-overlay');
-  var openBtn  = document.getElementById('topbar-hamburger');
-  var closeBtn = document.getElementById('sidebar-toggle');
-  function open()  { sidebar.classList.add('open'); overlay.classList.add('visible'); }
-  function close() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
-  if (openBtn)  openBtn.addEventListener('click', open);
-  if (closeBtn) closeBtn.addEventListener('click', close);
-  if (overlay)  overlay.addEventListener('click', close);
-})();
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/supabase-init.js"></script>
-<script src="/js/site-views.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/stream.js"></script>
-<script src="/js/coord-utils.js"></script>
-<script src="/js/admin-line.js"></script>
-<script src="/js/admin-init.js"></script>
-<script src="/js/admin-night-profile.js"></script>
-<script src="/js/admin-runtime-profile.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/site-views.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/stream.js"></script>
+  <script src="/js/coord-utils.js"></script>
+  <script src="/js/admin-line.js"></script>
+  <script src="/js/admin-init.js"></script>
+  <script src="/js/admin-night-profile.js"></script>
+  <script src="/js/admin-runtime-profile.js"></script>
 </body>
 </html>

@@ -1090,9 +1090,14 @@ async function loadActiveUsers() {
     const data = await res.json();
     const online = data?.online_now || {};
     const visits = data?.visit_totals || {};
+    const db = data?.db || {};
     const publicClients = Array.isArray(data?.active_public_clients) ? data.active_public_clients : [];
     const authUsers = Array.isArray(data?.active_authenticated_users) ? data.active_authenticated_users : [];
     const recentEvents = Array.isArray(data?.recent_events) ? data.recent_events.slice(-6).reverse() : [];
+    const guestRecent = Array.isArray(db?.guest_recent) ? db.guest_recent.slice(0, 10) : [];
+    const topPages = Array.isArray(db?.site_views_top_pages_24h) ? db.site_views_top_pages_24h.slice(0, 10) : [];
+    const recentViews = Array.isArray(db?.site_views_recent) ? db.site_views_recent.slice(0, 10) : [];
+    const recentUsers = Array.isArray(db?.registered_users_recent) ? db.registered_users_recent.slice(0, 10) : [];
 
     const publicRows = publicClients.slice(0, 8).map((entry) => `
       <div class="round-row">
@@ -1121,6 +1126,42 @@ async function loadActiveUsers() {
       </div>
     `).join("");
 
+    const recentUserRows = recentUsers.map((user) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(user.username || "user")} (${escHtml(String(user.user_id || "").slice(0, 8))}...)</span>
+          <span class="round-row-meta">updated ${fmtAgo(user.updated_at || user.created_at)}</span>
+        </div>
+      </div>
+    `).join("");
+
+    const guestRows = guestRecent.map((guest) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(guest.username || guest.guest_id || "guest")} (${Number(guest.messages || 0)} msgs)</span>
+          <span class="round-row-meta">last ${fmtAgo(guest.last_seen)} | ${escHtml(String(guest.last_message || "").slice(0, 70))}</span>
+        </div>
+      </div>
+    `).join("");
+
+    const topPageRows = topPages.map((p) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(p.page_path || "/")}</span>
+          <span class="round-row-meta">${Number(p.views || 0).toLocaleString()} views (24h)</span>
+        </div>
+      </div>
+    `).join("");
+
+    const recentViewRows = recentViews.map((view) => `
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">${escHtml(view.page_path || "/")} (${escHtml(view.source || "web")})</span>
+          <span class="round-row-meta">${fmtAgo(view.viewed_at)} | ${escHtml(view.user_id ? "user" : (view.guest_id || "guest"))}</span>
+        </div>
+      </div>
+    `).join("");
+
     box.innerHTML = `
       <div class="round-row">
         <div class="round-row-info">
@@ -1134,6 +1175,16 @@ async function loadActiveUsers() {
           <span class="round-row-meta">Public ${Number(visits.public_ws_connections_total || 0).toLocaleString()} | Account ${Number(visits.account_ws_connections_total || 0).toLocaleString()} | Combined ${Number(visits.combined_ws_connections_total || 0).toLocaleString()}</span>
         </div>
       </div>
+      <div class="round-row">
+        <div class="round-row-info">
+          <span class="round-row-id">DB Audience Totals</span>
+          <span class="round-row-meta">Users ${Number(db.registered_users_total || 0).toLocaleString()} | Guests ${Number(db.guests_total || 0).toLocaleString()} (${Number(db.guests_24h || 0).toLocaleString()} / 24h) | Views ${Number(db.site_views_total || 0).toLocaleString()} (${Number(db.site_views_24h || 0).toLocaleString()} / 24h)</span>
+        </div>
+      </div>
+      ${recentUserRows || `<p class="muted" style="font-size:0.82rem;">No registered user history.</p>`}
+      ${guestRows || `<p class="muted" style="font-size:0.82rem;">No guest history yet.</p>`}
+      ${topPageRows || `<p class="muted" style="font-size:0.82rem;">No site-view page stats yet.</p>`}
+      ${recentViewRows || `<p class="muted" style="font-size:0.82rem;">No site-view history yet.</p>`}
       ${publicRows || `<p class="muted" style="font-size:0.82rem;">No active public clients.</p>`}
       ${authRows || `<p class="muted" style="font-size:0.82rem;">No active authenticated users.</p>`}
       ${eventRows || `<p class="muted" style="font-size:0.82rem;">No recent connect/disconnect events.</p>`}

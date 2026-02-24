@@ -143,7 +143,16 @@ const LiveBet = (() => {
 
       // Show countdown
       _showBpActiveBet(data.window_end);
-      window.dispatchEvent(new CustomEvent("bet:placed", { detail: data }));
+      window.dispatchEvent(new CustomEvent("bet:placed", {
+        detail: {
+          ...data,
+          bet_type: "exact_count",
+          round_id: _round?.id || null,
+          window_duration_sec: _windowSec,
+          vehicle_class: _vehicleClass || null,
+          exact_count: exact,
+        },
+      }));
 
     } catch (e) {
       errorEl.textContent = "Network error — try again";

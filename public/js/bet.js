@@ -6,10 +6,12 @@
 const Bet = (() => {
   let _marketId = null;
   let _odds = null;
+  let _marketLabel = "";
 
   function openModal(marketId, label, odds) {
     _marketId = marketId;
     _odds = odds;
+    _marketLabel = String(label || "");
 
     const round = Markets.getCurrentRound();
     if (!round) return;
@@ -25,10 +27,11 @@ const Bet = (() => {
       <div class="modal-backdrop" id="bmi-backdrop"></div>
       <div class="modal-box">
         <button class="modal-close" id="bmi-close" aria-label="Close">✕</button>
-        <h3>Place Bet</h3>
-        <p class="modal-label">${esc(label)}</p>
+        <h3>Place Your Pick</h3>
+        <p class="modal-label">Outcome: ${esc(label)}</p>
+        <p class="modal-label">Quick rule: payout = stake x odds rate.</p>
         <div class="modal-row">
-          <span>Odds</span>
+          <span>Payout rate</span>
           <strong>${parseFloat(odds).toFixed(2)}x</strong>
         </div>
         <div class="modal-row">
@@ -36,15 +39,15 @@ const Bet = (() => {
           <input id="bmi-amount" type="number" min="1" placeholder="e.g. 100" />
         </div>
         <div class="modal-row">
-          <span>Potential payout</span>
+          <span>If this wins</span>
           <strong id="bmi-payout">—</strong>
         </div>
         <div id="bmi-loading" class="modal-loading hidden" aria-live="polite">
           <span class="modal-spinner" aria-hidden="true"></span>
-          <span>Validating bet...</span>
+          <span>Checking and creating ticket...</span>
         </div>
         <p id="bmi-error" class="modal-error" role="alert"></p>
-        <button id="bmi-submit" class="btn-primary btn-full">Confirm Bet</button>
+        <button id="bmi-submit" class="btn-primary btn-full">Place Bet Ticket</button>
       </div>
     `;
     document.body.appendChild(box);
@@ -61,6 +64,7 @@ const Bet = (() => {
     _removeExisting();
     _marketId = null;
     _odds = null;
+    _marketLabel = "";
   }
 
   function _removeExisting() {
@@ -131,14 +135,26 @@ const Bet = (() => {
         return;
       }
 
+      const placedMarketId = _marketId;
+      const placedOdds = _odds;
+      const placedLabel = _marketLabel;
       closeModal();
-      window.dispatchEvent(new CustomEvent("bet:placed", { detail: data }));
-      _showToast(`Bet placed! Potential payout: ${data.potential_payout.toLocaleString()} credits`);
+      window.dispatchEvent(new CustomEvent("bet:placed", {
+        detail: {
+          ...data,
+          bet_type: "market",
+          market_id: placedMarketId,
+          market_label: placedLabel,
+          market_odds: placedOdds,
+          round_id: round.id,
+        },
+      }));
+      _showToast(`Ticket placed. Potential return: ${data.potential_payout.toLocaleString()} credits`);
     } catch (e) {
-      if (errorEl) errorEl.textContent = "Network error — try again";
+      if (errorEl) errorEl.textContent = "Network error - try again";
     } finally {
       if (submitBtn) submitBtn.disabled = false;
-      if (submitBtn) submitBtn.textContent = "Confirm Bet";
+      if (submitBtn) submitBtn.textContent = "Place Bet Ticket";
       if (loadingEl) loadingEl.classList.add("hidden");
     }
   }

@@ -29,13 +29,13 @@ const Bet = (() => {
         <button class="modal-close" id="bmi-close" aria-label="Close">✕</button>
         <h3>Place Your Guess</h3>
         <p class="modal-label">Your guess: ${esc(label)}</p>
-        <p class="modal-label">Quick rule: payout = stake x odds rate.</p>
+        <p class="modal-label">Quick rule: reward = play amount x odds rate.</p>
         <div class="modal-row">
           <span>Payout rate</span>
           <strong>${parseFloat(odds).toFixed(2)}x</strong>
         </div>
         <div class="modal-row">
-          <label for="bmi-amount">Amount (credits)</label>
+          <label for="bmi-amount">Play amount (credits)</label>
           <input id="bmi-amount" type="number" min="1" placeholder="e.g. 100" />
         </div>
         <div class="modal-row">
@@ -47,7 +47,7 @@ const Bet = (() => {
           <span>Checking and creating ticket...</span>
         </div>
         <p id="bmi-error" class="modal-error" role="alert"></p>
-        <button id="bmi-submit" class="btn-primary btn-full">Place Bet Ticket</button>
+        <button id="bmi-submit" class="btn-primary btn-full">Submit Guess Ticket</button>
       </div>
     `;
     document.body.appendChild(box);
@@ -96,13 +96,13 @@ const Bet = (() => {
       return;
     }
     if (String(round.status || "").toLowerCase() !== "open") {
-      if (errorEl) errorEl.textContent = `Round is ${String(round.status || "closed")}. Betting is closed.`;
+      if (errorEl) errorEl.textContent = `Round is ${String(round.status || "closed")}. Guessing is closed.`;
       return;
     }
     if (round.closes_at) {
       const closesAt = new Date(round.closes_at).getTime();
       if (Number.isFinite(closesAt) && Date.now() >= closesAt) {
-        if (errorEl) errorEl.textContent = "Betting window has closed.";
+        if (errorEl) errorEl.textContent = "Guess window has closed.";
         return;
       }
     }
@@ -131,7 +131,7 @@ const Bet = (() => {
 
       const data = await res.json();
       if (!res.ok) {
-        if (errorEl) errorEl.textContent = data.detail || "Bet failed";
+        if (errorEl) errorEl.textContent = data.detail || "Guess failed";
         return;
       }
 
@@ -149,12 +149,12 @@ const Bet = (() => {
           round_id: round.id,
         },
       }));
-      _showToast(`Ticket placed. Potential return: ${data.potential_payout.toLocaleString()} credits`);
+      _showToast(`Guess ticket submitted. Potential return: ${data.potential_payout.toLocaleString()} credits`);
     } catch (e) {
       if (errorEl) errorEl.textContent = "Network error - try again";
     } finally {
       if (submitBtn) submitBtn.disabled = false;
-      if (submitBtn) submitBtn.textContent = "Place Bet Ticket";
+      if (submitBtn) submitBtn.textContent = "Submit Guess Ticket";
       if (loadingEl) loadingEl.classList.add("hidden");
     }
   }

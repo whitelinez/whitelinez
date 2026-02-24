@@ -28,12 +28,12 @@
   </header>
 
   <nav class="admin-topnav">
-    <button class="admin-nav-btn active" data-panel="overview">Overview</button>
-    <button class="admin-nav-btn" data-panel="ml">ML Control</button>
-    <button class="admin-nav-btn" data-panel="detection">Detection</button>
-    <button class="admin-nav-btn" data-panel="bets">Bets</button>
-    <button class="admin-nav-btn" data-panel="users">Users</button>
-    <button class="admin-nav-btn" data-panel="audience">Audience</button>
+    <button class="admin-nav-btn active" data-panel="overview"><span>Overview</span><small>Operate</small></button>
+    <button class="admin-nav-btn" data-panel="ml"><span>ML Control</span><small>Train</small></button>
+    <button class="admin-nav-btn" data-panel="detection"><span>Detection</span><small>Visuals</small></button>
+    <button class="admin-nav-btn" data-panel="bets"><span>Bets</span><small>Markets</small></button>
+    <button class="admin-nav-btn" data-panel="users"><span>Users</span><small>Access</small></button>
+    <button class="admin-nav-btn" data-panel="audience"><span>Audience</span><small>Traffic</small></button>
   </nav>
 
   <div class="admin-shell">
@@ -44,31 +44,32 @@
           <p>Main actions: zone setup and round control.</p>
         </div>
 
-        <div class="overview-grid main-actions-grid">
-          <section class="card-box">
+        <div class="overview-grid main-actions-grid workflow-grid">
+          <section class="card-box card-box-priority">
             <h3>Zone Editor</h3>
-            <p class="admin-hint">Draw detect/count zones. 3D mask auto-follows and all save together.</p>
-            <div class="stream-canvas-wrapper">
-              <video id="admin-video" muted playsinline autoplay></video>
-              <canvas id="line-canvas"></canvas>
-            </div>
-
-            <div class="admin-line-controls">
-              <div class="zone-toggle-group">
-                <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
-                <button id="btn-zone-count" class="zone-toggle count active">Count</button>
-                <button id="btn-zone-ground" class="zone-toggle">3D Mask</button>
-                <button id="btn-zone-guides" class="zone-toggle active" type="button" title="Toggle perspective guides">Guides</button>
-                <button id="btn-zone-snap" class="zone-toggle active" type="button" title="Snap clicks to perspective guides">Snap</button>
+            <p class="admin-hint">Step 1: draw zones. Step 2: tune appearance while watching live feed.</p>
+            <div class="zone-editor-workflow">
+              <div class="stream-canvas-wrapper">
+                <video id="admin-video" muted playsinline autoplay></video>
+                <canvas id="line-canvas"></canvas>
               </div>
-              <button id="btn-clear-line" class="btn-secondary">Clear</button>
-              <button id="btn-save-line" class="btn-primary" disabled>Save Zones</button>
-              <span id="line-status" class="line-status"></span>
+              <div class="admin-line-controls">
+                <div class="zone-toggle-group">
+                  <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
+                  <button id="btn-zone-count" class="zone-toggle count active">Count</button>
+                  <button id="btn-zone-ground" class="zone-toggle">3D Mask</button>
+                  <button id="btn-zone-guides" class="zone-toggle active" type="button" title="Toggle perspective guides">Guides</button>
+                  <button id="btn-zone-snap" class="zone-toggle active" type="button" title="Snap clicks to perspective guides">Snap</button>
+                </div>
+                <button id="btn-clear-line" class="btn-secondary">Clear</button>
+                <button id="btn-save-line" class="btn-primary" disabled>Save Zones</button>
+                <span id="line-status" class="line-status"></span>
+              </div>
             </div>
 
-            <div class="count-tuning-box">
+            <div class="count-tuning-box compact-controls">
               <h4>Count Tuning</h4>
-              <p class="admin-hint">Controls consistency filters for counted crossings (does not alter stream source).</p>
+              <p class="admin-hint">Simple controls for stable counting.</p>
               <div class="count-tuning-grid">
                 <div class="field">
                   <label for="count-min-track-frames">Min Track Frames</label>
@@ -76,18 +77,18 @@
                 </div>
                 <div class="field">
                   <label for="count-min-confidence">Min Confidence</label>
-                  <input id="count-min-confidence" type="number" min="0" max="1" step="0.01" value="0.30" />
+                  <input id="count-min-confidence" type="number" min="0" max="1" step="0.05" value="0.30" />
                 </div>
                 <div class="field">
-                  <label for="count-min-box-area-ratio">Min Box Area Ratio</label>
-                  <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.0001" value="0.004" />
+                  <label for="count-min-box-area-ratio">Min Object Size</label>
+                  <input id="count-min-box-area-ratio" type="number" min="0" max="1" step="0.001" value="0.004" />
                 </div>
                 <div class="field count-tuning-wide">
-                  <label for="count-allowed-classes">Allowed Classes (comma-separated)</label>
+                  <label for="count-allowed-classes">Allowed Classes</label>
                   <input id="count-allowed-classes" type="text" value="car, truck, bus, motorcycle" placeholder="car, truck, bus, motorcycle" />
                 </div>
                 <div class="field count-tuning-wide">
-                  <label for="count-class-min-confidence">Per-Class Min Confidence</label>
+                  <label for="count-class-min-confidence">Class Confidence Rules</label>
                   <input id="count-class-min-confidence" type="text" value="car:0.30, truck:0.42, bus:0.45, motorcycle:0.32" placeholder="car:0.35, truck:0.40" />
                 </div>
               </div>
@@ -99,10 +100,10 @@
               </div>
             </div>
 
-            <div class="count-tuning-box">
+            <div class="count-tuning-box compact-controls">
               <h4>Feed Appearance</h4>
-              <p class="admin-hint">Preview updates instantly here. Push to public view when ready.</p>
-              <div class="field-row">
+              <p class="admin-hint">Tune while the live screen stays visible above.</p>
+              <div class="field-row simplified-field-row">
                 <div class="field" style="max-width:220px">
                   <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
                   <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
@@ -116,7 +117,7 @@
                   <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
                 </div>
               </div>
-              <div class="field-row">
+              <div class="field-row simplified-field-row">
                 <div class="field" style="max-width:220px">
                   <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
                   <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
@@ -126,7 +127,7 @@
                   <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
                 </div>
               </div>
-              <div class="field-row">
+              <div class="field-row simplified-field-row">
                 <div class="field" style="max-width:210px">
                   <label for="feed-push-public">Push To Public View</label>
                   <select id="feed-push-public">
@@ -152,7 +153,7 @@
             </div>
           </section>
 
-          <section class="card-box">
+          <section class="card-box card-box-secondary">
             <h3>Create Round</h3>
             <form id="round-form">
               <div class="field-row">
@@ -274,7 +275,7 @@
 
         <div class="overview-grid overview-bottom">
           <div class="card-box overview-feed-card">
-            <h3>System Health</h3>
+            <h3>System Health and Recovery</h3>
             <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
           </div>
           <div class="card-box overview-feed-card">
@@ -565,8 +566,8 @@
           </article>
         </div>
 
-        <div class="overview-grid" style="margin-top:10px;">
-          <section class="card-box">
+        <div class="overview-grid detection-workflow-grid" style="margin-top:10px;">
+          <section class="card-box card-box-priority">
             <h3>Detection Runtime</h3>
             <div class="rounds-list data-list">
               <div class="round-row"><div class="round-row-info"><span class="round-row-id">AI Loop</span><span class="round-row-meta" id="det-runtime-ai">Checking...</span></div></div>
@@ -578,7 +579,7 @@
             </div>
           </section>
 
-          <section class="card-box">
+          <section class="card-box card-box-secondary">
             <h3>Overlay Customization</h3>
             <div class="field-row">
               <div class="field" style="max-width:180px">
@@ -595,7 +596,7 @@
               </div>
               <div class="field" style="max-width:180px">
                 <label for="det-fill-alpha">Fill Opacity</label>
-                <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.01" value="0.10" />
+                <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.05" value="0.10" />
               </div>
               <div class="field" style="max-width:180px">
                 <label for="det-max-boxes">Max Boxes</label>
@@ -649,7 +650,7 @@
               </div>
               <div class="field" style="max-width:220px">
                 <label for="det-ground-alpha">Ground Opacity</label>
-                <input id="det-ground-alpha" type="range" min="0" max="0.45" step="0.01" value="0.16" />
+                <input id="det-ground-alpha" type="range" min="0" max="0.45" step="0.05" value="0.16" />
               </div>
               <div class="field" style="max-width:220px">
                 <label for="det-ground-grid">Ground Grid Density</label>
@@ -657,42 +658,42 @@
               </div>
               <div class="field" style="max-width:220px">
                 <label for="det-ground-cutout">Vehicle Cutout</label>
-                <input id="det-ground-cutout" type="range" min="0" max="0.85" step="0.01" value="0.38" />
+                <input id="det-ground-cutout" type="range" min="0" max="0.85" step="0.05" value="0.38" />
               </div>
             </div>
 
             <div class="field-row">
               <div class="field" style="max-width:160px">
                 <label for="det-ground-x1">Quad X1 (top-left)</label>
-                <input id="det-ground-x1" type="number" min="0" max="1" step="0.01" value="0.34" />
+                <input id="det-ground-x1" type="number" min="0" max="1" step="0.05" value="0.34" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-y1">Quad Y1</label>
-                <input id="det-ground-y1" type="number" min="0" max="1" step="0.01" value="0.58" />
+                <input id="det-ground-y1" type="number" min="0" max="1" step="0.05" value="0.58" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-x2">Quad X2 (top-right)</label>
-                <input id="det-ground-x2" type="number" min="0" max="1" step="0.01" value="0.78" />
+                <input id="det-ground-x2" type="number" min="0" max="1" step="0.05" value="0.78" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-y2">Quad Y2</label>
-                <input id="det-ground-y2" type="number" min="0" max="1" step="0.01" value="0.58" />
+                <input id="det-ground-y2" type="number" min="0" max="1" step="0.05" value="0.58" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-x3">Quad X3 (bottom-right)</label>
-                <input id="det-ground-x3" type="number" min="0" max="1" step="0.01" value="0.98" />
+                <input id="det-ground-x3" type="number" min="0" max="1" step="0.05" value="0.98" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-y3">Quad Y3</label>
-                <input id="det-ground-y3" type="number" min="0" max="1" step="0.01" value="0.98" />
+                <input id="det-ground-y3" type="number" min="0" max="1" step="0.05" value="0.98" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-x4">Quad X4 (bottom-left)</label>
-                <input id="det-ground-x4" type="number" min="0" max="1" step="0.01" value="0.08" />
+                <input id="det-ground-x4" type="number" min="0" max="1" step="0.05" value="0.08" />
               </div>
               <div class="field" style="max-width:160px">
                 <label for="det-ground-y4">Quad Y4</label>
-                <input id="det-ground-y4" type="number" min="0" max="1" step="0.01" value="0.98" />
+                <input id="det-ground-y4" type="number" min="0" max="1" step="0.05" value="0.98" />
               </div>
             </div>
 

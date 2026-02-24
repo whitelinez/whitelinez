@@ -1016,6 +1016,21 @@ function renderHealthOverview(health, errMsg = "") {
     ? `${String(weather.latest.lighting || "-")} / ${String(weather.latest.weather || "-")}`
     : (weather.last_error ? "fetch failed" : "waiting");
 
+  const publicWs = Number(health.public_ws_connections || 0);
+  const authWs = Number(health.user_ws_connections || 0);
+  const totalWs = Number(health.total_ws_connections || (publicWs + Number(health.user_ws_sockets || 0)));
+  const runtimeVisits = Number(health.public_ws_total_visits || 0);
+  const wsBar = Math.max(0, Math.min(100, totalWs * 6));
+  const visitBar = Math.max(0, Math.min(100, runtimeVisits > 0 ? Math.log10(runtimeVisits + 1) * 25 : 0));
+  const watchdogOk = Boolean(health.watchdog_task_running);
+  const restartCounts = health.watchdog_restart_counts || {};
+  const restartTotal =
+    Number(restartCounts.refresh || 0) +
+    Number(restartCounts.ai || 0) +
+    Number(restartCounts.round || 0) +
+    Number(restartCounts.resolver || 0) +
+    Number(restartCounts.ml_retrain || 0);
+
   box.innerHTML = `
     <div class="health-grid">
       <div class="health-item">
@@ -1039,16 +1054,30 @@ function renderHealthOverview(health, errMsg = "") {
         <p class="health-item-value">${dot(Boolean(health.resolver_task_running))}</p>
       </div>
       <div class="health-item">
+        <p class="health-item-title">Auto Recovery</p>
+        <p class="health-item-value">${dot(watchdogOk)} <span class="muted">${restartTotal.toLocaleString()} restarts</span></p>
+      </div>
+      <div class="health-item">
         <p class="health-item-title">Stream URL</p>
         <p class="health-item-value">${dot(Boolean(health.stream_configured ?? health.stream_url))}</p>
       </div>
       <div class="health-item">
+        <p class="health-item-title">AI Heartbeat</p>
+        <p class="health-item-value">${dot(!Boolean(health.ai_heartbeat_stale))} <span class="muted">${health.ai_last_frame_age_sec == null ? "-" : `${Number(health.ai_last_frame_age_sec).toFixed(1)}s`}</span></p>
+      </div>
+      <div class="health-item">
+        <p class="health-item-title">AI FPS</p>
+        <p class="health-item-value">${Number(health.ai_fps_estimate || 0).toFixed(2)} fps <span class="muted">${Number(health.ai_frames_total || 0).toLocaleString()} frames</span></p>
+      </div>
+      <div class="health-item">
         <p class="health-item-title">Public WS / User WS</p>
-        <p class="health-item-value">${health.public_ws_connections ?? 0} / ${health.user_ws_connections ?? 0} users (${health.user_ws_sockets ?? 0} sockets)</p>
+        <p class="health-item-value">${publicWs} / ${authWs} users</p>
+        <div class="health-inline-bar"><span style="width:${wsBar}%"></span></div>
       </div>
       <div class="health-item">
         <p class="health-item-title">Public Visits (Runtime)</p>
-        <p class="health-item-value">${Number(health.public_ws_total_visits ?? 0).toLocaleString()}</p>
+        <p class="health-item-value">${runtimeVisits.toLocaleString()}</p>
+        <div class="health-inline-bar"><span style="width:${visitBar}%"></span></div>
       </div>
       <div class="health-item">
         <p class="health-item-title">Active Round</p>

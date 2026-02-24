@@ -1085,7 +1085,7 @@ async function loadActiveUsers() {
 
   try {
     const headers = await getAdminHeaders();
-    const res = await fetch("/api/admin/active-users", { headers });
+    const res = await fetch("/api/admin/set-role?mode=active-users", { headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const online = data?.online_now || {};

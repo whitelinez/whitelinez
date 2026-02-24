@@ -847,10 +847,10 @@ const AdminLine = (() => {
       return countPoints.slice(0, 4).map((p) => ({ rx: p.rx, ry: p.ry }));
     }
 
-    const source = detectPoints.length >= 4
+    const source = detectPoints.length >= 3
       ? detectPoints
-      : (detectPoints.length >= 3 && countPoints.length >= 2 ? [...detectPoints, ...countPoints] : []);
-    if (source.length < 4) return null;
+      : (countPoints.length >= 2 ? countPoints : []);
+    if (source.length < 3) return null;
 
     const pts = source.map((p) => ({ rx: clamp01(p.rx), ry: clamp01(p.ry) }));
     const byY = [...pts].sort((a, b) => a.ry - b.ry);

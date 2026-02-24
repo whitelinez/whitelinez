@@ -19,6 +19,10 @@ const MlOverlay = (() => {
     sceneWeather: "unknown",
     sceneConfidence: 0,
     liveObjectsNow: 0,
+    detRatePerMin: 0,
+    crossingRatePerMin: 0,
+    lastTickMs: null,
+    lastCrossingTotal: null,
   };
 
   let _bound = false;
@@ -76,9 +80,17 @@ const MlOverlay = (() => {
   }
 
   function updateFromCount(data) {
+    const nowMs = Date.now();
+    const dtMin = state.lastTickMs ? Math.max(1 / 1200, (nowMs - state.lastTickMs) / 60000) : null;
+    state.lastTickMs = nowMs;
+
     state.frames += 1;
     const dets = Array.isArray(data?.detections) ? data.detections : [];
     state.detections += dets.length;
+    if (dtMin != null) {
+      const instDetRate = dets.length / dtMin;
+      state.detRatePerMin = (state.detRatePerMin * 0.7) + (instDetRate * 0.3);
+    }
     state.liveObjectsNow = Math.max(0, Math.round((state.liveObjectsNow * 0.45) + (dets.length * 0.55)));
 
     for (const d of dets) {
@@ -100,6 +112,18 @@ const MlOverlay = (() => {
     if (sceneWeather) state.sceneWeather = sceneWeather;
     if (Number.isFinite(sceneConfidence)) {
       state.sceneConfidence = Math.max(0, Math.min(1, sceneConfidence));
+    }
+
+    const inCount = Number(data?.count_in);
+    const outCount = Number(data?.count_out);
+    if (Number.isFinite(inCount) && Number.isFinite(outCount)) {
+      const crossingsNow = Math.max(0, inCount) + Math.max(0, outCount);
+      if (state.lastCrossingTotal != null && dtMin != null) {
+        const delta = Math.max(0, crossingsNow - state.lastCrossingTotal);
+        const instCrossRate = delta / dtMin;
+        state.crossingRatePerMin = (state.crossingRatePerMin * 0.65) + (instCrossRate * 0.35);
+      }
+      state.lastCrossingTotal = crossingsNow;
     }
 
     const ts = Date.parse(String(data?.captured_at || ""));
@@ -299,10 +323,15 @@ const MlOverlay = (() => {
     msgEl.textContent = `${level.label}. Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     framesEl.textContent = state.frames.toLocaleString();
     detsEl.textContent = state.detections.toLocaleString();
-    confEl.textContent = percent(confPct);
-    confBarEl.style.setProperty("--pct", confPct.toFixed(1));
-    sceneConfEl.textContent = percent(scenePct);
-    sceneBarEl.style.setProperty("--pct", scenePct.toFixed(1));
+    const detRate = Math.max(0, Number(state.detRatePerMin) || 0);
+    const crossRate = Math.max(0, Number(state.crossingRatePerMin) || 0);
+    const detRatePct = Math.max(0, Math.min(100, (detRate / 45) * 100));
+    const crossRatePct = Math.max(0, Math.min(100, (crossRate / 18) * 100));
+
+    confEl.textContent = `${detRate.toFixed(1)}/m`;
+    confBarEl.style.setProperty("--pct", detRatePct.toFixed(1));
+    sceneConfEl.textContent = `${crossRate.toFixed(1)}/m`;
+    sceneBarEl.style.setProperty("--pct", crossRatePct.toFixed(1));
     delayEl.textContent = percent(confPct);
     const liveObjPct = Math.max(0, Math.min(100, (Number(state.liveObjectsNow) / 12) * 100));
     sceneEl.style.setProperty("--pct", liveObjPct.toFixed(1));
@@ -331,3 +360,6 @@ const MlOverlay = (() => {
 })();
 
 window.MlOverlay = MlOverlay;
+
+
+

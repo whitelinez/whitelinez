@@ -1080,6 +1080,99 @@
   color: var(--am);
 }
 
+/* ── Banners Admin ───────────────────────────────────────────── */
+.abn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.abn-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ab);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  transition: border-color 0.15s;
+}
+.abn-row:hover { border-color: var(--acc); }
+.abn-row-archived { opacity: 0.55; }
+
+.abn-thumb-wrap { flex-shrink: 0; }
+.abn-thumb {
+  width: 52px;
+  height: 40px;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--bd);
+}
+.abn-thumb-empty {
+  background: var(--as);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--am);
+}
+
+.abn-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.abn-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--at);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.abn-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.abn-meta-likes, .abn-meta-date {
+  font-size: 0.7rem;
+  color: var(--am);
+}
+.badge-pinned  { background: rgba(255,215,0,0.12); color: #ffd700; border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; font-size: 0.65rem; padding: 1px 6px; font-weight: 700; }
+.badge-active  { background: rgba(34,197,94,0.1);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 4px; font-size: 0.65rem; padding: 1px 6px; font-weight: 700; }
+.badge-archived{ background: rgba(100,116,139,0.1);color: var(--am); border: 1px solid var(--bd); border-radius: 4px; font-size: 0.65rem; padding: 1px 6px; font-weight: 700; }
+
+.abn-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.abn-form-card { }
+.abn-form-preview {
+  display: block;
+  margin-top: 8px;
+  max-height: 120px;
+  width: auto;
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+  object-fit: cover;
+}
+.abn-form-preview.hidden { display: none; }
+
+.form-msg {
+  font-size: 0.8rem;
+  color: var(--acc);
+  min-height: 1.2em;
+  margin-bottom: 4px;
+}
+
 /* ── Bet Validation ──────────────────────────────────────────── */
 /* Uses card-box slim */
 

@@ -331,3 +331,55 @@ function _connectUserWs(session) {
     try { ws?.close(); } catch {}
   });
 }
+
+// ── Login Modal ────────────────────────────────────────────────────────────────
+(function _loginModal() {
+  const modal    = document.getElementById("login-modal");
+  const backdrop = document.getElementById("login-modal-backdrop");
+  const closeBtn = document.getElementById("login-modal-close");
+  const openBtn  = document.getElementById("btn-open-login");
+  const form     = document.getElementById("modal-login-form");
+  const errorEl  = document.getElementById("modal-auth-error");
+  const submitBtn = document.getElementById("modal-submit-btn");
+
+  if (!modal) return;
+
+  function open() {
+    modal.classList.remove("hidden");
+    document.getElementById("modal-email")?.focus();
+  }
+
+  function close() {
+    modal.classList.add("hidden");
+    if (errorEl) errorEl.textContent = "";
+    if (form) form.reset();
+  }
+
+  openBtn?.addEventListener("click", open);
+  closeBtn?.addEventListener("click", close);
+  backdrop?.addEventListener("click", close);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (errorEl) errorEl.textContent = "";
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Signing in...";
+
+    try {
+      await Auth.login(
+        document.getElementById("modal-email").value,
+        document.getElementById("modal-password").value
+      );
+      // Reload the page with the active session
+      window.location.reload();
+    } catch (err) {
+      if (errorEl) errorEl.textContent = err.message || "Login failed";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Sign In";
+    }
+  });
+}());

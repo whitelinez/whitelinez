@@ -130,6 +130,7 @@ const Markets = (() => {
     lastRoundId = null;
     _stopUserBetPolling();
     _resetRoundLiveState();
+    window.Banners?.show();
     const container = document.getElementById("markets-container");
     if (container) {
       const html = `
@@ -316,6 +317,7 @@ const Markets = (() => {
   }
 
   function renderRound(round) {
+    window.Banners?.hide();
     const container = document.getElementById("markets-container");
     if (!container) return;
 

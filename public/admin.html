@@ -100,6 +100,17 @@
         </svg>
         <span>Users</span>
       </button>
+
+      <span class="sidebar-section-label">Content</span>
+
+      <button class="admin-nav-btn" data-panel="banners">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="3" width="14" height="10" rx="2"/>
+          <path d="M1 6h14"/>
+          <path d="M5 10h4"/>
+        </svg>
+        <span>Banners</span>
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -869,6 +880,60 @@
         <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
       </section>
 
+      <!-- ══ Banners ════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-banners">
+        <div class="panel-head">
+          <h2>Banners</h2>
+          <p>Create and manage announcement banners shown to users when no round is active.</p>
+        </div>
+
+        <!-- Banner list -->
+        <div id="admin-banners-list" class="abn-list">
+          <p class="muted">Loading…</p>
+        </div>
+
+        <!-- Create / Edit form -->
+        <div class="card-box abn-form-card" id="abn-form-card" style="margin-top:18px;">
+          <h3 id="abn-form-heading" style="margin-bottom:14px;">New Banner</h3>
+
+          <form id="abn-form">
+            <div class="field">
+              <label for="abn-form-title">Title</label>
+              <input id="abn-form-title" type="text" maxlength="80" placeholder="e.g. Site Update, How It Works…" required />
+            </div>
+
+            <div class="field">
+              <label for="abn-form-info">Info / Body Text</label>
+              <textarea id="abn-form-info" rows="5" placeholder="Full details shown when user clicks the banner…" style="resize:vertical;"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="abn-form-image">Banner Image</label>
+              <input id="abn-form-image" type="file" accept="image/*" />
+              <img id="abn-form-preview" class="abn-form-preview hidden" alt="Preview" />
+            </div>
+
+            <div class="field" style="flex-direction:row;gap:20px;align-items:center;">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+                <input id="abn-form-pinned" type="checkbox" />
+                <span>Pin this banner</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+                <input id="abn-form-active" type="checkbox" checked />
+                <span>Active (visible)</span>
+              </label>
+            </div>
+
+            <p id="abn-form-msg" class="form-msg"></p>
+
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button type="submit" class="btn-primary" id="abn-form-submit">Create Banner</button>
+              <button type="button" class="btn-outline" id="abn-form-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
     </div><!-- .admin-workspace -->
   </main>
 </div><!-- .admin-layout -->
@@ -900,5 +965,6 @@
 <script src="/js/admin-init.js"></script>
 <script src="/js/admin-night-profile.js"></script>
 <script src="/js/admin-runtime-profile.js"></script>
+<script src="/js/admin-banners.js"></script>
 </body>
 </html>

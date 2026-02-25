@@ -2470,6 +2470,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("admin:panel-change", (e) => {
     const panel = String(e?.detail?.panel || "");
     if (panel === "audience") loadAudiencePanel(true);
+    if (panel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
   });
 
   // Market type visibility

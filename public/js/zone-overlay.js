@@ -29,8 +29,31 @@ const ZoneOverlay = (() => {
     return Number.isFinite(n) ? n : 0x66bb6a;
   }
 
+  function _canUseUnsafeEval() {
+    try {
+      // eslint-disable-next-line no-new-func
+      const fn = new Function("return 1;");
+      return fn() === 1;
+    } catch {
+      return false;
+    }
+  }
+
+  function _isMobileClient() {
+    try {
+      const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      const narrow = window.matchMedia && window.matchMedia("(max-width: 980px)").matches;
+      const ua = String(navigator.userAgent || "").toLowerCase();
+      return Boolean(coarse || narrow || /android|iphone|ipad|ipod|mobile|tablet/.test(ua));
+    } catch {
+      return false;
+    }
+  }
+
   function initPixiRenderer() {
     if (!canvas || !window.PIXI) return false;
+    if (!_canUseUnsafeEval()) return false;
+
     let hasWebGL = false;
     try {
       const probe = document.createElement("canvas");
@@ -44,27 +67,49 @@ const ZoneOverlay = (() => {
     }
     if (!hasWebGL) return false;
 
-    try {
-      pixiApp = new window.PIXI.Application({
-        view: canvas,
-        width: Math.max(1, canvas.width || 1),
-        height: Math.max(1, canvas.height || 1),
-        backgroundAlpha: 0,
-        antialias: true,
-        autoDensity: true,
-        resolution: Math.max(1, window.devicePixelRatio || 1),
-        powerPreference: "high-performance",
-      });
-      pixiGraphics = new window.PIXI.Graphics();
-      pixiApp.stage.addChild(pixiGraphics);
-      pixiEnabled = true;
-      return true;
-    } catch {
-      pixiApp = null;
-      pixiGraphics = null;
-      pixiEnabled = false;
-      return false;
+    const mobile = _isMobileClient();
+    const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
+    const desktopCfg = {
+      view: canvas,
+      width: Math.max(1, canvas.width || 1),
+      height: Math.max(1, canvas.height || 1),
+      backgroundAlpha: 0,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(2, dpr),
+      powerPreference: "high-performance",
+      preference: "webgl",
+    };
+    const mobileCfg = {
+      view: canvas,
+      width: Math.max(1, canvas.width || 1),
+      height: Math.max(1, canvas.height || 1),
+      backgroundAlpha: 0,
+      antialias: false,
+      autoDensity: true,
+      resolution: 1,
+      powerPreference: "low-power",
+      preference: "webgl",
+    };
+    const tries = mobile ? [mobileCfg, desktopCfg] : [desktopCfg, mobileCfg];
+
+    for (const cfg of tries) {
+      try {
+        pixiApp = new window.PIXI.Application(cfg);
+        pixiGraphics = new window.PIXI.Graphics();
+        pixiApp.stage.addChild(pixiGraphics);
+        pixiEnabled = true;
+        console.info(`[ZoneOverlay] Renderer: WebGL (PixiJS, ${mobile ? "mobile" : "desktop"})`);
+        return true;
+      } catch (e) {
+        pixiApp = null;
+        pixiGraphics = null;
+      }
     }
+
+    pixiEnabled = false;
+    console.info("[ZoneOverlay] Renderer: Canvas2D fallback");
+    return false;
   }
 
   function clearPixiTexts() {

@@ -165,6 +165,7 @@ const LiveBet = (() => {
   function _showBpActiveBet(windowEndIso) {
     const activeEl = document.getElementById("bp-active-bet");
     const cdEl = document.getElementById("bp-countdown");
+    const hintEl = document.getElementById("bp-active-hint");
     const submitBtn = document.getElementById("bp-submit");
     if (!activeEl || !cdEl) return;
 
@@ -175,13 +176,16 @@ const LiveBet = (() => {
 
     clearInterval(_countdownTimer);
     _countdownTimer = setInterval(() => {
-      const diff = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-      cdEl.textContent = diff + "s";
-      if (diff === 0) {
+      const diffRaw = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const m = Math.floor(diffRaw / 60).toString().padStart(2, "0");
+      const s = (diffRaw % 60).toString().padStart(2, "0");
+      cdEl.textContent = `${m}:${s}`;
+      if (diffRaw === 0) {
         clearInterval(_countdownTimer);
-        cdEl.textContent = "Resolving...";
+        cdEl.textContent = "00:00";
+        if (hintEl) hintEl.textContent = "Resolving your bet...";
       }
-    }, 500);
+    }, 200);
   }
 
   function _hideBpActiveBet() {

@@ -21,6 +21,8 @@ const Markets = (() => {
   let lastUserBetMarkup = "";
   let latestResolvedCard = null;
   let roundGuideCollapsed = false;
+  let _lastRenderedRoundKey = null;   // prevents timer flicker on 60s polls
+  let _receiptSkeletonBetKey = null;  // prevents receipt flicker on count:update
   const dismissedResolvedBetIds = new Set();
   const RESOLVED_CARD_STORAGE_KEY = "wlz_round_result_card_v1";
   const DISMISSED_RESOLVED_STORAGE_KEY = "wlz_round_result_dismissed_v1";
@@ -355,16 +357,21 @@ const Markets = (() => {
         </button>
       </div>` : ""}
     `;
-    if (container.innerHTML !== html) container.innerHTML = html;
-
-    startTimers(opensAt, closesAt, endsAt);
-
-    document.getElementById("btn-open-live-bet")?.addEventListener("click", () => {
-      LiveBet.open(currentRound);
-    });
-    document.getElementById("round-guide-toggle")?.addEventListener("click", () => {
-      _setRoundGuideCollapsed(!roundGuideCollapsed);
-    });
+    // Only rebuild DOM (and restart timers/listeners) when round identity or
+    // status changes. This prevents the timer elements from being destroyed
+    // and recreated on every 60-second loadMarkets() poll.
+    const roundKey = `${round.id}:${round.status}`;
+    if (roundKey !== _lastRenderedRoundKey) {
+      _lastRenderedRoundKey = roundKey;
+      container.innerHTML = html;
+      startTimers(opensAt, closesAt, endsAt);
+      document.getElementById("btn-open-live-bet")?.addEventListener("click", () => {
+        LiveBet.open(currentRound);
+      });
+      document.getElementById("round-guide-toggle")?.addEventListener("click", () => {
+        _setRoundGuideCollapsed(!roundGuideCollapsed);
+      });
+    }
 
     _renderUserRoundBet();
     _stopNextRoundCountdown();
@@ -505,6 +512,8 @@ const Markets = (() => {
     roundBaseline = null;
     userRoundBets = [];
     optimisticPendingBet = null;
+    _lastRenderedRoundKey = null;
+    _receiptSkeletonBetKey = null;
   }
 
   function _loadPersistedResolvedCard() {
@@ -902,6 +911,129 @@ const Markets = (() => {
     return "Tracking round progress live.";
   }
 
+  // ── Receipt: SVG scan art + terminal style (AI tab aesthetic) ────────────
+
+  function _buildReceiptSkeleton(active, latestResolved) {
+    if (!active) return "";
+    const isExact = active.bet_type === "exact_count";
+    const stake = Number(active?.amount || 0);
+    const payout = Number(active?.potential_payout || 0);
+
+    let targetLabel, targetVal;
+    if (isExact) {
+      const target = Number(active?.exact_count || 0);
+      const cls = active?.vehicle_class || "all vehicles";
+      targetLabel = "TARGET";
+      targetVal = `${target} ${cls}`;
+    } else {
+      targetLabel = "PREDICTION";
+      targetVal = active?.markets?.label || "Market bet";
+    }
+
+    const resolvedBlock = latestResolved
+      ? `<div class="brc-resolved brc-${latestResolved.status}">
+          <span class="brc-resolved-badge">${latestResolved.status === "won" ? "WIN" : "LOSS"}</span>
+          <span class="brc-resolved-val">${latestResolved.status === "won"
+            ? `+${Number(latestResolved.potential_payout || 0).toLocaleString()} cr`
+            : `−${Number(latestResolved.amount || 0).toLocaleString()} cr`}</span>
+        </div>`
+      : "";
+
+    return `
+      <div class="bet-receipt">
+        <div class="brc-art">
+          <svg class="brc-scan-svg" viewBox="0 0 140 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 24 V10 H24" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M116 10 H130 V24" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 56 V70 H24" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M116 70 H130 V56" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="46" y="34" width="48" height="20" rx="4" fill="rgba(34,197,94,0.07)" stroke="#22c55e" stroke-width="1" stroke-opacity="0.35"/>
+            <path d="M52 34 L58 26 H82 L88 34" stroke="#22c55e" stroke-width="1" stroke-opacity="0.45" stroke-linecap="round"/>
+            <circle cx="56" cy="56" r="4" fill="rgba(34,197,94,0.12)" stroke="#22c55e" stroke-width="0.8" stroke-opacity="0.4"/>
+            <circle cx="84" cy="56" r="4" fill="rgba(34,197,94,0.12)" stroke="#22c55e" stroke-width="0.8" stroke-opacity="0.4"/>
+            <line x1="10" y1="40" x2="130" y2="40" stroke="#22c55e" stroke-width="0.5" stroke-opacity="0.2" stroke-dasharray="3 4"/>
+            <circle cx="70" cy="40" r="2.5" fill="#22c55e" fill-opacity="0.4"/>
+            <text x="70" y="13" text-anchor="middle" fill="#22c55e" font-size="6" font-family="monospace" opacity="0.6" letter-spacing="1">AI SCAN</text>
+          </svg>
+        </div>
+        <div class="brc-bar">
+          <span class="brc-prompt">&gt;_</span>
+          <span class="brc-label">${isExact ? "EXACT COUNT" : "MARKET BET"}</span>
+          <div class="brc-status"><span class="mls-pulse"></span><span>LIVE</span></div>
+        </div>
+        <div class="brc-body">
+          <div class="brc-row">
+            <span class="brc-key">${targetLabel}</span>
+            <span class="brc-val">${targetVal}</span>
+          </div>
+          <div class="brc-row">
+            <span class="brc-key">STAKE</span>
+            <span class="brc-val">${stake.toLocaleString()} cr</span>
+          </div>
+          <div class="brc-row">
+            <span class="brc-key">WIN</span>
+            <span class="brc-val brc-green">${payout.toLocaleString()} cr</span>
+          </div>
+          <div class="brc-row">
+            <span class="brc-key">PROGRESS</span>
+            <span class="brc-val" id="brc-progress">—</span>
+          </div>
+          <div class="brc-track-wrap">
+            <div class="brc-track"><div class="brc-fill" id="brc-fill"></div></div>
+          </div>
+          <div id="brc-hit" class="brc-hit" style="display:none">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11" aria-hidden="true">
+              <polyline points="2 8 6 12 14 4" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            TARGET REACHED — WIN PENDING
+          </div>
+          <div class="brc-hint" id="brc-hint">Waiting for live count...</div>
+          ${active?._optimistic ? `<div class="brc-syncing">· Syncing ticket...</div>` : ""}
+        </div>
+        ${resolvedBlock}
+      </div>
+    `;
+  }
+
+  function _updateReceiptLiveValues(active) {
+    if (!active) return;
+    const progressEl = document.getElementById("brc-progress");
+    const hintEl = document.getElementById("brc-hint");
+    const fillEl = document.getElementById("brc-fill");
+    const hitEl = document.getElementById("brc-hit");
+    if (!progressEl) return;
+
+    if (active.bet_type === "exact_count") {
+      const live = _liveExactProgress(active);
+      const target = Number(active?.exact_count || 0);
+      const isHit = live != null && live >= target && target > 0;
+      const pct = live == null || !target ? 0 : Math.min(100, Math.round((live / target) * 100));
+      const liveText = live == null ? "—" : `${live} / ${target}`;
+      const hint = live == null
+        ? "Waiting for live count..."
+        : isHit ? "Target reached — awaiting resolution."
+        : `Need ${Math.max(0, target - live)} more to hit target.`;
+      if (progressEl.textContent !== liveText) progressEl.textContent = liveText;
+      if (hintEl && hintEl.textContent !== hint) hintEl.textContent = hint;
+      if (fillEl) fillEl.style.width = `${pct}%`;
+      if (hitEl) hitEl.style.display = isHit ? "flex" : "none";
+    } else if (active.bet_type === "market") {
+      const selection = String(active?.markets?.outcome_key || "").toLowerCase();
+      const threshold = Number(currentRound?.params?.threshold ?? 0);
+      const progress = _marketProgressCount(active);
+      const pct = progress == null || !threshold ? 0 : Math.min(100, Math.round((progress / threshold) * 100));
+      const isHit = selection === "over" && progress != null && progress > threshold;
+      const liveText = progress == null ? "—" : `${progress.toLocaleString()} / ${threshold.toLocaleString()}`;
+      const hint = _marketHint(selection, progress, threshold);
+      if (progressEl.textContent !== liveText) progressEl.textContent = liveText;
+      if (hintEl && hintEl.textContent !== hint) hintEl.textContent = hint;
+      if (fillEl) fillEl.style.width = `${pct}%`;
+      if (hitEl) hitEl.style.display = isHit ? "flex" : "none";
+    }
+  }
+
+  // ── Render user bet receipt (stable skeleton + in-place live updates) ──
+
   function _renderUserRoundBet() {
     const box = document.getElementById("user-round-bet");
     if (!box) return;
@@ -909,6 +1041,7 @@ const Markets = (() => {
     const pending = userRoundBets.filter((b) => b.status === "pending");
     const allPending = optimisticPendingBet ? [optimisticPendingBet, ...pending] : pending;
     const latestResolved = userRoundBets.find((b) => b.status !== "pending");
+
     if (latestResolved && !dismissedResolvedBetIds.has(String(latestResolved.id))) {
       latestResolvedCard = {
         bet_id: latestResolved.id,
@@ -929,86 +1062,20 @@ const Markets = (() => {
     if (!allPending.length && !latestResolved) {
       box.classList.add("hidden");
       if (box.innerHTML) box.innerHTML = "";
+      _receiptSkeletonBetKey = null;
       lastUserBetMarkup = "";
       return;
     }
 
     const active = allPending[0] || null;
-    const pendingCount = allPending.length;
-    let body = "";
-
-    if (active?.bet_type === "market") {
-      const selection = String(active?.markets?.outcome_key || "").toLowerCase();
-      const threshold = Number(currentRound?.params?.threshold ?? 0);
-      const progress = _marketProgressCount(active);
-      const isRoundActive = _shouldUseRoundRelativeCounts(currentRound);
-      const progressLabel = isRoundActive ? "Round progress" : "Global count";
-      const progressText = progress == null || !Number.isFinite(threshold)
-        ? "—"
-        : `${progress.toLocaleString()}/${threshold.toLocaleString()}`;
-      const chance = _estimateMarketChance(selection, progress, threshold, active?.placed_at);
-      const liveEdge = chance == null
-        ? "—"
-        : `${chance}%`;
-      const odds = Number(active?.markets?.odds || 0);
-      const payout = Number(active?.potential_payout || 0);
-      const stake = Number(active?.amount || 0);
-      body = `
-        <div class="user-round-bet-row"><span>Your guess</span><strong>${(active?.markets?.label || "Market bet")}</strong></div>
-        <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
-        <div class="user-round-bet-row"><span>Odds</span><strong>${odds ? odds.toFixed(2) + "x" : "—"}</strong></div>
-        <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
-        <div class="user-round-bet-row"><span>${progressLabel}</span><strong>${progressText}</strong></div>
-        <div class="user-round-bet-row"><span>Live likelihood</span><strong>${liveEdge}</strong></div>
-        ${active?._optimistic ? `<div class="user-round-bet-row"><span>Validation</span><strong>Syncing ticket...</strong></div>` : ""}
-        <div class="user-round-bet-note">${_marketHint(selection, progress, threshold)}</div>
-      `;
-    } else if (active?.bet_type === "exact_count") {
-      const live = _liveExactProgress(active);
-      const target = Number(active?.exact_count || 0);
-      const cls = active?.vehicle_class || "all vehicles";
-      const liveText = live == null ? "—" : `${live.toLocaleString()}/${target.toLocaleString()}`;
-      const hint = live == null
-        ? "Waiting for live count..."
-        : (live === target ? "On target right now." : `Need ${Math.max(0, target - live)} more to hit target.`);
-      const payout = Number(active?.potential_payout || 0);
-      const stake = Number(active?.amount || 0);
-      body = `
-        <div class="user-round-bet-row"><span>Your guess</span><strong>Exact ${target} (${cls})</strong></div>
-        <div class="user-round-bet-row"><span>Stake</span><strong>${stake.toLocaleString()} credits</strong></div>
-        <div class="user-round-bet-row"><span>Potential payout</span><strong>${payout.toLocaleString()} credits</strong></div>
-        <div class="user-round-bet-row"><span>Window progress</span><strong>${liveText}</strong></div>
-        ${active?._optimistic ? `<div class="user-round-bet-row"><span>Validation</span><strong>Syncing ticket...</strong></div>` : ""}
-        <div class="user-round-bet-note">${hint}</div>
-      `;
+    // Stable key: only rebuild skeleton when the active bet itself changes.
+    const betKey = active ? `${active.id}:${active.bet_type}` : "resolved-only";
+    if (betKey !== _receiptSkeletonBetKey) {
+      _receiptSkeletonBetKey = betKey;
+      box.innerHTML = _buildReceiptSkeleton(active, latestResolved);
     }
-
-    const resolvedBlock = latestResolved
-      ? `
-        <div class="user-round-bet-resolved">
-          <span class="badge badge-${latestResolved.status}">${latestResolved.status}</span>
-          <span>${latestResolved.status === "won"
-            ? `Won +${Number(latestResolved.potential_payout || 0).toLocaleString()}`
-            : "Lost"}</span>
-        </div>
-      `
-      : "";
-
-    const markup = `
-      <div class="user-round-bet-head">
-        <span>Your Bet Status</span>
-        <span class="badge badge-pending">${pendingCount} pending</span>
-      </div>
-      <div class="user-round-bet-row"><span>Receipt</span><strong>#${String(active?.id || "").slice(0, 8)}</strong></div>
-      ${body}
-      ${resolvedBlock}
-    `;
-
     box.classList.remove("hidden");
-    if (markup !== lastUserBetMarkup) {
-      box.innerHTML = markup;
-      lastUserBetMarkup = markup;
-    }
+    _updateReceiptLiveValues(active);
   }
 
   function init() {
@@ -1158,25 +1225,37 @@ const Markets = (() => {
     card.id = "round-result-card";
     card.className = `round-result-card ${latestResolvedCard.won ? "result-win" : "result-loss"}`;
 
-    const badge = latestResolvedCard.won ? "WIN" : "LOSS";
+    const isWin = latestResolvedCard.won;
     const subtitle = latestResolvedCard.market_label
       ? latestResolvedCard.market_label
-      : `Exact ${latestResolvedCard.exact ?? "?"}${latestResolvedCard.vehicle_class ? ` (${latestResolvedCard.vehicle_class})` : ""}`;
-
-    const payoutText = latestResolvedCard.won
-      ? `+${Number(latestResolvedCard.payout || 0).toLocaleString()} credits`
-      : `-${Number(latestResolvedCard.amount || 0).toLocaleString()} credits`;
+      : `Exact ${latestResolvedCard.exact ?? "?"}${latestResolvedCard.vehicle_class ? ` · ${latestResolvedCard.vehicle_class}` : ""}`;
+    const payoutVal = isWin
+      ? `+${Number(latestResolvedCard.payout || 0).toLocaleString()} cr`
+      : `−${Number(latestResolvedCard.amount || 0).toLocaleString()} cr`;
+    const winColor = isWin ? "#22c55e" : "#ef4444";
+    const cornerStroke = isWin ? "#22c55e" : "#ef4444";
 
     card.innerHTML = `
-      <div class="round-result-head">
-        <span class="round-result-badge">${badge}</span>
-        <button class="round-result-close" type="button" data-dismiss-resolved="${latestResolvedCard.bet_id}" aria-label="Dismiss">x</button>
+      <div class="rrc-art">
+        <svg viewBox="0 0 120 54" fill="none" class="rrc-svg">
+          <path d="M8 18 V8 H18" stroke="${cornerStroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M102 8 H112 V18" stroke="${cornerStroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 36 V46 H18" stroke="${cornerStroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M102 46 H112 V36" stroke="${cornerStroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="60" y="29" text-anchor="middle" fill="${winColor}" font-size="14" font-weight="800" font-family="monospace" letter-spacing="3">${isWin ? "WIN" : "LOSS"}</text>
+          <text x="60" y="40" text-anchor="middle" fill="${winColor}" font-size="5.5" font-family="monospace" opacity="0.65" letter-spacing="0.5">${payoutVal}</text>
+        </svg>
       </div>
-      <div class="round-result-title">${subtitle}</div>
-      <div class="round-result-row"><span>Receipt</span><strong>#${String(latestResolvedCard.bet_id).slice(0, 8)}</strong></div>
-      <div class="round-result-row"><span>Outcome</span><strong>${payoutText}</strong></div>
-      <div class="round-result-row"><span>Actual</span><strong>${latestResolvedCard.actual ?? "-"}</strong></div>
-      <div class="round-result-row"><span>Target</span><strong>${latestResolvedCard.exact ?? "-"}</strong></div>
+      <div class="rrc-bar">
+        <span class="rrc-sub">${subtitle}</span>
+        <button class="rrc-close" type="button" data-dismiss-resolved="${latestResolvedCard.bet_id}" aria-label="Dismiss">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 1l8 8M9 1l-8 8"/></svg>
+        </button>
+      </div>
+      <div class="rrc-body">
+        <div class="rrc-row"><span>ACTUAL</span><strong>${latestResolvedCard.actual ?? "—"}</strong></div>
+        <div class="rrc-row"><span>TARGET</span><strong>${latestResolvedCard.exact ?? "—"}</strong></div>
+      </div>
     `;
 
     const container = document.getElementById("markets-container");

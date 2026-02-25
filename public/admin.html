@@ -73,6 +73,15 @@
         <span>Detection</span>
       </button>
 
+      <span class="sidebar-section-label">System</span>
+
+      <button class="admin-nav-btn" data-panel="health">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <polyline points="1 8 3.5 8 5 3 7 13 9 6 11 10 12.5 8 15 8"/>
+        </svg>
+        <span>Health</span>
+      </button>
+
       <span class="sidebar-section-label">People</span>
 
       <button class="admin-nav-btn" data-panel="audience">
@@ -267,101 +276,8 @@
           </section>
         </div>
 
-        <!-- Round Operations -->
-        <section class="card-box card-box-secondary round-ops-section">
-          <h3>Round Operations</h3>
-          <div class="round-ops-grid">
-            <div class="round-create-pane">
-              <h4>Create Round</h4>
-              <form id="round-form">
-                <div class="field-row">
-                  <div class="field">
-                    <label for="market-type">Bet Type</label>
-                    <select id="market-type">
-                      <option value="over_under">Over / Under — total vehicles</option>
-                      <option value="vehicle_count">Count — specific vehicle type</option>
-                      <option value="vehicle_type">Type Leader — which type wins</option>
-                    </select>
-                  </div>
-                  <div class="field" id="vehicle-class-field" style="display:none">
-                    <label for="vehicle-class">Vehicle Type</label>
-                    <select id="vehicle-class">
-                      <option value="car">Cars</option>
-                      <option value="truck">Trucks</option>
-                      <option value="bus">Buses</option>
-                      <option value="motorcycle">Motorcycles</option>
-                    </select>
-                  </div>
-                  <div class="field" id="threshold-field">
-                    <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
-                    <input id="threshold" type="number" min="1" value="20" />
-                  </div>
-                </div>
-                <div class="field-row">
-                  <div class="field">
-                    <label for="starts-at">Round Starts <small class="muted">(local time)</small></label>
-                    <input id="starts-at" type="datetime-local" required />
-                  </div>
-                  <div class="field" style="max-width:120px">
-                    <label for="duration">Duration (min)</label>
-                    <input id="duration" type="number" min="5" max="480" value="10" />
-                  </div>
-                  <div class="field" style="max-width:140px">
-                    <label for="bet-cutoff">Close bets (min before end)</label>
-                    <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
-                  </div>
-                </div>
-                <div class="computed-times" id="computed-times" style="display:none">
-                  <span>Bets close: <strong id="computed-closes">-</strong></span>
-                  <span>Round ends: <strong id="computed-ends">-</strong></span>
-                </div>
-                <div id="round-preview" class="round-preview hidden">
-                  <div class="preview-row"><span>Duration</span><strong id="prev-duration">-</strong></div>
-                  <div class="preview-row"><span>Avg zone flow (this hour)</span><strong id="prev-rate">-</strong></div>
-                  <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">-</strong></div>
-                  <div id="prev-warning" class="preview-warning hidden"></div>
-                  <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
-                </div>
-                <p id="round-error" class="auth-error" role="alert"></p>
-                <p id="round-success" class="auth-success" role="status"></p>
-                <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
-              </form>
-            </div>
-
-            <div class="round-session-pane">
-              <h4>Session Loop</h4>
-              <p class="admin-hint">Auto-run rounds continuously for a fixed session window.</p>
-              <div class="field-row">
-                <div class="field" style="max-width:160px">
-                  <label for="session-duration">Session Duration (min)</label>
-                  <input id="session-duration" type="number" min="10" max="1440" value="120" />
-                </div>
-                <div class="field" style="max-width:155px">
-                  <label for="session-interval">Interval Between Rounds (min)</label>
-                  <input id="session-interval" type="number" min="0" max="120" value="2" />
-                </div>
-                <div class="field" style="max-width:135px">
-                  <label for="session-max-rounds">Max Rounds (optional)</label>
-                  <input id="session-max-rounds" type="number" min="1" max="500" placeholder="no limit" />
-                </div>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:6px;">
-                <button type="button" id="btn-session-start" class="btn-primary">Start Session</button>
-              </div>
-              <p id="session-status" class="auth-success" role="status" style="min-height:18px;margin-top:6px;"></p>
-              <div id="session-list" class="rounds-list data-list" style="margin-top:8px;">
-                <p class="loading">Loading sessions...</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Bottom row: Health + Rounds + Connections -->
+        <!-- Bottom row: Rounds + Connections -->
         <div class="overview-grid overview-bottom">
-          <div class="card-box overview-feed-card">
-            <h3>System Health and Recovery</h3>
-            <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
-          </div>
           <div class="card-box overview-feed-card">
             <h3>Recent Rounds</h3>
             <div id="recent-rounds" class="rounds-list data-list"><p class="loading">Loading...</p></div>
@@ -763,9 +679,99 @@
            ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-bets">
         <div class="panel-head">
-          <h2>Recent Bets</h2>
-          <p>Latest bettor activity and stake details.</p>
+          <h2>Bets</h2>
+          <p>Round controls, session scheduling, and recent bet activity.</p>
         </div>
+
+        <!-- Round Operations -->
+        <section class="card-box card-box-secondary round-ops-section">
+          <h3>Round Operations</h3>
+          <div class="round-ops-grid">
+            <div class="round-create-pane">
+              <h4>Create Round</h4>
+              <form id="round-form">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="market-type">Bet Type</label>
+                    <select id="market-type">
+                      <option value="over_under">Over / Under — total vehicles</option>
+                      <option value="vehicle_count">Count — specific vehicle type</option>
+                      <option value="vehicle_type">Type Leader — which type wins</option>
+                    </select>
+                  </div>
+                  <div class="field" id="vehicle-class-field" style="display:none">
+                    <label for="vehicle-class">Vehicle Type</label>
+                    <select id="vehicle-class">
+                      <option value="car">Cars</option>
+                      <option value="truck">Trucks</option>
+                      <option value="bus">Buses</option>
+                      <option value="motorcycle">Motorcycles</option>
+                    </select>
+                  </div>
+                  <div class="field" id="threshold-field">
+                    <label for="threshold" id="threshold-label">Threshold (vehicles)</label>
+                    <input id="threshold" type="number" min="1" value="20" />
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="starts-at">Round Starts <small class="muted">(local time)</small></label>
+                    <input id="starts-at" type="datetime-local" required />
+                  </div>
+                  <div class="field" style="max-width:120px">
+                    <label for="duration">Duration (min)</label>
+                    <input id="duration" type="number" min="5" max="480" value="10" />
+                  </div>
+                  <div class="field" style="max-width:140px">
+                    <label for="bet-cutoff">Close bets (min before end)</label>
+                    <input id="bet-cutoff" type="number" min="0" max="60" value="1" />
+                  </div>
+                </div>
+                <div class="computed-times" id="computed-times" style="display:none">
+                  <span>Bets close: <strong id="computed-closes">-</strong></span>
+                  <span>Round ends: <strong id="computed-ends">-</strong></span>
+                </div>
+                <div id="round-preview" class="round-preview hidden">
+                  <div class="preview-row"><span>Duration</span><strong id="prev-duration">-</strong></div>
+                  <div class="preview-row"><span>Avg zone flow (this hour)</span><strong id="prev-rate">-</strong></div>
+                  <div class="preview-row" id="prev-expected-row"><span>Expected for window</span><strong id="prev-expected">-</strong></div>
+                  <div id="prev-warning" class="preview-warning hidden"></div>
+                  <div id="prev-ok" class="preview-ok hidden">Round looks competitive</div>
+                </div>
+                <p id="round-error" class="auth-error" role="alert"></p>
+                <p id="round-success" class="auth-success" role="status"></p>
+                <button type="submit" class="btn-primary" id="round-submit-btn">Create Round</button>
+              </form>
+            </div>
+
+            <div class="round-session-pane">
+              <h4>Session Loop</h4>
+              <p class="admin-hint">Auto-run rounds continuously for a fixed session window.</p>
+              <div class="field-row">
+                <div class="field" style="max-width:160px">
+                  <label for="session-duration">Session Duration (min)</label>
+                  <input id="session-duration" type="number" min="10" max="1440" value="120" />
+                </div>
+                <div class="field" style="max-width:155px">
+                  <label for="session-interval">Interval Between Rounds (min)</label>
+                  <input id="session-interval" type="number" min="0" max="120" value="2" />
+                </div>
+                <div class="field" style="max-width:135px">
+                  <label for="session-max-rounds">Max Rounds (optional)</label>
+                  <input id="session-max-rounds" type="number" min="1" max="500" placeholder="no limit" />
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <button type="button" id="btn-session-start" class="btn-primary">Start Session</button>
+              </div>
+              <p id="session-status" class="auth-success" role="status" style="min-height:18px;margin-top:6px;"></p>
+              <div id="session-list" class="rounds-list data-list" style="margin-top:8px;">
+                <p class="loading">Loading sessions...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div class="card-box slim" style="margin-bottom:12px;margin-top:0;">
           <h3>Bet Validation Status</h3>
           <div id="bet-validation-status" class="rounds-list data-list">
@@ -844,6 +850,17 @@
           <h3>Registered Users</h3>
           <div id="registered-users" class="rounds-list data-list tall"><p class="loading">Loading users...</p></div>
         </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SYSTEM HEALTH PANEL
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-health">
+        <div class="panel-head">
+          <h2>System Health &amp; Recovery</h2>
+          <p>Backend health status, pipeline diagnostics, and automatic recovery logs.</p>
+        </div>
+        <div id="health-overview" class="rounds-list data-list"><p class="loading">Loading /health...</p></div>
       </section>
 
     </div><!-- .admin-workspace -->

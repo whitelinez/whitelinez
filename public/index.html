@@ -14,7 +14,7 @@
 
   <header class="site-header">
     <a href="/index.html" class="logo">
-      <img src="/img/whitelinezlogo.svg" alt="WHITELINEZ" />
+      <img src="/img/logo.png" alt="WHITELINEZ" />
       <span class="logo-credit">created by ruel</span>
     </a>
     <nav>
@@ -179,9 +179,7 @@
         <!-- Console terminal -->
         <div class="ai-console">
           <div class="ai-console-bar">
-            <span class="ai-con-dot" style="background:#ff5f57"></span>
-            <span class="ai-con-dot" style="background:#febc2e"></span>
-            <span class="ai-con-dot" style="background:#28c840"></span>
+            <span class="ai-con-prompt">&gt;_</span>
             <span class="ai-con-title">AI ENGINE — LIVE FEED</span>
             <span class="ai-con-online"><span class="mls-pulse"></span>ONLINE</span>
           </div>
@@ -291,10 +289,17 @@
         <button id="bp-submit" class="btn-primary btn-full">Place Bet</button>
 
         <div id="bp-active-bet" class="bp-active-bet hidden">
-          <div class="bp-active-inner">
-            <span class="bp-active-label">Resolving in</span>
-            <strong id="bp-countdown" class="bp-countdown">-</strong>
+          <div class="bpa-header">
+            <span class="bpa-dot"></span>
+            <span class="bpa-label">BET WINDOW RUNNING</span>
           </div>
+          <div class="bpa-timer-row">
+            <svg class="bpa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+            </svg>
+            <strong id="bp-countdown" class="bpa-countdown">--:--</strong>
+          </div>
+          <p id="bp-active-hint" class="bpa-hint">Counting vehicles in your window...</p>
         </div>
       </div>
 

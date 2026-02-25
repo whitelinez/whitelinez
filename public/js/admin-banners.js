@@ -193,15 +193,18 @@ const AdminBanners = (() => {
     document.getElementById("abn-form")?.addEventListener("submit", _handleSubmit);
     document.getElementById("abn-form-cancel")?.addEventListener("click", _clearForm);
 
-    // Image preview on file select
+    // Image preview on file select — use FileReader (data: URI) to satisfy CSP img-src
     document.getElementById("abn-form-image")?.addEventListener("change", (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const f = _getFormEls();
-      if (f.preview) {
-        f.preview.src = URL.createObjectURL(file);
+      if (!f.preview) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        f.preview.src = ev.target.result;
         f.preview.classList.remove("hidden");
-      }
+      };
+      reader.readAsDataURL(file);
     });
   }
 

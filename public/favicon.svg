@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" fill="#000000"/>
+
+  <!-- Cyan Detection Corners -->
+  <g stroke="#00E5FF" stroke-width="4" fill="none" stroke-linecap="round">
+    <!-- Top Left -->
+    <path d="M6 18 V6 H18"/>
+    <!-- Top Right -->
+    <path d="M46 6 H58 V18"/>
+    <!-- Bottom Left -->
+    <path d="M6 46 V58 H18"/>
+    <!-- Bottom Right -->
+    <path d="M46 58 H58 V46"/>
+  </g>
+</svg>

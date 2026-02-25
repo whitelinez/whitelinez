@@ -53,7 +53,7 @@
         <div id="count-widget" class="count-widget">
           <div class="count-widget-total">
             <span id="cw-total">-</span>
-            <span class="cw-label">vehicles</span>
+            <span id="cw-total-label" class="cw-label">TOTAL</span>
           </div>
           <div class="count-widget-breakdown">
             <span class="cw-item"><svg class="vehicle-icon car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg><strong id="cw-cars">-</strong></span>
@@ -170,38 +170,50 @@
       </div>
 
       <div id="tab-ml-showcase" class="tab-content">
-        <div class="ml-showcase-head">
-          <p class="ml-showcase-eyebrow">Live AI Engine</p>
-          <h3>Real-Time Traffic Action</h3>
-          <p class="ml-showcase-sub">This section shows what the AI is seeing live on the road.<br>It counts vehicles passing through the area, measures confidence levels, and updates predictions in real time.<br><br>You&rsquo;re basically watching the system analyze traffic while users make predictions on how many vehicles will pass within a set time.<br><br>Bet smart. Watch the road. See the data live.</p>
+
+        <!-- Banner -->
+        <div class="ai-banner-wrap">
+          <img class="ai-banner-img" src="/img/ai%20banner.png" alt="Live AI Engine" />
         </div>
 
-        <div class="ai-scene">
-          <img class="ai-scene-img" src="/img/ai.png" alt="Live AI traffic detection view" loading="lazy" />
-          <div class="ai-scene-copy">
-            <strong>Live traffic detection</strong>
-            <span>Cars, buses, and trucks are detected frame-by-frame as AI tracks live road flow.</span>
+        <!-- Console terminal -->
+        <div class="ai-console">
+          <div class="ai-console-bar">
+            <span class="ai-con-dot" style="background:#ff5f57"></span>
+            <span class="ai-con-dot" style="background:#febc2e"></span>
+            <span class="ai-con-dot" style="background:#28c840"></span>
+            <span class="ai-con-title">AI ENGINE — LIVE FEED</span>
+            <span class="ai-con-online"><span class="mls-pulse"></span>ONLINE</span>
+          </div>
+          <div class="ai-console-body">
+            <div class="ai-con-line">
+              <span class="ai-con-label">LIVE OBJECTS (SESSION)</span>
+              <span id="mls-live-objects" class="ai-con-val primary">0</span>
+            </div>
+            <div class="ai-con-line sub">
+              <span class="ai-con-label">RATE</span>
+              <span id="mls-live-rate" class="ai-con-val dim">0.0 objects/min</span>
+            </div>
+            <div class="ai-con-line">
+              <span class="ai-con-label">AVG CONFIDENCE</span>
+              <span id="mls-live-conf" class="ai-con-val primary">-</span>
+            </div>
+            <div class="ai-con-line sub">
+              <span class="ai-con-label">LAST TELEMETRY</span>
+              <span id="mls-last-seen" class="ai-con-val dim">Waiting...</span>
+            </div>
+            <div class="ai-con-line">
+              <span class="ai-con-label">ROWS (24H)</span>
+              <span id="mls-rows-24h" class="ai-con-val primary">0</span>
+            </div>
+            <div class="ai-con-line sub">
+              <span class="ai-con-label">MODEL</span>
+              <span id="mls-model-name" class="ai-con-val dim">-</span>
+            </div>
           </div>
         </div>
 
-        <div class="ml-showcase-grid">
-          <article class="mls-card">
-            <p class="mls-label">Live Objects (session)</p>
-            <p id="mls-live-objects" class="mls-value">0</p>
-            <p id="mls-live-rate" class="mls-sub">0.0 objects/min</p>
-          </article>
-          <article class="mls-card">
-            <p class="mls-label">Avg Confidence</p>
-            <p id="mls-live-conf" class="mls-value">-</p>
-            <p id="mls-last-seen" class="mls-sub">Waiting for telemetry...</p>
-          </article>
-          <article class="mls-card">
-            <p class="mls-label">Rows (24h)</p>
-            <p id="mls-rows-24h" class="mls-value">0</p>
-            <p id="mls-model-name" class="mls-sub">Model: -</p>
-          </article>
-        </div>
-
+        <!-- Progress bars -->
         <div class="mls-bars">
           <div class="mls-bar-row">
             <div class="mls-bar-head"><span>Training Readiness</span><strong id="mls-readiness-text">0%</strong></div>
@@ -213,15 +225,17 @@
           </div>
         </div>
 
-        <div class="mls-card">
-          <div class="mls-stream-head">
+        <!-- Capture stream -->
+        <div class="ai-stream-terminal">
+          <div class="ai-stream-bar">
             <span class="mls-pulse"></span>
-            <strong>AI capture stream</strong>
+            <span class="ai-stream-title">AI CAPTURE STREAM</span>
           </div>
           <div id="mls-stream-list" class="mls-stream-list">
             <p class="loading">Collecting live ML events...</p>
           </div>
         </div>
+
       </div>
 
       <div id="bet-panel" class="bet-panel hidden">

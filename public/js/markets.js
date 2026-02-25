@@ -745,6 +745,7 @@ const Markets = (() => {
           .from("count_snapshots")
           .select("total, vehicle_breakdown")
           .eq("camera_id", currentRound.camera_id)
+          .gt("total", 0)
           .lte("captured_at", bet.placed_at)
           .order("captured_at", { ascending: false })
           .limit(1)
@@ -754,7 +755,7 @@ const Markets = (() => {
         const derived = vehicleClass
           ? Number(data?.vehicle_breakdown?.[vehicleClass] || 0)
           : Number(data?.total || 0);
-        if (Number.isFinite(derived)) {
+        if (Number.isFinite(derived) && derived > 0) {
           bet._derived_baseline_count = derived;
         }
       } catch {}

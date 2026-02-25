@@ -1353,6 +1353,184 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   padding-top: 14px;
 }
 
+/* ── AI Tab — Banner ───────────────────────────────────────────────────── */
+.ai-banner-wrap {
+  width: 100%;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  box-shadow: 0 0 24px rgba(34, 197, 94, 0.08);
+}
+
+.ai-banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ── AI Tab — Console Terminal ─────────────────────────────────────────── */
+.ai-console {
+  background: #060a08;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Courier New", monospace;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.ai-console-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.18);
+}
+
+.ai-con-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ai-con-title {
+  flex: 1;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-left: 4px;
+}
+
+.ai-con-online {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  color: #22c55e;
+  text-transform: uppercase;
+}
+
+.ai-console-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ai-con-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.ai-con-line:last-child {
+  border-bottom: none;
+}
+
+.ai-con-line.sub {
+  padding: 3px 0 3px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.025);
+}
+
+.ai-con-label {
+  font-size: 0.67rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.ai-con-line.sub .ai-con-label {
+  color: rgba(255,255,255,0.22);
+  font-size: 0.63rem;
+}
+
+.ai-con-val {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-con-val.primary {
+  color: #22c55e;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.ai-con-val.dim {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.72rem;
+}
+
+/* ── AI Tab — Capture Stream Terminal ──────────────────────────────────── */
+.ai-stream-terminal {
+  background: #060a08;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Courier New", monospace;
+}
+
+.ai-stream-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.16);
+}
+
+.ai-stream-title {
+  font-size: 0.67rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+
+.ai-stream-terminal .mls-stream-list {
+  padding: 8px 10px;
+  gap: 3px;
+}
+
+.ai-stream-terminal .mls-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.07);
+  border-radius: 0;
+  padding: 4px 2px;
+  font-size: 0.72rem;
+}
+
+.ai-stream-terminal .mls-item:last-child {
+  border-bottom: none;
+}
+
+.ai-stream-terminal .mls-item-main {
+  color: #fff;
+}
+
+.ai-stream-terminal .mls-item-main::before {
+  content: "> ";
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.ai-stream-terminal .mls-item-meta {
+  color: #22c55e;
+  opacity: 0.75;
+}
+
 /* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .toast {
   position: fixed;

@@ -972,6 +972,48 @@
   font-weight: 700;
 }
 
+/* ── Active Model Banner ─────────────────────────────────────── */
+.admin-model-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.28);
+  border-radius: 8px;
+}
+.admin-model-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00d4ff;
+  flex-shrink: 0;
+  animation: modelPulse 2s ease-in-out infinite;
+}
+@keyframes modelPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,212,255,0.5); }
+  50%       { opacity: 0.7; box-shadow: 0 0 0 5px rgba(0,212,255,0); }
+}
+.admin-model-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(0, 212, 255, 0.6);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.admin-model-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #00d4ff;
+  font-family: "Roboto Mono", "Fira Mono", monospace;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Detection Panel ─────────────────────────────────────────── */
 .detection-status-grid {
   display: grid;

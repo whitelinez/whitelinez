@@ -14,7 +14,8 @@
 
   <header class="site-header">
     <a href="/index.html" class="logo">
-      <img src="/img/logo.png" alt="WHITELINEZ" />
+      <img src="/img/logoicon.png" alt="WHITELINEZ" />
+      <span class="logo-title">AI TRAFFIC JAMAICA</span>
     </a>
     <nav>
       <span id="nav-balance" class="nav-balance hidden"></span>
@@ -141,6 +142,14 @@
           </div>
         </div>
 
+        <div id="stream-chat-overlay" class="stream-chat-overlay">
+          <div class="sco-header">
+            <span class="sco-dot"></span>
+            <span id="sco-count">0 watching</span>
+          </div>
+          <div id="sco-messages" class="sco-messages"></div>
+        </div>
+
       </div>
     </section>
 
@@ -202,10 +211,6 @@
               <div class="ai-con-line sub">
                 <span class="ai-con-label">RATE</span>
                 <span id="mls-live-rate" class="ai-con-val dim">0.0 objects/min</span>
-              </div>
-              <div class="ai-con-line">
-                <span class="ai-con-label">DELAYED FRAMES</span>
-                <span id="mls-delayed-frames" class="ai-con-val primary">—</span>
               </div>
               <div class="ai-con-line sub">
                 <span class="ai-con-label">LAST TELEMETRY</span>

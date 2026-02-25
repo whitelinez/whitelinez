@@ -11,15 +11,12 @@ const MlShowcase = (() => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-  const DELAY_THRESHOLD_MS = 300;
-
   const state = {
     startedAt: Date.now(),
     frames: 0,
     objects: 0,
     confSum: 0,
     confCount: 0,
-    delayedFrames: 0,
     rows24h: 0,
     modelName: "-",
     lastSeenIso: "",
@@ -55,15 +52,6 @@ const MlShowcase = (() => {
     state.objects += detections.length;
     state.lastSeenIso = new Date().toISOString();
 
-    // Track delayed frames
-    const capturedAt = payload?.captured_at;
-    if (capturedAt) {
-      const ageMs = Date.now() - Date.parse(capturedAt);
-      if (Number.isFinite(ageMs) && ageMs > DELAY_THRESHOLD_MS) {
-        state.delayedFrames += 1;
-      }
-    }
-
     for (const d of detections) {
       const c = Number(d?.conf);
       if (Number.isFinite(c) && c >= 0 && c <= 1) {
@@ -97,7 +85,7 @@ const MlShowcase = (() => {
           .from("ml_detection_events")
           .select("captured_at, detections_count, avg_confidence, model_name")
           .order("captured_at", { ascending: false })
-          .limit(8),
+          .limit(12),
         fetch("/api/health"),
       ]);
 
@@ -173,7 +161,6 @@ const MlShowcase = (() => {
   function render() {
     const objectsEl = document.getElementById("mls-live-objects");
     const rateEl = document.getElementById("mls-live-rate");
-    const delayedEl = document.getElementById("mls-delayed-frames");
     const rowsEl = document.getElementById("mls-rows-24h");
     const modelEl = document.getElementById("mls-model-name");
     const lastSeenEl = document.getElementById("mls-last-seen");
@@ -182,17 +169,9 @@ const MlShowcase = (() => {
     if (!objectsEl || !rateEl || !rowsEl || !modelEl || !lastSeenEl || !streamEl) return;
 
     const rate = objectsPerMinute();
-    const delayedPct = state.frames > 0
-      ? ((state.delayedFrames / state.frames) * 100).toFixed(1)
-      : null;
 
     objectsEl.textContent = state.objects.toLocaleString();
     rateEl.textContent = `${rate.toFixed(1)} objects/min`;
-    if (delayedEl) {
-      delayedEl.textContent = state.frames === 0
-        ? "—"
-        : `${state.delayedFrames} (${delayedPct}%)`;
-    }
     rowsEl.textContent = state.rows24h.toLocaleString();
     modelEl.textContent = `Model: ${state.modelName || "-"}`;
     lastSeenEl.textContent = `Last telemetry ${ago(state.lastSeenIso)}`;

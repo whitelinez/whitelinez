@@ -523,6 +523,7 @@ async function loadDetectionStatus() {
     const modelName = latest?.model_name || "none";
     const avgConf = Number(latest?.avg_confidence || 0);
     setText("det-status-model", modelName);
+    setText("det-model-banner-name", modelName);
     setText("det-status-conf", latest ? `${(avgConf * 100).toFixed(1)}%` : "-");
     setText("det-status-last", latest?.captured_at ? fmtAgo(latest.captured_at) : "No telemetry");
 
@@ -563,6 +564,7 @@ async function loadDetectionStatus() {
     }
   } catch {
     setText("det-status-model", "-");
+    setText("det-model-banner-name", "-");
     setText("det-status-conf", "-");
     setText("det-status-last", "Unavailable");
     setText("det-runtime-ai", "Unavailable");

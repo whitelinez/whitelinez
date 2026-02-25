@@ -235,9 +235,25 @@ const Chat = (() => {
           });
         });
 
+        // Detect joins before overwriting map
+        const prevUids = _presenceInitialized ? new Set(_onlineUsers.keys()) : null;
+
         _onlineUsers.clear();
         nowOnline.forEach((name, uid) => _onlineUsers.set(uid, name));
         _renderOnlineUi();
+
+        // Dispatch online count
+        window.dispatchEvent(new CustomEvent("chat:online", { detail: _onlineUsers.size }));
+
+        // Dispatch join events for new arrivals (skip initial sync)
+        if (prevUids) {
+          nowOnline.forEach((name, uid) => {
+            if (!prevUids.has(uid)) {
+              window.dispatchEvent(new CustomEvent("chat:join", { detail: { username: name } }));
+            }
+          });
+        }
+
         _presenceInitialized = true;
       })
       .subscribe(async (status) => {
@@ -350,6 +366,11 @@ const Chat = (() => {
 
           renderMsg(msg);
           _scrollToBottom();
+
+          // Broadcast to stream overlay
+          const _ovProfile = msg.user_id ? _profileByUserId.get(msg.user_id) : null;
+          const _ovName = _ovProfile?.username || msg.username || "User";
+          window.dispatchEvent(new CustomEvent("chat:message", { detail: { username: _ovName, content: msg.content || "" } }));
 
           const isOwn = !!_userSession?.user?.id && msg.user_id === _userSession.user.id;
           if (!isOwn && !_isChatTabActive()) {
@@ -506,3 +527,68 @@ const Chat = (() => {
 })();
 
 window.Chat = Chat;
+
+// ── Stream Chat Overlay (Twitch-style live feed widget) ────────────────────────
+const StreamChatOverlay = (() => {
+  const MAX_MSGS = 6;
+  const MSG_LIFETIME_MS  = 9000;
+  const JOIN_LIFETIME_MS = 4500;
+
+  function _esc(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function _msgEl() { return document.getElementById("sco-messages"); }
+  function _countEl() { return document.getElementById("sco-count"); }
+
+  function _trim(container) {
+    while (container.children.length > MAX_MSGS) {
+      container.removeChild(container.firstChild);
+    }
+  }
+
+  function _schedFade(el, lifeMs, fadeDurationMs) {
+    setTimeout(() => {
+      el.classList.add("fading");
+      setTimeout(() => { try { el.remove(); } catch {} }, fadeDurationMs);
+    }, lifeMs);
+  }
+
+  function _onMessage({ username, content }) {
+    const container = _msgEl();
+    if (!container) return;
+    const div = document.createElement("div");
+    div.className = "sco-msg";
+    div.innerHTML = `<span class="sco-msg-user">${_esc(username)}</span><span class="sco-msg-text">${_esc(content)}</span>`;
+    container.appendChild(div);
+    _trim(container);
+    _schedFade(div, MSG_LIFETIME_MS, 1000);
+  }
+
+  function _onJoin({ username }) {
+    const container = _msgEl();
+    if (!container) return;
+    const div = document.createElement("div");
+    div.className = "sco-join";
+    div.textContent = `${username} joined`;
+    container.appendChild(div);
+    _schedFade(div, JOIN_LIFETIME_MS, 700);
+  }
+
+  function _onOnline(count) {
+    const el = _countEl();
+    if (el) el.textContent = `${count} watching`;
+  }
+
+  function init() {
+    window.addEventListener("chat:message", (e) => _onMessage(e.detail || {}));
+    window.addEventListener("chat:join",    (e) => _onJoin(e.detail || {}));
+    window.addEventListener("chat:online",  (e) => _onOnline(e.detail || 0));
+  }
+
+  return { init };
+})();
+
+window.StreamChatOverlay = StreamChatOverlay;

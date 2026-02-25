@@ -95,7 +95,7 @@
         .maybeSingle();
       const balEl = document.getElementById("nav-balance");
       if (balEl && data?.balance != null) {
-        balEl.textContent = Number(data.balance).toLocaleString() + " ₡";
+        balEl.textContent = "$ " + Number(data.balance).toLocaleString();
         balEl.classList.remove("hidden");
       }
     } catch {
@@ -221,6 +221,7 @@
 
   // Chat
   Chat.init(session);
+  StreamChatOverlay.init();
 
   // Activity feed
   Activity.init();
@@ -237,7 +238,7 @@
   window.addEventListener("balance:update", (e) => {
     const balEl = document.getElementById("nav-balance");
     if (balEl) {
-      balEl.textContent = (e.detail ?? 0).toLocaleString() + " ₡";
+      balEl.textContent = "$ " + (e.detail ?? 0).toLocaleString();
       balEl.classList.remove("hidden");
     }
   });

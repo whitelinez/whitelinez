@@ -107,23 +107,36 @@
     const src = String(seed || "whitelinez-user");
     let hash = 0;
     for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
-    const hue = Math.abs(hash) % 360;
-    const hue2 = (hue + 28) % 360;
+    const h = Math.abs(hash) % 360;
+    const h2 = (h + 32) % 360;
+    // Skin tone palette (light → dark)
+    const skins = [
+      "hsl(28,72%,72%)", "hsl(26,62%,64%)", "hsl(24,56%,56%)",
+      "hsl(21,50%,46%)", "hsl(18,44%,36%)",
+    ];
+    // Hair color palette
+    const hairs = ["#17100a", "#3b2008", "#6b3510", "#c48a10", "#7a1515"];
+    const skin  = skins[Math.abs(hash >> 4) % skins.length];
+    const hair  = hairs[Math.abs(hash >> 8) % hairs.length];
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
       <defs>
-        <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='hsl(${hue},66%,34%)'/>
-          <stop offset='100%' stop-color='hsl(${hue2},74%,20%)'/>
+        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+          <stop offset='0%' stop-color='hsl(${h},60%,28%)'/>
+          <stop offset='100%' stop-color='hsl(${h2},68%,16%)'/>
         </linearGradient>
+        <clipPath id='c'><circle cx='48' cy='48' r='48'/></clipPath>
       </defs>
-      <rect width='96' height='96' rx='48' fill='url(#bg)'/>
-      <circle cx='48' cy='48' r='41' fill='none' stroke='rgba(255,255,255,0.24)' stroke-width='1.5'/>
-      <path d='M24 56l6-14h34l7 14' fill='none' stroke='#d8f8ff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/>
-      <rect x='20' y='56' width='56' height='12' rx='4' fill='none' stroke='#d8f8ff' stroke-width='3.2'/>
-      <circle cx='34' cy='69' r='5' fill='none' stroke='#ffd600' stroke-width='2.6'/>
-      <circle cx='62' cy='69' r='5' fill='none' stroke='#ffd600' stroke-width='2.6'/>
-      <path d='M33 48h22' stroke='#7de3ff' stroke-width='2.2' stroke-linecap='round'/>
-      <path d='M28 28h9M59 28h9M28 28v7M68 28v7' stroke='#ffd600' stroke-width='2' stroke-linecap='round'/>
+      <circle cx='48' cy='48' r='48' fill='url(#g)'/>
+      <ellipse cx='48' cy='92' rx='40' ry='26' fill='rgba(0,0,0,0.30)' clip-path='url(#c)'/>
+      <rect x='43' y='63' width='10' height='15' rx='5' fill='${skin}' clip-path='url(#c)'/>
+      <circle cx='48' cy='44' r='23' fill='${skin}'/>
+      <path d='M25 44 Q26 18 48 16 Q70 18 71 44 Q66 28 48 27 Q30 28 25 44Z' fill='${hair}' clip-path='url(#c)'/>
+      <ellipse cx='40' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
+      <ellipse cx='56' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
+      <ellipse cx='41.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
+      <ellipse cx='57.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
+      <path d='M40 52 Q48 59 56 52' stroke='rgba(8,4,2,0.28)' stroke-width='2.8' fill='none' stroke-linecap='round'/>
+      <circle cx='48' cy='48' r='46' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='1.5'/>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }

@@ -11,12 +11,15 @@ const MlShowcase = (() => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+  const DELAY_THRESHOLD_MS = 300;
+
   const state = {
     startedAt: Date.now(),
     frames: 0,
     objects: 0,
     confSum: 0,
     confCount: 0,
+    delayedFrames: 0,
     rows24h: 0,
     modelName: "-",
     lastSeenIso: "",
@@ -51,6 +54,16 @@ const MlShowcase = (() => {
     state.frames += 1;
     state.objects += detections.length;
     state.lastSeenIso = new Date().toISOString();
+
+    // Track delayed frames
+    const capturedAt = payload?.captured_at;
+    if (capturedAt) {
+      const ageMs = Date.now() - Date.parse(capturedAt);
+      if (Number.isFinite(ageMs) && ageMs > DELAY_THRESHOLD_MS) {
+        state.delayedFrames += 1;
+      }
+    }
+
     for (const d of detections) {
       const c = Number(d?.conf);
       if (Number.isFinite(c) && c >= 0 && c <= 1) {
@@ -158,45 +171,31 @@ const MlShowcase = (() => {
   }
 
   function render() {
-    const tab = document.getElementById("tab-ml-showcase");
-    if (!tab) return;
-
     const objectsEl = document.getElementById("mls-live-objects");
     const rateEl = document.getElementById("mls-live-rate");
-    const confEl = document.getElementById("mls-live-conf");
+    const delayedEl = document.getElementById("mls-delayed-frames");
     const rowsEl = document.getElementById("mls-rows-24h");
     const modelEl = document.getElementById("mls-model-name");
     const lastSeenEl = document.getElementById("mls-last-seen");
-    const readinessFill = document.getElementById("mls-readiness-fill");
-    const readinessText = document.getElementById("mls-readiness-text");
-    const qualityFill = document.getElementById("mls-quality-fill");
-    const qualityText = document.getElementById("mls-quality-text");
     const streamEl = document.getElementById("mls-stream-list");
 
-    if (!objectsEl || !rateEl || !confEl || !rowsEl || !modelEl || !lastSeenEl ||
-        !readinessFill || !readinessText || !qualityFill || !qualityText || !streamEl) {
-      return;
-    }
+    if (!objectsEl || !rateEl || !rowsEl || !modelEl || !lastSeenEl || !streamEl) return;
 
     const rate = objectsPerMinute();
-    const conf = avgConf();
-    const readinessFromRows = Math.max(0, Math.min(100, Math.round((Math.min(state.rows24h, 5000) / 5000) * 100)));
-    const readinessFromLive = Math.max(0, Math.min(100, Math.round((Math.min(state.objects, 600) / 600) * 100)));
-    const readinessFromFrames = Math.max(0, Math.min(100, Math.round((Math.min(state.frames, 900) / 900) * 100)));
-    const readiness = Math.max(readinessFromRows, readinessFromLive, readinessFromFrames);
-    const quality = conf == null ? 0 : Math.max(0, Math.min(100, Math.round(conf * 100)));
+    const delayedPct = state.frames > 0
+      ? ((state.delayedFrames / state.frames) * 100).toFixed(1)
+      : null;
 
     objectsEl.textContent = state.objects.toLocaleString();
     rateEl.textContent = `${rate.toFixed(1)} objects/min`;
-    confEl.textContent = conf == null ? "-" : `${(conf * 100).toFixed(1)}%`;
+    if (delayedEl) {
+      delayedEl.textContent = state.frames === 0
+        ? "—"
+        : `${state.delayedFrames} (${delayedPct}%)`;
+    }
     rowsEl.textContent = state.rows24h.toLocaleString();
     modelEl.textContent = `Model: ${state.modelName || "-"}`;
     lastSeenEl.textContent = `Last telemetry ${ago(state.lastSeenIso)}`;
-
-    readinessFill.style.width = `${readiness}%`;
-    readinessText.textContent = `${readiness}%`;
-    qualityFill.style.width = `${quality}%`;
-    qualityText.textContent = `${quality}%`;
 
     const items = state.streamItems.length ? state.streamItems : state.fallbackItems;
     if (!items.length) {

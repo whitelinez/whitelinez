@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Background -->
-  <rect width="64" height="64" fill="#000000"/>
+  <rect width="64" height="64" rx="10" fill="#050810"/>
 
-  <!-- Cyan Detection Corners -->
-  <g stroke="#00E5FF" stroke-width="4" fill="none" stroke-linecap="round">
-    <!-- Top Left -->
-    <path d="M6 18 V6 H18"/>
-    <!-- Top Right -->
-    <path d="M46 6 H58 V18"/>
-    <!-- Bottom Left -->
-    <path d="M6 46 V58 H18"/>
-    <!-- Bottom Right -->
-    <path d="M46 58 H58 V46"/>
+  <!-- Yellow HUD corner brackets — balanced inset -->
+  <g stroke="#00d4ff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top-left -->
+    <path d="M12 24V12H24"/>
+    <!-- Top-right -->
+    <path d="M40 12H52V24"/>
+    <!-- Bottom-left -->
+    <path d="M12 40V52H24"/>
+    <!-- Bottom-right -->
+    <path d="M40 52H52V40"/>
   </g>
 </svg>

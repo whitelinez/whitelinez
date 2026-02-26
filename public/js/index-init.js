@@ -287,6 +287,18 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   // Floating count widget
   const streamWrapper = document.querySelector(".stream-wrapper");
   FloatingCount.init(streamWrapper);
+
+  // Count widget — mobile tap toggle (desktop uses CSS :hover)
+  const countWidget = document.getElementById("count-widget");
+  if (countWidget) {
+    countWidget.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+      countWidget.classList.toggle("cw-active");
+    }, { passive: true });
+    document.addEventListener("touchstart", (e) => {
+      if (!countWidget.contains(e.target)) countWidget.classList.remove("cw-active");
+    }, { passive: true });
+  }
   MlOverlay.init();
 
   // WS counter — hooks into floating widget

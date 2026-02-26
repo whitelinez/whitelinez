@@ -5867,3 +5867,152 @@ button {
 .count-widget {
   top: 44px !important;
 }
+
+/* =============================================
+   CAMERA TILE — HUD style matching default tile
+   ============================================= */
+
+/* Reset landscape overrides — restore full HUD tile structure */
+.bnr-tile-camera {
+  height: 72px !important;
+  display: block !important;
+  padding: 0 !important;
+  gap: unset !important;
+  min-height: unset !important;
+  border: 1px solid rgba(0,212,255,0.28) !important;
+  background: unset !important;
+  box-shadow: 0 0 20px rgba(0,212,255,0.07), inset 0 0 24px rgba(0,0,0,0.3) !important;
+  cursor: pointer;
+  transform: none;
+}
+.bnr-tile-camera:hover {
+  border-color: rgba(0,212,255,0.52) !important;
+  box-shadow: 0 0 28px rgba(0,212,255,0.14), inset 0 0 24px rgba(0,0,0,0.3) !important;
+  transform: none !important;
+}
+
+/* Re-enable the inner elements that the previous override hid */
+.bnr-tile-camera .bnr-default-inner,
+.bnr-tile-camera .bnr-default-status-bar {
+  display: flex !important;
+}
+
+/* Camera-specific background — cyan tint instead of yellow */
+.bnr-tile-camera .bnr-tile-bg-empty {
+  background:
+    radial-gradient(ellipse at 10% 50%, rgba(0,212,255,0.06) 0%, transparent 55%),
+    linear-gradient(135deg, #080b10 0%, #0e1319 100%);
+}
+.bnr-tile-camera .bnr-tile-tint {
+  background: linear-gradient(
+    135deg,
+    rgba(0,212,255,0.04) 0%,
+    transparent 55%,
+    rgba(0,0,0,0.25) 100%
+  );
+}
+
+/* Camera tile title — cyan */
+.bnr-tile-camera .bnr-tile-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #00d4ff;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+  text-shadow: 0 0 10px rgba(0,212,255,0.3);
+}
+.bnr-tile-camera .bnr-tile-info {
+  font-size: 9px;
+  color: rgba(190,215,235,0.6);
+  line-height: 1.4;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* =============================================
+   COUNT WIDGET — hover / tap effect
+   ============================================= */
+
+.count-widget {
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    backdrop-filter 0.22s ease;
+  cursor: default;
+}
+
+.count-widget:hover,
+.count-widget.cw-active {
+  border-color: rgba(255,214,0,0.72) !important;
+  background: rgba(4,7,14,0.88) !important;
+  box-shadow:
+    0 0 24px rgba(255,214,0,0.18),
+    0 0 6px rgba(255,214,0,0.08),
+    inset 0 0 0 1px rgba(255,214,0,0.1) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.count-widget:hover::before,
+.count-widget.cw-active::before {
+  color: rgba(255,214,0,0.75);
+}
+
+/* Subtle number brightening on hover */
+.count-widget:hover .count-widget-total span:first-child,
+.count-widget.cw-active .count-widget-total span:first-child {
+  text-shadow:
+    0 0 18px rgba(255,214,0,0.55),
+    0 2px 8px rgba(0,0,0,0.6);
+}
+
+/* Mobile: tap feedback ring */
+.count-widget:active,
+.count-widget.cw-active {
+  border-color: rgba(255,214,0,0.82) !important;
+}
+
+/* =============================================
+   TAB ACTIVE — AI detection box selector
+   ============================================= */
+
+/* Remove bottom border from base CSS */
+.tab-btn {
+  border-bottom: none !important;
+}
+
+/* Detection box corners via inline SVG background */
+.tab-btn.active::after {
+  /* Reset all underline properties */
+  content: "" !important;
+  position: absolute !important;
+  inset: 4px 6px !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  height: auto !important;
+  width: auto !important;
+  border-radius: 0 !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 44' preserveAspectRatio='none'%3E%3Cg stroke='%2300d4ff' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 1H1V14'/%3E%3Cpath d='M86 1H99V14'/%3E%3Cpath d='M1 30V43H14'/%3E%3Cpath d='M86 43H99V30'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  opacity: 0.9;
+  animation: tab-detect-in 0.18s ease-out forwards;
+}
+
+@keyframes tab-detect-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 0.9; transform: scale(1); }
+}
+
+/* Keep cyan text on active tab */
+.tab-btn.active {
+  color: #00d4ff !important;
+  background: rgba(0,212,255,0.04) !important;
+  text-shadow: 0 0 10px rgba(0,212,255,0.2);
+  border-bottom-color: transparent !important;
+}

@@ -24,31 +24,43 @@ const Chat = (() => {
     const src = String(seed || "whitelinez-user");
     let hash = 0;
     for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
-    const h = Math.abs(hash) % 360;
-    const h2 = (h + 32) % 360;
-    const skins = ["hsl(28,72%,72%)", "hsl(26,62%,64%)", "hsl(24,56%,56%)", "hsl(21,50%,46%)", "hsl(18,44%,36%)"];
-    const hairs = ["#17100a", "#3b2008", "#6b3510", "#c48a10", "#7a1515"];
-    const skin = skins[Math.abs(hash >> 4) % skins.length];
-    const hair = hairs[Math.abs(hash >> 8) % hairs.length];
+    const abs = Math.abs(hash);
+    // Background palettes — dark cyber tones anchored around cyan/purple/teal
+    const bgs = [
+      ["#091a22", "#0e2d3a"], // deep teal
+      ["#0a0f1e", "#102040"], // navy blue
+      ["#120a1e", "#1e0f35"], // deep purple
+      ["#0d1a10", "#0f2d18"], // dark green
+      ["#1a0d0d", "#2d1010"], // dark red
+    ];
+    const accents = ["#00d4ff", "#7de8ff", "#22c55e", "#a78bfa", "#f472b6"];
+    const bg = bgs[abs % bgs.length];
+    const accent = accents[(abs >> 4) % accents.length];
+    // Initials from seed (first 1-2 chars)
+    const initials = src.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
+    const fontSize = initials.length > 1 ? 34 : 42;
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
       <defs>
-        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='hsl(${h},60%,28%)'/>
-          <stop offset='100%' stop-color='hsl(${h2},68%,16%)'/>
+        <linearGradient id='bg${abs}' x1='0' y1='0' x2='1' y2='1'>
+          <stop offset='0%' stop-color='${bg[0]}'/>
+          <stop offset='100%' stop-color='${bg[1]}'/>
         </linearGradient>
-        <clipPath id='c'><circle cx='48' cy='48' r='48'/></clipPath>
+        <clipPath id='cr${abs}'><rect width='96' height='96' rx='12'/></clipPath>
       </defs>
-      <circle cx='48' cy='48' r='48' fill='url(#g)'/>
-      <ellipse cx='48' cy='92' rx='40' ry='26' fill='rgba(0,0,0,0.30)' clip-path='url(#c)'/>
-      <rect x='43' y='63' width='10' height='15' rx='5' fill='${skin}' clip-path='url(#c)'/>
-      <circle cx='48' cy='44' r='23' fill='${skin}'/>
-      <path d='M25 44 Q26 18 48 16 Q70 18 71 44 Q66 28 48 27 Q30 28 25 44Z' fill='${hair}' clip-path='url(#c)'/>
-      <ellipse cx='40' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
-      <ellipse cx='56' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
-      <ellipse cx='41.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
-      <ellipse cx='57.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
-      <path d='M40 52 Q48 59 56 52' stroke='rgba(8,4,2,0.28)' stroke-width='2.8' fill='none' stroke-linecap='round'/>
-      <circle cx='48' cy='48' r='46' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='1.5'/>
+      <rect width='96' height='96' rx='12' fill='url(#bg${abs})'/>
+      <!-- Corner brackets -->
+      <path d='M6 18 L6 6 L18 6' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
+      <path d='M78 6 L90 6 L90 18' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
+      <path d='M6 78 L6 90 L18 90' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
+      <path d='M78 90 L90 90 L90 78' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
+      <!-- Initials -->
+      <text x='48' y='54' text-anchor='middle' dominant-baseline='middle'
+        font-family='JetBrains Mono,Fira Code,monospace' font-size='${fontSize}'
+        font-weight='700' fill='${accent}' opacity='0.92'
+        letter-spacing='-1'>${initials}</text>
+      <!-- Subtle bottom glow -->
+      <rect x='0' y='70' width='96' height='26' fill='${accent}' opacity='0.04' rx='0'/>
+      <rect width='96' height='96' rx='12' fill='none' stroke='${accent}' stroke-width='1.5' opacity='0.18'/>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }

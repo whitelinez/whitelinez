@@ -4483,8 +4483,8 @@ button {
   background: rgba(5,8,16,0.85);
 }
 .count-widget {
-  border: 1px solid rgba(0,212,255,0.2);
-  background: rgba(4,7,14,0.88);
+  border: 1px solid rgba(255,214,0,0.45);
+  background: rgba(4,7,14,0.48);
 }
 
 /* ── Admin sections ─────────────────────────────────────────────── */
@@ -4565,4 +4565,348 @@ button {
   background: rgba(0,212,255,0.08);
   border: 1px solid rgba(0,212,255,0.3);
   color: #00d4ff;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DEFAULT "NO ROUND" TILE — Cyber terminal, yellow AI theme
+   ══════════════════════════════════════════════════════════════ */
+.bnr-tile-default {
+  height: 72px;
+  opacity: 1;
+  border: 1px solid rgba(255,214,0,0.28) !important;
+  box-shadow: 0 0 20px rgba(255,214,0,0.07), inset 0 0 24px rgba(0,0,0,0.3);
+  cursor: default;
+}
+.bnr-tile-default:hover {
+  border-color: rgba(255,214,0,0.48) !important;
+  box-shadow: 0 0 24px rgba(255,214,0,0.12), inset 0 0 24px rgba(0,0,0,0.3);
+  transform: none;
+}
+
+/* Background gradient — dark with subtle yellow tint top-left */
+.bnr-tile-default .bnr-tile-bg-empty {
+  background:
+    radial-gradient(ellipse at 10% 50%, rgba(255,214,0,0.06) 0%, transparent 55%),
+    linear-gradient(135deg, #080b10 0%, #0e1319 100%);
+}
+
+/* Tint layer — faint yellow diagonal wash */
+.bnr-tile-default .bnr-tile-tint {
+  background: linear-gradient(
+    135deg,
+    rgba(255,214,0,0.04) 0%,
+    transparent 55%,
+    rgba(0,0,0,0.25) 100%
+  );
+}
+
+/* Hide legacy content + footer elements for this tile */
+.bnr-tile-default .bnr-tile-content,
+.bnr-tile-default .bnr-tile-footer { display: none; }
+
+/* ── Inner body: icon + copy ─────────────────────────── */
+.bnr-default-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 5px;
+}
+
+.bnr-ai-scan-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+/* Scan line animation on the SVG line element */
+.bnr-detect-scan {
+  animation: bnr-scan-sweep 1.9s ease-in-out infinite;
+  transform-origin: 22px 22px;
+}
+@keyframes bnr-scan-sweep {
+  0%   { opacity: 0.15; transform: translateY(-6px); }
+  45%  { opacity: 0.9; }
+  55%  { opacity: 0.9; }
+  100% { opacity: 0.15; transform: translateY(6px); }
+}
+
+/* Copy text */
+.bnr-default-copy {
+  flex: 1;
+  min-width: 0;
+}
+.bnr-tile-default .bnr-tile-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #FFD600;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+  text-shadow: 0 0 10px rgba(255,214,0,0.3);
+}
+.bnr-tile-default .bnr-tile-info {
+  font-size: 9px;
+  color: rgba(190,215,235,0.6);
+  line-height: 1.4;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Status bar at bottom ───────────────────────────── */
+.bnr-default-status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  background: rgba(255,214,0,0.05);
+  border-top: 1px solid rgba(255,214,0,0.14);
+}
+
+/* Pulsing yellow dot */
+.bnr-ai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FFD600;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(255,214,0,0.55);
+  animation: bnr-ai-pulse 1.5s ease-in-out infinite;
+}
+@keyframes bnr-ai-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,214,0,0.55); }
+  70%  { box-shadow: 0 0 0 5px rgba(255,214,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,214,0,0); }
+}
+
+.bnr-ai-label {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #FFD600;
+  opacity: 0.82;
+}
+
+.bnr-standby-label {
+  margin-left: auto;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0,212,255,0.45);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHAT TAB — Cyber terminal aesthetic
+   ══════════════════════════════════════════════════════════════ */
+
+/* Meta row — terminal header bar */
+.chat-meta-row {
+  background: rgba(0,212,255,0.03);
+  border-bottom: 1px solid rgba(0,212,255,0.1);
+  padding: 7px 14px;
+}
+
+/* Online count with live green dot */
+.chat-online-count {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.7rem;
+  color: rgba(0,212,255,0.6);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chat-online-count::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.5);
+  animation: chat-live-pulse 1.7s ease-in-out infinite;
+}
+@keyframes chat-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  70%  { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* Online user chips — cyber squared */
+.chat-online-user {
+  border: 1px solid rgba(0,212,255,0.22);
+  background: rgba(0,212,255,0.06);
+  color: rgba(0,212,255,0.7);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  padding: 3px 7px;
+  border-radius: 4px;
+  transition: background .14s, border-color .14s, color .14s;
+}
+.chat-online-user:hover {
+  background: rgba(0,212,255,0.12);
+  border-color: rgba(0,212,255,0.4);
+  color: #00d4ff;
+}
+
+/* Messages area — faint horizontal scanline */
+.chat-messages {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 46px,
+    rgba(0,212,255,0.02) 46px,
+    rgba(0,212,255,0.02) 47px
+  );
+  gap: 6px;
+}
+
+/* Avatars — cyber rounded square */
+.chat-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,212,255,0.25);
+  box-shadow: 0 0 0 2px rgba(0,212,255,0.07);
+  background: var(--bg3);
+}
+
+/* Username — cyan instead of yellow */
+.chat-msg .chat-user {
+  color: #00d4ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* Timestamp */
+.chat-msg .chat-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.63rem;
+  color: rgba(100,116,139,0.55);
+  letter-spacing: 0.02em;
+}
+
+/* Message text */
+.chat-msg .chat-text {
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: rgba(220,232,245,0.88);
+}
+
+/* System messages — terminal output line */
+.chat-msg.system {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,212,255,0.03);
+  border: 1px solid rgba(0,212,255,0.1);
+  border-radius: 5px;
+  padding: 5px 9px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: rgba(0,212,255,0.5);
+}
+.chat-msg.system > span:first-child::before {
+  content: "> ";
+  color: rgba(0,212,255,0.35);
+  font-weight: 700;
+}
+
+/* Activity items — bet events, gold tinted */
+.chat-activity-item {
+  background: rgba(255,214,0,0.04) !important;
+  border: 1px solid rgba(255,214,0,0.14) !important;
+  border-radius: 6px;
+}
+.chat-activity-item .ca-icon {
+  color: rgba(255,214,0,0.7);
+}
+.chat-activity-item .ca-text {
+  font-size: 0.77rem;
+  color: rgba(200,215,230,0.75);
+}
+.chat-activity-item .ca-text strong {
+  color: #FFD600;
+}
+.chat-activity-item .ca-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.63rem;
+  color: rgba(100,116,139,0.55);
+}
+
+/* Input area */
+.chat-input-row input::placeholder {
+  color: rgba(100,116,139,0.45);
+  font-size: 0.84rem;
+}
+
+/* Send button — cyan ghost */
+#chat-send {
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.26);
+  color: #00d4ff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  border-radius: 7px;
+  transition: background .16s, border-color .16s, box-shadow .16s;
+}
+#chat-send:hover {
+  background: rgba(0,212,255,0.16);
+  border-color: rgba(0,212,255,0.46);
+  box-shadow: 0 0 10px rgba(0,212,255,0.14);
+}
+
+/* Login hint — terminal style */
+.chat-login-hint {
+  background: rgba(0,212,255,0.025);
+  border-top: 1px solid rgba(0,212,255,0.1);
+  color: rgba(100,116,139,0.65);
+  font-size: 0.78rem;
+  font-family: "JetBrains Mono", monospace;
+  padding: 10px 16px;
+}
+.chat-login-hint a {
+  color: #00d4ff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.chat-login-hint a:hover {
+  color: #7de8ff;
+  text-decoration: underline;
+}
+
+/* Mentions */
+.chat-mention {
+  color: #00d4ff;
+  font-weight: 700;
+  background: rgba(0,212,255,0.09);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.chat-mention-self {
+  color: #FFD600;
+  font-weight: 700;
+  background: rgba(255,214,0,0.1);
+  border-radius: 3px;
+  padding: 0 3px;
 }

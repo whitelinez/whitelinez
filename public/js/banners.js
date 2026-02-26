@@ -1,32 +1,102 @@
 /**
  * banners.js — Public banner/announcement tiles shown when no round is active.
- * Loads from Supabase `banners` table. Supports likes, dismiss, and detail view.
+ *
+ * Dismissal is per-user profile:
+ *   - localStorage key is scoped by user ID (logged-in) or "anon" (guest)
+ *   - Logging in/out re-scopes all preferences automatically
+ *   - Admin can force re-show any banner by updating it in Supabase — the
+ *     banner's `updated_at` timestamp is compared to the user's dismiss time;
+ *     if updated AFTER the user dismissed, the banner reappears.
+ *
+ * Admin controls:
+ *   - Activate / deactivate banners (is_active)
+ *   - Edit a banner content → automatically clears all user dismissals for it
  */
 
 const Banners = (() => {
-  const DISMISSED_KEY = "wlz.dismissed_banners.v1";
-  const LIKED_KEY     = "wlz.liked_banners.v1";
+  const DISMISSED_KEY = "wlz.dismissed_banners.v2"; // v2 = per-user + timestamped
+  const LIKED_KEY     = "wlz.liked_banners.v2";
 
-  let _banners       = [];
-  let _dismissed     = new Set();
-  let _liked         = new Set();
-  let _detailId      = null;
-  let _visible       = false;
-  let _sessionLive   = false;
+  let _banners          = [];
+  let _dismissed        = new Map(); // id → ISO timestamp (or null)
+  let _liked            = new Set();
+  let _userId           = null;      // current logged-in user ID, null = anon
+  let _detailId         = null;
+  let _visible          = false;
+  let _sessionLive      = false;
   let _sessionPollTimer = null;
+  let _authUnsub        = null;
+
+  // ── User-scoped storage key ───────────────────────────────────
+  function _userKey(base) {
+    return _userId ? `${base}.u.${_userId}` : `${base}.anon`;
+  }
 
   // ── Persistence helpers ───────────────────────────────────────
   function _loadDismissed() {
-    try { _dismissed = new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]")); } catch { _dismissed = new Set(); }
+    try {
+      const raw = JSON.parse(localStorage.getItem(_userKey(DISMISSED_KEY)) || "[]");
+      // Support both formats: legacy [id, ...] and current [{id, at}, ...]
+      _dismissed = new Map(raw.map(x =>
+        x && typeof x === "object" ? [String(x.id), x.at || null] : [String(x), null]
+      ));
+    } catch { _dismissed = new Map(); }
   }
+
   function _saveDismissed() {
-    try { localStorage.setItem(DISMISSED_KEY, JSON.stringify([..._dismissed])); } catch {}
+    try {
+      const data = [..._dismissed.entries()].map(([id, at]) => ({ id, at }));
+      localStorage.setItem(_userKey(DISMISSED_KEY), JSON.stringify(data));
+    } catch {}
   }
+
   function _loadLiked() {
-    try { _liked = new Set(JSON.parse(localStorage.getItem(LIKED_KEY) || "[]")); } catch { _liked = new Set(); }
+    try {
+      _liked = new Set(JSON.parse(localStorage.getItem(_userKey(LIKED_KEY)) || "[]"));
+    } catch { _liked = new Set(); }
   }
+
   function _saveLiked() {
-    try { localStorage.setItem(LIKED_KEY, JSON.stringify([..._liked])); } catch {}
+    try {
+      localStorage.setItem(_userKey(LIKED_KEY), JSON.stringify([..._liked]));
+    } catch {}
+  }
+
+  // ── Admin force-reset: clear dismissals for banners updated after dismiss ──
+  function _pruneOutdatedDismissals() {
+    let changed = false;
+    for (const b of _banners) {
+      const key = String(b.id);
+      if (!_dismissed.has(key)) continue;
+      const dismissedAt = _dismissed.get(key);
+      if (b.updated_at && dismissedAt && new Date(b.updated_at) > new Date(dismissedAt)) {
+        _dismissed.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) _saveDismissed();
+  }
+
+  // ── Auth tracking ─────────────────────────────────────────────
+  async function _resolveUser() {
+    if (!window.sb) return;
+    try {
+      const { data } = await window.sb.auth.getUser();
+      _userId = data?.user?.id || null;
+    } catch { _userId = null; }
+  }
+
+  function _watchAuth() {
+    if (_authUnsub || !window.sb) return;
+    const { data } = window.sb.auth.onAuthStateChange((_event, session) => {
+      const newId = session?.user?.id || null;
+      if (newId === _userId) return;
+      _userId = newId;
+      _loadDismissed();
+      _loadLiked();
+      if (_visible) _render();
+    });
+    _authUnsub = data?.subscription?.unsubscribe ?? null;
   }
 
   // ── Escape ────────────────────────────────────────────────────
@@ -34,13 +104,13 @@ const Banners = (() => {
     return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
-  // ── Fetch ─────────────────────────────────────────────────────
+  // ── Fetch (include updated_at for admin force-reset logic) ────
   async function _fetch() {
     if (!window.sb) { console.warn("[Banners] sb not ready"); return []; }
     try {
       const { data, error } = await window.sb
         .from("banners")
-        .select("id, title, info, image_url, is_pinned, likes")
+        .select("id, title, info, image_url, is_pinned, likes, updated_at")
         .eq("is_active", true)
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false });
@@ -51,8 +121,8 @@ const Banners = (() => {
 
   // ── Render tile ───────────────────────────────────────────────
   function _tile(b) {
-    if (_dismissed.has(b.id)) return "";
-    const liked = _liked.has(b.id);
+    if (_dismissed.has(String(b.id))) return "";
+    const liked = _liked.has(String(b.id));
     const imgStyle = b.image_url ? `style="background-image:url('${_esc(b.image_url)}')"` : "";
     return `
       <div class="bnr-tile" data-id="${_esc(b.id)}">
@@ -148,15 +218,41 @@ const Banners = (() => {
       <div class="bnr-tile bnr-tile-default">
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
-        <div class="bnr-tile-content">
-          <p class="bnr-tile-title">No Active Round</p>
-          <p class="bnr-tile-info">Markets are closed right now. Check the countdown above — a new round is coming soon.</p>
+        <div class="bnr-default-inner">
+          <div class="bnr-ai-scan-icon">
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Corner brackets -->
+              <path d="M4 13V4H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M31 4H40V13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 31V40H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M31 40H40V31" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Detection box -->
+              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(255,214,0,0.42)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
+              <!-- Corner dots on detection box -->
+              <circle cx="11" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <circle cx="33" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <circle cx="11" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <circle cx="33" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <!-- Car body -->
+              <rect x="15" y="19" width="14" height="7" rx="1.5" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
+              <!-- Roof -->
+              <path d="M17.5 19L19.5 16H24.5L26.5 19" stroke="rgba(0,212,255,0.45)" stroke-width="0.9" fill="rgba(0,212,255,0.07)"/>
+              <!-- Wheels -->
+              <circle cx="18" cy="26" r="1.3" fill="rgba(0,212,255,0.45)" stroke="rgba(0,212,255,0.65)" stroke-width="0.7"/>
+              <circle cx="26" cy="26" r="1.3" fill="rgba(0,212,255,0.45)" stroke="rgba(0,212,255,0.65)" stroke-width="0.7"/>
+              <!-- Animated scan line -->
+              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.8" opacity="0.75"/>
+            </svg>
+          </div>
+          <div class="bnr-default-copy">
+            <p class="bnr-tile-title">No Active Round</p>
+            <p class="bnr-tile-info">AI is scanning live traffic. A new round is incoming.</p>
+          </div>
         </div>
-        <div class="bnr-tile-footer">
-          <span class="bnr-default-status">
-            <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
-            Waiting for next round
-          </span>
+        <div class="bnr-default-status-bar">
+          <span class="bnr-ai-dot"></span>
+          <span class="bnr-ai-label">AI SCANNING</span>
+          <span class="bnr-standby-label">STANDBY</span>
         </div>
       </div>`;
   }
@@ -172,7 +268,7 @@ const Banners = (() => {
       _detailId = null;
     }
 
-    const visible = _banners.filter(b => !_dismissed.has(b.id));
+    const visible = _banners.filter(b => !_dismissed.has(String(b.id)));
     const adminTiles = visible.length ? visible.map(_tile).join("") : _defaultTile();
 
     section.innerHTML = `
@@ -188,7 +284,8 @@ const Banners = (() => {
     container.querySelectorAll(".bnr-dismiss").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        _dismissed.add(btn.dataset.id);
+        // Store dismiss with current timestamp for admin force-reset comparison
+        _dismissed.set(String(btn.dataset.id), new Date().toISOString());
         _saveDismissed();
         _render();
       });
@@ -226,12 +323,12 @@ const Banners = (() => {
 
   // ── Like toggle ───────────────────────────────────────────────
   async function _toggleLike(id, btn) {
-    const wasLiked = _liked.has(id);
+    const wasLiked = _liked.has(String(id));
     const banner = _banners.find(b => b.id === id);
     if (!banner) return;
 
     // Optimistic
-    if (wasLiked) { _liked.delete(id); } else { _liked.add(id); }
+    if (wasLiked) { _liked.delete(String(id)); } else { _liked.add(String(id)); }
     _saveLiked();
     btn.classList.toggle("is-liked", !wasLiked);
     const svgPath = btn.querySelector("svg");
@@ -251,9 +348,18 @@ const Banners = (() => {
     _visible = true;
     const section = document.getElementById("banners-section");
     if (section) section.classList.remove("hidden");
+
+    // Resolve current user first so localStorage keys are scoped correctly
+    await _resolveUser();
     _loadDismissed();
     _loadLiked();
+    _watchAuth();
+
     [_banners, _sessionLive] = await Promise.all([_fetch(), _checkSession()]);
+
+    // Clear any dismissals that admin has overridden via banner updates
+    _pruneOutdatedDismissals();
+
     _render();
     _startSessionPoll();
   }

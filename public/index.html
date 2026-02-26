@@ -26,9 +26,9 @@
         <button id="btn-open-login" class="nav-icon-btn" title="Login">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         </button>
-        <a href="/register.html" class="nav-icon-btn nav-icon-register" title="Create account">
+        <button id="btn-open-register" class="nav-icon-btn nav-icon-register" title="Create account">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-        </a>
+        </button>
       </span>
       <span id="nav-user" class="hidden">
         <a id="nav-admin-link" href="/admin.html" class="nav-icon-btn nav-icon-admin hidden" title="Admin panel">
@@ -281,7 +281,7 @@
           <label for="bp-count">Exact Count</label>
           <div class="bp-count-row">
             <button class="btn-count-adj" id="bp-count-minus">-</button>
-            <input id="bp-count" type="number" min="0" max="999" value="5" />
+            <input id="bp-count" type="number" min="0" max="10000" value="5" />
             <button class="btn-count-adj" id="bp-count-plus">+</button>
           </div>
         </div>
@@ -342,7 +342,39 @@
         <p id="modal-auth-error" class="auth-error" role="alert"></p>
         <button type="submit" class="btn-primary btn-full" id="modal-submit-btn">Sign In</button>
       </form>
-      <p class="auth-switch">Don't have an account? <a href="/register.html">Register</a></p>
+      <p class="auth-switch">Don't have an account? <a href="#" id="switch-to-register">Register</a></p>
+    </div>
+  </div>
+
+  <!-- ── Register Modal ─────────────────────────────────────────── -->
+  <div id="register-modal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-label="Create account">
+    <div class="auth-modal-backdrop" id="register-modal-backdrop"></div>
+    <div class="auth-card auth-modal-card">
+      <button class="auth-modal-close" id="register-modal-close" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <a href="/index.html" class="logo">
+        <img src="/img/logoicon.png" alt="WHITELINEZ" />
+        <span class="logo-title">AI TRAFFIC JAMAICA</span>
+      </a>
+      <h1>Create Account</h1>
+      <form id="modal-register-form">
+        <div class="field">
+          <label for="modal-reg-email">Email</label>
+          <input id="modal-reg-email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="modal-reg-password">Password</label>
+          <input id="modal-reg-password" type="password" autocomplete="new-password" required />
+        </div>
+        <div class="field">
+          <label for="modal-reg-confirm">Confirm Password</label>
+          <input id="modal-reg-confirm" type="password" autocomplete="new-password" required />
+        </div>
+        <p id="modal-register-error" class="auth-error" role="alert"></p>
+        <button type="submit" class="btn-primary btn-full" id="register-submit-btn">Create Account</button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="#" id="switch-to-login">Sign In</a></p>
     </div>
   </div>
 

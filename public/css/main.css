@@ -714,7 +714,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .bnr-tile {
   position: relative;
-  height: 140px;
+  height: 112px;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
@@ -844,7 +844,9 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .bnr-read-more:hover { color: #00d4ff; }
 
-/* Play tile */
+/* Play tile — no footer button, so content extends to bottom */
+.bnr-tile-play .bnr-tile-content { bottom: 8px; }
+
 .bnr-tile-play .bnr-tile-tint {
   background: linear-gradient(160deg, rgba(0,80,140,0.55) 0%, rgba(0,212,255,0.08) 100%);
 }
@@ -1536,6 +1538,24 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 /* â”€â”€ Activity feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* ── Leaderboard tab ─────────────────────────────────────────── */
+#lb-refresh {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 5px;
+  background: none;
+  border: 1px solid rgba(0,212,255,0.28);
+  color: rgba(0,212,255,0.65);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  letter-spacing: 0.02em;
+}
+#lb-refresh:hover {
+  background: rgba(0,212,255,0.1);
+  border-color: rgba(0,212,255,0.5);
+  color: #00d4ff;
+}
+
 .lb-header {
   display: flex;
   align-items: center;

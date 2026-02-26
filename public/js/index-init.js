@@ -407,4 +407,84 @@ function _connectUserWs(session) {
       submitBtn.textContent = "Sign In";
     }
   });
+
+  // Switch to register modal
+  document.getElementById("switch-to-register")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    close();
+    document.getElementById("register-modal")?.classList.remove("hidden");
+    document.getElementById("modal-reg-email")?.focus();
+  });
+}());
+
+// ── Register Modal ─────────────────────────────────────────────────────────────
+(function _registerModal() {
+  const modal    = document.getElementById("register-modal");
+  const backdrop = document.getElementById("register-modal-backdrop");
+  const closeBtn = document.getElementById("register-modal-close");
+  const openBtn  = document.getElementById("btn-open-register");
+  const form     = document.getElementById("modal-register-form");
+  const errorEl  = document.getElementById("modal-register-error");
+  const submitBtn = document.getElementById("register-submit-btn");
+
+  if (!modal) return;
+
+  function open() {
+    modal.classList.remove("hidden");
+    document.getElementById("modal-reg-email")?.focus();
+  }
+
+  function close() {
+    modal.classList.add("hidden");
+    if (errorEl) errorEl.textContent = "";
+    if (form) form.reset();
+  }
+
+  openBtn?.addEventListener("click", open);
+  closeBtn?.addEventListener("click", close);
+  backdrop?.addEventListener("click", close);
+
+  // Switch back to login
+  document.getElementById("switch-to-login")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    close();
+    document.getElementById("login-modal")?.classList.remove("hidden");
+    document.getElementById("modal-email")?.focus();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (errorEl) errorEl.textContent = "";
+    const pass    = document.getElementById("modal-reg-password").value;
+    const confirm = document.getElementById("modal-reg-confirm").value;
+    if (pass !== confirm) {
+      if (errorEl) errorEl.textContent = "Passwords do not match.";
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account...";
+    try {
+      await Auth.register(
+        document.getElementById("modal-reg-email").value,
+        pass
+      );
+      close();
+      // Open login modal with success hint
+      document.getElementById("login-modal")?.classList.remove("hidden");
+      const authErr = document.getElementById("modal-auth-error");
+      if (authErr) {
+        authErr.style.color = "#00d4ff";
+        authErr.textContent = "Account created. Please sign in.";
+      }
+      document.getElementById("modal-email")?.focus();
+    } catch (err) {
+      if (errorEl) errorEl.textContent = err.message || "Registration failed.";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create Account";
+    }
+  });
 }());

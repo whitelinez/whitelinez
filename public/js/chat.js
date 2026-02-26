@@ -148,7 +148,11 @@ const Chat = (() => {
   function _bindTabIndicator() {
     const btn = _chatTabBtn();
     if (btn) {
-      btn.addEventListener("click", _clearUnread);
+      btn.addEventListener("click", () => {
+        _clearUnread();
+        // Scroll to newest when tab becomes visible (handles hidden-at-load race)
+        requestAnimationFrame(_scrollToBottom);
+      });
     }
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden && _isChatTabActive()) _clearUnread();

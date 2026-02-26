@@ -255,7 +255,7 @@ const LiveBet = (() => {
     });
     document.getElementById("bp-count-plus")?.addEventListener("click", () => {
       const el = document.getElementById("bp-count");
-      if (el) el.value = Math.min(999, parseInt(el.value || 0, 10) + 1);
+      if (el) el.value = Math.min(10000, parseInt(el.value || 0, 10) + 1);
     });
 
     // Amount → payout

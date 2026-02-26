@@ -139,19 +139,7 @@ const Banners = (() => {
             : "Watch the live feed while you wait. A betting round is coming soon — count the cars and get ready."
           }</p>
         </div>
-        <div class="bnr-tile-footer">
-          <button class="bnr-play-btn" id="bnr-play-btn">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            ${live ? "Join Now" : "Watch Feed"}
-          </button>
-        </div>
       </div>`;
-  }
-
-  function _wirePlayBtn(section) {
-    section.querySelector("#bnr-play-btn")?.addEventListener("click", () => {
-      document.querySelector('.tab-btn[data-tab="ai"]')?.click();
-    });
   }
 
   // ── Default "no round" tile ───────────────────────────────────
@@ -193,7 +181,6 @@ const Banners = (() => {
         <span>Updates &amp; Announcements</span>
       </div>
       <div class="bnr-grid">${_playTile()}${adminTiles}</div>`;
-    _wirePlayBtn(section);
     if (visible.length) _wireGrid(section);
   }
 

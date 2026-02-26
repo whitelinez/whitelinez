@@ -19,7 +19,7 @@ const Auth = (() => {
   async function logout() {
     const { error } = await window.sb.auth.signOut();
     if (error) throw error;
-    window.location.href = "/login.html";
+    window.location.href = "/index.html";
   }
 
   async function getSession() {

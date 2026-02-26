@@ -847,6 +847,23 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 /* Play tile — no footer button, so content extends to bottom */
 .bnr-tile-play .bnr-tile-content { bottom: 8px; }
 
+/* Default "no round" tile — compact, less visual weight */
+.bnr-tile-default {
+  height: 72px;
+  opacity: 0.7;
+}
+.bnr-tile-default .bnr-tile-content {
+  bottom: 28px;
+}
+.bnr-tile-default .bnr-tile-title {
+  font-size: 10.5px;
+  margin-bottom: 2px;
+}
+.bnr-tile-default .bnr-tile-info {
+  font-size: 9px;
+  -webkit-line-clamp: 1;
+}
+
 .bnr-tile-play .bnr-tile-tint {
   background: linear-gradient(160deg, rgba(0,80,140,0.55) 0%, rgba(0,212,255,0.08) 100%);
 }
@@ -3011,12 +3028,13 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     max-height: calc(100vh - 48px - 56.25vw);
   }
 
-  /* Stream chat overlay: move to bottom-right, smaller + less opaque */
+  /* Stream chat overlay: top-right, smaller */
   .stream-chat-overlay {
-    top: auto;
-    bottom: 42px;
-    right: 8px;
-    width: 190px;
+    top: 6px;
+    bottom: auto;
+    right: 6px;
+    width: 160px;
+    opacity: 0.92;
   }
 
   /* Touch targets: remove 300ms tap delay */
@@ -3032,9 +3050,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 
 @media (max-width: 480px) {
-  /* Overlay: much smaller so it doesn't crowd the count widget */
-  .stream-chat-overlay { width: 140px; bottom: 38px; right: 6px; opacity: 0.88; }
-  .sco-msg, .sco-join { font-size: 10px; }
+  /* Overlay: even smaller on narrow screens */
+  .stream-chat-overlay { top: 5px; bottom: auto; width: 130px; right: 5px; opacity: 0.85; }
+  .sco-msg, .sco-join { font-size: 9.5px; }
+  #sco-count { font-size: 0.58rem; }
   .logo-title { font-size: 11px; letter-spacing: 0.07em; }
 
   .count-widget {
@@ -4077,4 +4096,473 @@ button {
   .account-page .pending-row {
     font-size: 0.78rem;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   WHITELINEZ — UI THEME v2 : Cyber Terminal Aesthetic
+   Unified design language: header ↔ overlays ↔ sidebar
+   Primary theme color: #00d4ff  │  Accent: #FFD600  │  Live: #22c55e
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Design token overrides ─────────────────────────────────────── */
+:root {
+  --cyan: #00d4ff;
+  --border: #1d2235;
+  --bg:  #09090f;
+  --bg2: #0f1117;
+  --bg3: #161924;
+}
+
+/* ── Scrollbar — cyan tinted ─────────────────────────────────────── */
+* {
+  scrollbar-color: rgba(0,212,255,0.2) #09090f;
+}
+*::-webkit-scrollbar-track { background: #09090f; }
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0,212,255,0.3), rgba(0,212,255,0.1));
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0,212,255,0.5), rgba(0,212,255,0.22));
+}
+
+/* ── Header — cyber glass ────────────────────────────────────────── */
+.site-header {
+  background: rgba(7, 9, 15, 0.97);
+  border-bottom: 1px solid rgba(0,212,255,0.18);
+  box-shadow:
+    0 1px 0 rgba(0,212,255,0.07),
+    0 6px 28px rgba(0,0,0,0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: relative;
+}
+
+/* Animated scan-line on header bottom edge */
+.site-header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0,212,255,0.55) 30%,
+    rgba(0,212,255,0.95) 50%,
+    rgba(0,212,255,0.55) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  animation: hdr-scan 7s ease-in-out infinite;
+  z-index: 1;
+}
+@keyframes hdr-scan {
+  0%, 100% { opacity: 0.25; }
+  50%       { opacity: 0.72; }
+}
+
+/* ── Stream panel — right boundary ──────────────────────────────── */
+.stream-panel {
+  border-right: 1px solid rgba(0,212,255,0.1);
+}
+
+/* ── Sidebar — terminal panel ───────────────────────────────────── */
+.sidebar {
+  border-left: 1px solid rgba(0,212,255,0.14);
+  background: linear-gradient(
+    180deg,
+    rgba(0,212,255,0.025) 0%,
+    rgba(0,212,255,0.005) 60%,
+    transparent 100%
+  ), var(--bg2);
+}
+
+/* ── Sidebar tabs bar ───────────────────────────────────────────── */
+.sidebar-tabs {
+  background: rgba(5, 7, 13, 0.88);
+  border-bottom: 1px solid rgba(0,212,255,0.12);
+  position: relative;
+}
+.sidebar-tabs::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.35), transparent);
+  pointer-events: none;
+}
+
+.tab-btn {
+  color: rgba(130,155,185,0.7);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  position: relative;
+  transition: color .18s, background .18s;
+}
+.tab-btn:hover {
+  color: rgba(190,220,240,0.9);
+  background: rgba(0,212,255,0.04);
+}
+.tab-btn.active {
+  color: #00d4ff;
+  border-bottom-color: transparent;
+  background: rgba(0,212,255,0.06);
+  text-shadow: 0 0 10px rgba(0,212,255,0.25);
+}
+/* Cyan glow underline replaces default border-bottom */
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+  box-shadow: 0 0 8px rgba(0,212,255,0.55);
+  border-radius: 1px;
+}
+
+/* Tab badge indicator — cyan */
+.tab-indicator {
+  background: rgba(0,212,255,0.12);
+  border: 1px solid rgba(0,212,255,0.28);
+  color: #00d4ff;
+}
+
+/* ── Market cards ────────────────────────────────────────────────── */
+.market-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.025) 0%,
+    rgba(255,255,255,0.008) 100%
+  ), var(--bg3);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  transition: border-color .18s, box-shadow .18s, transform .14s;
+}
+.market-card:hover {
+  border-color: rgba(0,212,255,0.3);
+  box-shadow: 0 0 18px rgba(0,212,255,0.09), 0 4px 16px rgba(0,0,0,0.28);
+  transform: translateY(-1px);
+}
+.market-label {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ── Pills (bet type / direction) — cyan active ──────────────────── */
+.pill.active {
+  background: rgba(0,212,255,0.12);
+  border-color: rgba(0,212,255,0.5);
+  color: #00d4ff;
+  box-shadow: 0 0 10px rgba(0,212,255,0.14);
+}
+.pill:hover {
+  border-color: rgba(0,212,255,0.28);
+  color: rgba(190,220,240,0.9);
+  background: rgba(0,212,255,0.05);
+}
+
+/* ── Bet panel ───────────────────────────────────────────────────── */
+.bet-panel {
+  background: linear-gradient(180deg, rgba(0,212,255,0.018) 0%, transparent 35%), var(--bg2);
+}
+
+/* Bet field labels → uppercase monospace */
+.bp-field label {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  color: rgba(0,212,255,0.55);
+}
+
+/* Count input — cyber style */
+.bp-count-row input {
+  background: rgba(7,10,18,0.85);
+  border: 1px solid rgba(0,212,255,0.22);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: border-color .18s, box-shadow .18s;
+}
+.bp-count-row input:focus {
+  outline: none;
+  border-color: rgba(0,212,255,0.5);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.08), 0 0 14px rgba(0,212,255,0.1);
+}
+
+/* Generic bet input */
+.bp-input {
+  background: rgba(7,10,18,0.85);
+  border: 1px solid rgba(0,212,255,0.2);
+  transition: border-color .18s, box-shadow .18s;
+}
+.bp-input:focus {
+  outline: none;
+  border-color: rgba(0,212,255,0.48);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+}
+
+/* Count adj buttons — cyan */
+.btn-count-adj {
+  background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.2);
+  color: rgba(0,212,255,0.75);
+  border-radius: 7px;
+  transition: background .16s, border-color .16s, color .16s;
+}
+.btn-count-adj:hover {
+  background: rgba(0,212,255,0.14);
+  border-color: rgba(0,212,255,0.42);
+  color: #00d4ff;
+}
+
+/* ── Bet receipt ─────────────────────────────────────────────────── */
+.bet-receipt {
+  border: 1px solid rgba(0,212,255,0.18);
+  background: linear-gradient(
+    135deg,
+    rgba(0,212,255,0.04) 0%,
+    transparent 60%
+  ), rgba(8,12,22,0.65);
+}
+
+/* ── Live-bet quick buttons ──────────────────────────────────────── */
+.btn-live-bet {
+  background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.22);
+  color: rgba(0,212,255,0.8);
+  border-radius: 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all .18s;
+}
+.btn-live-bet:hover {
+  background: rgba(0,212,255,0.13);
+  border-color: rgba(0,212,255,0.44);
+  color: #00d4ff;
+  box-shadow: 0 0 12px rgba(0,212,255,0.14);
+}
+
+/* ── Nav balance chip ────────────────────────────────────────────── */
+.nav-balance {
+  background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.22);
+  color: var(--text);
+  font-weight: 700;
+  transition: background .16s, border-color .16s;
+}
+.nav-balance:hover {
+  background: rgba(0,212,255,0.11);
+  border-color: rgba(0,212,255,0.4);
+}
+
+/* ── Secondary button — unified with theme ───────────────────────── */
+.btn-secondary {
+  background: rgba(0,212,255,0.05);
+  border: 1px solid rgba(0,212,255,0.2);
+  color: rgba(160,210,235,0.85);
+  transition: background .16s, border-color .16s, color .16s;
+}
+.btn-secondary:hover {
+  background: rgba(0,212,255,0.1);
+  border-color: rgba(0,212,255,0.38);
+  color: #00d4ff;
+}
+
+/* ── Leaderboard rows ────────────────────────────────────────────── */
+.lb-header {
+  border-bottom: 1px solid rgba(0,212,255,0.1);
+  color: rgba(0,212,255,0.45);
+  letter-spacing: 0.06em;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.66rem;
+}
+.lb-row {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: border-color .15s, background .15s;
+}
+.lb-row:hover {
+  background: rgba(0,212,255,0.04);
+  border-color: rgba(0,212,255,0.2);
+}
+.lb-rank-num {
+  font-family: "JetBrains Mono", monospace;
+  color: rgba(0,212,255,0.45);
+}
+
+/* ── Chat section ────────────────────────────────────────────────── */
+.chat-section {
+  background: linear-gradient(180deg, rgba(0,212,255,0.015) 0%, transparent 25%);
+}
+.chat-input-row {
+  border-top: 1px solid rgba(0,212,255,0.1);
+  background: rgba(5,7,14,0.65);
+}
+.chat-input-row input {
+  background: rgba(8,11,20,0.88);
+  border: 1px solid rgba(0,212,255,0.18);
+  border-radius: 7px;
+  transition: border-color .18s, box-shadow .18s;
+}
+.chat-input-row input:focus {
+  border-color: rgba(0,212,255,0.45);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.07);
+  outline: none;
+}
+/* System messages — terminal look */
+.chat-msg.system {
+  background: rgba(0,212,255,0.03);
+  border: 1px solid rgba(0,212,255,0.1);
+  color: rgba(0,212,255,0.55);
+  font-family: "JetBrains Mono", monospace;
+  border-radius: 6px;
+  font-size: 0.74rem;
+}
+
+/* ── Auth card ───────────────────────────────────────────────────── */
+.auth-card {
+  background: rgba(8,10,18,0.94);
+  border: 1px solid rgba(0,212,255,0.2);
+  box-shadow:
+    0 8px 64px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(0,212,255,0.06),
+    0 0 50px rgba(0,212,255,0.07);
+}
+.field input:focus,
+.field select:focus {
+  border-color: rgba(0,212,255,0.5);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+}
+
+/* ── ML showcase stat cards ──────────────────────────────────────── */
+.mls-card {
+  background: linear-gradient(135deg, rgba(0,212,255,0.04) 0%, transparent 65%), var(--bg3);
+  border: 1px solid rgba(0,212,255,0.1);
+}
+.mls-value {
+  color: #00d4ff;
+  text-shadow: 0 0 12px rgba(0,212,255,0.28);
+}
+.mls-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0,212,255,0.45);
+}
+
+/* ── Banner tiles ────────────────────────────────────────────────── */
+.banners-section {
+  border-bottom: 1px solid rgba(0,212,255,0.07);
+}
+.bnr-tile {
+  background: linear-gradient(135deg, rgba(0,212,255,0.03) 0%, rgba(255,255,255,0.01) 100%), var(--bg3);
+  border: 1px solid rgba(0,212,255,0.1);
+  transition: border-color .18s, box-shadow .18s;
+}
+.bnr-tile:hover {
+  border-color: rgba(0,212,255,0.26);
+  box-shadow: 0 0 16px rgba(0,212,255,0.08);
+}
+
+/* ── Stream overlays — unified border language ───────────────────── */
+.stream-badge {
+  border: 1px solid rgba(0,212,255,0.2);
+  background: rgba(5,8,16,0.88);
+}
+.fps-overlay {
+  border: 1px solid rgba(0,212,255,0.16);
+  background: rgba(5,8,16,0.85);
+}
+.count-widget {
+  border: 1px solid rgba(0,212,255,0.2);
+  background: rgba(4,7,14,0.88);
+}
+
+/* ── Admin sections ─────────────────────────────────────────────── */
+.admin-section {
+  border: 1px solid rgba(0,212,255,0.1);
+  background: linear-gradient(180deg, rgba(0,212,255,0.018) 0%, transparent 40%), var(--bg2);
+}
+.admin-section h2 {
+  color: rgba(0,212,255,0.5);
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid rgba(0,212,255,0.1);
+}
+.stat-card {
+  background: linear-gradient(135deg, rgba(0,212,255,0.04) 0%, transparent 65%), var(--bg3);
+  border: 1px solid rgba(0,212,255,0.1);
+}
+.stat-card .stat-val {
+  color: #00d4ff;
+  text-shadow: 0 0 14px rgba(0,212,255,0.25);
+}
+
+/* ── Round rows (admin) ─────────────────────────────────────────── */
+.round-row {
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: border-color .15s;
+}
+.round-row:hover {
+  border-color: rgba(0,212,255,0.2);
+}
+
+/* ── Payout row ─────────────────────────────────────────────────── */
+.bp-payout-row {
+  border-top: 1px solid rgba(0,212,255,0.1);
+}
+
+/* ── Section label style (shared) ──────────────────────────────── */
+.bp-field label,
+.lb-header,
+.bet-panel h3 {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* ── Round strip scan-line border ───────────────────────────────── */
+.round-strip {
+  background: rgba(6,9,18,0.9);
+  border: 1px solid rgba(0,212,255,0.25);
+  box-shadow: 0 0 18px rgba(0,212,255,0.1), inset 0 0 8px rgba(0,212,255,0.03);
+}
+
+/* ── Sidebar tab content area ───────────────────────────────────── */
+.tab-content {
+  background: linear-gradient(180deg, rgba(0,212,255,0.01) 0%, transparent 20%);
+}
+
+/* ── Activity feed — cyber row lines ───────────────────────────── */
+.af-event {
+  border-bottom: 1px solid rgba(0,212,255,0.05);
+  transition: background .14s;
+}
+.af-event:hover {
+  background: rgba(0,212,255,0.025);
+}
+
+/* ── Skeleton shimmer — cyan tint ──────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg3) 25%,
+    rgba(0,212,255,0.06) 50%,
+    var(--bg3) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ── Toast — unified border ────────────────────────────────────── */
+.toast-info {
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.3);
+  color: #00d4ff;
 }

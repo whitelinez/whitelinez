@@ -5663,3 +5663,207 @@ button {
 .vehicle-icon.truck { color: #fb923c; }
 .vehicle-icon.bus   { color: #a78bfa; }
 .vehicle-icon.moto  { color: #FFD600; }
+
+/* =============================================
+   BANNER GRID — 1-column stacked landscape
+   ============================================= */
+
+/* Override 2-col grid → single column flex */
+.bnr-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: unset !important;
+  gap: 8px;
+}
+
+/* ── Landscape banner base ── */
+.bnr-tile-landscape {
+  height: auto !important;
+  min-height: 74px;
+  display: flex !important;
+  align-items: center;
+  padding: 14px 18px;
+  gap: 16px;
+  cursor: default;
+  border-radius: 8px;
+  transform: none !important;
+}
+.bnr-tile-landscape:hover { transform: none !important; }
+.bnr-tile-landscape .bnr-tile-bg,
+.bnr-tile-landscape .bnr-tile-tint { display: none !important; }
+
+/* ── Icon badge (circle) ── */
+.bnr-lbanner-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Green — play idle */
+.bnr-lbanner-icon-idle {
+  background: rgba(34,197,94,0.08);
+  border: 1.5px solid rgba(34,197,94,0.25);
+  color: rgba(34,197,94,0.55);
+}
+
+/* Green — play live */
+.bnr-lbanner-icon-live {
+  background: rgba(34,197,94,0.15);
+  border: 1.5px solid rgba(34,197,94,0.55);
+  color: #22c55e;
+  box-shadow: 0 0 18px rgba(34,197,94,0.22);
+}
+
+/* Cyan — camera */
+.bnr-lbanner-icon-cam {
+  background: rgba(0,212,255,0.09);
+  border: 1.5px solid rgba(0,212,255,0.32);
+  color: #00d4ff;
+}
+
+/* ── Body text ── */
+.bnr-lbanner-body {
+  flex: 1;
+  min-width: 0;
+}
+.bnr-lbanner-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: rgba(220,235,248,0.95);
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.bnr-lbanner-sub {
+  font-size: 0.73rem;
+  color: rgba(150,180,210,0.6);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── Action column (right side) ── */
+.bnr-lbanner-action {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+.bnr-lbanner-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Play CTA button — green ── */
+.bnr-play-cta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border: 1px solid rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.12);
+  color: #22c55e;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.bnr-play-cta:hover {
+  background: rgba(34,197,94,0.22);
+  box-shadow: 0 0 14px rgba(34,197,94,0.28);
+  border-color: rgba(34,197,94,0.65);
+}
+.bnr-tile-live .bnr-play-cta {
+  border-color: rgba(34,197,94,0.65);
+  box-shadow: 0 0 16px rgba(34,197,94,0.22);
+  animation: bnr-green-pulse 1.8s ease-in-out infinite;
+}
+@keyframes bnr-green-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(34,197,94,0.22); }
+  50%       { box-shadow: 0 0 28px rgba(34,197,94,0.42); }
+}
+
+/* ── Standby state ── */
+.bnr-play-standby {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: rgba(34,197,94,0.38);
+  letter-spacing: 0.1em;
+  padding: 4px 0;
+}
+
+/* ── Camera CTA button — cyan ── */
+.bnr-cam-cta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: 1px solid rgba(0,212,255,0.32);
+  background: rgba(0,212,255,0.07);
+  color: rgba(0,212,255,0.82);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  pointer-events: none; /* tile click handles it */
+  transition: background 0.12s, border-color 0.12s;
+}
+.bnr-tile-camera:hover .bnr-cam-cta {
+  background: rgba(0,212,255,0.14);
+  border-color: rgba(0,212,255,0.55);
+  color: #00d4ff;
+}
+
+/* ── Play tile overrides — green accent, dark opacity bg ── */
+.bnr-tile-play {
+  border: 1px solid rgba(34,197,94,0.28) !important;
+  background: linear-gradient(135deg, rgba(2,10,5,0.78) 0%, rgba(6,14,10,0.65) 100%) !important;
+  box-shadow: 0 0 20px rgba(34,197,94,0.05) !important;
+  animation: none !important;
+}
+.bnr-tile-live {
+  border-color: rgba(34,197,94,0.52) !important;
+  box-shadow: 0 0 24px rgba(34,197,94,0.12) !important;
+  animation: bnr-green-border-pulse 2.4s ease-in-out infinite !important;
+}
+@keyframes bnr-green-border-pulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(34,197,94,0.12); }
+  50%       { box-shadow: 0 0 36px rgba(34,197,94,0.24); }
+}
+/* Suppress old yellow play tile styles */
+.bnr-tile-play .bnr-tile-content,
+.bnr-tile-play .bnr-default-inner,
+.bnr-tile-play .bnr-default-status-bar { display: none !important; }
+
+/* ── Camera tile overrides — cyan accent, dark opacity bg ── */
+.bnr-tile-camera {
+  border: 1px solid rgba(0,212,255,0.25) !important;
+  background: linear-gradient(135deg, rgba(2,8,14,0.78) 0%, rgba(4,12,20,0.65) 100%) !important;
+  box-shadow: 0 0 20px rgba(0,212,255,0.04) !important;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+.bnr-tile-camera:hover {
+  border-color: rgba(0,212,255,0.52) !important;
+  box-shadow: 0 0 28px rgba(0,212,255,0.12) !important;
+}
+.bnr-tile-camera .bnr-tile-content,
+.bnr-tile-camera .bnr-default-inner,
+.bnr-tile-camera .bnr-default-status-bar { display: none !important; }
+
+/* ── Count widget — move down slightly ── */
+.count-widget {
+  top: 44px !important;
+}

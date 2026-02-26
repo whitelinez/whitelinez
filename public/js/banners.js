@@ -223,101 +223,70 @@ const Banners = (() => {
     }, 12000);
   }
 
-  // ── Camera switcher tile ──────────────────────────────────────
+  // ── Camera switcher tile — landscape banner ───────────────────
   function _cameraTile() {
     return `
-      <div class="bnr-tile bnr-tile-camera" id="bnr-camera-tile" role="button" tabindex="0" aria-label="Switch camera location">
-        <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
-        <div class="bnr-tile-tint"></div>
-        <div class="bnr-default-inner">
-          <div class="bnr-ai-scan-icon">
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Corner brackets — cyan -->
-              <path d="M4 13V4H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 4H40V13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 31V40H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 40H40V31" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Detection box -->
-              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(0,212,255,0.35)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
-              <!-- Corner dots -->
-              <circle cx="11" cy="13" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <circle cx="33" cy="13" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <circle cx="11" cy="31" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <circle cx="33" cy="31" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <!-- Camera body -->
-              <rect x="15" y="18" width="10" height="8" rx="1.2" fill="rgba(0,212,255,0.1)" stroke="rgba(0,212,255,0.6)" stroke-width="0.9"/>
-              <!-- Camera lens -->
-              <circle cx="20" cy="22" r="2.2" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
-              <!-- Camera lens inner dot -->
-              <circle cx="20" cy="22" r="0.8" fill="#00d4ff" opacity="0.7"/>
-              <!-- Camera tail -->
-              <path d="M25 20l4-2v8l-4-2z" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.5)" stroke-width="0.8" stroke-linejoin="round"/>
-              <!-- Scan line -->
-              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.8" opacity="0.5"/>
-            </svg>
-          </div>
-          <div class="bnr-default-copy">
-            <p class="bnr-tile-title">Live Cameras</p>
-            <p class="bnr-tile-info">Browse active camera locations and preview before switching.</p>
-          </div>
+      <div class="bnr-tile bnr-tile-camera bnr-tile-landscape" id="bnr-camera-tile" role="button" tabindex="0" aria-label="Switch camera location">
+        <div class="bnr-lbanner-icon bnr-lbanner-icon-cam">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M23 7 16 12 23 17V7z"/>
+            <rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
         </div>
-        <div class="bnr-default-status-bar">
-          <span class="bnr-ai-dot" style="background:#00d4ff;animation:bnr-ai-pulse 2s ease-in-out infinite;"></span>
-          <span class="bnr-ai-label">MULTI-CAM</span>
-          <span class="bnr-standby-label" style="color:#00d4ff;">VIEW ALL</span>
+        <div class="bnr-lbanner-body">
+          <p class="bnr-lbanner-title">Live Cameras</p>
+          <p class="bnr-lbanner-sub">Preview and switch active camera feeds in real time.</p>
+        </div>
+        <div class="bnr-lbanner-action">
+          <button class="bnr-cam-cta" tabindex="-1">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 7 16 12 23 17V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            Switch Camera
+          </button>
+          <div class="bnr-lbanner-status">
+            <span class="bnr-ai-dot" style="background:#00d4ff;animation:bnr-ai-pulse 2s ease-in-out infinite;"></span>
+            <span class="bnr-ai-label" style="color:rgba(0,212,255,0.55);">MULTI-CAM</span>
+          </div>
         </div>
       </div>`;
   }
 
-  // ── Play tile ─────────────────────────────────────────────────
+  // ── Play tile — landscape banner ──────────────────────────────
   function _playTile() {
     const live = _sessionLive;
-    const scanColor = live ? "#FFD600" : "#00d4ff";
     return `
-      <div class="bnr-tile bnr-tile-play ${live ? "bnr-tile-live" : ""}">
-        <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
-        <div class="bnr-tile-tint"></div>
-        <div class="bnr-default-inner">
-          <div class="bnr-ai-scan-icon">
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Corner brackets -->
-              <path d="M4 13V4H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 4H40V13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 31V40H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 40H40V31" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Detection box -->
-              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(255,214,0,0.38)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
-              <!-- Corner dots -->
-              <circle cx="11" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <circle cx="33" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <circle cx="11" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <circle cx="33" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
-              ${live ? `
-              <!-- Round active: play triangle -->
-              <polygon points="18,17 18,27 29,22" fill="rgba(255,214,0,0.82)" stroke="#FFD600" stroke-width="0.7" stroke-linejoin="round"/>
-              <circle cx="22" cy="22" r="5.5" fill="none" stroke="rgba(255,214,0,0.3)" stroke-width="0.9"/>
-              ` : `
-              <!-- Waiting: clock/timer -->
-              <circle cx="22" cy="22" r="5.5" fill="none" stroke="rgba(255,214,0,0.32)" stroke-width="1"/>
-              <line x1="22" y1="18" x2="22" y2="22" stroke="#FFD600" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/>
-              <line x1="22" y1="22" x2="25" y2="25" stroke="#FFD600" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/>
-              `}
-              <!-- Scan line -->
-              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="${scanColor}" stroke-width="0.8" opacity="0.6"/>
-            </svg>
-          </div>
-          <div class="bnr-default-copy">
-            <p class="bnr-tile-title">${live ? "Round Active" : "Play"}</p>
-            <p class="bnr-tile-info">${live
-              ? "A betting round is live — place your bet before time runs out."
-              : "Watch the feed. Count the vehicles. A round is coming soon."
-            }</p>
-          </div>
+      <div class="bnr-tile bnr-tile-play bnr-tile-landscape ${live ? "bnr-tile-live" : ""}">
+        <div class="bnr-lbanner-icon ${live ? "bnr-lbanner-icon-live" : "bnr-lbanner-icon-idle"}">
+          ${live ? `
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>` : `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>`}
         </div>
-        <div class="bnr-default-status-bar">
-          <span class="bnr-ai-dot ${live ? "bnr-ai-dot-live" : ""}"></span>
-          <span class="bnr-ai-label">${live ? "ROUND OPEN" : "WAITING"}</span>
-          <span class="bnr-standby-label ${live ? "bnr-standby-live" : ""}">${live ? "BET NOW" : "STANDBY"}</span>
+        <div class="bnr-lbanner-body">
+          <p class="bnr-lbanner-title">${live ? "Round Live" : "Ready to Play"}</p>
+          <p class="bnr-lbanner-sub">${live
+            ? "A betting round is open — place your bet before time runs out."
+            : "Watch the live feed and count vehicles. A round is coming soon."
+          }</p>
+        </div>
+        <div class="bnr-lbanner-action">
+          ${live ? `
+          <button class="bnr-play-cta">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Bet Now
+          </button>` : `
+          <span class="bnr-play-standby">
+            <span class="bnr-ai-dot"></span>
+            Standby
+          </span>`}
+          ${live ? `
+          <div class="bnr-lbanner-status">
+            <span class="bnr-ai-dot bnr-ai-dot-live"></span>
+            <span class="bnr-ai-label">LIVE</span>
+          </div>` : ""}
         </div>
       </div>`;
   }
@@ -394,6 +363,13 @@ const Banners = (() => {
       document.getElementById("login-modal")?.classList.add("hidden");
       document.getElementById("register-modal")?.classList.remove("hidden");
       document.getElementById("modal-reg-email")?.focus();
+    });
+
+    // Wire play CTA → open live bet panel / bet tab
+    section.querySelector(".bnr-play-cta")?.addEventListener("click", () => {
+      const betTab = document.querySelector('[data-tab="livebet"], [data-tab="bet"], .tab-btn[data-panel="livebet"]');
+      if (betTab) { betTab.click(); return; }
+      document.getElementById("btn-live-bet")?.click();
     });
   }
 

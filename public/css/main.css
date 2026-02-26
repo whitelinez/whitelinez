@@ -1588,8 +1588,8 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .ca-icon { color: rgba(0,212,255,0.7); flex-shrink: 0; display: flex; }
 .ca-text { flex: 1; }
 .ca-time { font-size: 0.7rem; color: var(--muted); opacity: 0.7; flex-shrink: 0; }
-.sco-activity { display: flex; align-items: center; gap: 4px; }
-.sco-act-icon { font-style: normal; font-size: 11px; }
+.sco-activity { display: inline-flex; align-items: center; gap: 4px; }
+.sco-act-icon { font-style: normal; font-size: 0.65rem; }
 
 /* â”€â”€ Chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tab-content#tab-chat {
@@ -2753,6 +2753,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
     aspect-ratio: 16 / 9;
     height: auto;
     flex: none;
+    position: relative; /* ensure canvas overlays are positioned correctly */
   }
   .stream-wrapper video {
     position: absolute;
@@ -2982,10 +2983,37 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .nav-balance { height: 30px; padding: 0 9px; font-size: 0.76rem; }
 
   .empty-state { padding: 24px 16px; }
+
+  /* Sidebar: grow to fill remaining viewport below the stream */
+  .sidebar {
+    height: auto;
+    min-height: 55vh;
+    max-height: calc(100vh - 48px - 56.25vw);
+  }
+
+  /* Stream chat overlay: move to bottom-right, smaller + less opaque */
+  .stream-chat-overlay {
+    top: auto;
+    bottom: 42px;
+    right: 8px;
+    width: 190px;
+  }
+
+  /* Touch targets: remove 300ms tap delay */
+  button, a, .pill, .tab-btn, .nav-icon-btn {
+    touch-action: manipulation;
+  }
+
+  /* Pills: comfortable touch height */
+  .pill { min-height: 34px; }
+
+  /* Safe area padding for home bar on iOS */
+  .sidebar { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 
 @media (max-width: 480px) {
-  .stream-chat-overlay { width: 160px; }
+  /* Overlay: much smaller so it doesn't crowd the count widget */
+  .stream-chat-overlay { width: 140px; bottom: 38px; right: 6px; opacity: 0.88; }
   .sco-msg, .sco-join { font-size: 10px; }
   .logo-title { font-size: 11px; letter-spacing: 0.07em; }
 

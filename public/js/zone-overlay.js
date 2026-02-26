@@ -9,6 +9,7 @@ const ZoneOverlay = (() => {
   let pixiEnabled = false;
   let pixiGraphics = null;
   let pixiTexts = [];
+  let _dpr = 1;
   let countLine = null;
   let detectZone = null;
   let latestDetections = [];
@@ -69,25 +70,27 @@ const ZoneOverlay = (() => {
 
     const mobile = _isMobileClient();
     const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
+    const cssW = Math.max(1, (video?.clientWidth) || 1);
+    const cssH = Math.max(1, (video?.clientHeight) || 1);
     const desktopCfg = {
       view: canvas,
-      width: Math.max(1, canvas.width || 1),
-      height: Math.max(1, canvas.height || 1),
+      width: cssW,
+      height: cssH,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      resolution: Math.min(2, dpr),
+      resolution: Math.min(dpr, 2),
       powerPreference: "high-performance",
       preference: "webgl",
     };
     const mobileCfg = {
       view: canvas,
-      width: Math.max(1, canvas.width || 1),
-      height: Math.max(1, canvas.height || 1),
+      width: cssW,
+      height: cssH,
       backgroundAlpha: 0,
-      antialias: false,
+      antialias: true,
       autoDensity: true,
-      resolution: 1,
+      resolution: Math.min(dpr, 2),
       powerPreference: "low-power",
       preference: "webgl",
     };
@@ -171,6 +174,7 @@ const ZoneOverlay = (() => {
     syncSize();
     if (!initPixiRenderer()) {
       ctx = canvas.getContext("2d");
+      ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
       pixiEnabled = false;
     }
     window.addEventListener("resize", () => {
@@ -197,10 +201,18 @@ const ZoneOverlay = (() => {
 
   function syncSize() {
     if (!video || !canvas) return;
-    canvas.width = video.clientWidth;
-    canvas.height = video.clientHeight;
+    _dpr = window.devicePixelRatio || 1;
+    const cssW = video.clientWidth;
+    const cssH = video.clientHeight;
     if (pixiEnabled && pixiApp?.renderer) {
-      pixiApp.renderer.resize(Math.max(1, canvas.width), Math.max(1, canvas.height));
+      // Pixi manages canvas backing store via autoDensity; pass CSS dimensions
+      pixiApp.renderer.resize(Math.max(1, cssW), Math.max(1, cssH));
+    } else {
+      canvas.width  = Math.round(cssW * _dpr);
+      canvas.height = Math.round(cssH * _dpr);
+      canvas.style.width  = cssW + "px";
+      canvas.style.height = cssH + "px";
+      if (ctx) ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
     }
   }
 
@@ -236,8 +248,9 @@ const ZoneOverlay = (() => {
       drawPixi();
       return;
     }
-    if (!ctx || !canvas) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!ctx || !canvas || !video) return;
+    ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
+    ctx.clearRect(0, 0, video.clientWidth, video.clientHeight);
 
     const bounds = getContentBounds(video);
     const pt = (rx, ry) => contentToPixel(rx, ry, bounds);

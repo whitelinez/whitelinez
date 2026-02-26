@@ -7,6 +7,7 @@
 
 const DetectionOverlay = (() => {
   let canvas, ctx, video;
+  let _dpr = 1;
   let latestDetections = [];
   let rafId = null;
   const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
@@ -313,25 +314,27 @@ const DetectionOverlay = (() => {
       return false;
     }
     const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
+    const cssW = Math.max(1, (video?.clientWidth) || 1);
+    const cssH = Math.max(1, (video?.clientHeight) || 1);
     const desktopCfg = {
       view: canvas,
-      width: Math.max(1, canvas.width || 1),
-      height: Math.max(1, canvas.height || 1),
+      width: cssW,
+      height: cssH,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      resolution: Math.min(2, dpr),
+      resolution: Math.min(dpr, 2),
       powerPreference: "high-performance",
       preference: "webgl",
     };
     const mobileCfg = {
       view: canvas,
-      width: Math.max(1, canvas.width || 1),
-      height: Math.max(1, canvas.height || 1),
+      width: cssW,
+      height: cssH,
       backgroundAlpha: 0,
-      antialias: false,
+      antialias: true,
       autoDensity: true,
-      resolution: 1,
+      resolution: Math.min(dpr, 2),
       powerPreference: "low-power",
       preference: "webgl",
     };
@@ -599,6 +602,7 @@ const DetectionOverlay = (() => {
     syncSize();
     if (!initPixiRenderer()) {
       ctx = canvas.getContext("2d");
+      ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
       pixiEnabled = false;
       const hasPixi = Boolean(window.PIXI);
       let webglAvailable = false;
@@ -645,22 +649,33 @@ const DetectionOverlay = (() => {
 
   function syncSize() {
     if (!video || !canvas) return;
-    const prevW = canvas.width;
-    const prevH = canvas.height;
-    canvas.width  = video.clientWidth;
-    canvas.height = video.clientHeight;
+    _dpr = window.devicePixelRatio || 1;
+    const cssW = video.clientWidth;
+    const cssH = video.clientHeight;
     if (pixiEnabled && pixiApp?.renderer) {
-      pixiApp.renderer.resize(Math.max(1, canvas.width), Math.max(1, canvas.height));
-    }
-    if (canvas.width !== prevW || canvas.height !== prevH) {
+      // Pixi manages canvas backing store via autoDensity; pass CSS dimensions
+      pixiApp.renderer.resize(Math.max(1, cssW), Math.max(1, cssH));
       forceRender = true;
+      return;
     }
+    const newW = Math.round(cssW * _dpr);
+    const newH = Math.round(cssH * _dpr);
+    const changed = canvas.width !== newW || canvas.height !== newH;
+    canvas.width  = newW;
+    canvas.height = newH;
+    canvas.style.width  = cssW + "px";
+    canvas.style.height = cssH + "px";
+    if (changed) forceRender = true;
+    if (ctx) ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
   }
 
   function draw(detections) {
     if (!canvas) return;
     if (pixiEnabled) beginPixiFrame();
-    else if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    else if (ctx) {
+      ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
+      ctx.clearRect(0, 0, video.clientWidth, video.clientHeight);
+    }
     else return;
     const bounds = getContentBounds(video);
     if (settings.show_ground_plane_public === true) {

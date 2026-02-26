@@ -19,6 +19,28 @@ const Chat = (() => {
   let _presenceInitialized = false;
   let _lastRoundEvent = null;
   let _boundRoundUpdates = false;
+  let _lastChatUserId = null; // track last message sender for grouping
+
+  // Deterministic per-user accent color — used by avatar AND username label
+  function _userAccent(seed) {
+    const src = String(seed || "whitelinez-user");
+    let hash = 0;
+    for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
+    const abs = Math.abs(hash);
+    const palette = [
+      "#00d4ff", // cyan
+      "#22c55e", // green
+      "#a78bfa", // violet
+      "#f472b6", // pink
+      "#fb923c", // orange
+      "#4ade80", // lime
+      "#e879f9", // magenta
+      "#60a5fa", // sky-blue
+      "#f59e0b", // amber
+      "#2dd4bf", // teal
+    ];
+    return palette[(abs >> 3) % palette.length];
+  }
 
   function defaultAvatar(seed) {
     const src = String(seed || "whitelinez-user");
@@ -33,9 +55,8 @@ const Chat = (() => {
       ["#0d1a10", "#0f2d18"], // dark green
       ["#1a0d0d", "#2d1010"], // dark red
     ];
-    const accents = ["#00d4ff", "#7de8ff", "#22c55e", "#a78bfa", "#f472b6"];
     const bg = bgs[abs % bgs.length];
-    const accent = accents[(abs >> 4) % accents.length];
+    const accent = _userAccent(seed);
     // Initials from seed (first 1-2 chars)
     const initials = src.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
     const fontSize = initials.length > 1 ? 34 : 42;
@@ -419,6 +440,7 @@ const Chat = (() => {
       div.className = "chat-msg system";
       div.innerHTML = `<span>${esc(msg.content || "")}</span>${time ? `<span class="chat-time">${time}</span>` : ""}`;
       container.appendChild(div);
+      _lastChatUserId = null; // break grouping chain
       return;
     }
 
@@ -431,12 +453,16 @@ const Chat = (() => {
       ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : "";
 
+    const color = _userAccent(msg.user_id || username);
+    const senderKey = msg.user_id || username;
+    const isContinued = senderKey === _lastChatUserId;
+    _lastChatUserId = senderKey;
     const div = document.createElement("div");
-    div.className = "chat-msg";
+    div.className = isContinued ? "chat-msg chat-continued" : "chat-msg";
     div.innerHTML = `
-      <img class="chat-avatar" src="${escAttr(avatar)}" alt="${escAttr(username)}" />
-      <div class="chat-body">
-        <div class="chat-head"><span class="chat-user">${esc(username)}</span><span class="chat-time">${time}</span></div>
+      <img class="chat-avatar" src="${escAttr(avatar)}" alt="${escAttr(username)}" style="border-color: ${color}55;" />
+      <div class="chat-body" style="--user-accent: ${color};">
+        <div class="chat-head"><span class="chat-user" style="color: ${color};">${esc(username)}</span><span class="chat-time">${time}</span></div>
         <div class="chat-text">${_formatContent(msg.content)}</div>
       </div>
     `;
@@ -469,6 +495,7 @@ const Chat = (() => {
       ? new Date(bet.placed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : "";
     const div = document.createElement("div");
+    _lastChatUserId = null; // break grouping chain
     div.className = "chat-msg chat-activity-item";
     div.innerHTML = `
       <span class="ca-icon">

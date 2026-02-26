@@ -21,6 +21,7 @@ const Banners = (() => {
   let _dismissed        = new Map(); // id → ISO timestamp (or null)
   let _liked            = new Set();
   let _userId           = null;      // current logged-in user ID, null = anon
+  let _isAnon           = false;     // true when session is Supabase anonymous
   let _detailId         = null;
   let _visible          = false;
   let _sessionLive      = false;
@@ -83,20 +84,51 @@ const Banners = (() => {
     try {
       const { data } = await window.sb.auth.getUser();
       _userId = data?.user?.id || null;
-    } catch { _userId = null; }
+      _isAnon = !!data?.user?.is_anonymous;
+    } catch { _userId = null; _isAnon = false; }
   }
 
   function _watchAuth() {
     if (_authUnsub || !window.sb) return;
     const { data } = window.sb.auth.onAuthStateChange((_event, session) => {
-      const newId = session?.user?.id || null;
-      if (newId === _userId) return;
+      const newId    = session?.user?.id || null;
+      const newIsAnon = !!session?.user?.is_anonymous;
+      if (newId === _userId && newIsAnon === _isAnon) return;
       _userId = newId;
+      _isAnon = newIsAnon;
       _loadDismissed();
       _loadLiked();
       if (_visible) _render();
     });
     _authUnsub = data?.subscription?.unsubscribe ?? null;
+  }
+
+  // ── Guest upgrade tile ────────────────────────────────────────
+  function _guestUpgradeTile() {
+    if (!_isAnon) return "";
+    return `
+      <div class="bnr-tile bnr-tile-guest">
+        <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
+        <div class="bnr-tile-tint"></div>
+        <div class="bnr-guest-inner">
+          <div class="bnr-guest-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFD600" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/>
+              <line x1="17" y1="3" x2="21" y2="7"/>
+              <line x1="21" y1="3" x2="17" y2="7"/>
+            </svg>
+          </div>
+          <div class="bnr-guest-copy">
+            <p class="bnr-tile-title">Guest Session</p>
+            <p class="bnr-tile-info">You're browsing as a guest. Create a free account to save bets, track wins, and appear on the leaderboard. Guest access expires in 48 hours.</p>
+            <button class="bnr-guest-signup" id="bnr-guest-signup">
+              Create Account
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>`;
   }
 
   // ── Escape ────────────────────────────────────────────────────
@@ -191,23 +223,101 @@ const Banners = (() => {
     }, 12000);
   }
 
+  // ── Camera switcher tile ──────────────────────────────────────
+  function _cameraTile() {
+    return `
+      <div class="bnr-tile bnr-tile-camera" id="bnr-camera-tile" role="button" tabindex="0" aria-label="Switch camera location">
+        <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
+        <div class="bnr-tile-tint"></div>
+        <div class="bnr-default-inner">
+          <div class="bnr-ai-scan-icon">
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Corner brackets — cyan -->
+              <path d="M4 13V4H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M31 4H40V13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 31V40H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M31 40H40V31" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Detection box -->
+              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(0,212,255,0.35)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
+              <!-- Corner dots -->
+              <circle cx="11" cy="13" r="1.2" fill="#00d4ff" opacity="0.65"/>
+              <circle cx="33" cy="13" r="1.2" fill="#00d4ff" opacity="0.65"/>
+              <circle cx="11" cy="31" r="1.2" fill="#00d4ff" opacity="0.65"/>
+              <circle cx="33" cy="31" r="1.2" fill="#00d4ff" opacity="0.65"/>
+              <!-- Camera body -->
+              <rect x="15" y="18" width="10" height="8" rx="1.2" fill="rgba(0,212,255,0.1)" stroke="rgba(0,212,255,0.6)" stroke-width="0.9"/>
+              <!-- Camera lens -->
+              <circle cx="20" cy="22" r="2.2" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
+              <!-- Camera lens inner dot -->
+              <circle cx="20" cy="22" r="0.8" fill="#00d4ff" opacity="0.7"/>
+              <!-- Camera tail -->
+              <path d="M25 20l4-2v8l-4-2z" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.5)" stroke-width="0.8" stroke-linejoin="round"/>
+              <!-- Scan line -->
+              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.8" opacity="0.5"/>
+            </svg>
+          </div>
+          <div class="bnr-default-copy">
+            <p class="bnr-tile-title">Live Cameras</p>
+            <p class="bnr-tile-info">Browse active camera locations and preview before switching.</p>
+          </div>
+        </div>
+        <div class="bnr-default-status-bar">
+          <span class="bnr-ai-dot" style="background:#00d4ff;animation:bnr-ai-pulse 2s ease-in-out infinite;"></span>
+          <span class="bnr-ai-label">MULTI-CAM</span>
+          <span class="bnr-standby-label" style="color:#00d4ff;">VIEW ALL</span>
+        </div>
+      </div>`;
+  }
+
   // ── Play tile ─────────────────────────────────────────────────
   function _playTile() {
     const live = _sessionLive;
+    const scanColor = live ? "#FFD600" : "#00d4ff";
     return `
       <div class="bnr-tile bnr-tile-play ${live ? "bnr-tile-live" : ""}">
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
-        ${live ? `
-        <span class="bnr-live-badge">
-          <span class="bnr-live-dot"></span>LIVE
-        </span>` : ""}
-        <div class="bnr-tile-content">
-          <p class="bnr-tile-title">Play</p>
-          <p class="bnr-tile-info">${live
-            ? "A session is live. Watch the feed, count the cars, and place your bets before the round opens."
-            : "Watch the live feed while you wait. A betting round is coming soon — count the cars and get ready."
-          }</p>
+        <div class="bnr-default-inner">
+          <div class="bnr-ai-scan-icon">
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Corner brackets -->
+              <path d="M4 13V4H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M31 4H40V13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 31V40H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M31 40H40V31" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Detection box -->
+              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(255,214,0,0.38)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
+              <!-- Corner dots -->
+              <circle cx="11" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <circle cx="33" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <circle cx="11" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
+              <circle cx="33" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
+              ${live ? `
+              <!-- Round active: play triangle -->
+              <polygon points="18,17 18,27 29,22" fill="rgba(255,214,0,0.82)" stroke="#FFD600" stroke-width="0.7" stroke-linejoin="round"/>
+              <circle cx="22" cy="22" r="5.5" fill="none" stroke="rgba(255,214,0,0.3)" stroke-width="0.9"/>
+              ` : `
+              <!-- Waiting: clock/timer -->
+              <circle cx="22" cy="22" r="5.5" fill="none" stroke="rgba(255,214,0,0.32)" stroke-width="1"/>
+              <line x1="22" y1="18" x2="22" y2="22" stroke="#FFD600" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/>
+              <line x1="22" y1="22" x2="25" y2="25" stroke="#FFD600" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/>
+              `}
+              <!-- Scan line -->
+              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="${scanColor}" stroke-width="0.8" opacity="0.6"/>
+            </svg>
+          </div>
+          <div class="bnr-default-copy">
+            <p class="bnr-tile-title">${live ? "Round Active" : "Play"}</p>
+            <p class="bnr-tile-info">${live
+              ? "A betting round is live — place your bet before time runs out."
+              : "Watch the feed. Count the vehicles. A round is coming soon."
+            }</p>
+          </div>
+        </div>
+        <div class="bnr-default-status-bar">
+          <span class="bnr-ai-dot ${live ? "bnr-ai-dot-live" : ""}"></span>
+          <span class="bnr-ai-label">${live ? "ROUND OPEN" : "WAITING"}</span>
+          <span class="bnr-standby-label ${live ? "bnr-standby-live" : ""}">${live ? "BET NOW" : "STANDBY"}</span>
         </div>
       </div>`;
   }
@@ -269,15 +379,22 @@ const Banners = (() => {
     }
 
     const visible = _banners.filter(b => !_dismissed.has(String(b.id)));
-    const adminTiles = visible.length ? visible.map(_tile).join("") : _defaultTile();
+    const bannerTiles = visible.map(_tile).join("");
 
     section.innerHTML = `
       <div class="bnr-header">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span>Updates &amp; Announcements</span>
       </div>
-      <div class="bnr-grid">${_playTile()}${adminTiles}</div>`;
+      <div class="bnr-grid">${_playTile()}${_defaultTile()}${_cameraTile()}${_guestUpgradeTile()}${bannerTiles}</div>`;
     if (visible.length) _wireGrid(section);
+
+    // Wire guest signup → register modal
+    section.querySelector("#bnr-guest-signup")?.addEventListener("click", () => {
+      document.getElementById("login-modal")?.classList.add("hidden");
+      document.getElementById("register-modal")?.classList.remove("hidden");
+      document.getElementById("modal-reg-email")?.focus();
+    });
   }
 
   function _wireGrid(container) {

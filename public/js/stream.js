@@ -21,6 +21,10 @@ const Stream = (() => {
   }
 
   function buildStreamUrl() {
+    // Direct HLS URL — bypass proxy
+    if (currentAlias && /^https?:\/\//i.test(currentAlias)) {
+      return currentAlias;
+    }
     const qs = currentAlias ? `?alias=${encodeURIComponent(currentAlias)}` : "";
     return `/api/stream${qs}`;
   }

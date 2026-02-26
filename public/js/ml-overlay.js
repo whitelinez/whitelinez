@@ -246,33 +246,68 @@ const MlOverlay = (() => {
   }
 
   function getVerboseScript({ confPct, scenePct, detections, frames, modelLoop }) {
-    const lines = [];
-    if (frames < 8) {
-      lines.push("Scanning vehicles live");
-    } else if (detections < 40) {
-      lines.push("Building traffic baseline");
+    const lighting = mapSceneValue(state.sceneLighting, "scanning");
+    const weather  = mapSceneValue(state.sceneWeather,  "scanning");
+    const crossRate = Math.max(0, Number(state.crossingRatePerMin) || 0);
+    const profile   = String(state.runtimeProfile || "").toLowerCase().replaceAll("_", " ");
+
+    const parts = [];
+
+    // ── Scene observation ──────────────────────────────────────
+    if (frames < 6) {
+      parts.push("initializing scene scan");
     } else {
-      lines.push("Tracking vehicles in lane");
+      const lightDesc =
+        lighting === "day"                   ? "daylight scene confirmed" :
+        lighting === "night"                 ? "night scene active" :
+        (lighting === "dusk" ||
+         lighting === "dawn")               ? "low-light transition" :
+        lighting === "overcast"              ? "overcast conditions" :
+        lighting === "glare"                 ? "glare interference detected" :
+        (lighting === "scanning" ||
+         lighting === "unknown")            ? "scene lock calibrating" :
+        `scene: ${lighting}`;
+      parts.push(lightDesc);
     }
 
-    if (confPct < 40) {
-      lines.push("Improving confidence for better detections");
-    } else if (confPct < 65) {
-      lines.push("Confidence is stabilizing");
+    // ── Weather ────────────────────────────────────────────────
+    if (weather && weather !== "scanning" && weather !== "unknown") {
+      const wxDesc =
+        weather === "clear"                  ? "clear sky" :
+        (weather === "rain" ||
+         weather === "rainy")               ? "rain detected — wet road" :
+        weather === "overcast"               ? "overcast sky" :
+        (weather === "fog" ||
+         weather === "foggy")               ? "fog — reduced visibility" :
+        weather === "glare"                  ? "glare conditions" :
+        weather === "haze"                   ? "haze detected" :
+        `weather: ${weather}`;
+      parts.push(wxDesc);
     } else {
-      lines.push("Confidence stable for live detections");
+      parts.push("weather scanning");
     }
 
-    if (scenePct < 35) {
-      lines.push("Scene lock calibrating");
-    } else if (scenePct < 70) {
-      lines.push("Scene lock settling");
+    // ── Traffic load ───────────────────────────────────────────
+    if (frames < 4) {
+      parts.push("traffic baseline building");
+    } else if (crossRate >= 12) {
+      parts.push(`heavy volume · ${crossRate.toFixed(1)}/min`);
+    } else if (crossRate >= 5) {
+      parts.push(`moderate flow · ${crossRate.toFixed(1)}/min`);
+    } else if (crossRate > 0) {
+      parts.push(`light traffic · ${crossRate.toFixed(1)}/min`);
     } else {
-      lines.push("Scene lock stable");
+      parts.push("monitoring traffic flow");
     }
 
-    lines.push(modelLoop === "active" ? "Model retrain active" : "Model retrain idle");
-    return lines.join(" | ");
+    // ── Model / profile ────────────────────────────────────────
+    if (profile && profile !== "balanced" && profile !== "") {
+      parts.push(`profile: ${profile}`);
+    } else {
+      parts.push(modelLoop === "active" ? "retrain loop running" : "retrain idle");
+    }
+
+    return parts.join(" | ");
   }
 
   function getTrafficLoadSummary(crossRate, profile, reason) {

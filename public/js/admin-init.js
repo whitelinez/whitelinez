@@ -2471,6 +2471,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const panel = String(e?.detail?.panel || "");
     if (panel === "audience") loadAudiencePanel(true);
     if (panel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
+    if (panel === "streams") { window.AdminStreams?.init(); }
   });
 
   // initAdminSections() fires admin:panel-change before the listener above is registered.
@@ -2479,6 +2480,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const _initPanel = localStorage.getItem("whitelinez.admin.active_panel") || "overview";
     if (_initPanel === "audience") loadAudiencePanel(true);
     if (_initPanel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
+    if (_initPanel === "streams") { window.AdminStreams?.init(); }
   }
 
   // Market type visibility

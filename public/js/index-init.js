@@ -1,3 +1,5 @@
+const GUEST_TS_KEY = "wlz.guest.session_ts";
+
 (async () => {
   const PUBLIC_DAY_PRESET = {
     brightness: 102,
@@ -79,6 +81,20 @@
       videoEl.style.filter = buildVideoFilter(appearance);
     } catch {
       // Keep public view resilient if appearance config fetch fails.
+    }
+  }
+
+  // ── Guest session 48h expiry scrub ────────────────────────────────────────
+  {
+    const earlySession = await Auth.getSession();
+    if (earlySession?.user?.is_anonymous) {
+      const ts = Number(localStorage.getItem(GUEST_TS_KEY) || 0);
+      if (ts > 0 && Date.now() - ts > 48 * 60 * 60 * 1000) {
+        localStorage.removeItem(GUEST_TS_KEY);
+        try { await window.sb.auth.signOut(); } catch {}
+        window.location.reload();
+        return;
+      }
     }
   }
 
@@ -208,6 +224,52 @@
   // Logout
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
 
+  // Load all active cameras for failover
+  let _streamCameras = [];
+  let _streamCamIdx = 0;
+  let _failoverPending = false;
+  try {
+    const { data: camData } = await window.sb
+      .from("cameras")
+      .select("id, ipcam_alias, created_at")
+      .eq("is_active", true);
+    if (Array.isArray(camData)) {
+      _streamCameras = camData
+        .filter(c => {
+          const a = String(c.ipcam_alias || "").trim();
+          return a && a.toLowerCase() !== "your-alias";
+        })
+        .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
+    }
+  } catch { /* silent — stream works without failover list */ }
+
+  // Stream offline overlay + camera failover
+  window.addEventListener("stream:status", (e) => {
+    const overlay = document.getElementById("stream-offline-overlay");
+    const infoEl = overlay?.querySelector(".stream-offline-info");
+
+    if (e.detail?.status === "down") {
+      overlay?.classList.remove("hidden");
+
+      // Try next camera if multiple are configured
+      if (!_failoverPending && _streamCameras.length > 1) {
+        _failoverPending = true;
+        _streamCamIdx = (_streamCamIdx + 1) % _streamCameras.length;
+        const next = _streamCameras[_streamCamIdx];
+        if (infoEl) infoEl.textContent = "Trying backup stream...";
+        setTimeout(() => {
+          Stream.setAlias(next?.ipcam_alias || "");
+          _failoverPending = false;
+        }, 2500);
+      } else if (infoEl) {
+        infoEl.textContent = "Reconnecting to live feed...";
+      }
+    } else if (e.detail?.status === "ok") {
+      overlay?.classList.add("hidden");
+      _failoverPending = false;
+    }
+  });
+
   // Stream
   const video = document.getElementById("live-video");
   await Stream.init(video);
@@ -251,6 +313,7 @@
   });
 
   MlShowcase.init();
+  CameraSwitcher.init();
 
   // ws_account — per-user events (balance, bet resolution)
   if (session) {
@@ -414,6 +477,24 @@ function _connectUserWs(session) {
     close();
     document.getElementById("register-modal")?.classList.remove("hidden");
     document.getElementById("modal-reg-email")?.focus();
+  });
+
+  // Guest login
+  document.getElementById("modal-guest-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("modal-guest-btn");
+    const errEl = document.getElementById("modal-auth-error");
+    if (errEl) errEl.textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Connecting...";
+    try {
+      await Auth.signInAnon();
+      localStorage.setItem(GUEST_TS_KEY, String(Date.now()));
+      window.location.reload();
+    } catch (err) {
+      if (errEl) errEl.textContent = err.message || "Guest access unavailable.";
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg> Continue as Guest`;
+    }
   });
 }());
 

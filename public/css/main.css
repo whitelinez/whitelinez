@@ -4910,3 +4910,756 @@ button {
   border-radius: 3px;
   padding: 0 3px;
 }
+
+/* =============================================
+   CHAT REFINEMENTS v2 — per-user color identities
+   ============================================= */
+
+/* Tighter rows with breathing room */
+.chat-messages {
+  gap: 1px !important;
+  padding: 8px 0 !important;
+}
+
+/* Regular message row */
+.chat-msg:not(.system):not(.chat-activity-item) {
+  padding: 4px 10px 5px 10px;
+  border-radius: 6px;
+  border-left: 2px solid transparent;
+  transition: background 0.1s, border-color 0.1s;
+}
+.chat-msg:not(.system):not(.chat-activity-item):hover {
+  background: rgba(255,255,255,0.03);
+  border-left-color: rgba(var(--user-accent-rgb, 0,212,255), 0.18);
+}
+
+/* Body column — left accent bar from CSS var injected by JS */
+.chat-body {
+  border-left: 2px solid rgba(0,0,0,0);
+  border-left-color: color-mix(in srgb, var(--user-accent, #00d4ff) 30%, transparent);
+  padding-left: 8px;
+  min-width: 0;
+}
+
+/* Username — JetBrains Mono, color comes from inline style */
+.chat-msg .chat-user {
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 0.73rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 8px currentColor;
+  opacity: 0.95;
+}
+
+/* Timestamp — dimmer, tighter */
+.chat-msg .chat-time {
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 0.58rem !important;
+  color: rgba(70, 90, 110, 0.55) !important;
+  letter-spacing: 0.05em;
+}
+
+/* Message text — clean, readable */
+.chat-msg .chat-text {
+  font-size: 0.83rem !important;
+  line-height: 1.52 !important;
+  color: rgba(210, 228, 245, 0.88) !important;
+  word-break: break-word;
+  letter-spacing: 0.008em;
+}
+
+/* Head row — tighter baseline alignment */
+.chat-head {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 7px !important;
+  margin-bottom: 1px;
+}
+
+/* Avatar — slightly larger, border matches user color via inline style */
+.chat-avatar {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 7px !important;
+  border-width: 1.5px !important;
+  flex-shrink: 0;
+}
+
+/* Consecutive message grouping — hide avatar/name for follow-ups
+   requires JS class but CSS prep: */
+.chat-msg.chat-continued .chat-avatar {
+  opacity: 0;
+}
+.chat-msg.chat-continued .chat-head {
+  display: none !important;
+}
+.chat-msg.chat-continued {
+  padding-top: 1px;
+}
+
+/* =============================================
+   PLAY TILE — Yellow HUD AI detect aesthetic
+   ============================================= */
+
+.bnr-tile-play {
+  border: 1px solid rgba(255,214,0,0.28) !important;
+  box-shadow: 0 0 20px rgba(255,214,0,0.06), inset 0 0 24px rgba(0,0,0,0.3);
+  cursor: default;
+  height: 72px;
+  opacity: 1;
+}
+.bnr-tile-play .bnr-tile-content { display: none; }
+
+/* Live state — brighter yellow glow */
+.bnr-tile-live {
+  border-color: rgba(255,214,0,0.55) !important;
+  box-shadow: 0 0 28px rgba(255,214,0,0.16), inset 0 0 24px rgba(0,0,0,0.3) !important;
+  animation: bnr-play-pulse 2.4s ease-in-out infinite;
+}
+@keyframes bnr-play-pulse {
+  0%, 100% { box-shadow: 0 0 28px rgba(255,214,0,0.16), inset 0 0 24px rgba(0,0,0,0.3); }
+  50%       { box-shadow: 0 0 38px rgba(255,214,0,0.28), inset 0 0 24px rgba(0,0,0,0.3); }
+}
+
+/* Live dot variants */
+.bnr-ai-dot-live {
+  background: #FFD600 !important;
+  animation: bnr-ai-pulse 0.85s ease-in-out infinite !important;
+}
+
+/* "BET NOW" label — glowing yellow */
+.bnr-standby-live {
+  color: #FFD600 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 8px rgba(255,214,0,0.55);
+  letter-spacing: 0.06em;
+}
+
+/* =============================================
+   STREAM OFFLINE OVERLAY
+   ============================================= */
+
+.stream-offline-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  background: rgba(4, 6, 14, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.stream-offline-overlay.hidden { display: none; }
+
+.stream-offline-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 28px 24px;
+  border: 1px solid rgba(255,214,0,0.28);
+  border-radius: 10px;
+  background: rgba(8, 10, 22, 0.72);
+  box-shadow: 0 0 40px rgba(255,214,0,0.07), inset 0 0 30px rgba(0,0,0,0.4);
+  min-width: 220px;
+}
+
+.stream-offline-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stream-offline-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #FFD600;
+  letter-spacing: 0.12em;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(255,214,0,0.45);
+}
+
+.stream-offline-info {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  color: rgba(255,214,0,0.5);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.stream-offline-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.stream-offline-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FFD600;
+  animation: bnr-ai-pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.stream-offline-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255,214,0,0.42);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* =============================================
+   CAMERA TILE — cyan HUD style
+   ============================================= */
+
+.bnr-tile-camera {
+  border: 1px solid rgba(0,212,255,0.28) !important;
+  box-shadow: 0 0 20px rgba(0,212,255,0.06), inset 0 0 24px rgba(0,0,0,0.3);
+  cursor: pointer;
+  height: 72px;
+  opacity: 1;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+.bnr-tile-camera:hover {
+  border-color: rgba(0,212,255,0.55) !important;
+  box-shadow: 0 0 28px rgba(0,212,255,0.14), inset 0 0 24px rgba(0,0,0,0.3) !important;
+  transform: translateY(-1px);
+}
+.bnr-tile-camera:focus-visible {
+  outline: 2px solid rgba(0,212,255,0.6);
+  outline-offset: 2px;
+}
+
+/* =============================================
+   CAMERA SWITCHER MODAL
+   ============================================= */
+
+.cam-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(4,6,14,0.72);
+  backdrop-filter: blur(4px);
+}
+.cam-modal-backdrop.hidden { display: none; }
+
+.camera-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1101;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+}
+.camera-modal.hidden { display: none; }
+
+.cam-modal-inner {
+  pointer-events: all;
+  background: #0c1018;
+  border: 1px solid rgba(0,212,255,0.28);
+  border-radius: 12px;
+  box-shadow: 0 0 60px rgba(0,212,255,0.1), 0 24px 48px rgba(0,0,0,0.55);
+  width: 100%;
+  max-width: 780px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cam-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(0,212,255,0.12);
+  background: rgba(0,212,255,0.03);
+  flex-shrink: 0;
+}
+
+.cam-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #00d4ff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cam-modal-close {
+  background: transparent;
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 5px;
+  color: rgba(0,212,255,0.6);
+  cursor: pointer;
+  padding: 5px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s;
+}
+.cam-modal-close:hover {
+  background: rgba(0,212,255,0.08);
+  border-color: rgba(0,212,255,0.4);
+  color: #00d4ff;
+}
+
+.cam-modal-hint {
+  font-size: 0.77rem;
+  color: rgba(140,160,185,0.65);
+  padding: 10px 18px 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+.cam-modal-hint strong { color: rgba(0,212,255,0.8); font-weight: 600; }
+
+.cam-modal-body {
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.cam-modal-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  color: rgba(100,120,145,0.6);
+  font-size: 0.82rem;
+  padding: 32px 0;
+}
+
+/* Camera card */
+.cam-card {
+  border: 1px solid rgba(0,212,255,0.16);
+  border-radius: 9px;
+  background: rgba(9,13,24,0.85);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+.cam-card:hover {
+  border-color: rgba(0,212,255,0.38);
+  box-shadow: 0 0 18px rgba(0,212,255,0.08);
+}
+.cam-card-active {
+  border-color: rgba(34,197,94,0.45) !important;
+  box-shadow: 0 0 16px rgba(34,197,94,0.1) !important;
+}
+
+/* Preview area */
+.cam-card-preview {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: #070b14;
+  overflow: hidden;
+}
+.cam-preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cam-preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(0,212,255,0.35);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  background: linear-gradient(160deg, rgba(0,212,255,0.03) 0%, transparent 70%);
+}
+.cam-preview-placeholder.hidden { display: none; }
+
+.cam-active-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  background: rgba(34,197,94,0.85);
+  color: #fff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+/* Card info row */
+.cam-card-info {
+  padding: 8px 10px 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.cam-card-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(220,235,250,0.9);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cam-card-type {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(0,212,255,0.45);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* Card action buttons */
+.cam-card-actions {
+  display: flex;
+  gap: 6px;
+  padding: 6px 10px 10px;
+}
+.btn-cam-preview,
+.btn-cam-switch {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(0,212,255,0.25);
+  background: rgba(0,212,255,0.06);
+  color: rgba(0,212,255,0.8);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.btn-cam-preview:hover,
+.btn-cam-switch:hover:not([disabled]) {
+  background: rgba(0,212,255,0.14);
+  border-color: rgba(0,212,255,0.45);
+  color: #00d4ff;
+}
+.btn-cam-switch-active {
+  border-color: rgba(34,197,94,0.35) !important;
+  background: rgba(34,197,94,0.07) !important;
+  color: rgba(34,197,94,0.8) !important;
+  cursor: default;
+}
+
+/* =============================================
+   ADMIN — STREAMS PANEL
+   ============================================= */
+
+.streams-msg {
+  font-size: 0.82rem;
+  min-height: 20px;
+  margin-bottom: 8px;
+  display: block;
+}
+.streams-msg-ok  { color: var(--ok, #22c55e); }
+.streams-msg-err { color: var(--err, #ef4444); }
+
+.stream-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--abr, rgba(255,255,255,0.07));
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--bg2, #12161e);
+  transition: border-color 0.12s;
+}
+.stream-row:hover { border-color: rgba(0,212,255,0.25); }
+
+.stream-row-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.stream-row-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text, #dce8f5);
+}
+.stream-row-alias {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: rgba(100,130,160,0.7);
+  word-break: break-all;
+}
+.stream-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.stream-badge-active   { background: rgba(34,197,94,0.15);  color: #22c55e; }
+.stream-badge-inactive { background: rgba(100,116,139,0.15); color: rgba(100,116,139,0.8); }
+.stream-type-tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(0,212,255,0.5);
+  background: rgba(0,212,255,0.07);
+  border-radius: 3px;
+  padding: 2px 7px;
+}
+
+.stream-row-preview-wrap {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #050810;
+  aspect-ratio: 16/9;
+  max-width: 360px;
+}
+.stream-row-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.stream-prv-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.65);
+  border: none;
+  color: #fff;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  padding: 3px 7px;
+  cursor: pointer;
+}
+
+.stream-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.stream-btn-delete {
+  background: rgba(239,68,68,0.08) !important;
+  border-color: rgba(239,68,68,0.3) !important;
+  color: rgba(239,68,68,0.8) !important;
+}
+.stream-btn-delete:hover {
+  background: rgba(239,68,68,0.18) !important;
+  color: #ef4444 !important;
+}
+
+/* =============================================
+   HEADER LOGO — hover effect
+   ============================================= */
+
+.logo {
+  transition: opacity 0.15s, filter 0.2s;
+}
+.logo:hover {
+  opacity: 0.88;
+  filter: drop-shadow(0 0 8px rgba(0,212,255,0.35));
+}
+.logo:hover .logo-title {
+  color: #00d4ff;
+  text-shadow: 0 0 12px rgba(0,212,255,0.45);
+}
+.logo:hover img {
+  filter: drop-shadow(0 0 6px rgba(0,212,255,0.5));
+}
+.logo img,
+.logo-title {
+  transition: color 0.18s, filter 0.18s, text-shadow 0.18s;
+}
+
+/* Login icon — fingerprint cyber glow */
+#btn-open-login {
+  transition: color 0.14s, background 0.14s, filter 0.16s;
+}
+#btn-open-login:hover {
+  color: #00d4ff !important;
+  filter: drop-shadow(0 0 6px rgba(0,212,255,0.45));
+}
+
+/* =============================================
+   AUTH DIVIDER + GUEST LOGIN BUTTON
+   ============================================= */
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+  color: rgba(180,200,220,0.3);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+
+.btn-guest-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 16px;
+  border: 1px solid rgba(255,214,0,0.22);
+  background: rgba(255,214,0,0.04);
+  color: rgba(255,214,0,0.65);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.btn-guest-login:hover {
+  background: rgba(255,214,0,0.09);
+  border-color: rgba(255,214,0,0.4);
+  color: rgba(255,214,0,0.92);
+}
+.btn-guest-login:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn-guest-login svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* =============================================
+   COUNT WIDGET — HUD REDESIGN
+   ============================================= */
+
+/* Override base count-widget layout */
+.count-widget {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  min-width: 148px;
+  padding: 8px 10px 9px 10px;
+  z-index: 6;
+  clip-path: none;
+  background: rgba(4,7,14,0.72);
+  border: 1px solid rgba(255,214,0,0.42);
+  border-radius: 0;
+  /* HUD corner cuts via clip-path */
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  backdrop-filter: blur(3px);
+  box-shadow: 0 0 18px rgba(255,214,0,0.06), inset 0 0 0 1px rgba(255,214,0,0.06);
+}
+
+/* HUD top-left label */
+.count-widget::before {
+  content: "LIVE COUNT";
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  color: rgba(255,214,0,0.45);
+  margin-bottom: 4px;
+}
+
+/* Total number */
+.count-widget-total {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 7px;
+  line-height: 1;
+}
+.count-widget-total span:first-child {
+  font-size: 2rem;
+  font-weight: 900;
+  font-family: "JetBrains Mono", monospace;
+  color: #FFD600;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(255,214,0,0.4), 0 2px 8px rgba(0,0,0,0.6);
+  letter-spacing: -0.02em;
+}
+
+/* Separator line */
+.count-widget-total::after {
+  display: none;
+}
+.count-widget .cw-label {
+  font-size: 0.58rem;
+  color: rgba(255,220,100,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  align-self: flex-end;
+  padding-bottom: 3px;
+}
+
+/* Breakdown row */
+.count-widget-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 6px;
+}
+.cw-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: rgba(210,228,245,0.78);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+.cw-item strong {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: #e8f4ff;
+  text-shadow: 0 0 6px rgba(200,230,255,0.2);
+  min-width: 18px;
+}
+
+/* WS dot — repositioned */
+.cw-ws-dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 5px;
+  height: 5px;
+}
+
+/* HUD vehicle icons — themed */
+.vehicle-icon {
+  width: 15px;
+  height: 11px;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+.vehicle-icon.car   { color: #00d4ff; }
+.vehicle-icon.truck { color: #fb923c; }
+.vehicle-icon.bus   { color: #a78bfa; }
+.vehicle-icon.moto  { color: #FFD600; }

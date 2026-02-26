@@ -131,22 +131,11 @@ const Markets = (() => {
     window.Banners?.show();
     const container = document.getElementById("markets-container");
     if (container) {
+      // Keep hidden countdown elements alive for internal logic; no visible empty-state
+      // (the banner tile handles "No Active Round" messaging)
       const html = `
-        <div class="empty-state">
-          <div class="empty-state-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"></circle>
-              <circle cx="12" cy="12" r="3"></circle>
-              <line x1="12" y1="3" x2="12" y2="6"></line>
-              <line x1="12" y1="18" x2="12" y2="21"></line>
-              <line x1="3" y1="12" x2="6" y2="12"></line>
-              <line x1="18" y1="12" x2="21" y2="12"></line>
-            </svg>
-          </div>
-          No active round right now.
-          <span id="next-round-note">Checking next round schedule...</span>
-          <strong id="next-round-countdown" style="font-size:0.95rem;color:var(--accent);">--:--</strong>
-        </div>`;
+        <span id="next-round-note" style="display:none;"></span>
+        <strong id="next-round-countdown" style="display:none;">--:--</strong>`;
       if (container.innerHTML !== html) container.innerHTML = html;
     }
     updateRoundStrip(null);

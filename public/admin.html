@@ -111,6 +111,15 @@
         </svg>
         <span>Banners</span>
       </button>
+
+      <button class="admin-nav-btn" data-panel="streams">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="4" width="10" height="8" rx="1.2"/>
+          <path d="M11 7l4-2v6l-4-2"/>
+          <circle cx="4" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Streams</span>
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -934,6 +943,63 @@
         </div>
       </section>
 
+      <!-- ═══════════════════════════════════════════════════════
+           STREAMS PANEL
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-streams">
+        <div class="panel-head">
+          <h2>Streams</h2>
+          <p>Manage live camera sources. Add streams by ipcam alias or direct HLS URL.</p>
+        </div>
+
+        <p id="streams-msg" class="streams-msg"></p>
+
+        <!-- Camera list -->
+        <div class="card-box" style="margin-bottom:18px;">
+          <h3>Camera Sources</h3>
+          <div id="streams-list">
+            <p class="loading">Loading...</p>
+          </div>
+        </div>
+
+        <!-- Add / Edit form -->
+        <div class="card-box" id="streams-form-card">
+          <h3 id="streams-form-heading">Add Stream</h3>
+          <p class="admin-hint">Use an ipcam alias (short name) or paste a full HLS URL (https://...). The label is shown to users in the camera switcher.</p>
+
+          <form id="streams-form">
+            <div class="field-row">
+              <div class="field">
+                <label for="streams-form-name">Display Name</label>
+                <input id="streams-form-name" type="text" maxlength="60" placeholder="e.g. Main Street, North Gate…" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="streams-form-alias">Stream Alias or URL</label>
+                <input id="streams-form-alias" type="text" placeholder="my-cam-alias  or  https://stream.example.com/live.m3u8" required />
+                <p class="admin-hint" style="margin:4px 0 0;">Short alias → proxied via /api/stream. Full URL → loaded directly.</p>
+              </div>
+            </div>
+
+            <div class="field" style="flex-direction:row;align-items:center;gap:10px;">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+                <input id="streams-form-active" type="checkbox" checked />
+                <span>Active (visible to users)</span>
+              </label>
+            </div>
+
+            <p id="streams-form-msg" class="form-msg" style="margin-top:6px;"></p>
+
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button type="submit" class="btn-primary" id="streams-form-submit">Add Stream</button>
+              <button type="button" class="btn-outline" id="streams-form-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
     </div><!-- .admin-workspace -->
   </main>
 </div><!-- .admin-layout -->
@@ -954,5 +1020,6 @@
 <script src="/js/admin-night-profile.js"></script>
 <script src="/js/admin-runtime-profile.js"></script>
 <script src="/js/admin-banners.js"></script>
+<script src="/js/admin-streams.js"></script>
 </body>
 </html>

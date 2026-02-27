@@ -60,7 +60,7 @@ const Activity = (() => {
 
       if (error) throw error;
       if (!balances?.length) {
-        container.innerHTML = `<div class="empty-state">No players yet.<br><span>Be the first to place a bet.</span></div>`;
+        container.innerHTML = `<div class="empty-state">No players yet.<br><span>Be the first to make a guess.</span></div>`;
         return;
       }
 
@@ -84,7 +84,7 @@ const Activity = (() => {
           <div class="lb-row${topClass}">
             ${rank}
             <span class="lb-name">${_esc(name)}</span>
-            <span class="lb-balance">$ ${Number(b.balance || 0).toLocaleString()}</span>
+            <span class="lb-balance">${Number(b.balance || 0).toLocaleString()} pts</span>
           </div>`;
       }).join("");
     } catch (e) {

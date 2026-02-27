@@ -9,9 +9,7 @@
 
 const FloatingCount = (() => {
   let _wrapper = null;
-  let _lastTotal = 0;         // latest global total from WS
-  let _betBaseline = null;    // global total at moment bet was placed; null = no active bet
-  let _betVehicleClass = null; // vehicle class for the active bet (null = all)
+  let _lastTotal = 0;
 
   function init(streamWrapper) {
     _wrapper = streamWrapper;
@@ -20,32 +18,19 @@ const FloatingCount = (() => {
       update(e.detail);
     });
 
-    // Switch to bet mode when user places a bet.
+    // Show guess row when user submits a guess.
     window.addEventListener("bet:placed", (e) => {
       const detail = e.detail || {};
-      _betVehicleClass = detail.vehicle_class || null;
-      // Anchor baseline to the current live count at bet placement time.
-      if (_betVehicleClass) {
-        const bd = window._lastCountPayload?.vehicle_breakdown ?? {};
-        _betBaseline = Number(bd[_betVehicleClass] ?? 0);
-      } else {
-        _betBaseline = _lastTotal;
-      }
-      _refreshBetModeLabel(true);
+      const guessEl = document.getElementById("cw-guess-val");
+      const rowEl   = document.getElementById("cw-guess-row");
+      if (guessEl) guessEl.textContent = detail.exact_count ?? "—";
+      if (rowEl)   rowEl.classList.remove("hidden");
     });
 
-    // Return to global mode when bet resolves.
+    // Hide guess row when resolved.
     window.addEventListener("bet:resolved", () => {
-      _betBaseline = null;
-      _betVehicleClass = null;
-      _refreshBetModeLabel(false);
+      document.getElementById("cw-guess-row")?.classList.add("hidden");
     });
-  }
-
-  function _refreshBetModeLabel(isBetMode) {
-    const labelEl = document.getElementById("cw-total-label");
-    if (!labelEl) return;
-    labelEl.textContent = isBetMode ? "MY BET" : "TOTAL";
   }
 
   function update(data) {
@@ -54,7 +39,6 @@ const FloatingCount = (() => {
     const crossings = data.new_crossings ?? 0;
 
     _lastTotal = total;
-    // Expose latest payload globally so bet:placed handler can read vehicle breakdown.
     window._lastCountPayload = data;
 
     const totalEl = document.getElementById("cw-total");
@@ -63,18 +47,7 @@ const FloatingCount = (() => {
     const busesEl = document.getElementById("cw-buses");
     const motosEl = document.getElementById("cw-motos");
 
-    // In bet mode: show cars since bet was placed (starts at 0 for the bettor).
-    let displayTotal = total;
-    if (_betBaseline !== null) {
-      if (_betVehicleClass) {
-        const currentClass = Number(bd[_betVehicleClass] ?? 0);
-        displayTotal = Math.max(0, currentClass - _betBaseline);
-      } else {
-        displayTotal = Math.max(0, total - _betBaseline);
-      }
-    }
-
-    if (totalEl) totalEl.textContent = displayTotal.toLocaleString();
+    if (totalEl) totalEl.textContent = total.toLocaleString();
     if (carsEl) carsEl.textContent = bd.car ?? 0;
     if (trucksEl) trucksEl.textContent = bd.truck ?? 0;
     if (busesEl) busesEl.textContent = bd.bus ?? 0;

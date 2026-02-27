@@ -330,7 +330,7 @@ const Chat = (() => {
         && !!prev
         && (prev.id !== current.id || prev.status !== "open");
       if (becameOpen) {
-        _addSystemMessage("New round started. Bets are now open.");
+        _addSystemMessage("New match started. Guesses are now open.");
       }
       _lastRoundEvent = current;
     });
@@ -483,9 +483,9 @@ const Chat = (() => {
       const cls = bet.vehicle_class ? `${bet.vehicle_class}s` : "vehicles";
       const sec = bet.window_duration_sec;
       const win = sec ? (sec < 60 ? `${sec}s` : `${Math.floor(sec/60)}m`) : "";
-      return `Exact: <strong>${bet.exact_count} ${cls}</strong>${win ? ` in ${win}` : ""}`;
+      return `Guessed: <strong>${bet.exact_count} ${cls}</strong>${win ? ` in ${win}` : ""}`;
     }
-    return "Market bet";
+    return "Submitted a guess";
   }
 
   function _renderActivity(bet) {
@@ -501,7 +501,7 @@ const Chat = (() => {
       <span class="ca-icon">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.4H21l-5.2 3.8 2 6.4L12 14.8 6.2 18.6l2-6.4L3 8.4h6.6z"/></svg>
       </span>
-      <span class="ca-text">Someone bet <strong>$ ${(bet.amount || 0).toLocaleString()}</strong> — ${_betDesc(bet)}</span>
+      <span class="ca-text">Someone guessed — ${_betDesc(bet)}</span>
       ${time ? `<span class="ca-time">${time}</span>` : ""}`;
     container.appendChild(div);
     _scrollToBottom();
@@ -661,12 +661,11 @@ const StreamChatOverlay = (() => {
     if (!container) return;
     // Only show new real-time bets in overlay, not history replays
     if (!bet.isNew) return;
-    const amount = `$ ${Number(bet.amount || 0).toLocaleString()}`;
-    let label = "bet placed";
-    if (bet.bet_type === "exact_count") label = `guessed ${bet.exact_count} cars`;
+    let label = "submitted a guess";
+    if (bet.bet_type === "exact_count") label = `guessed ${bet.exact_count} vehicles`;
     const div = document.createElement("div");
     div.className = "sco-msg sco-activity";
-    div.innerHTML = `<span class="sco-act-icon">⭐</span><span class="sco-msg-text">Someone ${label} — <strong>${_esc(amount)}</strong></span>`;
+    div.innerHTML = `<span class="sco-act-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 6.4H21l-5.2 3.8 2 6.4L12 14.8 6.2 18.6l2-6.4L3 8.4h6.6z"/></svg></span><span class="sco-msg-text">Someone ${label}</span>`;
     container.appendChild(div);
     _trim(container);
     _schedFade(div, MSG_LIFETIME_MS, 1000);

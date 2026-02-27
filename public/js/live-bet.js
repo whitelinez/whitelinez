@@ -6,7 +6,7 @@
 const LiveBet = (() => {
   let _round = null;
   let _vehicleClass = "";    // "" = all
-  let _windowSec = 30;
+  let _windowSec = 60;
   let _countdownTimer = null;
   let _wsAccountRef = null;  // set by index-init
 
@@ -41,14 +41,12 @@ const LiveBet = (() => {
 
     // Reset form
     document.getElementById("bp-error").textContent = "";
-    document.getElementById("bp-amount").value = "";
     document.getElementById("bp-count").value = "5";
-    document.getElementById("bp-payout").textContent = "—";
     _hideBpActiveBet();
 
     // Reset pills
     _setPill("bp-vehicle-pills", "");
-    _setPill("bp-window-pills", "30");
+    _setPill("bp-window-pills", "60");
 
     panel.classList.remove("hidden");
     requestAnimationFrame(() => panel.classList.add("visible"));
@@ -71,15 +69,6 @@ const LiveBet = (() => {
     });
   }
 
-  // ── Payout calc ───────────────────────────────────────────────────
-
-  function _updatePayout() {
-    const amount = parseInt(document.getElementById("bp-amount")?.value ?? 0, 10);
-    const el = document.getElementById("bp-payout");
-    if (!el) return;
-    el.textContent = (amount > 0) ? (amount * 8).toLocaleString() + " credits" : "—";
-  }
-
   // ── Submit ────────────────────────────────────────────────────────
 
   async function submit() {
@@ -87,24 +76,23 @@ const LiveBet = (() => {
     const submitBtn = document.getElementById("bp-submit");
     errorEl.textContent = "";
 
-    const amount = parseInt(document.getElementById("bp-amount")?.value ?? 0, 10);
+    const amount = 10;
     const exact = parseInt(document.getElementById("bp-count")?.value ?? 0, 10);
 
     if (!_round) { errorEl.textContent = "No active round"; return; }
-    if (!amount || amount <= 0) { errorEl.textContent = "Enter a valid amount"; return; }
     if (isNaN(exact) || exact < 0) { errorEl.textContent = "Enter a valid count"; return; }
-    if (String(_round.status || "").toLowerCase() !== "open") { errorEl.textContent = "Round is not open for betting"; return; }
+    if (String(_round.status || "").toLowerCase() !== "open") { errorEl.textContent = "Round is not open for guesses"; return; }
     if (_round.closes_at) {
       const closesAt = new Date(_round.closes_at).getTime();
       if (Number.isFinite(closesAt) && Date.now() >= closesAt) {
-        errorEl.textContent = "Betting window has closed";
+        errorEl.textContent = "Guess window has closed";
         return;
       }
     }
     if (_round.ends_at) {
       const endsAt = new Date(_round.ends_at).getTime();
       if (Number.isFinite(endsAt) && (Date.now() + (_windowSec * 1000)) > endsAt) {
-        errorEl.textContent = "Selected live bet window extends past round end";
+        errorEl.textContent = "Selected window extends past match end";
         return;
       }
     }
@@ -118,7 +106,7 @@ const LiveBet = (() => {
         if (!jwt) throw new Error("Guest session failed");
         window.dispatchEvent(new CustomEvent("session:guest"));
       } catch (e) {
-        errorEl.textContent = e.message || "Login required to place a bet";
+        errorEl.textContent = e.message || "Login required to submit a guess";
         submitBtn.disabled = false;
         return;
       }
@@ -128,7 +116,7 @@ const LiveBet = (() => {
       submitBtn.dataset.defaultHtml = submitBtn.innerHTML;
     }
     submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span class="wlz-inline-spinner" aria-hidden="true"></span>Validating...`;
+    submitBtn.innerHTML = `<span class="wlz-inline-spinner" aria-hidden="true"></span>Submitting...`;
     errorEl.textContent = "";
 
     try {
@@ -149,7 +137,7 @@ const LiveBet = (() => {
 
       const data = await res.json();
       if (!res.ok) {
-        errorEl.textContent = data.detail || "Bet failed";
+        errorEl.textContent = data.detail || "Submission failed";
         return;
       }
 
@@ -170,7 +158,7 @@ const LiveBet = (() => {
       errorEl.textContent = "Network error — try again";
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = submitBtn.dataset.defaultHtml || "Place Live Bet";
+      submitBtn.innerHTML = submitBtn.dataset.defaultHtml || "Submit Guess";
     }
   }
 
@@ -195,7 +183,7 @@ const LiveBet = (() => {
       if (diffRaw === 0) {
         clearInterval(_countdownTimer);
         cdEl.textContent = "00:00";
-        if (hintEl) hintEl.textContent = "Resolving your bet...";
+        if (hintEl) hintEl.textContent = "Calculating your score...";
       }
     }, 200);
   }
@@ -211,9 +199,9 @@ const LiveBet = (() => {
   function onBetResolved(data) {
     _hideBpActiveBet();
     if (data.won) {
-      _showToast(`WIN! +${data.payout.toLocaleString()} credits — got ${data.actual} (target: ${data.exact})`, "win");
+      _showToast(`WIN! +${data.payout.toLocaleString()} pts — count was ${data.actual} (you guessed: ${data.exact})`, "win");
     } else {
-      _showToast(`LOSS — got ${data.actual}, needed ${data.exact}`, "loss");
+      _showToast(`MISS — count was ${data.actual}, you guessed ${data.exact}`, "loss");
     }
   }
 
@@ -257,9 +245,6 @@ const LiveBet = (() => {
       const el = document.getElementById("bp-count");
       if (el) el.value = Math.min(10000, parseInt(el.value || 0, 10) + 1);
     });
-
-    // Amount → payout
-    document.getElementById("bp-amount")?.addEventListener("input", _updatePayout);
 
     // Submit
     document.getElementById("bp-submit")?.addEventListener("click", submit);

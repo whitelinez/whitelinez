@@ -121,7 +121,7 @@ const Banners = (() => {
           </div>
           <div class="bnr-guest-copy">
             <p class="bnr-tile-title">Guest Session</p>
-            <p class="bnr-tile-info">You're browsing as a guest. Create a free account to save bets, track wins, and appear on the leaderboard. Guest access expires in 48 hours.</p>
+            <p class="bnr-tile-info">You're browsing as a guest. Create a free account to save guesses, track your score, and appear on the leaderboard. Guest access expires in 48 hours.</p>
             <button class="bnr-guest-signup" id="bnr-guest-signup">
               Create Account
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
@@ -260,17 +260,17 @@ const Banners = (() => {
           </svg>`}
         </div>
         <div class="bnr-lbanner-body">
-          <p class="bnr-lbanner-title">${live ? "Round Live" : "Ready to Play"}</p>
+          <p class="bnr-lbanner-title">${live ? "Match Live" : "Ready to Play"}</p>
           <p class="bnr-lbanner-sub">${live
-            ? "A betting round is open — place your bet before time runs out."
-            : "Watch the live feed and count vehicles. A round is coming soon."
+            ? "A match is live — submit your guess before time runs out."
+            : "Watch the live feed and get ready to guess. A match is coming soon."
           }</p>
         </div>
         <div class="bnr-lbanner-action">
           ${live ? `
           <button class="bnr-play-cta">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Bet Now
+            Guess Now
           </button>` : `
           <span class="bnr-play-standby">
             <span class="bnr-ai-dot"></span>
@@ -285,29 +285,10 @@ const Banners = (() => {
       </div>`;
   }
 
-  // ── How It Works modal ───────────────────────────────────────
-  function _openHiw() {
-    const backdrop = document.getElementById("hiw-modal-backdrop");
-    const modal    = document.getElementById("hiw-modal");
-    if (!backdrop || !modal) return;
-    backdrop.classList.remove("hidden");
-    modal.classList.remove("hidden");
-    // Wire close targets (safe to re-wire — they replace each other)
-    const close = () => {
-      backdrop.classList.add("hidden");
-      modal.classList.add("hidden");
-    };
-    document.getElementById("hiw-modal-close")?.addEventListener("click", close, { once: true });
-    document.getElementById("hiw-got-it")?.addEventListener("click", close, { once: true });
-    backdrop.addEventListener("click", close, { once: true });
-    modal.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }, { once: true });
-    modal.focus();
-  }
-
   // ── Default "no round" tile ───────────────────────────────────
   function _defaultTile() {
     return `
-      <div class="bnr-tile bnr-tile-default" id="bnr-default-tile" role="button" tabindex="0" aria-label="Learn how it works" style="cursor:pointer;">
+      <div class="bnr-tile bnr-tile-default">
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">
@@ -322,7 +303,7 @@ const Banners = (() => {
         <div class="bnr-default-status-bar">
           <span class="bnr-ai-dot"></span>
           <span class="bnr-ai-label">AI SCANNING</span>
-          <span class="bnr-standby-label">HOW IT WORKS ?</span>
+          <span class="bnr-standby-label">STANDBY</span>
         </div>
       </div>`;
   }
@@ -357,21 +338,10 @@ const Banners = (() => {
       document.getElementById("modal-reg-email")?.focus();
     });
 
-    // Wire play CTA → open live bet panel / bet tab
+    // Wire play CTA → enter round view (shows markets, hides banners)
     section.querySelector(".bnr-play-cta")?.addEventListener("click", () => {
-      const betTab = document.querySelector('[data-tab="livebet"], [data-tab="bet"], .tab-btn[data-panel="livebet"]');
-      if (betTab) { betTab.click(); return; }
-      document.getElementById("btn-live-bet")?.click();
+      window.Markets?.enterRound?.();
     });
-
-    // Wire "No Active Round" tile → How It Works modal
-    const defaultTile = section.querySelector("#bnr-default-tile");
-    if (defaultTile) {
-      defaultTile.addEventListener("click", _openHiw);
-      defaultTile.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); _openHiw(); }
-      });
-    }
   }
 
   function _wireGrid(container) {

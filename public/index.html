@@ -98,6 +98,10 @@
             <span id="cw-total">-</span>
             <span id="cw-total-label" class="cw-label">TOTAL</span>
           </div>
+          <div id="cw-guess-row" class="cw-guess-row hidden">
+            <span class="cw-guess-label">MY GUESS</span>
+            <span id="cw-guess-val" class="cw-guess-val">—</span>
+          </div>
           <div class="count-widget-breakdown">
             <!-- Car: sleek sedan side-profile -->
             <span class="cw-item">
@@ -227,7 +231,7 @@
 
     <aside class="sidebar">
       <div class="sidebar-tabs">
-        <button class="tab-btn active" data-tab="markets">Markets</button>
+        <button class="tab-btn active" data-tab="markets">Rounds</button>
         <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
         <button class="tab-btn" data-tab="chat">Chat <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span></button>
         <button class="tab-btn" data-tab="ml-showcase">AI</button>
@@ -321,7 +325,7 @@
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           Back
         </button>
-        <h3 id="bp-title">Exact Count Bet</h3>
+        <h3 id="bp-title">Traffic Guess</h3>
         <p id="bp-market-label" class="bp-market-label"></p>
 
         <div class="bp-field">
@@ -336,18 +340,17 @@
         </div>
 
         <div class="bp-field">
-          <label>Time Window</label>
+          <label>Match Duration</label>
           <div class="bp-pills" id="bp-window-pills">
-            <button class="pill" data-val="10">10s</button>
-            <button class="pill active" data-val="30">30s</button>
-            <button class="pill" data-val="60">1m</button>
-            <button class="pill" data-val="120">2m</button>
-            <button class="pill" data-val="300">5m</button>
+            <button class="pill active" data-val="60">1 min</button>
+            <button class="pill" data-val="180">3 min</button>
+            <button class="pill" data-val="300">5 min</button>
           </div>
         </div>
 
         <div class="bp-field">
-          <label for="bp-count">Exact Count</label>
+          <label for="bp-count">Your Guess</label>
+          <p class="bp-field-hint">How many vehicles will pass?</p>
           <div class="bp-count-row">
             <button class="btn-count-adj" id="bp-count-minus">-</button>
             <input id="bp-count" type="number" min="0" max="10000" value="5" />
@@ -355,23 +358,18 @@
           </div>
         </div>
 
-        <div class="bp-field">
-          <label for="bp-amount">Amount (credits)</label>
-          <input id="bp-amount" type="number" min="1" placeholder="100" class="bp-input" />
-        </div>
-
-        <div class="bp-payout-row">
-          <span>Payout at 8x</span>
-          <strong id="bp-payout">-</strong>
+        <div class="bp-points-hint">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          Closer to the real count = more points earned
         </div>
 
         <p id="bp-error" class="bp-error" role="alert"></p>
-        <button id="bp-submit" class="btn-primary btn-full">Place Bet</button>
+        <button id="bp-submit" class="btn-primary btn-full">Submit Guess</button>
 
         <div id="bp-active-bet" class="bp-active-bet hidden">
           <div class="bpa-header">
             <span class="bpa-dot"></span>
-            <span class="bpa-label">BET WINDOW RUNNING</span>
+            <span class="bpa-label">MATCH IN PROGRESS</span>
           </div>
           <div class="bpa-timer-row">
             <svg class="bpa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -379,7 +377,7 @@
             </svg>
             <strong id="bp-countdown" class="bpa-countdown">--:--</strong>
           </div>
-          <p id="bp-active-hint" class="bpa-hint">Counting vehicles in your window...</p>
+          <p id="bp-active-hint" class="bpa-hint">Your guess is locked in. AI is counting...</p>
         </div>
       </div>
 

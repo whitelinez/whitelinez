@@ -130,6 +130,7 @@ const Markets = (() => {
     _resetRoundLiveState();
     window.Banners?.show();
     const container = document.getElementById("markets-container");
+    if (container) container.classList.remove("mkts-round-hidden");
     if (container) {
       // Keep hidden countdown elements alive for internal logic; no visible empty-state
       // (the banner tile handles "No Active Round" messaging)
@@ -154,41 +155,31 @@ const Markets = (() => {
     return "Vehicles";
   }
 
+  function _matchDurationLabel(round) {
+    const params = round?.params || {};
+    // Derive a friendly label from round timing
+    const opensAt  = round?.opens_at  ? new Date(round.opens_at)  : null;
+    const endsAt   = round?.ends_at   ? new Date(round.ends_at)   : null;
+    if (opensAt && endsAt) {
+      const secs = Math.round((endsAt - opensAt) / 1000);
+      if (secs <= 90)  return "1 MIN MATCH";
+      if (secs <= 240) return "3 MIN MATCH";
+      if (secs <= 360) return "5 MIN MATCH";
+      return `${Math.round(secs / 60)} MIN MATCH`;
+    }
+    return "TIMED MATCH";
+  }
+
   function _roundGuide(round) {
     const params = round?.params || {};
     const marketType = String(round?.market_type || "");
-    const threshold = Number(params?.threshold || 0);
     const vehicleClass = String(params?.vehicle_class || "").toLowerCase();
-
-    if (marketType === "over_under") {
-      return {
-        title: "How This Round Works",
-        summary: `Count starts at 0 when the round opens and tracks new vehicles only.`,
-        winRule: `Guess OVER if final count finishes above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins only on exactly ${threshold}.`,
-      };
-    }
-
-    if (marketType === "vehicle_count") {
-      const clsLabel = _vehicleClassLabel(vehicleClass);
-      return {
-        title: "How This Round Works",
-        summary: `Count starts at 0 and tracks only new ${clsLabel.toLowerCase()} this round.`,
-        winRule: `Guess OVER if final ${clsLabel.toLowerCase()} count finishes above ${threshold}. Guess UNDER if below ${threshold}. EXACT wins on exactly ${threshold}.`,
-      };
-    }
-
-    if (marketType === "vehicle_type") {
-      return {
-        title: "How This Round Works",
-        summary: "All vehicle classes are tracked from 0 during this round.",
-        winRule: "Guess the vehicle class that finishes with the highest round total.",
-      };
-    }
+    const cls = vehicleClass ? _vehicleClassLabel(vehicleClass).toLowerCase() : "vehicles";
 
     return {
-      title: "How This Round Works",
-      summary: "Choose one outcome before bets close.",
-      winRule: "If your guess matches the final result, your bet wins.",
+      title: "How This Match Works",
+      summary: `Watch the live camera and guess how many ${cls} will pass during this match. The count starts at zero when the match opens.`,
+      winRule: "The closer your guess is to the real count, the more points you earn. An exact match scores the highest.",
     };
   }
 
@@ -218,8 +209,21 @@ const Markets = (() => {
     return String(market?.label || "Market");
   }
 
-  function renderRound(round) {
+  // ── Enter / exit round view ───────────────────────────────────
+  function _enterRound() {
+    const container = document.getElementById("markets-container");
+    if (container) container.classList.remove("mkts-round-hidden");
     window.Banners?.hide();
+  }
+
+  function _exitRound() {
+    const container = document.getElementById("markets-container");
+    if (container) container.classList.add("mkts-round-hidden");
+    window.Banners?.show();
+  }
+
+  function renderRound(round) {
+    // Do NOT hide banners immediately — user enters the round view intentionally
     const container = document.getElementById("markets-container");
     if (!container) return;
 
@@ -229,15 +233,22 @@ const Markets = (() => {
     const endsAt = round.ends_at ? new Date(round.ends_at) : null;
     const guide = _roundGuide(round);
 
+    const matchLabel = _matchDurationLabel(round);
+    const statusLabel = round.status === "open" ? "OPEN" : round.status === "locked" ? "LOCKED" : round.status.toUpperCase();
+
     const html = `
+      <button class="mkts-back-btn" id="mkts-back-btn" type="button">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Announcements
+      </button>
       <div class="round-header">
-        <span class="round-badge round-${round.status}">${round.status.toUpperCase()}</span>
-        <span class="round-type">${round.market_type.replace(/_/g, " ")}</span>
+        <span class="round-badge round-${round.status}">${statusLabel}</span>
+        <span class="round-type">${matchLabel}</span>
       </div>
       <div class="round-timing">
         ${opensAt ? `<div class="timing-row"><span>Started</span><strong id="rt-elapsed"></strong></div>` : ""}
-        ${closesAt ? `<div class="timing-row"><span>Bets close</span><strong id="rt-closes"></strong></div>` : ""}
-        ${endsAt ? `<div class="timing-row"><span>Round ends</span><strong id="rt-ends"></strong></div>` : ""}
+        ${closesAt ? `<div class="timing-row"><span>Guesses close</span><strong id="rt-closes"></strong></div>` : ""}
+        ${endsAt ? `<div class="timing-row"><span>Match ends</span><strong id="rt-ends"></strong></div>` : ""}
       </div>
       <div class="round-guide" role="note" aria-live="polite">
         <div class="round-guide-head">
@@ -250,31 +261,45 @@ const Markets = (() => {
         </div>
       </div>
       <div id="user-round-bet" class="user-round-bet hidden"></div>
-      <div class="market-list" id="market-list">
-        ${round.markets.map((m) => renderMarket(round, m, isOpen)).join("")}
-      </div>
       ${isOpen ? `
-      <div style="margin-top:12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top:10px;">
+      <div class="mkts-guess-cta">
         <button class="btn-live-bet btn-full" id="btn-open-live-bet">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-          Exact Count Live Bet (8x)
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          Make Your Guess
         </button>
-      </div>` : ""}
+        <p class="mkts-guess-sub">Guess the vehicle count — closer wins more points</p>
+      </div>` : `
+      <div class="mkts-locked-state">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Guesses are closed for this match</span>
+      </div>`}
     `;
     // Only rebuild DOM (and restart timers/listeners) when round identity or
     // status changes. This prevents the timer elements from being destroyed
     // and recreated on every 60-second loadMarkets() poll.
     const roundKey = `${round.id}:${round.status}`;
     if (roundKey !== _lastRenderedRoundKey) {
+      // Detect if this is a brand-new round (different ID) vs. same round status change
+      const prevRoundId = _lastRenderedRoundKey ? _lastRenderedRoundKey.split(":")[0] : null;
+      const isNewRound = !prevRoundId || prevRoundId !== String(round.id);
+
       _lastRenderedRoundKey = roundKey;
       container.innerHTML = html;
       startTimers(opensAt, closesAt, endsAt);
+
+      document.getElementById("mkts-back-btn")?.addEventListener("click", _exitRound);
       document.getElementById("btn-open-live-bet")?.addEventListener("click", () => {
         LiveBet.open(currentRound);
       });
       document.getElementById("round-guide-toggle")?.addEventListener("click", () => {
         _setRoundGuideCollapsed(!roundGuideCollapsed);
       });
+
+      // New round → stay on banners, let user choose to enter
+      if (isNewRound) {
+        container.classList.add("mkts-round-hidden");
+        window.Banners?.show();
+      }
     }
 
     _renderUserRoundBet();
@@ -1155,7 +1180,7 @@ const Markets = (() => {
     else tab.prepend(card);
   }
 
-  return { init, loadMarkets, getCurrentRound: () => currentRound };
+  return { init, loadMarkets, getCurrentRound: () => currentRound, enterRound: _enterRound };
 })();
 
 window.Markets = Markets;

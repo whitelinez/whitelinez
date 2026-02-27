@@ -291,7 +291,11 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   // Count widget — mobile tap toggle (desktop uses CSS :hover)
   const countWidget = document.getElementById("count-widget");
   if (countWidget) {
-    countWidget.addEventListener("touchstart", (e) => {
+    let _cwTouchMoved = false;
+    countWidget.addEventListener("touchstart", () => { _cwTouchMoved = false; }, { passive: true });
+    countWidget.addEventListener("touchmove",  () => { _cwTouchMoved = true;  }, { passive: true });
+    countWidget.addEventListener("touchend", (e) => {
+      if (_cwTouchMoved) return; // ignore scroll swipes
       e.stopPropagation();
       countWidget.classList.toggle("cw-active");
     }, { passive: true });
@@ -503,7 +507,13 @@ function _connectUserWs(session) {
       localStorage.setItem(GUEST_TS_KEY, String(Date.now()));
       window.location.reload();
     } catch (err) {
-      if (errEl) errEl.textContent = err.message || "Guest access unavailable.";
+      console.error("[GuestLogin] Full error object:", err);
+      const msg = err?.message || "Guest access unavailable.";
+      // Surface actionable hint for the most common Supabase config issue
+      const display = msg.toLowerCase().includes("disabled")
+        ? "Anonymous sign-ins are disabled in Supabase. Enable under Authentication → Providers → Anonymous."
+        : msg;
+      if (errEl) errEl.textContent = display;
       btn.disabled = false;
       btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg> Continue as Guest`;
     }

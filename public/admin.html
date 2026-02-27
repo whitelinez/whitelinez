@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — WHITELINEZ</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.svg" />
+  <link rel="icon" type="image/png" href="/img/gfdaw-removebg-preview.png" />
+  <link rel="shortcut icon" href="/img/gfdaw-removebg-preview.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
   <aside class="admin-sidebar" id="admin-sidebar">
     <div class="sidebar-header">
       <a href="/index.html" class="sidebar-logo">
-        <img src="/img/logo.png" alt="WHITELINEZ" />
+        <img src="/img/gfdaw-removebg-preview.png" alt="AI TRAFFIC JAMAICA" />
         <span class="admin-badge">Admin</span>
       </a>
       <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Close sidebar">
@@ -902,41 +902,100 @@
         </div>
 
         <!-- Create / Edit form -->
-        <div class="card-box abn-form-card" id="abn-form-card" style="margin-top:18px;">
-          <h3 id="abn-form-heading" style="margin-bottom:14px;">New Banner</h3>
+        <div class="abn-form-card" id="abn-form-card">
 
-          <form id="abn-form">
-            <div class="field">
-              <label for="abn-form-title">Title</label>
-              <input id="abn-form-title" type="text" maxlength="80" placeholder="e.g. Site Update, How It Works…" required />
+          <div class="abn-form-header">
+            <div class="abn-form-header-left">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span id="abn-form-heading">New Banner</span>
             </div>
+            <button type="button" class="abn-form-cancel-x" id="abn-form-cancel-x" title="Cancel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
 
-            <div class="field">
-              <label for="abn-form-info">Info / Body Text</label>
-              <textarea id="abn-form-info" rows="5" placeholder="Full details shown when user clicks the banner…" style="resize:vertical;"></textarea>
-            </div>
+          <form id="abn-form" class="abn-form-body">
 
-            <div class="field">
-              <label for="abn-form-image">Banner Image</label>
-              <input id="abn-form-image" type="file" accept="image/*" />
-              <img id="abn-form-preview" class="abn-form-preview hidden" alt="Preview" />
-            </div>
-
-            <div class="field" style="flex-direction:row;gap:20px;align-items:center;">
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
-                <input id="abn-form-pinned" type="checkbox" />
-                <span>Pin this banner</span>
+            <!-- Title -->
+            <div class="abn-field-group">
+              <label class="abn-label" for="abn-form-title">
+                Title
+                <span class="abn-char-count"><span id="abn-title-count">0</span>/80</span>
               </label>
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
-                <input id="abn-form-active" type="checkbox" checked />
-                <span>Active (visible)</span>
+              <input id="abn-form-title" class="abn-input" type="text" maxlength="80"
+                     placeholder="e.g. Site Maintenance, How It Works…" required />
+            </div>
+
+            <!-- Rich text body -->
+            <div class="abn-field-group">
+              <label class="abn-label">Body Text</label>
+              <div class="rte-wrap">
+                <div class="rte-toolbar" id="abn-rte-toolbar">
+                  <button type="button" class="rte-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+                  <button type="button" class="rte-btn rte-italic" data-cmd="italic" title="Italic"><i>I</i></button>
+                  <button type="button" class="rte-btn rte-underline" data-cmd="underline" title="Underline"><u>U</u></button>
+                  <span class="rte-sep"></span>
+                  <button type="button" class="rte-btn" data-cmd="insertUnorderedList" title="Bullet list">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
+                  </button>
+                  <button type="button" class="rte-btn" data-cmd="insertOrderedList" title="Ordered list">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="7" fill="currentColor" stroke="none" font-family="monospace">1.</text><text x="2" y="14" font-size="7" fill="currentColor" stroke="none" font-family="monospace">2.</text><text x="2" y="20" font-size="7" fill="currentColor" stroke="none" font-family="monospace">3.</text></svg>
+                  </button>
+                  <span class="rte-sep"></span>
+                  <button type="button" class="rte-btn" data-cmd="removeFormat" title="Clear formatting">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 9l6 6m0-6l-6 6"/><path d="M4 7h16M10 3h4M5 21l4-4M10 21H5"/></svg>
+                  </button>
+                </div>
+                <div id="abn-rte-editor" class="rte-editor" contenteditable="true"
+                     data-placeholder="Full details shown when user taps 'More info'…"></div>
+              </div>
+            </div>
+
+            <!-- Image upload -->
+            <div class="abn-field-group">
+              <label class="abn-label">Banner Image <span class="abn-label-hint">max 4 MB</span></label>
+              <label class="abn-dropzone" id="abn-dropzone" for="abn-form-image">
+                <div class="abn-dropzone-inner" id="abn-dropzone-inner">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9l4-4 4 4 4-5 4 5"/><circle cx="8.5" cy="7.5" r="1.5"/></svg>
+                  <span>Drop image or click to browse</span>
+                </div>
+                <img id="abn-form-preview" class="abn-dropzone-preview hidden" alt="Preview" />
+                <input id="abn-form-image" type="file" accept="image/*" class="abn-file-input" />
+              </label>
+              <button type="button" class="abn-clear-img hidden" id="abn-clear-img">✕ Remove image</button>
+            </div>
+
+            <!-- Toggles -->
+            <div class="abn-toggles-row">
+              <label class="abn-toggle-label">
+                <input id="abn-form-pinned" type="checkbox" class="abn-toggle-input" />
+                <span class="abn-toggle-track">
+                  <span class="abn-toggle-thumb"></span>
+                </span>
+                <span class="abn-toggle-text">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.4 6.4H21l-5.2 3.8 2 6.4L12 14.8 6.2 18.6l2-6.4L3 8.4h6.6z"/></svg>
+                  Pin to top
+                </span>
+              </label>
+              <label class="abn-toggle-label">
+                <input id="abn-form-active" type="checkbox" class="abn-toggle-input" checked />
+                <span class="abn-toggle-track">
+                  <span class="abn-toggle-thumb"></span>
+                </span>
+                <span class="abn-toggle-text">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                  Active (visible)
+                </span>
               </label>
             </div>
 
-            <p id="abn-form-msg" class="form-msg"></p>
+            <p id="abn-form-msg" class="abn-form-msg"></p>
 
-            <div style="display:flex;gap:8px;margin-top:4px;">
-              <button type="submit" class="btn-primary" id="abn-form-submit">Create Banner</button>
+            <div class="abn-form-actions">
+              <button type="submit" class="btn-primary" id="abn-form-submit">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Create Banner
+              </button>
               <button type="button" class="btn-outline" id="abn-form-cancel">Cancel</button>
             </div>
           </form>

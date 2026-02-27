@@ -64,8 +64,14 @@ const Auth = (() => {
   });
 
   async function signInAnon() {
+    if (typeof window.sb.auth.signInAnonymously !== "function") {
+      throw new Error("Anonymous sign-in not supported by this Supabase client version. Hard-refresh and try again.");
+    }
     const { data, error } = await window.sb.auth.signInAnonymously();
-    if (error) throw error;
+    if (error) {
+      console.error("[Auth.signInAnon] Supabase error:", error);
+      throw error;
+    }
     return data.session?.access_token ?? null;
   }
 

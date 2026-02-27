@@ -195,7 +195,7 @@ const Banners = (() => {
           <h3 class="bnr-detail-hero-title">${_esc(b.title)}</h3>
         </div>` : `<h3 class="bnr-detail-title-plain">${_esc(b.title)}</h3>`}
         <div class="bnr-detail-body">
-          <p class="bnr-detail-info">${_esc(b.info || "").replace(/\n/g, "<br>")}</p>
+          <div class="bnr-detail-info">${b.info || ""}</div>
         </div>
       </div>`;
   }
@@ -237,22 +237,15 @@ const Banners = (() => {
               <path d="M31 4H40V13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M4 31V40H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M31 40H40V31" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Detection box -->
-              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(0,212,255,0.35)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
-              <!-- Corner dots -->
-              <circle cx="11" cy="13" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <circle cx="33" cy="13" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <circle cx="11" cy="31" r="1.2" fill="#00d4ff" opacity="0.65"/>
-              <circle cx="33" cy="31" r="1.2" fill="#00d4ff" opacity="0.65"/>
               <!-- Camera body -->
-              <rect x="15" y="18" width="10" height="8" rx="1.2" fill="rgba(0,212,255,0.1)" stroke="rgba(0,212,255,0.6)" stroke-width="0.9"/>
+              <rect x="14" y="18" width="11" height="8" rx="1.2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
               <!-- Camera lens -->
-              <circle cx="20" cy="22" r="2.2" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
-              <circle cx="20" cy="22" r="0.8" fill="#00d4ff" opacity="0.7"/>
+              <circle cx="19.5" cy="22" r="2.5" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.5)" stroke-width="0.9"/>
+              <circle cx="19.5" cy="22" r="1" fill="#00d4ff" opacity="0.6"/>
               <!-- Camera tail -->
-              <path d="M25 20l4-2v8l-4-2z" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.5)" stroke-width="0.8" stroke-linejoin="round"/>
+              <path d="M25 20l4.5-2v8l-4.5-2z" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.4)" stroke-width="0.8" stroke-linejoin="round"/>
               <!-- Scan line -->
-              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.8" opacity="0.5"/>
+              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.9" opacity="0.6"/>
             </svg>
           </div>
           <div class="bnr-default-copy">
@@ -323,22 +316,13 @@ const Banners = (() => {
               <path d="M31 4H40V13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M4 31V40H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M31 40H40V31" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Detection box -->
-              <rect x="11" y="13" width="22" height="18" rx="1.5" stroke="rgba(255,214,0,0.42)" stroke-width="1" stroke-dasharray="3.5 2.5"/>
-              <!-- Corner dots on detection box -->
-              <circle cx="11" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <circle cx="33" cy="13" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <circle cx="11" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <circle cx="33" cy="31" r="1.2" fill="#FFD600" opacity="0.7"/>
-              <!-- Car body -->
-              <rect x="15" y="19" width="14" height="7" rx="1.5" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
-              <!-- Roof -->
-              <path d="M17.5 19L19.5 16H24.5L26.5 19" stroke="rgba(0,212,255,0.45)" stroke-width="0.9" fill="rgba(0,212,255,0.07)"/>
-              <!-- Wheels -->
-              <circle cx="18" cy="26" r="1.3" fill="rgba(0,212,255,0.45)" stroke="rgba(0,212,255,0.65)" stroke-width="0.7"/>
-              <circle cx="26" cy="26" r="1.3" fill="rgba(0,212,255,0.45)" stroke="rgba(0,212,255,0.65)" stroke-width="0.7"/>
-              <!-- Animated scan line -->
-              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.8" opacity="0.75"/>
+              <!-- Car silhouette -->
+              <path d="M14 23l3-5h10l3 5H14z" fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.5)" stroke-width="0.9" stroke-linejoin="round"/>
+              <rect x="14" y="23" width="16" height="4" rx="0.8" fill="rgba(0,212,255,0.06)" stroke="rgba(0,212,255,0.45)" stroke-width="0.9"/>
+              <circle cx="18.5" cy="28" r="1.3" fill="rgba(0,212,255,0.45)"/>
+              <circle cx="25.5" cy="28" r="1.3" fill="rgba(0,212,255,0.45)"/>
+              <!-- Scan line -->
+              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.9" opacity="0.6"/>
             </svg>
           </div>
           <div class="bnr-default-copy">

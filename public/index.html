@@ -455,6 +455,72 @@
     </div>
   </div>
 
+  <!-- ── How It Works Modal ────────────────────────────────────── -->
+  <div id="hiw-modal-backdrop" class="hiw-modal-backdrop hidden"></div>
+  <div id="hiw-modal" class="hiw-modal hidden" role="dialog" aria-modal="true" aria-label="How It Works">
+    <div class="hiw-modal-inner">
+      <div class="hiw-modal-head">
+        <div class="hiw-modal-title-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFD600" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          HOW IT WORKS
+        </div>
+        <button id="hiw-modal-close" class="hiw-modal-close" aria-label="Close">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 4L4 12M4 4l8 8"/></svg>
+        </button>
+      </div>
+      <div class="hiw-modal-body">
+        <p class="hiw-intro">A live CCTV camera films real traffic on a Jamaican road. You watch the feed, predict how many vehicles will pass, and the AI does the counting. Simple.</p>
+        <ol class="hiw-steps">
+          <li class="hiw-step">
+            <span class="hiw-step-num">01</span>
+            <div class="hiw-step-body">
+              <div class="hiw-step-title">Watch the Live Feed</div>
+              <div class="hiw-step-desc">A real camera streams traffic in real time — cars, buses, trucks, bikes. Study the flow before a round opens.</div>
+            </div>
+          </li>
+          <li class="hiw-step">
+            <span class="hiw-step-num">02</span>
+            <div class="hiw-step-body">
+              <div class="hiw-step-title">A Round Opens</div>
+              <div class="hiw-step-desc">The admin starts a timed window — usually 30 to 90 seconds. A countdown appears and betting opens. Don't miss it.</div>
+            </div>
+          </li>
+          <li class="hiw-step">
+            <span class="hiw-step-num">03</span>
+            <div class="hiw-step-body">
+              <div class="hiw-step-title">Place Your Prediction</div>
+              <div class="hiw-step-desc">Two ways to bet:<br>
+                <span class="hiw-tag hiw-tag-yellow">Exact Count</span> Guess the exact number of vehicles. High risk, best payout.<br>
+                <span class="hiw-tag hiw-tag-cyan">Over / Under</span> Predict above or below a set number. Easier, lower reward.
+              </div>
+            </div>
+          </li>
+          <li class="hiw-step">
+            <span class="hiw-step-num">04</span>
+            <div class="hiw-step-body">
+              <div class="hiw-step-title">AI Counts Every Vehicle</div>
+              <div class="hiw-step-desc">When the round closes, computer vision automatically tracks and counts every vehicle that crossed the camera line. No manual counting, no bias.</div>
+            </div>
+          </li>
+          <li class="hiw-step">
+            <span class="hiw-step-num">05</span>
+            <div class="hiw-step-body">
+              <div class="hiw-step-title">Results &amp; Payouts</div>
+              <div class="hiw-step-desc">Your prediction is compared to the AI count. The closer you are, the better your payout. Exact match = highest multiplier. Check your balance after each round.</div>
+            </div>
+          </li>
+        </ol>
+        <div class="hiw-footer">
+          <span class="hiw-footer-note">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFD600" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Rounds run on a schedule. Stay on the feed — the next one starts any time.
+          </span>
+          <button class="hiw-got-it" id="hiw-got-it">Got it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Camera Switcher Modal ───────────────────────────────── -->
   <div id="cam-modal-backdrop" class="cam-modal-backdrop hidden"></div>
   <div id="camera-modal" class="camera-modal hidden" role="dialog" aria-modal="true" aria-label="Camera Locations">

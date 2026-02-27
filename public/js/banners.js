@@ -253,9 +253,7 @@ const Banners = (() => {
       <div class="bnr-tile bnr-tile-play bnr-tile-landscape ${live ? "bnr-tile-live" : ""}">
         <div class="bnr-lbanner-icon ${live ? "bnr-lbanner-icon-live" : "bnr-lbanner-icon-idle"}">
           ${live ? `
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <polygon points="5 3 19 12 5 21 5 3"/>
-          </svg>` : `
+          <img src="/img/timer-start-svgrepo-com.svg" class="bnr-tile-img bnr-lbanner-icon-img ${live ? "bnr-lbanner-img-green" : ""}" width="24" height="24" alt="" />` : `
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <polyline points="12 6 12 12 16 14"/>
@@ -287,10 +285,29 @@ const Banners = (() => {
       </div>`;
   }
 
+  // ── How It Works modal ───────────────────────────────────────
+  function _openHiw() {
+    const backdrop = document.getElementById("hiw-modal-backdrop");
+    const modal    = document.getElementById("hiw-modal");
+    if (!backdrop || !modal) return;
+    backdrop.classList.remove("hidden");
+    modal.classList.remove("hidden");
+    // Wire close targets (safe to re-wire — they replace each other)
+    const close = () => {
+      backdrop.classList.add("hidden");
+      modal.classList.add("hidden");
+    };
+    document.getElementById("hiw-modal-close")?.addEventListener("click", close, { once: true });
+    document.getElementById("hiw-got-it")?.addEventListener("click", close, { once: true });
+    backdrop.addEventListener("click", close, { once: true });
+    modal.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }, { once: true });
+    modal.focus();
+  }
+
   // ── Default "no round" tile ───────────────────────────────────
   function _defaultTile() {
     return `
-      <div class="bnr-tile bnr-tile-default">
+      <div class="bnr-tile bnr-tile-default" id="bnr-default-tile" role="button" tabindex="0" aria-label="Learn how it works" style="cursor:pointer;">
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">
@@ -305,7 +322,7 @@ const Banners = (() => {
         <div class="bnr-default-status-bar">
           <span class="bnr-ai-dot"></span>
           <span class="bnr-ai-label">AI SCANNING</span>
-          <span class="bnr-standby-label">STANDBY</span>
+          <span class="bnr-standby-label">HOW IT WORKS ?</span>
         </div>
       </div>`;
   }
@@ -323,13 +340,14 @@ const Banners = (() => {
 
     const visible = _banners.filter(b => !_dismissed.has(String(b.id)));
     const bannerTiles = visible.map(_tile).join("");
+    const firstTile = _sessionLive ? _playTile() : _defaultTile();
 
     section.innerHTML = `
       <div class="bnr-header">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span>Updates &amp; Announcements</span>
+        <span>${_sessionLive ? "Round Active" : "Updates &amp; Announcements"}</span>
       </div>
-      <div class="bnr-grid">${_defaultTile()}${_cameraTile()}${_guestUpgradeTile()}${bannerTiles}</div>`;
+      <div class="bnr-grid">${firstTile}${_cameraTile()}${_guestUpgradeTile()}${bannerTiles}</div>`;
     if (visible.length) _wireGrid(section);
 
     // Wire guest signup → register modal
@@ -345,6 +363,15 @@ const Banners = (() => {
       if (betTab) { betTab.click(); return; }
       document.getElementById("btn-live-bet")?.click();
     });
+
+    // Wire "No Active Round" tile → How It Works modal
+    const defaultTile = section.querySelector("#bnr-default-tile");
+    if (defaultTile) {
+      defaultTile.addEventListener("click", _openHiw);
+      defaultTile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); _openHiw(); }
+      });
+    }
   }
 
   function _wireGrid(container) {

@@ -4627,6 +4627,30 @@ button {
   height: 44px;
 }
 
+/* Two-icon pair for default tile */
+.bnr-icon-pair {
+  width: auto;
+  gap: 5px;
+}
+
+/* Tile img icons — colorized via CSS filter */
+.bnr-tile-img {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Yellow: targets #FFD600 */
+.bnr-tile-img-yellow {
+  filter: brightness(0) saturate(100%) invert(90%) sepia(100%) saturate(600%) hue-rotate(2deg) brightness(1.05);
+  opacity: 0.9;
+}
+
+/* Cyan: targets #00d4ff */
+.bnr-tile-img-cyan {
+  filter: brightness(0) saturate(100%) invert(1) sepia(1) saturate(4) hue-rotate(163deg) brightness(1.1);
+  opacity: 0.88;
+}
+
 /* Scan line animation on the SVG line element */
 .bnr-detect-scan {
   animation: bnr-scan-sweep 2.4s ease-in-out infinite;
@@ -5470,6 +5494,13 @@ button {
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  /* Reset browser default button border so color classes take full control */
+  border: 1px solid transparent;
+  background: transparent;
   transition: background 0.14s, border-color 0.14s, color 0.14s;
 }
 .stream-row-actions .btn-sm svg {
@@ -6810,4 +6841,139 @@ button {
   .count-widget.cw-active .count-widget-total span:first-child {
     text-shadow: 0 0 20px rgba(255,214,0,0.7), 0 2px 8px rgba(0,0,0,0.6) !important;
   }
+}
+
+/* =============================================
+   COUNT WIDGET — transparent bg + mobile tweak
+   ============================================= */
+
+/* Remove background — show text/border only */
+.count-widget {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Hover/tap: subtle bg appears only on interaction */
+.count-widget:hover,
+.count-widget.cw-active {
+  background: rgba(4,7,14,0.82) !important;
+  backdrop-filter: blur(6px) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,214,0,0.2),
+    0 0 28px rgba(255,214,0,0.28) !important;
+}
+
+/* Mobile — smaller widget, pushed down to clear stream controls */
+@media (max-width: 768px) {
+  .count-widget {
+    top: 44px !important;
+    left: 8px !important;
+    max-width: 130px !important;
+    padding: 5px 7px 6px 7px !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+  .count-widget::before {
+    font-size: 0.42rem !important;
+    margin-bottom: 2px !important;
+  }
+  .count-widget-total span:first-child {
+    font-size: 1.25rem !important;
+  }
+  .count-widget .cw-label {
+    font-size: 0.48rem !important;
+  }
+  .count-widget-breakdown {
+    gap: 2px 6px !important;
+  }
+  .cw-item {
+    font-size: 0.6rem !important;
+  }
+  .vehicle-icon {
+    width: 12px !important;
+    height: 9px !important;
+  }
+  /* Tap active: bg fades in */
+  .count-widget.cw-active {
+    background: rgba(4,7,14,0.88) !important;
+    backdrop-filter: blur(4px) !important;
+    box-shadow: 0 0 20px rgba(255,214,0,0.22) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .count-widget {
+    top: 40px !important;
+    left: 6px !important;
+    max-width: 118px !important;
+    padding: 4px 6px 5px 6px !important;
+  }
+  .count-widget-total span:first-child {
+    font-size: 1.1rem !important;
+  }
+}
+
+/* =============================================
+   DEFAULT TILES — cleaner polish
+   ============================================= */
+
+/* Icon idle breathe — "waiting" state for no-round tile */
+.bnr-icon-idle {
+  animation: bnr-icon-breathe 3s ease-in-out infinite;
+}
+@keyframes bnr-icon-breathe {
+  0%, 100% { opacity: 0.88; }
+  50%       { opacity: 0.45; }
+}
+
+/* Cyan dot variant for camera tile status bar */
+.bnr-ai-dot-cyan {
+  background: #00d4ff !important;
+  box-shadow: 0 0 0 0 rgba(0,212,255,0.55);
+  animation: bnr-ai-pulse-cyan 1.8s ease-in-out infinite;
+}
+@keyframes bnr-ai-pulse-cyan {
+  0%   { box-shadow: 0 0 0 0 rgba(0,212,255,0.55); }
+  70%  { box-shadow: 0 0 0 5px rgba(0,212,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,212,255,0); }
+}
+
+/* Tighter icon container — single icon centered */
+.bnr-tile-default .bnr-ai-scan-icon,
+.bnr-tile-camera .bnr-ai-scan-icon {
+  width: 36px;
+  height: 36px;
+}
+
+/* Tighter inner layout for cleaner visual balance */
+.bnr-tile-default .bnr-default-inner,
+.bnr-tile-camera .bnr-default-inner {
+  gap: 8px;
+  padding: 0 10px 0 8px;
+}
+
+/* Top accent line — yellow for default, cyan for camera */
+.bnr-tile-default::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,214,0,0.5) 30%, rgba(255,214,0,0.22) 70%, transparent 100%);
+  z-index: 3;
+}
+.bnr-tile-camera::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,212,255,0.5) 30%, rgba(0,212,255,0.22) 70%, transparent 100%);
+  z-index: 3;
+}
+
+/* Crisper status bar backgrounds */
+.bnr-tile-camera .bnr-default-status-bar {
+  background: rgba(0,212,255,0.04);
+  border-top: 1px solid rgba(0,212,255,0.12);
 }

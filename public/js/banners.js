@@ -231,31 +231,16 @@ const Banners = (() => {
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">
           <div class="bnr-ai-scan-icon">
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Corner brackets — cyan -->
-              <path d="M4 13V4H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 4H40V13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 31V40H13" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 40H40V31" stroke="#00d4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Camera body -->
-              <rect x="14" y="18" width="11" height="8" rx="1.2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.55)" stroke-width="0.9"/>
-              <!-- Camera lens -->
-              <circle cx="19.5" cy="22" r="2.5" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.5)" stroke-width="0.9"/>
-              <circle cx="19.5" cy="22" r="1" fill="#00d4ff" opacity="0.6"/>
-              <!-- Camera tail -->
-              <path d="M25 20l4.5-2v8l-4.5-2z" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.4)" stroke-width="0.8" stroke-linejoin="round"/>
-              <!-- Scan line -->
-              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.9" opacity="0.6"/>
-            </svg>
+            <img src="/img/cctv-camera-smart-cctv-securitycamera-protection-secure-insurance-svgrepo-com.svg" class="bnr-tile-img bnr-tile-img-cyan" width="28" height="28" alt="" />
           </div>
           <div class="bnr-default-copy">
             <p class="bnr-tile-title">Live Cameras</p>
-            <p class="bnr-tile-info">Browse active camera locations and preview before switching.</p>
+            <p class="bnr-tile-info">Tap to browse and switch active camera feeds.</p>
           </div>
         </div>
         <div class="bnr-default-status-bar">
-          <span class="bnr-ai-dot" style="background:#00d4ff;animation:bnr-ai-pulse 2s ease-in-out infinite;"></span>
-          <span class="bnr-ai-label">MULTI-CAM</span>
+          <span class="bnr-ai-dot bnr-ai-dot-cyan"></span>
+          <span class="bnr-ai-label" style="color:#00d4ff;">MULTI-CAM</span>
           <span class="bnr-standby-label" style="color:#00d4ff;">VIEW ALL</span>
         </div>
       </div>`;
@@ -310,24 +295,11 @@ const Banners = (() => {
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">
           <div class="bnr-ai-scan-icon">
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Corner brackets -->
-              <path d="M4 13V4H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 4H40V13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 31V40H13" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M31 40H40V31" stroke="#FFD600" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Car silhouette -->
-              <path d="M14 23l3-5h10l3 5H14z" fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.5)" stroke-width="0.9" stroke-linejoin="round"/>
-              <rect x="14" y="23" width="16" height="4" rx="0.8" fill="rgba(0,212,255,0.06)" stroke="rgba(0,212,255,0.45)" stroke-width="0.9"/>
-              <circle cx="18.5" cy="28" r="1.3" fill="rgba(0,212,255,0.45)"/>
-              <circle cx="25.5" cy="28" r="1.3" fill="rgba(0,212,255,0.45)"/>
-              <!-- Scan line -->
-              <line class="bnr-detect-scan" x1="11" y1="22" x2="33" y2="22" stroke="#00d4ff" stroke-width="0.9" opacity="0.6"/>
-            </svg>
+            <img src="/img/timer-pause-svgrepo-com.svg" class="bnr-tile-img bnr-tile-img-yellow bnr-icon-idle" width="26" height="26" alt="" />
           </div>
           <div class="bnr-default-copy">
             <p class="bnr-tile-title">No Active Round</p>
-            <p class="bnr-tile-info">AI is scanning live traffic. A new round is incoming.</p>
+            <p class="bnr-tile-info">AI scanning live traffic — next round incoming.</p>
           </div>
         </div>
         <div class="bnr-default-status-bar">

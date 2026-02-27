@@ -78,11 +78,28 @@ a:hover { text-decoration: underline; }
   gap: 10px;
   text-decoration: none;
 }
-.logo img {
+/* Logo image stack */
+.logo-img-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 32px;
-  width: auto;
-  display: block;
+  width: 32px;
+  flex-shrink: 0;
 }
+.logo-icon,
+.logo-ai-frame {
+  position: absolute;
+  top: 0; left: 0;
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+  display: block;
+  transition: opacity 0.4s ease;
+}
+.logo-icon   { opacity: 1; }
+.logo-ai-frame { opacity: 0; }
 .logo-title {
   font-family: "Archivo", "Manrope", sans-serif;
   font-size: 11.5px;
@@ -105,8 +122,11 @@ a:hover { text-decoration: underline; }
   padding-right: 2px;
 }
 
-.auth-card .logo img {
+.auth-card .logo-img-wrap,
+.auth-card .logo-icon,
+.auth-card .logo-ai-frame {
   height: 44px;
+  width: 44px;
 }
 .auth-card .logo-title {
   font-size: 15px;
@@ -3033,7 +3053,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
 
   .site-header { padding: 0 14px; }
-  .logo img { height: 28px; }
+  .logo-img-wrap, .logo-icon, .logo-ai-frame { height: 28px; width: 28px; }
   .site-header nav { gap: 8px; }
   #nav-auth, #nav-user { gap: 6px; }
   .nav-link { padding: 4px 6px; font-size: 0.82rem; }
@@ -3059,7 +3079,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
 
   /* Touch targets: remove 300ms tap delay */
-  button, a, .pill, .tab-btn, .nav-icon-btn {
+  button, a, .pill, .tab-btn, .nav-icon-btn, .nav-login-btn {
     touch-action: manipulation;
   }
 
@@ -4666,6 +4686,34 @@ button {
   opacity: 0.9;
 }
 
+/* White: pure white icon */
+.bnr-tile-img-white {
+  filter: brightness(0) invert(1);
+  opacity: 0.75;
+}
+
+/* Info / HIW icon button on play tile */
+.bnr-hiw-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.14s, border-color 0.14s, background 0.14s;
+  margin-left: 4px;
+}
+.bnr-hiw-icon:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.12);
+}
+
 /* Cyan: targets #00d4ff */
 .bnr-tile-img-cyan {
   filter: brightness(0) saturate(100%) invert(1) sepia(1) saturate(4) hue-rotate(163deg) brightness(1.1);
@@ -5116,10 +5164,10 @@ button {
   gap: 12px;
   text-align: center;
   padding: 28px 24px;
-  border: 1px solid rgba(255,214,0,0.28);
+  border: 1px solid rgba(239,68,68,0.35);
   border-radius: 10px;
-  background: rgba(8, 10, 22, 0.72);
-  box-shadow: 0 0 40px rgba(255,214,0,0.07), inset 0 0 30px rgba(0,0,0,0.4);
+  background: rgba(8, 10, 22, 0.82);
+  box-shadow: 0 0 40px rgba(239,68,68,0.1), inset 0 0 30px rgba(0,0,0,0.4);
   min-width: 220px;
 }
 
@@ -5133,16 +5181,16 @@ button {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #FFD600;
+  color: #ef4444;
   letter-spacing: 0.12em;
   margin: 0;
-  text-shadow: 0 0 10px rgba(255,214,0,0.45);
+  text-shadow: 0 0 10px rgba(239,68,68,0.4);
 }
 
 .stream-offline-info {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.65rem;
-  color: rgba(255,214,0,0.5);
+  color: rgba(239,68,68,0.55);
   letter-spacing: 0.05em;
   margin: 0;
 }
@@ -5158,7 +5206,7 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #FFD600;
+  background: #ef4444;
   animation: bnr-ai-pulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -5166,7 +5214,7 @@ button {
 .stream-offline-label {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.6rem;
-  color: rgba(255,214,0,0.42);
+  color: rgba(239,68,68,0.45);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -5640,35 +5688,61 @@ button {
 }
 
 /* =============================================
-   HEADER LOGO — hover effect
+   HEADER LOGO — image swap + auto-cycle
    ============================================= */
 
 .logo {
-  transition: opacity 0.15s, filter 0.2s;
+  transition: opacity 0.15s;
 }
 .logo:hover {
-  opacity: 0.88;
-  filter: drop-shadow(0 0 8px rgba(0,212,255,0.35));
-}
-.logo:hover .logo-title {
-  color: #00d4ff;
-  text-shadow: 0 0 12px rgba(0,212,255,0.45);
-}
-.logo:hover img {
-  filter: drop-shadow(0 0 6px rgba(0,212,255,0.5));
-}
-.logo img,
-.logo-title {
-  transition: color 0.18s, filter 0.18s, text-shadow 0.18s;
+  opacity: 0.9;
+  text-decoration: none;
 }
 
-/* Login icon — fingerprint cyber glow */
-#btn-open-login {
-  transition: color 0.14s, background 0.14s, filter 0.16s;
+/* Hover: fade aiframes in, icon stays but dims slightly */
+.logo:hover .logo-icon,
+.logo.logo-ai-active .logo-icon {
+  opacity: 0.15;
 }
-#btn-open-login:hover {
-  color: #00d4ff !important;
-  filter: drop-shadow(0 0 6px rgba(0,212,255,0.45));
+.logo:hover .logo-ai-frame,
+.logo.logo-ai-active .logo-ai-frame {
+  opacity: 1;
+}
+
+/* auth-card logos share same sizing */
+.auth-card .logo-img-wrap,
+.auth-card .logo-icon,
+.auth-card .logo-ai-frame {
+  height: 44px;
+  width: 44px;
+}
+.auth-card .logo-img-wrap { height: 44px; width: 44px; }
+
+/* Login text button */
+.nav-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: rgba(10,18,28,0.5);
+  border: 1px solid rgba(0,212,255,0.22);
+  color: rgba(160,190,220,0.75);
+  font-family: "Archivo", "Manrope", sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color .16s, border-color .16s, background .16s, box-shadow .16s;
+}
+.nav-login-btn:hover {
+  color: #00d4ff;
+  border-color: rgba(0,212,255,0.44);
+  background: rgba(0,212,255,0.06);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.07);
 }
 
 /* =============================================
@@ -6106,6 +6180,7 @@ button {
 
 .count-widget {
   transition:
+    clip-path 0.28s ease,
     border-color 0.22s ease,
     box-shadow 0.22s ease,
     background 0.22s ease,
@@ -6115,6 +6190,8 @@ button {
 
 .count-widget:hover,
 .count-widget.cw-active {
+  /* Expand corner cuts on hover — the polygon itself reacts */
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)) !important;
   border-color: rgba(255,214,0,0.72) !important;
   background: rgba(4,7,14,0.88) !important;
   box-shadow:
@@ -6236,6 +6313,10 @@ button {
     max-width: 160px !important;
     padding: 6px 8px 7px 8px !important;
     background: rgba(4,7,14,0.8) !important;
+  }
+  .count-widget:hover,
+  .count-widget.cw-active {
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)) !important;
   }
 
   /* Shrink LIVE COUNT label */
@@ -7249,48 +7330,190 @@ button {
   .hiw-got-it { width: 100%; text-align: center; }
 }
 
-/* ── Count widget guess row ─────────────────────────────────── */
-.cw-guess-row {
+/* ── Count widget — normal / guess mode wrappers ─────────────── */
+.cw-normal-wrap { display: flex; flex-direction: column; gap: 0; }
+.cw-normal-wrap.hidden { display: none; }
+
+/* ── Count widget — guess mode (X/Y progress) ────────────────── */
+.cw-guess-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 0;
+}
+.cw-guess-mode.hidden { display: none; }
+
+.cw-gm-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.cw-gm-nums #cw-gm-current {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #22c55e;
+  transition: color 0.3s;
+}
+.cw-gm-sep {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+.cw-gm-nums #cw-gm-target {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.cw-gm-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #22c55e;
+  font-family: "JetBrains Mono", monospace;
+}
+.cw-gm-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.cw-gm-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  background: #22c55e;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+/* ── Scoring card (bet panel) ────────────────────────────────── */
+.bp-score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bp-sc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+}
+.bp-sc-exact { background: rgba(34,197,94,0.08); }
+.bp-sc-close { background: rgba(234,179,8,0.07); }
+.bp-sc-miss  { background: rgba(239,68,68,0.06); }
+.bp-sc-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  font-family: "JetBrains Mono", monospace;
+}
+.bp-sc-exact .bp-sc-badge { background: rgba(34,197,94,0.2); color: #4ade80; }
+.bp-sc-close .bp-sc-badge { background: rgba(234,179,8,0.2);  color: #facc15; }
+.bp-sc-miss  .bp-sc-badge { background: rgba(239,68,68,0.2);  color: #f87171; }
+.bp-sc-desc { color: var(--muted); }
+
+/* ── Active bet receipt ──────────────────────────────────────── */
+.bpa-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.bpa-window-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.2);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", monospace;
+}
+.bpa-receipt {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.bpa-receipt-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-top: 4px;
-  padding: 3px 6px;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
 }
-.cw-guess-row.hidden { display: none; }
-.cw-guess-label {
-  font-size: 0.6rem;
+.bpa-receipt-row:last-child { border-bottom: none; }
+.bpa-receipt-row span { color: var(--muted); }
+.bpa-receipt-row strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.bpa-countdown { color: var(--accent) !important; font-variant-numeric: tabular-nums; }
+
+/* ── Leaderboard window tabs ─────────────────────────────────── */
+.lb-window-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.lb-wtab {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.07em;
-  color: #4ade80;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.14s;
   font-family: "JetBrains Mono", monospace;
 }
-.cw-guess-val {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #4ade80;
-  font-variant-numeric: tabular-nums;
+.lb-wtab:hover { color: var(--text); border-color: rgba(0,212,255,0.3); }
+.lb-wtab.active {
+  background: rgba(0,212,255,0.1);
+  border-color: rgba(0,212,255,0.35);
+  color: var(--accent);
 }
 
-/* ── Points hint row (bet panel) ────────────────────────────── */
-.bp-points-hint {
+/* ── Leaderboard row with detail subtext ─────────────────────── */
+.lb-name-col {
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(34, 197, 94, 0.07);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin-top: 4px;
-  font-size: 0.74rem;
-  color: #4ade80;
-  line-height: 1.4;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
 }
-.bp-points-hint svg { flex-shrink: 0; opacity: 0.8; }
+.lb-name-col .lb-name {
+  flex: unset;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-detail {
+  font-size: 0.65rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ── Markets guess CTA / locked state ───────────────────────── */
 .mkts-guess-cta {

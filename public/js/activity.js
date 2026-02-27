@@ -46,47 +46,79 @@ const Activity = (() => {
     return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
-  async function loadLeaderboard() {
+  function _winLabel(sec) {
+    return sec <= 90 ? "1 MIN" : sec <= 240 ? "3 MIN" : "5 MIN";
+  }
+
+  async function loadLeaderboard(windowSec = 60) {
     const container = document.getElementById("leaderboard-list");
     if (!container) return;
-    container.innerHTML = `<div class="lb-loading"><span class="skeleton" style="height:36px;border-radius:8px;display:block;margin-bottom:6px;"></span><span class="skeleton" style="height:36px;border-radius:8px;display:block;margin-bottom:6px;"></span><span class="skeleton" style="height:36px;border-radius:8px;display:block;"></span></div>`;
+    container.innerHTML = `<div class="lb-loading"><span class="skeleton" style="height:44px;border-radius:8px;display:block;margin-bottom:6px;"></span><span class="skeleton" style="height:44px;border-radius:8px;display:block;margin-bottom:6px;"></span><span class="skeleton" style="height:44px;border-radius:8px;display:block;"></span></div>`;
 
     try {
-      const { data: balances, error } = await window.sb
-        .from("user_balances")
-        .select("user_id, balance")
-        .order("balance", { ascending: false })
-        .limit(20);
+      // Pull all resolved bets for this window
+      const { data: bets, error } = await window.sb
+        .from("bets")
+        .select("user_id, exact_count, payout, window_duration_sec, placed_at")
+        .eq("window_duration_sec", windowSec)
+        .not("payout", "is", null)
+        .gt("payout", 0);
 
       if (error) throw error;
-      if (!balances?.length) {
-        container.innerHTML = `<div class="empty-state">No players yet.<br><span>Be the first to make a guess.</span></div>`;
+
+      if (!bets?.length) {
+        container.innerHTML = `<div class="empty-state">No ${_winLabel(windowSec)} scores yet.<br><span>Be the first to guess in this window.</span></div>`;
         return;
       }
 
-      // Try to resolve usernames from profiles
-      const userIds = balances.map(b => b.user_id).filter(Boolean);
+      // Aggregate per user
+      const userMap = {};
+      for (const b of bets) {
+        if (!b.user_id) continue;
+        if (!userMap[b.user_id]) {
+          userMap[b.user_id] = { totalPts: 0, guesses: 0, topGuess: 0 };
+        }
+        const u = userMap[b.user_id];
+        const pts = Number(b.payout || 0);
+        u.totalPts += pts;
+        u.guesses  += 1;
+        if (pts > u.topGuess) u.topGuess = pts;
+      }
+
+      // Sort by total points
+      const sorted = Object.entries(userMap)
+        .sort((a, b) => b[1].totalPts - a[1].totalPts)
+        .slice(0, 20);
+
+      // Resolve usernames
+      const userIds = sorted.map(([id]) => id).filter(Boolean);
       let nameMap = {};
       try {
         const { data: profiles } = await window.sb
-          .from("profiles")
-          .select("user_id, username")
-          .in("user_id", userIds);
+          .from("profiles").select("user_id, username").in("user_id", userIds);
         (profiles || []).forEach(p => { nameMap[p.user_id] = p.username; });
-      } catch { /* profiles table may not exist — graceful */ }
+      } catch { /* graceful */ }
 
       const medals = ["🥇", "🥈", "🥉"];
-      container.innerHTML = balances.map((b, i) => {
-        const name = nameMap[b.user_id] || ("Player " + String(b.user_id || "").slice(0, 5));
-        const rank = i < 3 ? `<span class="lb-medal">${medals[i]}</span>` : `<span class="lb-rank-num">#${i + 1}</span>`;
+      container.innerHTML = sorted.map(([uid, stats], i) => {
+        const name     = nameMap[uid] || ("Player " + uid.slice(0, 5));
+        const rank     = i < 3 ? `<span class="lb-medal">${medals[i]}</span>` : `<span class="lb-rank-num">#${i + 1}</span>`;
         const topClass = i < 3 ? ` lb-row-top lb-row-top-${i}` : "";
+        const detail   = [
+          `${stats.guesses} guess${stats.guesses !== 1 ? "es" : ""}`,
+          `best ${stats.topGuess.toLocaleString()} pts`,
+        ].join(" · ");
         return `
           <div class="lb-row${topClass}">
             ${rank}
-            <span class="lb-name">${_esc(name)}</span>
-            <span class="lb-balance">${Number(b.balance || 0).toLocaleString()} pts</span>
+            <div class="lb-name-col">
+              <span class="lb-name">${_esc(name)}</span>
+              <span class="lb-detail">${_esc(detail)}</span>
+            </div>
+            <span class="lb-balance">${stats.totalPts.toLocaleString()} pts</span>
           </div>`;
       }).join("");
+
     } catch (e) {
       console.error("[Activity] Leaderboard load failed:", e);
       container.innerHTML = `<div class="empty-state">Could not load leaderboard.<br><span>${_esc(e?.message || "")}</span></div>`;

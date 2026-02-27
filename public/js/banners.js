@@ -280,20 +280,34 @@ const Banners = (() => {
           <div class="bnr-lbanner-status">
             <span class="bnr-ai-dot bnr-ai-dot-live"></span>
             <span class="bnr-ai-label">LIVE</span>
-          </div>` : ""}
+          </div>
+          <button class="bnr-hiw-icon" id="bnr-play-hiw" aria-label="How it works" title="How it works">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          </button>` : ""}
         </div>
       </div>`;
+  }
+
+  // ── HIW modal open/close ──────────────────────────────────────
+  function _openHiw() {
+    document.getElementById("hiw-modal-backdrop")?.classList.remove("hidden");
+    document.getElementById("hiw-modal")?.classList.remove("hidden");
+  }
+
+  function _closeHiw() {
+    document.getElementById("hiw-modal-backdrop")?.classList.add("hidden");
+    document.getElementById("hiw-modal")?.classList.add("hidden");
   }
 
   // ── Default "no round" tile ───────────────────────────────────
   function _defaultTile() {
     return `
-      <div class="bnr-tile bnr-tile-default">
+      <div class="bnr-tile bnr-tile-default" id="bnr-default-tile" role="button" tabindex="0" aria-label="How it works" style="cursor:pointer;">
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">
           <div class="bnr-ai-scan-icon">
-            <img src="/img/timer-pause-svgrepo-com.svg" class="bnr-tile-img bnr-tile-img-yellow bnr-icon-idle" width="26" height="26" alt="" />
+            <img src="/img/timer-pause-svgrepo-com.svg" class="bnr-tile-img bnr-tile-img-white bnr-icon-idle" width="26" height="26" alt="" />
           </div>
           <div class="bnr-default-copy">
             <p class="bnr-tile-title">No Active Round</p>
@@ -302,8 +316,7 @@ const Banners = (() => {
         </div>
         <div class="bnr-default-status-bar">
           <span class="bnr-ai-dot"></span>
-          <span class="bnr-ai-label">AI SCANNING</span>
-          <span class="bnr-standby-label">STANDBY</span>
+          <span class="bnr-ai-label" style="color:rgba(255,255,255,0.55);font-size:0.58rem;letter-spacing:0.04em;">Tap to see how the game works while you wait</span>
         </div>
       </div>`;
   }
@@ -342,6 +355,26 @@ const Banners = (() => {
     section.querySelector(".bnr-play-cta")?.addEventListener("click", () => {
       window.Markets?.enterRound?.();
     });
+
+    // Wire default tile → HIW modal
+    const defaultTile = section.querySelector("#bnr-default-tile");
+    if (defaultTile) {
+      defaultTile.addEventListener("click", _openHiw);
+      defaultTile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); _openHiw(); }
+      });
+    }
+
+    // Wire play tile info icon → HIW modal
+    section.querySelector("#bnr-play-hiw")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      _openHiw();
+    });
+
+    // Wire HIW close (idempotent — safe to re-attach each render)
+    document.getElementById("hiw-modal-close")?.addEventListener("click", _closeHiw);
+    document.getElementById("hiw-got-it")?.addEventListener("click", _closeHiw);
+    document.getElementById("hiw-modal-backdrop")?.addEventListener("click", _closeHiw);
   }
 
   function _wireGrid(container) {
@@ -370,9 +403,11 @@ const Banners = (() => {
       });
     });
 
-    container.querySelectorAll(".bnr-tile-content").forEach(el => {
-      el.addEventListener("click", () => {
-        _detailId = el.closest(".bnr-tile").dataset.id;
+    // Whole tile is clickable — data-id tiles only (excludes default/camera/play tiles)
+    container.querySelectorAll(".bnr-tile[data-id]").forEach(tile => {
+      tile.style.cursor = "pointer";
+      tile.addEventListener("click", () => {
+        _detailId = tile.dataset.id;
         _render();
       });
     });

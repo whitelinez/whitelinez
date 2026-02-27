@@ -20,6 +20,7 @@ const ZoneOverlay = (() => {
   let confirmedTotal = 0;
   let flashTimer = null;
   let isFlashing = false;
+  let _hoverCountLine = false;   // true when mouse is over the count zone polygon
 
   function hexToPixi(hex) {
     const raw = String(hex || "").replace("#", "");
@@ -189,6 +190,10 @@ const ZoneOverlay = (() => {
     loadAndDraw();
     setInterval(loadAndDraw, 30000);
 
+    // Hover detection — listen on the video element (canvas is pointer-events:none)
+    video.addEventListener("mousemove", _onMouseMove);
+    video.addEventListener("mouseleave", _onMouseLeave);
+
     window.addEventListener("count:update", (e) => {
       const detail = e.detail || {};
       const crossings = detail.new_crossings ?? 0;
@@ -233,6 +238,43 @@ const ZoneOverlay = (() => {
     }
   }
 
+  // ── Hover: point-in-polygon (ray casting) ────────────────────
+  function _pointInPoly(px, py, poly) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i].x, yi = poly[i].y;
+      const xj = poly[j].x, yj = poly[j].y;
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  function _onMouseMove(e) {
+    if (!countLine) return;
+    const rect = video.getBoundingClientRect();
+    const cssX = e.clientX - rect.left;
+    const cssY = e.clientY - rect.top;
+    const bounds = getContentBounds(video);
+    const pt = (rx, ry) => contentToPixel(rx, ry, bounds);
+    const poly = _toPoints(countLine, pt);
+    const nowHover = poly ? _pointInPoly(cssX, cssY, poly) : false;
+    if (nowHover !== _hoverCountLine) {
+      _hoverCountLine = nowHover;
+      video.style.cursor = nowHover ? "crosshair" : "";
+      draw();
+    }
+  }
+
+  function _onMouseLeave() {
+    if (_hoverCountLine) {
+      _hoverCountLine = false;
+      video.style.cursor = "";
+      draw();
+    }
+  }
+
   function flash() {
     isFlashing = true;
     draw();
@@ -261,7 +303,7 @@ const ZoneOverlay = (() => {
 
     if (countLine) {
       const color = isFlashing ? "#00FF88" : "#FFD600";
-      _drawZone(countLine, color, isFlashing, String(confirmedTotal), pt);
+      _drawZone(countLine, color, isFlashing, String(confirmedTotal), pt, _hoverCountLine);
     }
   }
 
@@ -274,12 +316,12 @@ const ZoneOverlay = (() => {
     const pt = (rx, ry) => contentToPixel(rx, ry, bounds);
 
     if (detectZone) {
-      _drawZonePixi(detectZone, "#00BCD4", false, "", pt);
+      _drawZonePixi(detectZone, "#00BCD4", false, "", pt, false);
     }
 
     if (countLine) {
       const color = isFlashing ? "#00FF88" : "#FFD600";
-      _drawZonePixi(countLine, color, isFlashing, String(confirmedTotal), pt);
+      _drawZonePixi(countLine, color, isFlashing, String(confirmedTotal), pt, _hoverCountLine);
     }
   }
 
@@ -300,7 +342,7 @@ const ZoneOverlay = (() => {
     return null;
   }
 
-  function _drawZone(zone, color, flashing, label, pt) {
+  function _drawZone(zone, color, flashing, label, pt, hovering = false) {
     const poly = _toPoints(zone, pt);
     if (poly && poly.length >= 3) {
       ctx.beginPath();
@@ -310,15 +352,25 @@ const ZoneOverlay = (() => {
 
       ctx.fillStyle = flashing
         ? "rgba(0,255,136,0.16)"
-        : color === "#00BCD4"
-          ? "rgba(0,188,212,0.08)"
-          : "rgba(255,214,0,0.10)";
+        : hovering
+          ? (color === "#00BCD4" ? "rgba(0,188,212,0.22)" : "rgba(255,214,0,0.22)")
+          : color === "#00BCD4"
+            ? "rgba(0,188,212,0.08)"
+            : "rgba(255,214,0,0.10)";
       ctx.fill();
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = flashing ? 3 : 2;
+      ctx.lineWidth = flashing ? 3 : hovering ? 3 : 2;
       ctx.setLineDash(flashing || color !== "#00BCD4" ? [] : [8, 5]);
+
+      // Glow on hover
+      if (hovering && !flashing) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 14;
+      }
       ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
       ctx.setLineDash([]);
 
       if (label) {
@@ -358,18 +410,20 @@ const ZoneOverlay = (() => {
     }
   }
 
-  function _drawZonePixi(zone, color, flashing, label, pt) {
+  function _drawZonePixi(zone, color, flashing, label, pt, hovering = false) {
     const poly = _toPoints(zone, pt);
     const colorNum = hexToPixi(color);
     if (poly && poly.length >= 3) {
       const fillAlpha = flashing
         ? 0.16
-        : color === "#00BCD4"
-          ? 0.08
-          : 0.10;
+        : hovering
+          ? 0.22
+          : color === "#00BCD4"
+            ? 0.08
+            : 0.10;
 
       pixiGraphics.beginFill(colorNum, fillAlpha);
-      pixiGraphics.lineStyle(flashing ? 3 : 2, colorNum, 1);
+      pixiGraphics.lineStyle(flashing ? 3 : hovering ? 3 : 2, colorNum, 1);
       pixiGraphics.moveTo(poly[0].x, poly[0].y);
       for (let i = 1; i < poly.length; i += 1) {
         pixiGraphics.lineTo(poly[i].x, poly[i].y);

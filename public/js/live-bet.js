@@ -141,8 +141,8 @@ const LiveBet = (() => {
         return;
       }
 
-      // Show countdown
-      _showBpActiveBet(data.window_end);
+      // Show countdown + receipt
+      _showBpActiveBet(data.window_end, exact);
       window.dispatchEvent(new CustomEvent("bet:placed", {
         detail: {
           ...data,
@@ -162,12 +162,22 @@ const LiveBet = (() => {
     }
   }
 
-  function _showBpActiveBet(windowEndIso) {
-    const activeEl = document.getElementById("bp-active-bet");
-    const cdEl = document.getElementById("bp-countdown");
-    const hintEl = document.getElementById("bp-active-hint");
+  function _showBpActiveBet(windowEndIso, guessCount) {
+    const activeEl  = document.getElementById("bp-active-bet");
+    const cdEl      = document.getElementById("bp-countdown");
+    const hintEl    = document.getElementById("bp-active-hint");
     const submitBtn = document.getElementById("bp-submit");
     if (!activeEl || !cdEl) return;
+
+    // Receipt fields
+    const receiptGuessEl = document.getElementById("bpa-receipt-guess");
+    if (receiptGuessEl) receiptGuessEl.textContent = guessCount ?? "—";
+
+    const winTagEl = document.getElementById("bpa-window-tag");
+    if (winTagEl) {
+      const labels = { 60: "1 MIN", 180: "3 MIN", 300: "5 MIN" };
+      winTagEl.textContent = labels[_windowSec] || `${Math.round(_windowSec / 60)} MIN`;
+    }
 
     activeEl.classList.remove("hidden");
     submitBtn.classList.add("hidden");
@@ -219,14 +229,6 @@ const LiveBet = (() => {
     _ensureSpinnerStyle();
     // Back button
     document.getElementById("bet-panel-back")?.addEventListener("click", close);
-
-    // Vehicle pill selection
-    document.getElementById("bp-vehicle-pills")?.addEventListener("click", (e) => {
-      const pill = e.target.closest(".pill");
-      if (!pill) return;
-      _vehicleClass = pill.dataset.val;
-      _setPill("bp-vehicle-pills", _vehicleClass);
-    });
 
     // Window pill selection
     document.getElementById("bp-window-pills")?.addEventListener("click", (e) => {

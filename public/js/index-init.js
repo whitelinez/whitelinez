@@ -321,12 +321,53 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 
   // Activity — broadcasts to chat; leaderboard loads lazily on tab open
   Activity.init();
+  let _lbWindow = 60;
+
   document.querySelector('.tab-btn[data-tab="leaderboard"]')?.addEventListener("click", () => {
-    Activity.loadLeaderboard();
+    Activity.loadLeaderboard(_lbWindow);
   });
   document.getElementById("lb-refresh")?.addEventListener("click", () => {
-    Activity.loadLeaderboard();
+    Activity.loadLeaderboard(_lbWindow);
   });
+
+  // Window tab switching on leaderboard
+  document.getElementById("tab-leaderboard")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".lb-wtab");
+    if (!btn) return;
+    _lbWindow = parseInt(btn.dataset.win, 10);
+    document.querySelectorAll(".lb-wtab").forEach(b => b.classList.toggle("active", b === btn));
+    Activity.loadLeaderboard(_lbWindow);
+  });
+
+  // ── Global heartbeat ─────────────────────────────────────────────────────
+  // Supabase realtime: auto-refresh markets + banners when rounds/sessions/banners change.
+  if (window.sb) {
+    window.sb.channel("site-heartbeat")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bet_rounds" }, () => {
+        Markets.loadMarkets();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "round_sessions" }, () => {
+        Markets.loadMarkets();
+        // Re-poll session state in banners (triggers play/default tile swap)
+        if (window.Banners) window.Banners.show();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "banners" }, () => {
+        if (window.Banners) window.Banners.show();
+      })
+      .subscribe();
+  }
+
+  // ── Logo AI-frame auto-cycle (5 min on / 5 min off) ─────────────────────
+  (function logoAiCycle() {
+    const logo = document.getElementById("site-logo");
+    if (!logo) return;
+    const INTERVAL = 5 * 60 * 1000; // 5 minutes
+    let aiActive = false;
+    setInterval(() => {
+      aiActive = !aiActive;
+      logo.classList.toggle("logo-ai-active", aiActive);
+    }, INTERVAL);
+  })();
 
   MlShowcase.init();
   CameraSwitcher.init();

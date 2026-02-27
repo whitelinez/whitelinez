@@ -6016,3 +6016,37 @@ button {
   text-shadow: 0 0 10px rgba(0,212,255,0.2);
   border-bottom-color: transparent !important;
 }
+
+/* =============================================
+   TAB DETECTION BOX — fix collapsed pseudo-element
+   ============================================= */
+
+/* Ensure brackets aren't clipped */
+.sidebar-tabs {
+  overflow: visible !important;
+}
+.tab-btn {
+  overflow: visible !important;
+}
+
+/* Clean override — no conflicting inset + individual property collision */
+.tab-btn.active::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 3px !important;
+  right: 5px !important;
+  bottom: 3px !important;
+  left: 5px !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 44' preserveAspectRatio='none'%3E%3Cg stroke='%2300d4ff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 1H1V14'/%3E%3Cpath d='M86 1H99V14'/%3E%3Cpath d='M1 30V43H14'/%3E%3Cpath d='M86 43H99V30'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  z-index: 2;
+  opacity: 0.85;
+  animation: tab-detect-in 0.18s ease-out forwards;
+}

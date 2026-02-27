@@ -447,31 +447,20 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   text-shadow: 0 0 8px rgba(255, 80, 80, 0.46), 0 1px 3px rgba(0,0,0,0.65);
 }
 
-/* ── Bot HUD — bottom-right training stats ──────────────────────────────── */
-.bot-hud {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 8;
+/* ── ml-hud bot info — training day + knowledge % ───────────────────────── */
+.ml-hud-bot {
+  margin: 0 0 4px;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  pointer-events: none;
+  gap: 1px;
 }
-.bot-hud-row {
-  padding: 2px 10px 2px 8px;
-  border: 1px solid rgba(112, 201, 133, 0.65);
-  background: rgba(12, 26, 18, 0.25);
-  color: #8dff9e;
-  font-family: "Courier New", "Consolas", monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-  clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%);
-  text-shadow: 0 0 8px rgba(28, 255, 74, 0.45), 0 1px 3px rgba(0,0,0,0.65);
-  white-space: nowrap;
+.ml-hud-bot span {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.46rem;
+  letter-spacing: 0.07em;
+  color: rgba(200, 228, 240, 0.8);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  line-height: 1.35;
 }
 
 .live-dot {
@@ -494,12 +483,12 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   background: transparent;
   border: 1.5px solid rgba(255, 214, 0, 0.6);
   border-radius: 0;
-  padding: 22px 8px 5px 6px;
+  padding: 8px 8px 5px;
   z-index: 6;
   backdrop-filter: none;
   min-width: 132px;
   box-shadow: none;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .count-widget-total {
@@ -559,26 +548,24 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   bottom: 14px;
   width: min(310px, 52vw);
   background: transparent;
-  border: 1.5px solid rgba(0, 212, 255, 0.45);
+  border: none;
   border-radius: 0;
-  padding: 24px 6px 4px;
+  padding: 4px 6px;
   z-index: 6;
   backdrop-filter: none;
   display: block;
   text-align: right;
-  overflow: visible;
 }
 
-/* ml-hud-head is now the YOLO label tab (styled via .yolo-label.yolo-label-cyan) */
 .ml-hud-head {
-  width: auto;
+  position: relative;
 }
 
 .ml-hud-title {
   font-size: 0.58rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #000c14;
+  color: rgba(255, 224, 120, 0.94);
   margin: 0;
   font-family: "Archivo", sans-serif;
   font-weight: 700;
@@ -3246,9 +3233,9 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-size: 0.49rem;
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: #000c14;
+  color: rgba(180, 215, 230, 0.65);
   background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(0,0,0,0.2);
+  border: 1px solid rgba(180, 215, 230, 0.18);
   text-shadow: none;
 }
 
@@ -5758,6 +5745,9 @@ button {
 .yolo-label-cyan   { background: #00d4ff; color: #000c14; }
 .yolo-label-yellow { background: #FFD600; color: #0f0c00; }
 .yolo-label-green  { background: #22c55e; color: #021207; }
+
+/* Banner tile YOLO labels sit above all tile layers */
+.bnr-tile .yolo-label { z-index: 10; pointer-events: none; }
 
 /* =============================================
    HEADER LOGO — pulse + hover freeze

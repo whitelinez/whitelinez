@@ -251,6 +251,7 @@ const Banners = (() => {
     const live = _sessionLive;
     return `
       <div class="bnr-tile bnr-tile-play bnr-tile-landscape ${live ? "bnr-tile-live" : ""}">
+        <div class="yolo-label yolo-label-cyan">LIVE CAMERA</div>
         <div class="bnr-lbanner-icon ${live ? "bnr-lbanner-icon-live" : "bnr-lbanner-icon-idle"}">
           ${live ? `
           <img src="/img/timer-start-svgrepo-com.svg" class="bnr-tile-img bnr-lbanner-icon-img ${live ? "bnr-lbanner-img-green" : ""}" width="24" height="24" alt="" />` : `
@@ -303,6 +304,7 @@ const Banners = (() => {
   function _defaultTile() {
     return `
       <div class="bnr-tile bnr-tile-default" id="bnr-default-tile" role="button" tabindex="0" aria-label="How it works" style="cursor:pointer;">
+        <div class="yolo-label yolo-label-yellow">NO ACTIVE ROUND</div>
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">

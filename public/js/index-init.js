@@ -388,7 +388,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 })();
 
 
-// ── Bot HUD — training days counter + knowledge % ────────────────────────────
+// ── Bot info in VISION HUD — training day + knowledge % ──────────────────────
 (function initBotHud() {
   const TRAIN_START  = new Date('2026-02-23T00:00:00');
   const BASE_KNOW    = 71.8;   // % on day 0
@@ -398,10 +398,8 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   function update() {
     const days = Math.floor((Date.now() - TRAIN_START) / 86400000);
     const know = Math.min(KNOW_MAX, BASE_KNOW + days * KNOW_PER_DAY).toFixed(1);
-    const daysEl = document.getElementById('bot-hud-days');
-    const knowEl = document.getElementById('bot-hud-know');
-    if (daysEl) daysEl.textContent = `TRAIN · DAY ${days}`;
-    if (knowEl) knowEl.textContent = `KNOW · ${know}%`;
+    const el = document.getElementById('ml-hud-bot');
+    if (el) el.innerHTML = `<span>TRAIN · DAY ${days}</span><span>KNOW · ${know}%</span>`;
   }
 
   update();

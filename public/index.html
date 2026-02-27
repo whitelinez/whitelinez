@@ -58,11 +58,6 @@
         <canvas id="zone-canvas" class="zone-overlay"></canvas>
         <div id="fps-overlay" class="fps-overlay" aria-live="polite">FPS --.-</div>
 
-        <div id="bot-hud" class="bot-hud" aria-live="polite">
-          <div class="bot-hud-row" id="bot-hud-days">TRAIN · DAY 0</div>
-          <div class="bot-hud-row" id="bot-hud-know">KNOW · --%</div>
-        </div>
-
         <div id="play-overlay" class="play-overlay hidden">
           <button id="btn-play">
             <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 20 12 8 19 8 5"></polygon></svg>
@@ -100,7 +95,6 @@
         </div>
 
         <div id="count-widget" class="count-widget">
-          <div class="yolo-label yolo-label-yellow">LIVE COUNT</div>
 
           <!-- Normal mode: global total + breakdown -->
           <div id="cw-normal" class="cw-normal-wrap">
@@ -173,12 +167,13 @@
         </div>
 
         <div id="ml-hud" class="ml-hud">
-          <div class="ml-hud-head yolo-label yolo-label-cyan">
+          <div class="ml-hud-head">
             <span class="ml-hud-title">VISION HUD</span>
             <span id="ml-hud-level" class="ml-hud-state">Idle</span>
           </div>
 
           <p id="ml-hud-msg" class="ml-hud-msg">Initializing live scene scan...</p>
+          <p id="ml-hud-bot" class="ml-hud-bot"></p>
           <p id="ml-hud-verbose" class="ml-hud-verbose">Scene lock scanning | retrain idle | scene --</p>
 
           <div class="ml-hud-chips">

@@ -23,6 +23,8 @@ const MlShowcase = (() => {
     streamItems: [],
     fallbackItems: [],
     seededFromTelemetry: false,
+    lifetimeTotal: 0,
+    lifetimeBreakdown: {},
   };
 
   let _bound = false;
@@ -51,6 +53,13 @@ const MlShowcase = (() => {
     state.frames += 1;
     state.objects += detections.length;
     state.lastSeenIso = new Date().toISOString();
+
+    // Track lifetime totals (cumulative from backend counter, survives redeploys)
+    const payloadTotal = Number(payload?.total ?? 0);
+    if (payloadTotal > state.lifetimeTotal) {
+      state.lifetimeTotal = payloadTotal;
+      state.lifetimeBreakdown = { ...breakdown };
+    }
 
     for (const d of detections) {
       const c = Number(d?.conf);
@@ -124,6 +133,15 @@ const MlShowcase = (() => {
         if (health?.ml_retrain_task_running) {
           state.modelName = `${state.modelName} (retraining)`;
         }
+        // Seed lifetime totals from latest snapshot if higher than current
+        const snap = health?.latest_snapshot;
+        if (snap) {
+          const snapTotal = Number(snap.total ?? 0);
+          if (snapTotal > state.lifetimeTotal) {
+            state.lifetimeTotal = snapTotal;
+            state.lifetimeBreakdown = { ...(snap.vehicle_breakdown || {}) };
+          }
+        }
       }
     } catch {
       // Keep previous values and fallback to live stream-only mode.
@@ -175,6 +193,19 @@ const MlShowcase = (() => {
     rowsEl.textContent = state.rows24h.toLocaleString();
     modelEl.textContent = `Model: ${state.modelName || "-"}`;
     lastSeenEl.textContent = `Last telemetry ${ago(state.lastSeenIso)}`;
+
+    // Lifetime totals
+    const ltTotal = document.getElementById("mls-lifetime-total");
+    const ltCar   = document.getElementById("mls-lt-car");
+    const ltTruck = document.getElementById("mls-lt-truck");
+    const ltBus   = document.getElementById("mls-lt-bus");
+    const ltMoto  = document.getElementById("mls-lt-moto");
+    const bd = state.lifetimeBreakdown;
+    if (ltTotal) ltTotal.textContent = state.lifetimeTotal > 0 ? state.lifetimeTotal.toLocaleString() : "—";
+    if (ltCar)   ltCar.textContent   = state.lifetimeTotal > 0 ? (Number(bd.car        ?? 0)).toLocaleString() : "—";
+    if (ltTruck) ltTruck.textContent = state.lifetimeTotal > 0 ? (Number(bd.truck      ?? 0)).toLocaleString() : "—";
+    if (ltBus)   ltBus.textContent   = state.lifetimeTotal > 0 ? (Number(bd.bus        ?? 0)).toLocaleString() : "—";
+    if (ltMoto)  ltMoto.textContent  = state.lifetimeTotal > 0 ? (Number(bd.motorcycle ?? 0)).toLocaleString() : "—";
 
     const items = state.streamItems.length ? state.streamItems : state.fallbackItems;
     if (!items.length) {

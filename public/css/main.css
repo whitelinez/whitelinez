@@ -96,10 +96,14 @@ a:hover { text-decoration: underline; }
   width: 32px;
   object-fit: contain;
   display: block;
-  transition: opacity 0.4s ease;
 }
-.logo-icon   { opacity: 1; }
-.logo-ai-frame { opacity: 0; }
+.logo-icon    { z-index: 2; opacity: 1; }
+.logo-ai-frame { z-index: 1; animation: logo-ai-pulse 2.5s ease-in-out infinite; }
+
+@keyframes logo-ai-pulse {
+  0%, 100% { opacity: 0; }
+  45%, 55% { opacity: 0.92; }
+}
 .logo-title {
   font-family: "Archivo", "Manrope", sans-serif;
   font-size: 11.5px;
@@ -443,6 +447,33 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   text-shadow: 0 0 8px rgba(255, 80, 80, 0.46), 0 1px 3px rgba(0,0,0,0.65);
 }
 
+/* ── Bot HUD — bottom-right training stats ──────────────────────────────── */
+.bot-hud {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  pointer-events: none;
+}
+.bot-hud-row {
+  padding: 2px 10px 2px 8px;
+  border: 1px solid rgba(112, 201, 133, 0.65);
+  background: rgba(12, 26, 18, 0.25);
+  color: #8dff9e;
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%);
+  text-shadow: 0 0 8px rgba(28, 255, 74, 0.45), 0 1px 3px rgba(0,0,0,0.65);
+  white-space: nowrap;
+}
+
 .live-dot {
   width: 7px;
   height: 7px;
@@ -461,14 +492,14 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   top: 50px;
   left: 10px;
   background: transparent;
-  border: 1px solid rgba(255, 214, 0, 0.55);
+  border: 1.5px solid rgba(255, 214, 0, 0.6);
   border-radius: 0;
-  padding: 4px 6px 5px;
+  padding: 22px 8px 5px 6px;
   z-index: 6;
   backdrop-filter: none;
   min-width: 132px;
   box-shadow: none;
-  clip-path: polygon(0 52%, 7% 0, 100% 0, 94% 100%, 0 100%);
+  overflow: visible;
 }
 
 .count-widget-total {
@@ -528,22 +559,29 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   bottom: 14px;
   width: min(310px, 52vw);
   background: transparent;
-  border: none;
+  border: 1.5px solid rgba(0, 212, 255, 0.45);
   border-radius: 0;
-  padding: 4px 6px;
+  padding: 24px 6px 4px;
   z-index: 6;
   backdrop-filter: none;
   display: block;
   text-align: right;
+  overflow: visible;
+}
+
+/* ml-hud-head is now the YOLO label tab (styled via .yolo-label.yolo-label-cyan) */
+.ml-hud-head {
+  width: auto;
 }
 
 .ml-hud-title {
-  font-size: 0.64rem;
-  letter-spacing: 0.09em;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #98dce5;
-  margin: 0 0 2px;
-  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  color: #000c14;
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
 }
 
 .ml-hud-msg {
@@ -1614,18 +1652,19 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   color: #00d4ff;
 }
 
+#tab-leaderboard {
+  position: relative;
+  padding-top: 24px;
+}
+
 .lb-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0 2px 10px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 8px;
+  /* All styling from .yolo-label.yolo-label-cyan */
+  color: #000c14;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 0;
+  border: none;
 }
 .lb-list { display: flex; flex-direction: column; gap: 4px; }
 .lb-row {
@@ -2027,36 +2066,39 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 /* ── AI Tab — Console Terminal ─────────────────────────────────────────── */
 .ai-console {
+  position: relative;
   background: #060a08;
-  border: 1px solid rgba(34, 197, 94, 0.28);
-  border-radius: 10px;
+  border: 1.5px solid rgba(34, 197, 94, 0.45);
+  border-radius: 0;
   margin-bottom: 12px;
-  overflow: hidden;
+  margin-top: 4px;
+  overflow: visible;
   font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Courier New", monospace;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.06);
 }
 
 /* When console is directly attached to banner inside .ai-unit */
 .ai-unit .ai-console {
   border-radius: 0;
-  border: none;
-  border-top: 1px solid rgba(34, 197, 94, 0.18);
+  border: 1.5px solid rgba(34, 197, 94, 0.45);
+  border-top: none;
   margin-bottom: 0;
   box-shadow: none;
+  margin-top: 0;
 }
 
 .ai-console-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.03);
-  border-bottom: 1px solid rgba(34, 197, 94, 0.18);
+  padding: 4px 10px;
+  /* background, color, and positioning come from .yolo-label.yolo-label-green */
+  pointer-events: none;
 }
 
 .ai-con-prompt {
-  font-size: 0.72rem;
-  color: #22c55e;
+  font-size: 0.62rem;
+  color: rgba(0,0,0,0.5);
   font-weight: 700;
   letter-spacing: 0;
   flex-shrink: 0;
@@ -2065,19 +2107,20 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .ai-con-title {
   flex: 1;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.5);
+  color: #021207;
+  font-weight: 700;
 }
 
 .ai-con-online {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.64rem;
-  letter-spacing: 0.12em;
-  color: #22c55e;
+  gap: 4px;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  color: rgba(0,0,0,0.6);
   text-transform: uppercase;
 }
 
@@ -3059,6 +3102,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .nav-link { padding: 4px 6px; font-size: 0.82rem; }
   .nav-icon-btn { width: 30px; height: 30px; border-radius: 7px; }
   .nav-balance { height: 30px; padding: 0 9px; font-size: 0.76rem; }
+  .nav-login-btn { height: 30px; padding: 0 10px; font-size: 10.5px; border-radius: 7px; }
 
   .empty-state { padding: 24px 16px; }
 
@@ -3202,11 +3246,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   font-size: 0.49rem;
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: #fff7d8;
-  background: rgba(39, 35, 18, 0.2);
-  border: 1px solid rgba(255, 214, 0, 0.62);
-  clip-path: polygon(0 50%, 6% 0, 100% 0, 94% 100%, 0 100%);
-  text-shadow: 0 0 5px rgba(255, 214, 0, 0.24), 0 1px 5px rgba(0, 0, 0, 0.45);
+  color: #000c14;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0,0,0,0.2);
+  text-shadow: none;
 }
 
 .ml-hud-state.is-live {
@@ -5688,25 +5731,54 @@ button {
 }
 
 /* =============================================
-   HEADER LOGO — image swap + auto-cycle
+   YOLO Detection Label Tab — shared pattern
+   ============================================= */
+
+.yolo-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 4px 10px;
+  font-family: "Archivo", "JetBrains Mono", sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
+}
+/* pointer-events back on lb-header since it has an interactive button */
+.lb-header.yolo-label { pointer-events: auto; }
+
+.yolo-label-cyan   { background: #00d4ff; color: #000c14; }
+.yolo-label-yellow { background: #FFD600; color: #0f0c00; }
+.yolo-label-green  { background: #22c55e; color: #021207; }
+
+/* =============================================
+   HEADER LOGO — pulse + hover freeze
    ============================================= */
 
 .logo {
   transition: opacity 0.15s;
 }
 .logo:hover {
-  opacity: 0.9;
+  opacity: 1;
   text-decoration: none;
 }
 
-/* Hover: fade aiframes in, icon stays but dims slightly */
-.logo:hover .logo-icon,
-.logo.logo-ai-active .logo-icon {
-  opacity: 0.15;
-}
-.logo:hover .logo-ai-frame,
-.logo.logo-ai-active .logo-ai-frame {
+/* Hover: freeze pulse, hold frame fully visible, dim icon so frame shows */
+.logo:hover .logo-ai-frame {
+  animation: none;
   opacity: 1;
+}
+.logo:hover .logo-icon {
+  opacity: 0.7;
+  transition: opacity 0.25s ease;
 }
 
 /* auth-card logos share same sizing */

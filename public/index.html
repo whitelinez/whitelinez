@@ -58,6 +58,11 @@
         <canvas id="zone-canvas" class="zone-overlay"></canvas>
         <div id="fps-overlay" class="fps-overlay" aria-live="polite">FPS --.-</div>
 
+        <div id="bot-hud" class="bot-hud" aria-live="polite">
+          <div class="bot-hud-row" id="bot-hud-days">TRAIN · DAY 0</div>
+          <div class="bot-hud-row" id="bot-hud-know">KNOW · --%</div>
+        </div>
+
         <div id="play-overlay" class="play-overlay hidden">
           <button id="btn-play">
             <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 20 12 8 19 8 5"></polygon></svg>
@@ -95,6 +100,7 @@
         </div>
 
         <div id="count-widget" class="count-widget">
+          <div class="yolo-label yolo-label-yellow">LIVE COUNT</div>
 
           <!-- Normal mode: global total + breakdown -->
           <div id="cw-normal" class="cw-normal-wrap">
@@ -167,8 +173,8 @@
         </div>
 
         <div id="ml-hud" class="ml-hud">
-          <div class="ml-hud-head">
-            <p class="ml-hud-title">VISION HUD</p>
+          <div class="ml-hud-head yolo-label yolo-label-cyan">
+            <span class="ml-hud-title">VISION HUD</span>
             <span id="ml-hud-level" class="ml-hud-state">Idle</span>
           </div>
 
@@ -260,10 +266,10 @@
       </div>
 
       <div id="tab-leaderboard" class="tab-content">
-        <div class="lb-header">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
-          <span>Top Players</span>
-          <button id="lb-refresh" class="btn-sm btn-outline" style="margin-left:auto;">Refresh</button>
+        <div class="lb-header yolo-label yolo-label-cyan">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
+          <span>STANDINGS</span>
+          <button id="lb-refresh" class="btn-sm" style="margin-left:auto; background:rgba(0,0,0,0.25); color:#000; border:none; font-size:0.58rem; font-weight:700; letter-spacing:0.08em; padding:2px 7px; border-radius:3px; cursor:pointer;">↻</button>
         </div>
         <div class="lb-window-tabs">
           <button class="lb-wtab active" data-win="60">1 MIN</button>
@@ -300,7 +306,7 @@
 
           <!-- Merged console — connected directly below banner -->
           <div class="ai-console ai-console-attached">
-            <div class="ai-console-bar">
+            <div class="ai-console-bar yolo-label yolo-label-green">
               <span class="ai-con-prompt">&gt;_</span>
               <span class="ai-con-title">AI ENGINE — LIVE FEED</span>
               <span class="ai-con-online"><span class="mls-pulse"></span>ONLINE</span>
@@ -325,6 +331,27 @@
               <div class="ai-con-line sub">
                 <span class="ai-con-label">MODEL</span>
                 <span id="mls-model-name" class="ai-con-val dim">-</span>
+              </div>
+              <div class="ai-con-divider"></div>
+              <div class="ai-con-line">
+                <span class="ai-con-label">LIFETIME VEHICLES</span>
+                <span id="mls-lifetime-total" class="ai-con-val primary">—</span>
+              </div>
+              <div class="ai-con-line sub">
+                <span class="ai-con-label">CARS</span>
+                <span id="mls-lt-car" class="ai-con-val dim">—</span>
+              </div>
+              <div class="ai-con-line sub">
+                <span class="ai-con-label">TRUCKS</span>
+                <span id="mls-lt-truck" class="ai-con-val dim">—</span>
+              </div>
+              <div class="ai-con-line sub">
+                <span class="ai-con-label">BUSES</span>
+                <span id="mls-lt-bus" class="ai-con-val dim">—</span>
+              </div>
+              <div class="ai-con-line sub">
+                <span class="ai-con-label">MOTORCYCLES</span>
+                <span id="mls-lt-moto" class="ai-con-val dim">—</span>
               </div>
               <div class="ai-con-divider"></div>
               <div class="ai-con-stream-head">

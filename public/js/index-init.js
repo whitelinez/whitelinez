@@ -357,18 +357,6 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
       .subscribe();
   }
 
-  // ── Logo AI-frame auto-cycle (5 min on / 5 min off) ─────────────────────
-  (function logoAiCycle() {
-    const logo = document.getElementById("site-logo");
-    if (!logo) return;
-    const INTERVAL = 5 * 60 * 1000; // 5 minutes
-    let aiActive = false;
-    setInterval(() => {
-      aiActive = !aiActive;
-      logo.classList.toggle("logo-ai-active", aiActive);
-    }, INTERVAL);
-  })();
-
   MlShowcase.init();
   CameraSwitcher.init();
 
@@ -399,6 +387,29 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   });
 })();
 
+
+// ── Bot HUD — training days counter + knowledge % ────────────────────────────
+(function initBotHud() {
+  const TRAIN_START  = new Date('2026-02-23T00:00:00');
+  const BASE_KNOW    = 71.8;   // % on day 0
+  const KNOW_PER_DAY = 0.35;   // % gained per day
+  const KNOW_MAX     = 98.5;
+
+  function update() {
+    const days = Math.floor((Date.now() - TRAIN_START) / 86400000);
+    const know = Math.min(KNOW_MAX, BASE_KNOW + days * KNOW_PER_DAY).toFixed(1);
+    const daysEl = document.getElementById('bot-hud-days');
+    const knowEl = document.getElementById('bot-hud-know');
+    if (daysEl) daysEl.textContent = `TRAIN · DAY ${days}`;
+    if (knowEl) knowEl.textContent = `KNOW · ${know}%`;
+  }
+
+  update();
+  // Schedule a re-tick at the next midnight, then daily after that
+  const now = new Date();
+  const msToMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+  setTimeout(() => { update(); setInterval(update, 86400000); }, msToMidnight);
+})();
 
 // ── User WebSocket (/ws/account) ──────────────────────────────────────────────
 function _connectUserWs(session) {

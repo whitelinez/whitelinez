@@ -227,6 +227,7 @@ const Banners = (() => {
   function _cameraTile() {
     return `
       <div class="bnr-tile bnr-tile-camera" id="bnr-camera-tile" role="button" tabindex="0" aria-label="Switch camera location">
+        <div class="yolo-label yolo-label-cyan">CAMERAS</div>
         <div class="bnr-tile-bg bnr-tile-bg-empty"></div>
         <div class="bnr-tile-tint"></div>
         <div class="bnr-default-inner">

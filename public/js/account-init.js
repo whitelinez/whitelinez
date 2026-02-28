@@ -61,17 +61,75 @@ function cleanUsername(v, fallback = "User") {
   return x ? x.slice(0, 32) : fallback;
 }
 
+// ── Tab switching ──────────────────────────────────────────────
+function initTabs() {
+  document.querySelectorAll(".acc-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".acc-tab-btn").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".acc-tab-panel").forEach((p) => p.classList.add("hidden"));
+      btn.classList.add("active");
+      const panel = document.getElementById(`acc-tab-${btn.dataset.acctab}`);
+      if (panel) panel.classList.remove("hidden");
+    });
+  });
+}
+
+// ── Username inline edit ───────────────────────────────────────
+function initUsernameEdit() {
+  const viewEl  = document.getElementById("acc-username-view");
+  const editEl  = document.getElementById("acc-username-edit");
+  const displayEl = document.getElementById("acc-username-display");
+  const editBtn   = document.getElementById("acc-edit-username-btn");
+  const cancelBtn = document.getElementById("acc-cancel-edit-btn");
+  const saveBtn   = document.getElementById("btn-save-profile");
+  const inputEl   = document.getElementById("profile-username");
+
+  const openEdit = () => {
+    if (inputEl) inputEl.value = currentProfile.username;
+    viewEl?.classList.add("hidden");
+    editEl?.classList.remove("hidden");
+    inputEl?.focus();
+  };
+
+  const closeEdit = () => {
+    viewEl?.classList.remove("hidden");
+    editEl?.classList.add("hidden");
+  };
+
+  displayEl?.addEventListener("click", openEdit);
+  editBtn?.addEventListener("click", openEdit);
+  cancelBtn?.addEventListener("click", closeEdit);
+
+  saveBtn?.addEventListener("click", async () => {
+    await saveProfile();
+    if (displayEl) displayEl.textContent = currentProfile.username;
+    closeEdit();
+  });
+
+  // Enter key submits
+  inputEl?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveBtn?.click();
+    if (e.key === "Escape") cancelBtn?.click();
+  });
+}
+
 async function init() {
   const session = await Auth.requireAuth("/login.html");
   if (!session) return;
   currentSession = session;
 
+  initTabs();
+  initUsernameEdit();
+
+  // Avatar click → trigger file input
+  document.getElementById("acc-avatar-wrap")?.addEventListener("click", () => {
+    document.getElementById("profile-avatar-input")?.click();
+  });
+  document.getElementById("profile-avatar-input")?.addEventListener("change", onAvatarUpload);
+
   await loadProfile();
   await loadHistory();
   connectAccountWs(session.access_token);
-
-  document.getElementById("btn-save-profile")?.addEventListener("click", saveProfile);
-  document.getElementById("profile-avatar-input")?.addEventListener("change", onAvatarUpload);
 }
 
 async function loadProfile() {
@@ -99,41 +157,49 @@ async function loadProfile() {
     avatar_url: profile?.avatar_url || user?.user_metadata?.avatar_url || "",
   };
 
-  const usernameEl = document.getElementById("profile-username");
-  const avatarEl = document.getElementById("profile-avatar-img");
-  const headerAvatarEl = document.getElementById("account-header-avatar");
-  if (usernameEl) usernameEl.value = currentProfile.username;
+  const displayEl    = document.getElementById("acc-username-display");
+  const inputEl      = document.getElementById("profile-username");
+  const avatarEl     = document.getElementById("profile-avatar-img");
+  const headerAvEl   = document.getElementById("account-header-avatar");
+
+  if (displayEl) displayEl.textContent = currentProfile.username;
+  if (inputEl)   inputEl.value = currentProfile.username;
+
   const avatarSrc = getAvatarUrl(currentProfile.avatar_url, user.id);
-  if (avatarEl) {
-    avatarEl.onerror = () => { avatarEl.src = defaultAvatar(user.id); };
-    avatarEl.src = avatarSrc;
-  }
-  if (headerAvatarEl) {
-    headerAvatarEl.onerror = () => { headerAvatarEl.src = defaultAvatar(user.id); };
-    headerAvatarEl.src = avatarSrc;
-  }
+  if (avatarEl)   { avatarEl.onerror   = () => { avatarEl.src   = defaultAvatar(user.id); }; avatarEl.src   = avatarSrc; }
+  if (headerAvEl) { headerAvEl.onerror = () => { headerAvEl.src = defaultAvatar(user.id); }; headerAvEl.src = avatarSrc; }
 
   if (user?.app_metadata?.role === "admin") {
     document.getElementById("account-nav-admin")?.classList.remove("hidden");
   }
+
+  // Settings tab population
+  const emailEl = document.getElementById("acc-settings-email");
+  const sinceEl = document.getElementById("acc-settings-since");
+  const uidEl   = document.getElementById("acc-settings-uid");
+  if (emailEl) emailEl.textContent = user.email || "—";
+  if (sinceEl) sinceEl.textContent = user.created_at
+    ? new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : "—";
+  if (uidEl) uidEl.textContent = user.id ? `${user.id.slice(0, 8)}…` : "—";
 }
 
 async function saveProfile() {
   if (!currentSession) return;
-  const msgEl = document.getElementById("profile-msg");
-  const usernameEl = document.getElementById("profile-username");
-  const saveBtn = document.getElementById("btn-save-profile");
-  if (!usernameEl || !saveBtn) return;
+  const msgEl    = document.getElementById("profile-msg");
+  const inputEl  = document.getElementById("profile-username");
+  const saveBtn  = document.getElementById("btn-save-profile");
+  if (!inputEl || !saveBtn) return;
 
-  const username = cleanUsername(usernameEl.value, currentProfile.username || "User");
+  const username   = cleanUsername(inputEl.value, currentProfile.username || "User");
   const avatar_url = currentProfile.avatar_url || "";
 
   saveBtn.disabled = true;
-  if (msgEl) msgEl.textContent = "Saving...";
+  if (msgEl) msgEl.textContent = "Saving…";
 
   try {
     const payload = {
-      user_id: currentSession.user.id,
+      user_id:    currentSession.user.id,
       username,
       avatar_url,
       updated_at: new Date().toISOString(),
@@ -142,21 +208,17 @@ async function saveProfile() {
     const { error: upsertError } = await window.sb.from("profiles").upsert(payload, { onConflict: "user_id" });
     if (upsertError) throw upsertError;
 
-    const { error: authError } = await window.sb.auth.updateUser({
-      data: { username, avatar_url },
-    });
+    const { error: authError } = await window.sb.auth.updateUser({ data: { username, avatar_url } });
     if (authError) throw authError;
 
     currentProfile.username = username;
     if (msgEl) msgEl.textContent = "Saved";
   } catch (e) {
-    if (msgEl) msgEl.textContent = "Profile save failed";
+    if (msgEl) msgEl.textContent = "Save failed";
     console.error("[Account] saveProfile failed:", e);
   } finally {
     saveBtn.disabled = false;
-    setTimeout(() => {
-      if (msgEl?.textContent === "Saved") msgEl.textContent = "";
-    }, 2000);
+    setTimeout(() => { if (msgEl?.textContent === "Saved") msgEl.textContent = ""; }, 2000);
   }
 }
 
@@ -167,35 +229,35 @@ async function onAvatarUpload(e) {
 
   const msgEl = document.getElementById("profile-msg");
   if (file.size > 2 * 1024 * 1024) {
-    if (msgEl) msgEl.textContent = "Max file size is 2MB";
+    if (msgEl) msgEl.textContent = "Max 2MB";
     return;
   }
 
   try {
-    if (msgEl) msgEl.textContent = "Uploading avatar...";
-    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+    if (msgEl) msgEl.textContent = "Uploading…";
+    const ext  = (file.name.split(".").pop() || "png").toLowerCase();
     const path = `${currentSession.user.id}/${Date.now()}.${ext}`;
 
     const { error: uploadError } = await window.sb.storage
       .from("avatars")
       .upload(path, file, { upsert: true, contentType: file.type || "image/png" });
-
     if (uploadError) throw uploadError;
 
     const { data } = window.sb.storage.from("avatars").getPublicUrl(path);
     const publicUrl = data?.publicUrl ? `${data.publicUrl}?v=${Date.now()}` : "";
     currentProfile.avatar_url = publicUrl;
 
-    const avatarEl = document.getElementById("profile-avatar-img");
-    const headerAvatarEl = document.getElementById("account-header-avatar");
-    const avatarSrc = getAvatarUrl(currentProfile.avatar_url, currentSession.user.id);
-    if (avatarEl) avatarEl.src = avatarSrc;
-    if (headerAvatarEl) headerAvatarEl.src = avatarSrc;
+    const avatarEl   = document.getElementById("profile-avatar-img");
+    const headerAvEl = document.getElementById("account-header-avatar");
+    const avatarSrc  = getAvatarUrl(currentProfile.avatar_url, currentSession.user.id);
+    if (avatarEl)   avatarEl.src   = avatarSrc;
+    if (headerAvEl) headerAvEl.src = avatarSrc;
 
     await saveProfile();
   } catch (err) {
     console.error("[Account] avatar upload failed:", err);
-    if (msgEl) msgEl.textContent = "Avatar upload failed";
+    const msgEl = document.getElementById("profile-msg");
+    if (msgEl) msgEl.textContent = "Upload failed";
   } finally {
     e.target.value = "";
   }
@@ -205,39 +267,33 @@ function formatBetDetail(b) {
   if (b.bet_type === "exact_count") {
     const cls = b.vehicle_class ? `${b.vehicle_class}s` : "vehicles";
     const win = b.window_duration_sec ? `${b.window_duration_sec}s` : "window";
-    return `Exact ${b.exact_count ?? 0} ${cls} in ${win} (8x)`;
+    return `Exact ${b.exact_count ?? 0} ${cls} in ${win} (8×)`;
   }
-  const market = b.markets || {};
-  const odds = Number(market.odds || 0);
-  const oddsText = odds > 0 ? `${odds.toFixed(2)}x` : "-";
-  return `${market.label || "Market bet"} (${oddsText})`;
+  const market   = b.markets || {};
+  const odds     = Number(market.odds || 0);
+  const oddsText = odds > 0 ? `${odds.toFixed(2)}×` : "—";
+  return `${market.label || "Market guess"} (${oddsText})`;
 }
 
 function formatOutcome(b) {
-  if (b.status === "pending") {
-    return `If correct: +${(b.potential_payout || 0).toLocaleString()} credits`;
-  }
-  if (b.status === "won") {
-    return `Won +${(b.potential_payout || 0).toLocaleString()} credits`;
-  }
+  if (b.status === "pending") return `If correct: +${(b.potential_payout || 0).toLocaleString()} pts`;
+  if (b.status === "won")     return `Won +${(b.potential_payout || 0).toLocaleString()} pts`;
   if (b.status === "lost") {
     if (b.bet_type === "exact_count" && b.actual_count != null) {
-      return `Lost - actual ${b.actual_count} vs target ${b.exact_count ?? 0}`;
+      return `Actual: ${b.actual_count} vs guess: ${b.exact_count ?? 0}`;
     }
-    return "Lost";
+    return "Missed";
   }
-  return b.status || "-";
+  return b.status || "—";
 }
 
 function renderPending(pending) {
   const container = document.getElementById("pending-container");
   if (!container) return;
-
   if (!pending.length) {
-    container.innerHTML = `<p class="muted">No pending bets.</p>`;
+    container.innerHTML = `<p class="muted">No pending guesses.</p>`;
     return;
   }
-
   container.innerHTML = pending.map((b) => `
     <div class="pending-card">
       <div class="pending-head">
@@ -245,9 +301,8 @@ function renderPending(pending) {
         <span class="pending-time">${new Date(b.placed_at).toLocaleString()}</span>
       </div>
       <div class="pending-detail">${formatBetDetail(b)}</div>
-      <div class="pending-row"><span>Stake</span><strong>${(b.amount || 0).toLocaleString()}</strong></div>
-      <div class="pending-row"><span>Potential Payout</span><strong>${(b.potential_payout || 0).toLocaleString()}</strong></div>
-      <div class="pending-row"><span>Outcome</span><strong>${formatOutcome(b)}</strong></div>
+      <div class="pending-row"><span>Stake</span><strong>${(b.amount || 0).toLocaleString()} pts</strong></div>
+      <div class="pending-row"><span>Potential</span><strong>+${(b.potential_payout || 0).toLocaleString()} pts</strong></div>
     </div>
   `).join("");
 }
@@ -265,15 +320,29 @@ function renderHistoryRows(data) {
   `).join("");
 }
 
+function updateStats(data) {
+  const all      = data || [];
+  const resolved = all.filter((b) => b.status !== "pending");
+  const wins     = resolved.filter((b) => b.status === "won");
+  const exacts   = wins.filter((b) => b.bet_type === "exact_count" && String(b.actual_count) === String(b.exact_count));
+  const rate     = resolved.length ? Math.round((wins.length / resolved.length) * 100) : null;
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set("stat-total", resolved.length || all.length || "0");
+  set("stat-wins",  wins.length);
+  set("stat-rate",  rate !== null ? `${rate}%` : "—");
+  set("stat-exact", exacts.length);
+}
+
 async function loadHistory() {
   if (!currentSession?.user?.id) return;
   const jwt = await Auth.getJwt();
   if (!jwt) return;
 
-  let data = [];
+  let data  = [];
   let error = null;
   try {
-    const res = await fetch("/api/bets/place?mode=history&limit=100", {
+    const res     = await fetch("/api/bets/place?mode=history&limit=100", {
       headers: { Authorization: `Bearer ${jwt}` },
     });
     const payload = await res.json();
@@ -286,15 +355,23 @@ async function loadHistory() {
     error = err;
   }
 
+  updateStats(data);
+
   const pending = (data || []).filter((b) => b.status === "pending");
   renderPending(pending);
+
+  // Badge pending count on tab
+  const pendingTabBtn = document.querySelector('.acc-tab-btn[data-acctab="pending"]');
+  if (pendingTabBtn) {
+    pendingTabBtn.textContent = pending.length ? `Pending (${pending.length})` : "Pending";
+  }
 
   const container = document.getElementById("history-container");
   if (!container) return;
 
   const resolved = (data || []).filter((b) => b.status !== "pending");
   if (error || !resolved.length) {
-    container.innerHTML = `<p class="muted">No resolved bets yet. <a href="/index.html">Place your first bet!</a></p>`;
+    container.innerHTML = `<p class="muted">No resolved guesses yet. <a href="/index.html">Make your first guess!</a></p>`;
     return;
   }
 
@@ -303,7 +380,7 @@ async function loadHistory() {
       <thead>
         <tr>
           <th>Date</th>
-          <th>Bet</th>
+          <th>Guess</th>
           <th>Stake</th>
           <th>Payout</th>
           <th>Outcome</th>
@@ -322,14 +399,14 @@ function connectAccountWs(jwt) {
     : fetch("/api/token").then((r) => r.json());
 
   wsMetaPromise.then(({ wss_url }) => {
-    const wsUrl = wss_url.replace("/ws/live", "/ws/account");
-    accountWs = new WebSocket(`${wsUrl}?token=${encodeURIComponent(jwt)}`);
+    const wsUrl  = wss_url.replace("/ws/live", "/ws/account");
+    accountWs    = new WebSocket(`${wsUrl}?token=${encodeURIComponent(jwt)}`);
 
-    const statusEl = document.getElementById("account-ws-status");
+    const statusEl  = document.getElementById("account-ws-status");
     const balanceEl = document.getElementById("balance-display");
 
     accountWs.onopen = () => {
-      if (statusEl) { statusEl.textContent = "Live"; statusEl.className = "ws-status ws-ok"; }
+      if (statusEl) { statusEl.className = "acc-ws-dot ws-ok"; statusEl.title = "Live"; }
     };
 
     accountWs.onmessage = (evt) => {
@@ -344,7 +421,7 @@ function connectAccountWs(jwt) {
     };
 
     accountWs.onclose = () => {
-      if (statusEl) { statusEl.textContent = "Disconnected"; statusEl.className = "ws-status ws-err"; }
+      if (statusEl) { statusEl.className = "acc-ws-dot ws-err"; statusEl.title = "Disconnected"; }
     };
   }).catch(console.error);
 }

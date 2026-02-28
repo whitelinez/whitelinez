@@ -86,12 +86,20 @@ const MlOverlay = (() => {
 
     state.frames += 1;
     const dets = Array.isArray(data?.detections) ? data.detections : [];
-    state.detections += dets.length;
-    if (dtMin != null) {
-      const instDetRate = dets.length / dtMin;
+    // Only count detections from live frames — bootstrap + stale frames carry dets:[]
+    // and would falsely collapse the EWMA. Use new_crossings as the rate signal when
+    // the frame is a real WS tick (not bootstrap, not stale-stripped).
+    const isLiveTick = !data?.bootstrap && dtMin != null;
+    if (isLiveTick) {
+      const newCrossings = Math.max(0, Number(data?.new_crossings ?? 0));
+      state.detections += newCrossings;
+      const instDetRate = newCrossings / dtMin;
       state.detRatePerMin = (state.detRatePerMin * 0.7) + (instDetRate * 0.3);
     }
-    state.liveObjectsNow = Math.max(0, Math.round((state.liveObjectsNow * 0.45) + (dets.length * 0.55)));
+    // liveObjectsNow uses bounding-box count when fresh, otherwise holds its value
+    if (dets.length > 0) {
+      state.liveObjectsNow = Math.max(0, Math.round((state.liveObjectsNow * 0.45) + (dets.length * 0.55)));
+    }
 
     for (const d of dets) {
       const conf = Number(d?.conf);
@@ -114,16 +122,13 @@ const MlOverlay = (() => {
       state.sceneConfidence = Math.max(0, Math.min(1, sceneConfidence));
     }
 
-    const inCount = Number(data?.count_in);
-    const outCount = Number(data?.count_out);
-    if (Number.isFinite(inCount) && Number.isFinite(outCount)) {
-      const crossingsNow = Math.max(0, inCount) + Math.max(0, outCount);
-      if (state.lastCrossingTotal != null && dtMin != null) {
-        const delta = Math.max(0, crossingsNow - state.lastCrossingTotal);
-        const instCrossRate = delta / dtMin;
-        state.crossingRatePerMin = (state.crossingRatePerMin * 0.65) + (instCrossRate * 0.35);
-      }
-      state.lastCrossingTotal = crossingsNow;
+    // new_crossings = per-frame vehicle crossing count from backend (same field
+    // used by floating-count.js / zone-overlay.js). Skip bootstrap frames since
+    // those carry new_crossings:0 and would drag the rate toward zero.
+    if (!data?.bootstrap && dtMin != null) {
+      const newCrossings = Math.max(0, Number(data?.new_crossings ?? 0));
+      const instCrossRate = newCrossings / dtMin;
+      state.crossingRatePerMin = (state.crossingRatePerMin * 0.65) + (instCrossRate * 0.35);
     }
 
     const ts = Date.parse(String(data?.captured_at || ""));
@@ -205,12 +210,29 @@ const MlOverlay = (() => {
     return v ? (v.charAt(0).toUpperCase() + v.slice(1)) : "Scanning";
   }
 
-  function weatherIcon(weather) {
+  // Phosphor Icons SVG path data (viewBox 0 0 256 256) — sourced from svgrepo.com
+  const WX_ICON_PATHS = {
+    clear:   "M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z",
+    overcast:"M160,40A88.09,88.09,0,0,0,81.29,88.67,64,64,0,1,0,72,216h88a88,88,0,0,0,0-176Zm0,160H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.29.11A88,88,0,0,0,72,128a8,8,0,0,0,16,0,72,72,0,1,1,72,72Z",
+    rain:    "M158.66,196.44l-32,48a8,8,0,1,1-13.32-8.88l32-48a8,8,0,0,1,13.32,8.88ZM232,92a76.08,76.08,0,0,1-76,76H132.28l-29.62,44.44a8,8,0,1,1-13.32-8.88L113.05,168H76A52,52,0,0,1,76,64a53.26,53.26,0,0,1,8.92.76A76.08,76.08,0,0,1,232,92Zm-16,0A60.06,60.06,0,0,0,96,88.46a8,8,0,0,1-16-.92q.21-3.66.77-7.23A38.11,38.11,0,0,0,76,80a36,36,0,0,0,0,72h80A60.07,60.07,0,0,0,216,92Z",
+    fog:     "M120,208H72a8,8,0,0,1,0-16h48a8,8,0,0,1,0,16Zm64-16H160a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Zm-24,32H104a8,8,0,0,0,0,16h56a8,8,0,0,0,0-16Zm72-124a76.08,76.08,0,0,1-76,76H76A52,52,0,0,1,76,72a53.26,53.26,0,0,1,8.92.76A76.08,76.08,0,0,1,232,100Zm-16,0A60.06,60.06,0,0,0,96,96.46a8,8,0,0,1-16-.92q.21-3.66.77-7.23A38.11,38.11,0,0,0,76,88a36,36,0,0,0,0,72h80A60.07,60.07,0,0,0,216,100Z",
+    moon:    "M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z",
+    glare:   "M120,40V32a8,8,0,0,1,16,0v8a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-8-8A8,8,0,0,0,50.34,61.66Zm0,116.68-8,8a8,8,0,0,0,11.32,11.32l8-8a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l8-8a8,8,0,0,0-11.32-11.32l-8,8A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l8,8a8,8,0,0,0,11.32-11.32ZM40,120H32a8,8,0,0,0,0,16h8a8,8,0,0,0,0-16Zm88,88a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-8A8,8,0,0,0,128,208Zm96-88h-8a8,8,0,0,0,0,16h8a8,8,0,0,0,0-16Z",
+    default: "M164,72a76.2,76.2,0,0,0-20.26,2.73,55.63,55.63,0,0,0-9.41-11.54l9.51-13.57a8,8,0,1,0-13.11-9.18L121.22,54A55.9,55.9,0,0,0,96,48c-.58,0-1.16,0-1.74,0L91.37,31.71a8,8,0,1,0-15.75,2.77L78.5,50.82A56.1,56.1,0,0,0,55.23,65.67L41.61,56.14a8,8,0,1,0-9.17,13.11L46,78.77A55.55,55.55,0,0,0,40,104c0,.57,0,1.15,0,1.72L23.71,108.6a8,8,0,0,0,1.38,15.88,8.24,8.24,0,0,0,1.39-.12l16.32-2.88a55.74,55.74,0,0,0,5.86,12.42A52,52,0,0,0,84,224h80a76,76,0,0,0,0-152ZM56,104a40,40,0,0,1,72.54-23.24,76.26,76.26,0,0,0-35.62,40,52.14,52.14,0,0,0-31,4.17A40,40,0,0,1,56,104ZM164,208H84a36,36,0,1,1,4.78-71.69c-.37,2.37-.63,4.79-.77,7.23a8,8,0,0,0,16,.92,58.91,58.91,0,0,1,1.88-11.81c0-.16.09-.32.12-.48A60.06,60.06,0,1,1,164,208Z",
+  };
+
+  function weatherSvgPath(weather, lighting) {
     const w = mapSceneValue(weather, "scanning");
-    if (w.includes("rain")) return "\u{1F327}";
-    if (w.includes("cloud")) return "\u2601";
-    if (w.includes("sun") || w.includes("clear")) return "\u2600";
-    return "\u26C5";
+    const l = mapSceneValue(lighting, "scanning");
+    if (w.includes("rain"))                        return WX_ICON_PATHS.rain;
+    if (w === "clear" || w.includes("sun"))        return WX_ICON_PATHS.clear;
+    if (w === "glare")                             return WX_ICON_PATHS.glare;
+    if (w === "fog" || w === "foggy" ||
+        w === "haze")                              return WX_ICON_PATHS.fog;
+    if (w === "overcast" || w.includes("cloud"))   return WX_ICON_PATHS.overcast;
+    // Fallback: use lighting for night
+    if (l === "night" || l === "dusk" || l === "dawn") return WX_ICON_PATHS.moon;
+    return WX_ICON_PATHS.default;
   }
 
   function lightingIcon(lighting) {
@@ -364,7 +386,9 @@ const MlOverlay = (() => {
     const confBarEl = document.getElementById("ml-hud-conf-bar");
     const sceneConfEl = document.getElementById("ml-hud-scene-conf");
     const trafficMsgEl = document.getElementById("ml-hud-traffic-msg");
-    const verboseEl = document.getElementById("ml-hud-verbose");
+    const verboseEl  = document.getElementById("ml-hud-verbose");
+    const wxPathEl   = document.getElementById("ml-hud-wx-path");
+    const wxLabelEl  = document.getElementById("ml-hud-wx-label");
     if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl || !confBarEl || !sceneConfEl) return;
 
     const level = getLevel();
@@ -410,6 +434,24 @@ const MlOverlay = (() => {
         frames: state.frames,
         modelLoop: state.modelLoop,
       });
+    }
+
+    // Weather icon + label row
+    if (wxPathEl && wxLabelEl) {
+      const weather = mapSceneValue(state.sceneWeather, "scanning");
+      const lighting = mapSceneValue(state.sceneLighting, "scanning");
+      wxPathEl.setAttribute("d", weatherSvgPath(weather, lighting));
+      const wxDesc =
+        weather === "clear"                           ? "Clear sky" :
+        (weather === "rain" || weather === "rainy")   ? "Rain — wet road" :
+        weather === "overcast"                        ? "Overcast" :
+        (weather === "fog" || weather === "foggy")    ? "Fog — low visibility" :
+        weather === "haze"                            ? "Haze detected" :
+        weather === "glare"                           ? "Glare conditions" :
+        (lighting === "night")                        ? "Night scene" :
+        (lighting === "dusk" || lighting === "dawn")  ? "Low-light transition" :
+        "Scanning weather...";
+      wxLabelEl.textContent = wxDesc;
     }
   }
 

@@ -110,8 +110,9 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
         .eq("user_id", currentUserId)
         .maybeSingle();
       const balEl = document.getElementById("nav-balance");
+      const balValEl = document.getElementById("nav-balance-val");
       if (balEl && data?.balance != null) {
-        balEl.textContent = "$ " + Number(data.balance).toLocaleString();
+        if (balValEl) balValEl.textContent = Number(data.balance).toLocaleString();
         balEl.classList.remove("hidden");
       }
     } catch {
@@ -369,9 +370,10 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 
   // Nav balance display from ws_account
   window.addEventListener("balance:update", (e) => {
-    const balEl = document.getElementById("nav-balance");
+    const balEl    = document.getElementById("nav-balance");
+    const balValEl = document.getElementById("nav-balance-val");
     if (balEl) {
-      balEl.textContent = "$ " + (e.detail ?? 0).toLocaleString();
+      if (balValEl) balValEl.textContent = (e.detail ?? 0).toLocaleString();
       balEl.classList.remove("hidden");
     }
   });

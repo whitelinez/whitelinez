@@ -4,6 +4,7 @@
  */
 
 let adminSession = null;
+let registeredUsersCache = [];
 let latestCaptureUploadError = null;
 let mlCaptureStats = { captureTotal: 0, uploadSuccessTotal: 0, uploadFailTotal: 0 };
 let capturePaused = false;
@@ -2235,8 +2236,7 @@ async function handleSubmit(e) {
   successEl.textContent = "";
   btn.disabled = true;
 
-  const jwt = adminSession;
-  if (!jwt) return;
+  if (!adminSession) return;
 
   const marketType   = document.getElementById("market-type").value;
   const vehicleClass = document.getElementById("vehicle-class").value;
@@ -2270,7 +2270,7 @@ async function handleSubmit(e) {
   try {
     const res = await fetch("/api/admin/rounds", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         camera_id: cameraId,
         market_type: marketType,
@@ -2300,22 +2300,34 @@ async function handleSubmit(e) {
 // ── User management ───────────────────────────────────────────────────────────
 async function handleSetAdmin() {
   const emailEl = document.getElementById("admin-email-input");
+  const roleEl  = document.getElementById("admin-role-select");
   const msgEl   = document.getElementById("user-mgmt-msg");
   const email   = emailEl?.value?.trim();
-  if (!email) return;
+  const role    = roleEl?.value || "admin";
+  if (!email) { if (msgEl) { msgEl.style.color = "var(--red)"; msgEl.textContent = "Enter an email address."; } return; }
   if (!adminSession) return;
-  msgEl.textContent = "Setting...";
+  if (msgEl) { msgEl.style.color = "var(--muted)"; msgEl.textContent = "Looking up user..."; }
+
+  // Look up user_id from cached user list
+  const match = registeredUsersCache.find((u) => String(u.email || "").toLowerCase() === email.toLowerCase());
+  if (!match?.id) {
+    if (msgEl) { msgEl.style.color = "var(--red)"; msgEl.textContent = `User not found: ${email}. Reload the user list first.`; }
+    return;
+  }
+
+  if (msgEl) { msgEl.style.color = "var(--muted)"; msgEl.textContent = `Setting role to "${role}"...`; }
   try {
-    // Use Supabase admin RPC or update user_metadata
-    // This calls an RPC set_admin_by_email if available, otherwise shows a note
-    const { error } = await window.sb.rpc("set_admin_by_email", { p_email: email });
-    if (error) throw error;
-    msgEl.style.color = "var(--green)";
-    msgEl.textContent = `Admin role set for ${email}`;
+    const res = await fetch("/api/admin/set-role", {
+      method: "POST",
+      headers: await getAdminHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ user_id: match.id, role }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.error || "Failed to update role");
+    if (msgEl) { msgEl.style.color = "var(--green)"; msgEl.textContent = `Role set to "${role}" for ${email}`; }
     loadRegisteredUsers();
   } catch (e) {
-    msgEl.style.color = "var(--red)";
-    msgEl.textContent = e.message || "Failed — ensure set_admin_by_email RPC exists";
+    if (msgEl) { msgEl.style.color = "var(--red)"; msgEl.textContent = e.message || "Failed to set role"; }
   }
 }
 
@@ -2357,6 +2369,7 @@ async function loadRegisteredUsers() {
       return;
     }
 
+    registeredUsersCache = users;
     box.innerHTML = users.map((u) => {
       const email = escHtml(u.email || "no-email");
       const uid = escHtml(String(u.id || "").slice(0, 8));

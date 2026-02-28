@@ -483,9 +483,9 @@ const Chat = (() => {
       const cls = bet.vehicle_class ? `${bet.vehicle_class}s` : "vehicles";
       const sec = bet.window_duration_sec;
       const win = sec ? (sec < 60 ? `${sec}s` : `${Math.floor(sec/60)}m`) : "";
-      return `Guessed: <strong>${bet.exact_count} ${cls}</strong>${win ? ` in ${win}` : ""}`;
+      return `guessed <strong>${bet.exact_count} ${cls}</strong>${win ? ` in ${win}` : ""}`;
     }
-    return "Submitted a guess";
+    return "placed a guess";
   }
 
   function _renderActivity(bet) {
@@ -501,7 +501,7 @@ const Chat = (() => {
       <span class="ca-icon">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.4H21l-5.2 3.8 2 6.4L12 14.8 6.2 18.6l2-6.4L3 8.4h6.6z"/></svg>
       </span>
-      <span class="ca-text">Someone guessed — ${_betDesc(bet)}</span>
+      <span class="ca-text">Someone ${_betDesc(bet)}</span>
       ${time ? `<span class="ca-time">${time}</span>` : ""}`;
     container.appendChild(div);
     _scrollToBottom();
@@ -661,7 +661,7 @@ const StreamChatOverlay = (() => {
     if (!container) return;
     // Only show new real-time bets in overlay, not history replays
     if (!bet.isNew) return;
-    let label = "submitted a guess";
+    let label = "placed a guess";
     if (bet.bet_type === "exact_count") label = `guessed ${bet.exact_count} vehicles`;
     const div = document.createElement("div");
     div.className = "sco-msg sco-activity";

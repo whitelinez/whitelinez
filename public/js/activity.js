@@ -59,10 +59,10 @@ const Activity = (() => {
       // Pull all resolved bets for this window
       const { data: bets, error } = await window.sb
         .from("bets")
-        .select("user_id, exact_count, payout, window_duration_sec, placed_at")
+        .select("user_id, exact_count, potential_payout, window_duration_sec, placed_at")
         .eq("window_duration_sec", windowSec)
-        .not("payout", "is", null)
-        .gt("payout", 0);
+        .not("potential_payout", "is", null)
+        .gt("potential_payout", 0);
 
       if (error) throw error;
 
@@ -79,7 +79,7 @@ const Activity = (() => {
           userMap[b.user_id] = { totalPts: 0, guesses: 0, topGuess: 0 };
         }
         const u = userMap[b.user_id];
-        const pts = Number(b.payout || 0);
+        const pts = Number(b.potential_payout || 0);
         u.totalPts += pts;
         u.guesses  += 1;
         if (pts > u.topGuess) u.topGuess = pts;

@@ -315,15 +315,14 @@
       <section class="admin-panel" id="panel-ml">
         <div class="panel-head">
           <h2>ML Control</h2>
-          <p>Capture frames, build dataset, retrain, and promote better models.</p>
+          <p>Detection model status, night profile, and adaptive runtime tuning.</p>
         </div>
 
         <div class="ml-subnav" id="ml-subnav">
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-overview">Pipeline</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-kpis">KPI</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-readiness">Readiness</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-night">Training Controls</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-jobs">Jobs</button>
+          <button class="ml-subnav-btn" type="button" data-target="ml-sec-night">Runtime Controls</button>
           <button class="ml-subnav-btn" type="button" data-target="ml-sec-capture">Capture Logs</button>
         </div>
 
@@ -395,36 +394,9 @@
             <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
           </div>
 
-          <!-- Training Controls (Night Profile + Adaptive Runtime + One-Click merged) -->
+          <!-- Runtime Controls (Night Profile + Adaptive Runtime) -->
           <div class="ml-control-wrap ml-section" id="ml-sec-night">
-            <h3>Training Controls</h3>
-            <div class="field">
-              <label for="ml-dataset-yaml">Dataset YAML URL</label>
-              <input id="ml-dataset-yaml" type="url" placeholder="https://.../data.yaml" />
-            </div>
-            <div class="field-row">
-              <div class="field"><label for="ml-epochs">Epochs</label><input id="ml-epochs" type="number" min="1" max="300" value="20" /></div>
-              <div class="field"><label for="ml-imgsz">Image Size</label><input id="ml-imgsz" type="number" min="320" max="1280" step="32" value="640" /></div>
-              <div class="field"><label for="ml-batch">Batch</label><input id="ml-batch" type="number" min="1" max="128" value="16" /></div>
-            </div>
-            <div class="ml-control-actions">
-              <button id="btn-ml-retrain" class="btn-primary">Trigger Retrain</button>
-              <button id="btn-ml-train-captures" class="btn-secondary" type="button">Train New Captures</button>
-              <span id="ml-control-msg" class="muted"></span>
-            </div>
-
-            <!-- One-Click merged in (was standalone section) -->
-            <div class="ml-oneclick-merged">
-              <h4>One-Click Model Pipeline</h4>
-              <p class="muted" style="font-size:0.8rem;margin-bottom:8px;">Runs export → train → candidate promotion and reports what is missing or failing.</p>
-              <div class="ml-control-actions" style="margin-bottom:8px;">
-                <button id="btn-ml-one-click" class="btn-secondary" type="button">Run One-Click</button>
-                <span id="ml-one-click-msg" class="muted"></span>
-              </div>
-              <div id="ml-diagnostics" class="rounds-list data-list">
-                <p class="loading">Loading diagnostics...</p>
-              </div>
-            </div>
+            <h3>Runtime Controls</h3>
 
             <!-- Night Profile -->
             <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--abr);">
@@ -543,12 +515,6 @@
               </div>
               <p id="runtime-profile-error" class="auth-error" role="alert" style="display:none;margin-top:8px;"></p>
             </div>
-          </div>
-
-          <!-- Jobs -->
-          <div class="card-box slim ml-section" id="ml-sec-jobs">
-            <h3>Latest Jobs and Models</h3>
-            <div id="ml-usage" class="rounds-list data-list"><p class="loading">Loading training usage...</p></div>
           </div>
 
           <!-- Capture Logs -->
@@ -869,7 +835,14 @@
             <label for="admin-email-input">User Email</label>
             <input id="admin-email-input" type="email" placeholder="user@example.com" />
           </div>
-          <button id="btn-set-admin" class="btn-primary">Set Admin</button>
+          <div class="field">
+            <label for="admin-role-select">Role</label>
+            <select id="admin-role-select">
+              <option value="admin">Admin</option>
+              <option value="user">User (revoke admin)</option>
+            </select>
+          </div>
+          <button id="btn-set-admin" class="btn-primary">Set Role</button>
         </div>
         <p id="user-mgmt-msg" style="font-size:0.82rem;margin-top:6px;color:var(--ok);"></p>
         <div class="card-box slim" style="margin-top:12px;">

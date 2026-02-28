@@ -43,6 +43,7 @@ const LiveBet = (() => {
     document.getElementById("bp-error").textContent = "";
     document.getElementById("bp-count").value = "5";
     _hideBpActiveBet();
+    _hideBpResult();
 
     // Reset pills
     _setPill("bp-vehicle-pills", "");
@@ -198,21 +199,72 @@ const LiveBet = (() => {
     }, 200);
   }
 
-  function _hideBpActiveBet() {
+  function _hideBpActiveBet(showSubmit = true) {
     clearInterval(_countdownTimer);
     document.getElementById("bp-active-bet")?.classList.add("hidden");
-    document.getElementById("bp-submit")?.classList.remove("hidden");
+    if (showSubmit) document.getElementById("bp-submit")?.classList.remove("hidden");
   }
 
   // ── Handle ws_account bet_resolved event ─────────────────────────
 
   function onBetResolved(data) {
-    _hideBpActiveBet();
-    if (data.won) {
-      _showToast(`WIN! +${data.payout.toLocaleString()} pts — count was ${data.actual} (you guessed: ${data.exact})`, "win");
-    } else {
-      _showToast(`MISS — count was ${data.actual}, you guessed ${data.exact}`, "loss");
+    _hideBpActiveBet(false); // don't show submit — result panel takes over
+    _showBpResult(data);
+  }
+
+  function _showBpResult(data) {
+    const resultEl = document.getElementById("bp-result");
+    if (!resultEl) {
+      // Fallback toast if HTML not present
+      _showToast(
+        data.won
+          ? `WIN! +${Number(data.payout || 0).toLocaleString()} pts — count was ${data.actual} (you guessed: ${data.exact})`
+          : `MISS — count was ${data.actual}, you guessed ${data.exact}`,
+        data.won ? "win" : "loss"
+      );
+      return;
     }
+
+    const won    = !!data.won;
+    const payout = Number(data.payout || 0);
+    const actual = data.actual ?? "—";
+    const exact  = data.exact  ?? "—";
+    const isExact = won && String(actual) === String(exact);
+
+    const badgeEl = document.getElementById("bpr-badge");
+    if (badgeEl) {
+      if (isExact) {
+        badgeEl.textContent = "EXACT";
+        badgeEl.className   = "bpr-badge bpr-badge-exact";
+      } else if (won) {
+        badgeEl.textContent = "CLOSE";
+        badgeEl.className   = "bpr-badge bpr-badge-close";
+      } else {
+        badgeEl.textContent = "MISS";
+        badgeEl.className   = "bpr-badge bpr-badge-miss";
+      }
+    }
+
+    const ptsEl = document.getElementById("bpr-pts");
+    if (ptsEl) {
+      ptsEl.textContent = won ? `+${payout.toLocaleString()} pts` : "No pts";
+      ptsEl.className   = `bpr-pts ${won ? "bpr-pts-win" : "bpr-pts-miss"}`;
+    }
+
+    const guessEl  = document.getElementById("bpr-guess");
+    const actualEl = document.getElementById("bpr-actual");
+    const payEl    = document.getElementById("bpr-payout");
+    if (guessEl)  guessEl.textContent  = exact;
+    if (actualEl) actualEl.textContent = actual;
+    if (payEl)    payEl.textContent    = won ? `+${payout.toLocaleString()} pts` : "0 pts";
+
+    document.getElementById("bp-submit")?.classList.add("hidden");
+    resultEl.classList.remove("hidden");
+  }
+
+  function _hideBpResult() {
+    document.getElementById("bp-result")?.classList.add("hidden");
+    document.getElementById("bp-submit")?.classList.remove("hidden");
   }
 
   function _showToast(msg, type = "info") {
@@ -250,6 +302,18 @@ const LiveBet = (() => {
 
     // Submit
     document.getElementById("bp-submit")?.addEventListener("click", submit);
+
+    // Result panel actions
+    document.getElementById("bpr-again-btn")?.addEventListener("click", () => {
+      _hideBpResult();
+    });
+
+    document.getElementById("bpr-leaderboard-btn")?.addEventListener("click", () => {
+      close();
+      // Activate the leaderboard sidebar tab
+      const lbTab = document.querySelector('.tab-btn[data-tab="leaderboard"]');
+      if (lbTab) lbTab.click();
+    });
   }
 
   return { init, open, close, onBetResolved, setRound: (r) => { _round = r; } };

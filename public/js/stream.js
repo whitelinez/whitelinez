@@ -101,16 +101,7 @@ const Stream = (() => {
     }
   }
 
-  function getLatency() {
-    // Returns current live-edge latency in seconds from HLS.js.
-    // Falls back to 14s (measured baseline for this stream).
-    if (hlsInstance && typeof hlsInstance.latency === "number" && hlsInstance.latency > 0) {
-      return hlsInstance.latency;
-    }
-    return 14;
-  }
-
-  return { init, destroy, setAlias, getLatency };
+  return { init, destroy, setAlias };
 })();
 
 window.Stream = Stream;

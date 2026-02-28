@@ -84,16 +84,16 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  width: 32px;
+  height: 44px;
+  width: 44px;
   flex-shrink: 0;
 }
 .logo-icon,
 .logo-ai-frame {
   position: absolute;
   top: 0; left: 0;
-  height: 32px;
-  width: 32px;
+  height: 44px;
+  width: 44px;
   object-fit: contain;
   display: block;
 }
@@ -112,7 +112,7 @@ a:hover { text-decoration: underline; }
 }
 .logo-title {
   font-family: "Archivo", "Manrope", sans-serif;
-  font-size: 11.5px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -3348,7 +3348,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   }
 
   .site-header { padding: 0 14px; }
-  .logo-img-wrap, .logo-icon, .logo-ai-frame { height: 28px; width: 28px; }
+  .logo-img-wrap, .logo-icon, .logo-ai-frame { height: 36px; width: 36px; }
   .site-header nav { gap: 8px; }
   #nav-auth, #nav-user { gap: 6px; }
   .nav-link { padding: 4px 6px; font-size: 0.82rem; }
@@ -3391,7 +3391,7 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   .stream-chat-overlay { top: 5px; bottom: auto; width: 130px; right: 5px; opacity: 0.85; }
   .sco-msg, .sco-join { font-size: 9.5px; }
   #sco-count { font-size: 0.58rem; }
-  .logo-title { font-size: 11px; letter-spacing: 0.07em; }
+  .logo-title { font-size: 13px; letter-spacing: 0.07em; }
 
   .count-widget {
     top: 36px;

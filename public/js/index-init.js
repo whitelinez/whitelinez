@@ -212,6 +212,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
     if (user.app_metadata?.role === "admin") {
       document.getElementById("nav-admin-link")?.classList.remove("hidden");
+      document.getElementById("btn-layout-editor")?.classList.remove("hidden");
     }
   }
 
@@ -233,6 +234,13 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 
   // Logout
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
+
+  // ── Widget Layout Editor (admin only) ────────────────────────
+  document.getElementById("btn-layout-editor")?.addEventListener("click", () => {
+    if (window.WidgetLayout) window.WidgetLayout.enter();
+  });
+  // Load saved layout for all visitors
+  if (window.WidgetLayout) window.WidgetLayout.loadLayout();
 
   // Load all active cameras for failover
   let _streamCameras = [];

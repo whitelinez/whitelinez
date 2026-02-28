@@ -8352,3 +8352,159 @@ button {
     display: none !important;
   }
 }
+
+/* =============================================
+   WIDGET LAYOUT EDITOR
+   ============================================= */
+
+/* Edit mode grid overlay on stream wrapper */
+.stream-wrapper.wl-edit-mode::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.07) 1px, transparent 1px);
+  background-size: 8px 8px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Draggable widget indicator */
+.wl-draggable {
+  cursor: grab !important;
+  z-index: 100 !important;
+  user-select: none !important;
+  touch-action: none !important;
+  outline: 1px dashed rgba(255, 214, 0, 0.45) !important;
+  outline-offset: 4px !important;
+  transition: outline-color 0.15s !important;
+}
+.wl-draggable:hover {
+  outline-color: rgba(255, 214, 0, 0.85) !important;
+}
+.wl-dragging {
+  cursor: grabbing !important;
+  z-index: 200 !important;
+  outline-color: #FFD600 !important;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) !important;
+}
+
+/* Alignment guidelines */
+.wl-guide {
+  position: absolute;
+  z-index: 160;
+  pointer-events: none;
+}
+.wl-guide-h {
+  left: 0; right: 0;
+  height: 1px;
+  background: rgba(255, 70, 70, 0.85);
+  box-shadow: 0 0 5px rgba(255, 70, 70, 0.5);
+}
+.wl-guide-v {
+  top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(255, 70, 70, 0.85);
+  box-shadow: 0 0 5px rgba(255, 70, 70, 0.5);
+}
+
+/* Toolbar */
+.wl-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(5, 8, 18, 0.94);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 7px;
+  padding: 5px 8px;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.wl-label {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 212, 255, 0.65);
+  font-family: 'JetBrains Mono', monospace;
+  padding-right: 4px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  margin-right: 2px;
+}
+.wl-btn {
+  font-size: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(210, 230, 248, 0.82);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.wl-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.wl-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.wl-btn-reset {
+  border-color: rgba(255, 214, 0, 0.25);
+  color: rgba(255, 214, 0, 0.7);
+}
+.wl-btn-reset:hover {
+  background: rgba(255, 214, 0, 0.07);
+  border-color: rgba(255, 214, 0, 0.5);
+  color: #FFD600;
+}
+.wl-btn-push {
+  border-color: rgba(0, 212, 255, 0.35);
+  color: rgba(0, 212, 255, 0.85);
+}
+.wl-btn-push:hover {
+  background: rgba(0, 212, 255, 0.09);
+  border-color: rgba(0, 212, 255, 0.6);
+  color: #00d4ff;
+}
+.wl-btn-exit {
+  border-color: rgba(255, 80, 80, 0.25);
+  color: rgba(255, 110, 110, 0.75);
+}
+.wl-btn-exit:hover {
+  background: rgba(255, 80, 80, 0.08);
+  border-color: rgba(255, 80, 80, 0.5);
+  color: #ff7070;
+}
+
+/* Layout editor nav button */
+.nav-layout-btn {
+  color: rgba(180, 210, 240, 0.7);
+}
+.nav-layout-btn:hover {
+  color: rgba(255, 214, 0, 0.9);
+}
+
+/* Mobile toolbar adjustments */
+@media (max-width: 640px) {
+  .wl-toolbar {
+    top: auto;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 7px;
+    gap: 4px;
+  }
+  .wl-label { display: none; }
+  .wl-btn { font-size: 0.58rem; padding: 3px 7px; }
+}

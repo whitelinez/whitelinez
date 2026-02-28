@@ -8102,155 +8102,158 @@ button {
 }
 
 /* =============================================
-   VISION HUB WIDGETS — REDESIGN
-   Bigger icons, more readable text, mobile-first
+   VISION HUB WIDGETS — REDESIGN v2
+   Compact, transparent, bigger icons
    ============================================= */
 
 /* ── Count Widget ─────────────────────────────── */
 .count-widget {
-  min-width: 140px !important;
-  padding: 9px 11px 10px !important;
+  min-width: 0 !important;
+  max-width: 120px !important;
+  padding: 6px 8px 7px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 .count-widget::before {
-  font-size: 0.5rem !important;
+  font-size: 0.44rem !important;
   letter-spacing: 0.14em !important;
-  margin-bottom: 3px !important;
+  margin-bottom: 2px !important;
+}
+
+.count-widget-total {
+  margin-bottom: 4px !important;
 }
 
 .count-widget-total span:first-child {
-  font-size: 2.1rem !important;
+  font-size: 1.7rem !important;
 }
 
 .count-widget-breakdown {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 5px 8px !important;
+  gap: 4px 6px !important;
 }
 
 .cw-item {
   display: flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  font-size: 0.72rem !important;
+  gap: 4px !important;
+  font-size: 0.65rem !important;
 }
 
 .cw-item strong {
-  font-size: 0.78rem !important;
-  min-width: 20px !important;
+  font-size: 0.7rem !important;
+  min-width: 16px !important;
 }
 
 .vehicle-icon {
-  width: 20px !important;
-  height: 15px !important;
+  width: 18px !important;
+  height: 13px !important;
   opacity: 1 !important;
 }
 
 /* ── Vision HUD ───────────────────────────────── */
 .ml-hud {
-  width: min(215px, 40vw) !important;
+  width: min(175px, 34vw) !important;
   bottom: 10px !important;
   right: 10px !important;
-  padding: 6px 8px !important;
-  background: rgba(4, 7, 14, 0.72) !important;
-  border: 1px solid rgba(255, 214, 0, 0.28) !important;
-  border-radius: 6px !important;
-  backdrop-filter: blur(4px) !important;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.4) !important;
+  padding: 4px 6px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
 }
 
 .ml-hud-head {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  margin-bottom: 5px !important;
+  margin-bottom: 3px !important;
 }
 
 .ml-hud-title {
-  font-size: 0.58rem !important;
-  letter-spacing: 0.12em !important;
+  font-size: 0.52rem !important;
+  letter-spacing: 0.1em !important;
 }
 
 .ml-hud-state {
-  font-size: 0.52rem !important;
-  padding: 2px 6px !important;
+  font-size: 0.47rem !important;
+  padding: 1px 5px !important;
   border-radius: 3px !important;
 }
 
-.ml-hud-msg {
-  font-size: 0.58rem !important;
-  margin-bottom: 5px !important;
-  display: block !important;
-  line-height: 1.3 !important;
-}
-
-.ml-hud-verbose {
-  font-size: 0.49rem !important;
-  margin-bottom: 4px !important;
+/* Hide verbose msg — too much noise */
+.ml-hud-msg,
+.ml-hud-verbose,
+.ml-hud-bot {
+  display: none !important;
 }
 
 .ml-hud-chips {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 4px !important;
-  margin-bottom: 4px !important;
+  gap: 3px !important;
+  margin-bottom: 3px !important;
 }
 
 .ml-chip {
-  padding: 4px 5px !important;
-  border-radius: 4px !important;
+  padding: 3px 4px !important;
+  border-radius: 3px !important;
   clip-path: none !important;
-  border: 1px solid rgba(255, 214, 0, 0.3) !important;
-  background: rgba(14, 27, 42, 0.4) !important;
+  border: 1px solid rgba(255, 214, 0, 0.25) !important;
+  background: transparent !important;
 }
 
 .ml-chip-label {
-  font-size: 0.49rem !important;
-  gap: 4px !important;
+  font-size: 0.44rem !important;
+  gap: 3px !important;
 }
 
 .ml-chip strong {
-  font-size: 0.62rem !important;
+  font-size: 0.56rem !important;
   min-width: auto !important;
 }
 
 .ml-hud-cells {
-  gap: 4px !important;
-  margin-bottom: 4px !important;
+  gap: 3px !important;
+  margin-bottom: 3px !important;
 }
 
 .ml-cell-row {
-  gap: 2px 6px !important;
+  gap: 2px 5px !important;
 }
 
 .ml-cell-label {
-  font-size: 0.49rem !important;
+  font-size: 0.44rem !important;
 }
 
 .ml-cell-row strong {
-  font-size: 0.56rem !important;
+  font-size: 0.5rem !important;
 }
 
 .ml-cell-note {
-  font-size: 0.46rem !important;
+  font-size: 0.42rem !important;
 }
 
 .ml-cell-track {
-  height: 5px !important;
+  height: 4px !important;
   clip-path: none !important;
   border-radius: 2px !important;
 }
 
 .ml-hud-metrics {
-  font-size: 0.52rem !important;
-  gap: 8px !important;
-  padding-top: 3px !important;
+  font-size: 0.47rem !important;
+  gap: 6px !important;
+  padding-top: 2px !important;
   border-top: 1px solid rgba(255,214,0,0.1) !important;
 }
 
 .ml-ico {
-  width: 13px !important;
-  height: 13px !important;
+  width: 12px !important;
+  height: 12px !important;
   opacity: 0.9 !important;
 }
 
@@ -8259,107 +8262,92 @@ button {
   .count-widget {
     top: 6px !important;
     left: 6px !important;
-    min-width: 0 !important;
-    max-width: 150px !important;
-    padding: 7px 9px 8px !important;
+    max-width: 108px !important;
+    padding: 5px 7px 6px !important;
   }
 
   .count-widget::before {
-    font-size: 0.44rem !important;
+    font-size: 0.4rem !important;
     margin-bottom: 2px !important;
   }
 
   .count-widget-total span:first-child {
-    font-size: 1.7rem !important;
+    font-size: 1.4rem !important;
   }
 
   .count-widget .cw-label {
-    font-size: 0.5rem !important;
-  }
-
-  .count-widget-breakdown {
-    gap: 4px 6px !important;
+    font-size: 0.46rem !important;
   }
 
   .cw-item {
-    font-size: 0.65rem !important;
-    gap: 4px !important;
+    font-size: 0.6rem !important;
+    gap: 3px !important;
   }
 
   .cw-item strong {
-    font-size: 0.7rem !important;
+    font-size: 0.64rem !important;
   }
 
   .vehicle-icon {
-    width: 17px !important;
-    height: 13px !important;
+    width: 15px !important;
+    height: 11px !important;
   }
 
-  /* HUD — compact but readable */
   .ml-hud {
-    width: min(160px, 46vw) !important;
-    bottom: 7px !important;
-    right: 7px !important;
-    padding: 5px 7px !important;
+    width: min(148px, 44vw) !important;
+    bottom: 6px !important;
+    right: 6px !important;
+    padding: 3px 5px !important;
   }
 
   .ml-hud-title {
-    font-size: 0.52rem !important;
+    font-size: 0.46rem !important;
   }
 
   .ml-hud-state {
-    font-size: 0.47rem !important;
-    padding: 1px 5px !important;
-  }
-
-  /* Hide verbose/msg on small screens to save space */
-  .ml-hud-msg,
-  .ml-hud-verbose,
-  .ml-hud-bot {
-    display: none !important;
+    font-size: 0.43rem !important;
   }
 
   .ml-chip {
-    padding: 3px 4px !important;
+    padding: 2px 3px !important;
   }
 
   .ml-chip-label {
-    font-size: 0.44rem !important;
+    font-size: 0.4rem !important;
   }
 
   .ml-chip strong {
-    font-size: 0.56rem !important;
-  }
-
-  .ml-cell-label {
-    font-size: 0.44rem !important;
-  }
-
-  .ml-cell-row strong {
     font-size: 0.5rem !important;
   }
 
+  .ml-cell-label {
+    font-size: 0.4rem !important;
+  }
+
+  .ml-cell-row strong {
+    font-size: 0.46rem !important;
+  }
+
   .ml-hud-metrics {
-    font-size: 0.47rem !important;
+    font-size: 0.43rem !important;
   }
 
   .ml-ico {
-    width: 11px !important;
-    height: 11px !important;
+    width: 10px !important;
+    height: 10px !important;
   }
 }
 
 /* ── Very small ≤400px ───────────────────────── */
 @media (max-width: 400px) {
   .count-widget-total span:first-child {
-    font-size: 1.45rem !important;
+    font-size: 1.2rem !important;
   }
 
   .ml-hud {
-    width: min(145px, 48vw) !important;
+    width: min(130px, 46vw) !important;
   }
 
-  /* On very small screens, hide cells too — only show chips */
   .ml-hud-cells {
     display: none !important;
   }

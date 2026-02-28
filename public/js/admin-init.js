@@ -529,7 +529,7 @@ async function loadDetectionStatus() {
 
     const latest = latestResp?.data || null;
     const registryModel = registryResp?.data?.model_name || null;
-    const modelName = registryModel || latest?.model_name || "yolov8s";
+    const modelName = registryModel || latest?.model_name || "yolov8m";
     const avgConf = Number(latest?.avg_confidence || 0);
     setText("det-status-model", modelName);
     setText("det-model-banner-name", modelName);

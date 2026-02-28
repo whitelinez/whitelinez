@@ -114,7 +114,7 @@ const MlShowcase = (() => {
       // Prefer registry active model; fall back to latest detection event model
       const registryModel = registryResp?.data?.model_name || null;
       const eventModel = recent.length > 0 ? (recent[0].model_name || null) : null;
-      state.modelName = registryModel || eventModel || state.modelName || "yolov8s";
+      state.modelName = registryModel || eventModel || state.modelName || "yolov8m";
       if (!state.seededFromTelemetry && recent.length > 0) {
         let detCount = 0;
         let confWeighted = 0;

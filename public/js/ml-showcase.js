@@ -85,7 +85,7 @@ const MlShowcase = (() => {
   async function pollTelemetry() {
     try {
       const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
-      const [rows24Resp, recentResp, healthResp] = await Promise.all([
+      const [rows24Resp, recentResp, healthResp, registryResp] = await Promise.all([
         window.sb
           .from("ml_detection_events")
           .select("id", { count: "exact", head: true })
@@ -96,6 +96,13 @@ const MlShowcase = (() => {
           .order("captured_at", { ascending: false })
           .limit(12),
         fetch("/api/health"),
+        window.sb
+          .from("ml_model_registry")
+          .select("model_name")
+          .eq("status", "active")
+          .order("promoted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       state.rows24h = Number(rows24Resp?.count || 0);
@@ -103,8 +110,11 @@ const MlShowcase = (() => {
       const recent = recentResp?.data || [];
       if (recent.length > 0) {
         state.lastSeenIso = recent[0].captured_at || "";
-        state.modelName = recent[0].model_name || state.modelName || "-";
       }
+      // Prefer registry active model; fall back to latest detection event model
+      const registryModel = registryResp?.data?.model_name || null;
+      const eventModel = recent.length > 0 ? (recent[0].model_name || null) : null;
+      state.modelName = registryModel || eventModel || state.modelName || "yolov8n";
       if (!state.seededFromTelemetry && recent.length > 0) {
         let detCount = 0;
         let confWeighted = 0;

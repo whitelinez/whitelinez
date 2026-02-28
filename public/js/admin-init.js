@@ -510,7 +510,7 @@ async function loadDetectionStatus() {
     if (node) node.textContent = value;
   };
   try {
-    const [latestResp, healthResp] = await Promise.all([
+    const [latestResp, healthResp, registryResp] = await Promise.all([
       window.sb
         .from("ml_detection_events")
         .select("captured_at, detections_count, avg_confidence, model_name")
@@ -518,13 +518,22 @@ async function loadDetectionStatus() {
         .limit(1)
         .maybeSingle(),
       fetch("/api/health").catch(() => null),
+      window.sb
+        .from("ml_model_registry")
+        .select("model_name")
+        .eq("status", "active")
+        .order("promoted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     const latest = latestResp?.data || null;
-    const modelName = latest?.model_name || "none";
+    const registryModel = registryResp?.data?.model_name || null;
+    const modelName = registryModel || latest?.model_name || "yolov8n";
     const avgConf = Number(latest?.avg_confidence || 0);
     setText("det-status-model", modelName);
     setText("det-model-banner-name", modelName);
+    setText("ml-active-model-name", modelName);
     setText("det-status-conf", latest ? `${(avgConf * 100).toFixed(1)}%` : "-");
     setText("det-status-last", latest?.captured_at ? fmtAgo(latest.captured_at) : "No telemetry");
 
@@ -566,6 +575,7 @@ async function loadDetectionStatus() {
   } catch {
     setText("det-status-model", "-");
     setText("det-model-banner-name", "-");
+    setText("ml-active-model-name", "-");
     setText("det-status-conf", "-");
     setText("det-status-last", "Unavailable");
     setText("det-runtime-ai", "Unavailable");

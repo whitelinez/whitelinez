@@ -315,87 +315,17 @@
       <section class="admin-panel" id="panel-ml">
         <div class="panel-head">
           <h2>ML Control</h2>
-          <p>Detection model status, night profile, and adaptive runtime tuning.</p>
+          <p>Active detection model, night profile, and adaptive runtime tuning.</p>
         </div>
 
-        <div class="ml-subnav" id="ml-subnav">
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-overview">Pipeline</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-kpis">KPI</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-readiness">Readiness</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-night">Runtime Controls</button>
-          <button class="ml-subnav-btn" type="button" data-target="ml-sec-capture">Capture Logs</button>
+        <div class="admin-model-banner">
+          <span class="admin-model-pulse"></span>
+          <span class="admin-model-label">ACTIVE MODEL</span>
+          <span id="ml-active-model-name" class="admin-model-value">—</span>
         </div>
 
-        <!-- Pipeline overview -->
-        <div class="ml-core-grid ml-section" id="ml-sec-overview">
-          <div class="ml-core-card">
-            <h3>Live ML Pipeline</h3>
-            <div class="ml-pipeline-grid">
-              <article id="ml-pipeline-capture" class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Capture + Upload <span id="ml-pipe-capture-badge" class="ml-pipe-badge">Checking</span></p>
-                <p id="ml-pipe-capture-value" class="ml-pipeline-value">Checking...</p>
-                <p class="ml-pipeline-sub">Frames + labels from live feed to Supabase</p>
-              </article>
-              <article id="ml-pipeline-dataset" class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Dataset Growth <span id="ml-pipe-dataset-badge" class="ml-pipe-badge">Checking</span></p>
-                <p id="ml-pipe-dataset-value" class="ml-pipeline-value">Checking...</p>
-                <p class="ml-pipeline-sub">Telemetry volume and daily throughput</p>
-              </article>
-              <article id="ml-pipeline-training" class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Training Engine <span id="ml-pipe-training-badge" class="ml-pipe-badge">Checking</span></p>
-                <p id="ml-pipe-training-value" class="ml-pipeline-value">Checking...</p>
-                <p class="ml-pipeline-sub">Auto retrain loop + latest training job</p>
-              </article>
-              <article id="ml-pipeline-model" class="ml-pipeline-item">
-                <p class="ml-pipeline-title">Active Detection Model <span id="ml-pipe-model-badge" class="ml-pipe-badge">Checking</span></p>
-                <p id="ml-pipe-model-value" class="ml-pipeline-value">Checking...</p>
-                <p class="ml-pipeline-sub">Model currently used for traffic detection</p>
-              </article>
-            </div>
-          </div>
-          <div class="ml-core-card">
-            <h3>Mission Focus</h3>
-            <div id="ml-glance-summary" class="rounds-list data-list">
-              <p class="loading">Loading ML summary...</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- KPIs -->
-        <div class="ml-kpi-grid ml-section" id="ml-sec-kpis">
-          <article class="ml-kpi-card">
-            <p class="ml-kpi-label">Total Dataset Rows</p>
-            <p id="ml-kpi-total" class="ml-kpi-value">-</p>
-            <p id="ml-kpi-total-sub" class="ml-kpi-sub">Target: 50,000</p>
-          </article>
-          <article class="ml-kpi-card">
-            <p class="ml-kpi-label">Rows Last 24h</p>
-            <p id="ml-kpi-24h" class="ml-kpi-value">-</p>
-            <p id="ml-kpi-24h-sub" class="ml-kpi-sub">Target: 5,000/day</p>
-          </article>
-          <article class="ml-kpi-card">
-            <p class="ml-kpi-label">Avg Confidence</p>
-            <p id="ml-kpi-confidence" class="ml-kpi-value">-</p>
-            <p id="ml-kpi-confidence-sub" class="ml-kpi-sub">Target: 55%+</p>
-          </article>
-          <article class="ml-kpi-card">
-            <p class="ml-kpi-label">Dataset Level</p>
-            <p id="ml-kpi-level" class="ml-kpi-level level-unknown">Unknown</p>
-            <p id="ml-kpi-level-sub" class="ml-kpi-sub">Collect more data to improve stability</p>
-          </article>
-        </div>
-
-        <div class="ml-ops-grid" id="ml-ops-grid">
-          <!-- Readiness -->
-          <div class="ml-progress-wrap ml-section" id="ml-sec-readiness">
-            <div class="ml-progress-head"><span>Training Readiness</span><strong id="ml-progress-text">0%</strong></div>
-            <div class="ml-progress-bar"><div id="ml-progress-fill" class="ml-progress-fill"></div></div>
-            <p id="ml-progress-hint" class="admin-hint"></p>
-            <div id="ml-last-seen" class="rounds-list data-list" style="margin-top:10px;"><p class="loading">Loading ML data...</p></div>
-          </div>
-
-          <!-- Runtime Controls (Night Profile + Adaptive Runtime) -->
-          <div class="ml-control-wrap ml-section" id="ml-sec-night">
+        <!-- Runtime Controls (Night Profile + Adaptive Runtime) -->
+        <div class="ml-control-wrap" id="ml-sec-night">
             <h3>Runtime Controls</h3>
 
             <!-- Night Profile -->
@@ -517,18 +447,6 @@
             </div>
           </div>
 
-          <!-- Capture Logs -->
-          <div class="card-box slim ml-section" id="ml-sec-capture">
-            <h3>Live Capture Logs</h3>
-            <div id="ml-capture-log" class="rounds-list data-list"><p class="loading">Loading live capture logs...</p></div>
-            <div class="ml-control-actions" style="margin-top:10px;">
-              <button id="btn-toggle-capture-pause" class="btn-secondary" type="button">Pause Capture</button>
-              <button id="btn-copy-capture-error" class="btn-secondary" type="button">Copy Latest Upload Error</button>
-              <span id="ml-capture-pause-msg" class="muted"></span>
-              <span id="ml-capture-copy-msg" class="muted"></span>
-            </div>
-          </div>
-        </div>
       </section>
 
       <!-- ═══════════════════════════════════════════════════════

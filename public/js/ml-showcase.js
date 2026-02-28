@@ -18,7 +18,7 @@ const MlShowcase = (() => {
     confSum: 0,
     confCount: 0,
     rows24h: 0,
-    modelName: "-",
+    modelName: "",
     lastSeenIso: "",
     streamItems: [],
     fallbackItems: [],
@@ -201,7 +201,7 @@ const MlShowcase = (() => {
     objectsEl.textContent = state.objects.toLocaleString();
     rateEl.textContent = `${rate.toFixed(1)} objects/min`;
     rowsEl.textContent = state.rows24h.toLocaleString();
-    modelEl.textContent = `Model: ${state.modelName || "-"}`;
+    modelEl.textContent = state.modelName || "yolov8m";
     lastSeenEl.textContent = `Last telemetry ${ago(state.lastSeenIso)}`;
 
     // Lifetime totals

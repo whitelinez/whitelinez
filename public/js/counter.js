@@ -14,6 +14,10 @@ const Counter = (() => {
   const MAX_BACKOFF = 30000;
   const MAX_BOX_STALE_MS = 350;
 
+  // Stream-sync delay buffer
+  const _eventQueue = [];
+  let _queueTimer = null;
+
   function setStatus(ok) {
     if (window.FloatingCount) FloatingCount.setStatus(ok);
   }
@@ -22,7 +26,7 @@ const Counter = (() => {
     window.dispatchEvent(new CustomEvent("count:update", { detail: data }));
   }
 
-  function sanitizeCountPayload(data) {
+  function sanitizeCountPayload(data, fromQueue = false) {
     if (!data || typeof data !== "object") return data;
     const tsRaw = data.captured_at;
     const tsMs = tsRaw ? Date.parse(tsRaw) : NaN;
@@ -33,13 +37,34 @@ const Counter = (() => {
       if (lastCountTsMs && tsMs < lastCountTsMs) return null;
       lastCountTsMs = tsMs;
 
-      // If payload is old, keep totals but avoid drawing stale boxes.
-      const ageMs = now - tsMs;
-      if (ageMs > MAX_BOX_STALE_MS) {
-        return { ...data, detections: [] };
+      // Skip stale-box check for queued events — they are intentionally delayed.
+      if (!fromQueue) {
+        const ageMs = now - tsMs;
+        if (ageMs > MAX_BOX_STALE_MS) {
+          return { ...data, detections: [] };
+        }
       }
     }
     return data;
+  }
+
+  function enqueue(data) {
+    const delayMs = Math.round((window.Stream?.getLatency?.() ?? 14) * 1000);
+    _eventQueue.push({ data, showAt: Date.now() + delayMs });
+  }
+
+  function startQueueProcessor() {
+    if (_queueTimer) return;
+    _queueTimer = setInterval(() => {
+      const now = Date.now();
+      while (_eventQueue.length && _eventQueue[0].showAt <= now) {
+        const { data } = _eventQueue.shift();
+        const sanitized = sanitizeCountPayload(data, true);
+        if (!sanitized) continue;
+        update(sanitized);
+        if ("round" in data) emitRoundIfChanged(data.round);
+      }
+    }, 100);
   }
 
   function roundSignature(round) {
@@ -116,12 +141,7 @@ const Counter = (() => {
       try {
         const data = JSON.parse(e.data);
         if (data.type === "count") {
-          const sanitized = sanitizeCountPayload(data);
-          if (!sanitized) return;
-          update(sanitized);
-          if ("round" in data) {
-            emitRoundIfChanged(data.round);
-          }
+          enqueue(data);
         } else if (data.type === "round") {
           emitRoundIfChanged(data.round);
         }
@@ -142,6 +162,7 @@ const Counter = (() => {
   function init() {
     if (started) return;
     started = true;
+    startQueueProcessor();
     bootstrapFromHealth();
     if (document.readyState === "complete") connect();
     else window.addEventListener("load", connect, { once: true });
@@ -150,6 +171,8 @@ const Counter = (() => {
 
   function destroy() {
     clearTimeout(reconnectTimer);
+    if (_queueTimer) { clearInterval(_queueTimer); _queueTimer = null; }
+    _eventQueue.length = 0;
     if (ws) ws.close();
   }
 

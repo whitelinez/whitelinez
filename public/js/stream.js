@@ -101,14 +101,7 @@ const Stream = (() => {
     }
   }
 
-  function getLatency() {
-    if (hlsInstance && typeof hlsInstance.latency === "number" && hlsInstance.latency > 0) {
-      return hlsInstance.latency;
-    }
-    return 0; // No delay until HLS connects — dispatch immediately
-  }
-
-  return { init, destroy, setAlias, getLatency };
+  return { init, destroy, setAlias };
 })();
 
 window.Stream = Stream;

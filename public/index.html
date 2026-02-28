@@ -173,20 +173,15 @@
         <div id="ml-hud" class="ml-hud">
           <div class="ml-hud-head">
             <span class="ml-hud-title">VISION HUD</span>
-            <span id="ml-hud-level" class="ml-hud-state">Idle</span>
+            <span id="ml-hud-level" class="ml-hud-state">
+              <svg id="ml-hud-wx-svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" style="width:9px;height:9px;flex-shrink:0"><path id="ml-hud-wx-path" d=""/></svg>
+              <span id="ml-hud-wx-text">Idle</span>
+            </span>
           </div>
 
           <p id="ml-hud-msg" class="ml-hud-msg">Initializing live scene scan...</p>
           <p id="ml-hud-bot" class="ml-hud-bot"></p>
           <p id="ml-hud-verbose" class="ml-hud-verbose">Scene lock scanning | retrain idle | scene --</p>
-
-          <!-- Weather row: icon + status merged -->
-          <div class="ml-hud-weather">
-            <svg class="ml-wx-icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
-              <path id="ml-hud-wx-path" d=""/>
-            </svg>
-            <span id="ml-hud-wx-label" class="ml-hud-wx-label">—</span>
-          </div>
 
           <div class="ml-hud-chips">
             <span class="ml-chip">

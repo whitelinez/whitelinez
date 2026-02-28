@@ -201,7 +201,7 @@ const MlOverlay = (() => {
 
   function mapSceneValue(value, fallback) {
     const v = String(value || "").trim().toLowerCase();
-    if (!v || v === "unknown" || v === "none" || v === "null") return fallback;
+    if (!v || v === "unknown" || v === "none" || v === "null" || v === "scanning") return fallback;
     return v.replaceAll("_", " ");
   }
 
@@ -222,16 +222,17 @@ const MlOverlay = (() => {
   };
 
   function weatherSvgPath(weather, lighting) {
-    const w = mapSceneValue(weather, "scanning");
-    const l = mapSceneValue(lighting, "scanning");
+    const w = mapSceneValue(weather, "");
+    const l = mapSceneValue(lighting, "");
     if (w.includes("rain"))                        return WX_ICON_PATHS.rain;
     if (w === "clear" || w.includes("sun"))        return WX_ICON_PATHS.clear;
     if (w === "glare")                             return WX_ICON_PATHS.glare;
     if (w === "fog" || w === "foggy" ||
         w === "haze")                              return WX_ICON_PATHS.fog;
     if (w === "overcast" || w.includes("cloud"))   return WX_ICON_PATHS.overcast;
-    // Fallback: use lighting for night
+    // Fallback: use lighting
     if (l === "night" || l === "dusk" || l === "dawn") return WX_ICON_PATHS.moon;
+    if (l === "day")                               return WX_ICON_PATHS.clear;
     return WX_ICON_PATHS.default;
   }
 
@@ -243,12 +244,17 @@ const MlOverlay = (() => {
   }
 
   function getSceneDisplay() {
-    const lighting = mapSceneValue(state.sceneLighting, "scanning");
-    const weather = mapSceneValue(state.sceneWeather, "scanning");
-    const hasRealScene = lighting !== "scanning" || weather !== "scanning";
-    if (!hasRealScene && state.frames === 0) return "Idle";
-    if (!hasRealScene) return "Scanning...";
-    return `${sceneTitle(lighting)} | ${sceneTitle(weather)}`;
+    let lighting = mapSceneValue(state.sceneLighting, "");
+    const weather = mapSceneValue(state.sceneWeather, "");
+    if (!lighting && !weather && state.frames === 0) return "Idle";
+    // Time-of-day fallback when AI hasn't classified lighting yet
+    if (!lighting) {
+      const hr = new Date().getHours();
+      lighting = (hr >= 6 && hr < 19) ? "day" : "night";
+    }
+    const parts = [sceneTitle(lighting)];
+    if (weather) parts.push(sceneTitle(weather));
+    return parts.join(" · ");
   }
 
   function getHudState(avgConf) {
@@ -388,7 +394,7 @@ const MlOverlay = (() => {
     const trafficMsgEl = document.getElementById("ml-hud-traffic-msg");
     const verboseEl  = document.getElementById("ml-hud-verbose");
     const wxPathEl   = document.getElementById("ml-hud-wx-path");
-    const wxLabelEl  = document.getElementById("ml-hud-wx-label");
+    const wxTextEl   = document.getElementById("ml-hud-wx-text");
     if (!titleEl || !levelEl || !msgEl || !framesEl || !detsEl || !confEl || !sceneEl || !delayEl || !confBarEl || !sceneConfEl) return;
 
     const level = getLevel();
@@ -403,10 +409,11 @@ const MlOverlay = (() => {
     const reasonText = state.runtimeReason ? state.runtimeReason.replaceAll("_", " ") : "";
     const confPct = avgConf == null ? 0 : Math.max(0, Math.min(100, avgConf * 100));
     const scenePct = Math.max(0, Math.min(100, (Number(state.sceneConfidence) || 0) * 100));
+    const hasRealScene = !!mapSceneValue(state.sceneLighting, "") || !!mapSceneValue(state.sceneWeather, "");
     titleEl.textContent = title;
-    levelEl.textContent = sceneLabel;
-    levelEl.classList.toggle("is-live", sceneLabel !== "Scanning..." && sceneLabel !== "Idle");
-    levelEl.classList.toggle("is-scan", sceneLabel === "Scanning..." || sceneLabel === "Idle");
+    if (wxTextEl) wxTextEl.textContent = sceneLabel;
+    levelEl.classList.toggle("is-live", hasRealScene);
+    levelEl.classList.toggle("is-scan", !hasRealScene);
     levelEl.classList.toggle("is-delay", false);
     msgEl.textContent = `${level.label}. Mode: ${modeLabel}${reasonText ? ` (${reasonText})` : ""}.`;
     framesEl.textContent = state.frames.toLocaleString();
@@ -436,22 +443,13 @@ const MlOverlay = (() => {
       });
     }
 
-    // Weather icon + label row
-    if (wxPathEl && wxLabelEl) {
-      const weather = mapSceneValue(state.sceneWeather, "scanning");
-      const lighting = mapSceneValue(state.sceneLighting, "scanning");
-      wxPathEl.setAttribute("d", weatherSvgPath(weather, lighting));
-      const wxDesc =
-        weather === "clear"                           ? "Clear sky" :
-        (weather === "rain" || weather === "rainy")   ? "Rain — wet road" :
-        weather === "overcast"                        ? "Overcast" :
-        (weather === "fog" || weather === "foggy")    ? "Fog — low visibility" :
-        weather === "haze"                            ? "Haze detected" :
-        weather === "glare"                           ? "Glare conditions" :
-        (lighting === "night")                        ? "Night scene" :
-        (lighting === "dusk" || lighting === "dawn")  ? "Low-light transition" :
-        "Scanning weather...";
-      wxLabelEl.textContent = wxDesc;
+    // Weather icon in the level badge
+    if (wxPathEl) {
+      const weather = mapSceneValue(state.sceneWeather, "");
+      const lighting = mapSceneValue(state.sceneLighting, "");
+      const hr = new Date().getHours();
+      const lightForIcon = lighting || ((hr >= 6 && hr < 19) ? "day" : "night");
+      wxPathEl.setAttribute("d", weatherSvgPath(weather, lightForIcon));
     }
   }
 

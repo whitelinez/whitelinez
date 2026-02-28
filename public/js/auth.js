@@ -64,22 +64,25 @@ const Auth = (() => {
   });
 
   async function signInAnon() {
-    if (typeof window.sb.auth.signInAnonymously !== "function") {
-      throw new Error("Anonymous sign-in not supported by this Supabase client version. Hard-refresh and try again.");
-    }
     const { data, error } = await window.sb.auth.signInAnonymously();
-    if (error) {
-      console.error("[Auth.signInAnon] Supabase error:", error);
-      throw error;
-    }
-    return data.session?.access_token ?? null;
+    if (error) throw error;
+    if (!data?.session) throw new Error("Guest session could not be created. Please try again.");
+    return data.session.access_token;
+  }
+
+  async function signInWithGoogle(redirectTo = window.location.origin + "/index.html") {
+    const { error } = await window.sb.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    });
+    if (error) throw error;
   }
 
   function isAnonymous(session) {
     return !!session?.user?.is_anonymous;
   }
 
-  return { login, register, logout, getSession, getJwt, requireAuth, requireAdmin, signInAnon, isAnonymous };
+  return { login, register, logout, getSession, getJwt, requireAuth, requireAdmin, signInAnon, signInWithGoogle, isAnonymous };
 })();
 
 window.Auth = Auth;

@@ -11,6 +11,7 @@ const Counter = (() => {
   let started = false;
   let lastRoundSig = "";
   let lastCountTsMs = 0;
+  let lastKnownTotal = 0;
   const MAX_BACKOFF = 30000;
   const MAX_BOX_STALE_MS = 350;
 
@@ -39,6 +40,13 @@ const Counter = (() => {
         return { ...data, detections: [] };
       }
     }
+
+    // Guard against zero-total live frames overriding a known bootstrapped count
+    const newTotal = Number(data.total ?? 0);
+    if (newTotal === 0 && lastKnownTotal > 0 && !data.bootstrap) {
+      return { ...data, total: lastKnownTotal };
+    }
+    if (newTotal > lastKnownTotal) lastKnownTotal = newTotal;
     return data;
   }
 
@@ -79,6 +87,8 @@ const Counter = (() => {
         detections: [],
         bootstrap: true,
       };
+      const t = Number(payload.total || 0);
+      if (t > lastKnownTotal) lastKnownTotal = t;
       update(payload);
     } catch {}
   }

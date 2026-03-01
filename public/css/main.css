@@ -5969,6 +5969,18 @@ button {
   color: #fb923c !important;
 }
 
+/* Set as AI Cam — cyan */
+.stream-btn-set-ai {
+  border: 1px solid rgba(0,212,255,0.35) !important;
+  color: rgba(0,212,255,0.85) !important;
+  background: rgba(0,212,255,0.07) !important;
+}
+.stream-btn-set-ai:hover {
+  border-color: rgba(0,212,255,0.6) !important;
+  background: rgba(0,212,255,0.14) !important;
+  color: #00d4ff !important;
+}
+
 /* Delete — red */
 .stream-btn-delete {
   border: 1px solid rgba(239,68,68,0.3) !important;
@@ -8489,10 +8501,30 @@ button {
 
 /* Layout editor nav button */
 .nav-layout-btn {
-  color: rgba(180, 210, 240, 0.7);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,214,0,0.25);
+  background: rgba(255,214,0,0.06);
+  color: rgba(255,214,0,0.75);
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .nav-layout-btn:hover {
-  color: rgba(255, 214, 0, 0.9);
+  color: #ffd600;
+  border-color: rgba(255,214,0,0.55);
+  background: rgba(255,214,0,0.12);
+}
+.nav-layout-label {
+  line-height: 1;
 }
 
 /* Mobile toolbar adjustments */

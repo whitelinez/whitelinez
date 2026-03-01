@@ -87,11 +87,8 @@ const AdminStreams = (() => {
         ? '<span class="stream-live-badge"><span class="stream-live-dot"></span>LIVE ON PUBLIC</span>'
         : "";
 
-      const toggleCls  = cam.is_active ? "stream-btn-deactivate" : "stream-btn-activate";
-      const toggleIcon = cam.is_active
-        ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>'
-        : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
-      const toggleText = cam.is_active ? "Deactivate" : "Activate";
+      const aiIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
+      const offIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
 
       return `
         <div class="stream-row ${isDefault ? "stream-row-live" : ""}" data-id="${cam.id}">
@@ -115,9 +112,10 @@ const AdminStreams = (() => {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit
             </button>
-            <button class="btn-sm ${toggleCls}" data-action="toggle" data-id="${cam.id}" data-active="${cam.is_active ? 1 : 0}">
-              ${toggleIcon} ${toggleText}
-            </button>
+            ${cam.is_active
+              ? `<button class="btn-sm stream-btn-deactivate" data-action="deactivate-ai" data-id="${cam.id}">${offIcon} Remove AI</button>`
+              : `<button class="btn-sm stream-btn-set-ai" data-action="set-ai" data-id="${cam.id}">${aiIcon} Set as AI Cam</button>`
+            }
             <button class="btn-sm stream-btn-delete" data-action="delete" data-id="${cam.id}">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
               Delete
@@ -139,10 +137,11 @@ const AdminStreams = (() => {
     const btn = e.currentTarget;
     const id = btn.dataset.id;
     switch (btn.dataset.action) {
-      case "preview": _togglePreview(id, btn.dataset.alias); break;
-      case "edit":    _startEdit(id); break;
-      case "toggle":  _toggleActive(id, btn.dataset.active === "1"); break;
-      case "delete":  _deleteCamera(id); break;
+      case "preview":       _togglePreview(id, btn.dataset.alias); break;
+      case "edit":          _startEdit(id); break;
+      case "set-ai":        _setAiCamera(id); break;
+      case "deactivate-ai": _deactivateAi(id); break;
+      case "delete":        _deleteCamera(id); break;
     }
   }
 
@@ -202,14 +201,30 @@ const AdminStreams = (() => {
     document.getElementById("streams-form-card")?.scrollIntoView({ behavior: "smooth" });
   }
 
-  // ── Toggle active ─────────────────────────────────────────────
-  async function _toggleActive(id, currentlyActive) {
+  // ── AI camera selection (exclusive — only one active at a time) ──────────────
+  async function _setAiCamera(id) {
+    // Deactivate all others first, then activate the chosen one
+    const { error: e1 } = await window.sb
+      .from("cameras")
+      .update({ is_active: false })
+      .neq("id", id);
+    if (e1) { _msg("Error: " + e1.message, true); return; }
+    const { error: e2 } = await window.sb
+      .from("cameras")
+      .update({ is_active: true })
+      .eq("id", id);
+    if (e2) { _msg("Error: " + e2.message, true); return; }
+    _msg("AI camera set. Backend will switch within ~4 min.");
+    await _load();
+  }
+
+  async function _deactivateAi(id) {
     const { error } = await window.sb
       .from("cameras")
-      .update({ is_active: !currentlyActive })
+      .update({ is_active: false })
       .eq("id", id);
     if (error) { _msg("Error: " + error.message, true); return; }
-    _msg(currentlyActive ? "Stream deactivated." : "Stream activated.");
+    _msg("AI deactivated for this camera.");
     await _load();
   }
 

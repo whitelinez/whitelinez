@@ -10,16 +10,10 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     hud.classList.add("is-collapsed");
   }
 
-  // Click on the head → collapse
-  hud.querySelector(".ml-hud-head")?.addEventListener("click", () => {
-    hud.classList.add("is-collapsed");
-    localStorage.setItem("wlz.hud.collapsed", "1");
-  });
-
-  // Click on the collapsed icon → expand
-  hud.querySelector(".ml-hud-collapsed-ico")?.addEventListener("click", () => {
-    hud.classList.remove("is-collapsed");
-    localStorage.setItem("wlz.hud.collapsed", "0");
+  // Click anywhere on the hub to toggle collapse/expand
+  hud.addEventListener("click", () => {
+    const collapsed = hud.classList.toggle("is-collapsed");
+    localStorage.setItem("wlz.hud.collapsed", collapsed ? "1" : "0");
   });
 }());
 
@@ -311,9 +305,10 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
   });
 
-  // Stream
+  // Stream — initialise with the AI-active camera alias so the correct feed
+  // loads immediately without waiting for CameraSwitcher.init() to resolve.
   const video = document.getElementById("live-video");
-  await Stream.init(video);
+  await Stream.init(video, { alias: _streamCameras[0]?.ipcam_alias || "" });
   await applyPublicFeedAppearance(video);
   setInterval(() => applyPublicFeedAppearance(video), 15000);
   FpsOverlay.init(video, document.getElementById("fps-overlay"));

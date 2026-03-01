@@ -618,31 +618,38 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   text-align: right;
 }
 
+/* ── Whole hub is the collapse/expand trigger ───────────────────────────── */
+.ml-hud {
+  cursor: pointer;
+  user-select: none;
+}
+
 /* ── Collapsed icon (hidden by default) ─────────────────────────────────── */
 .ml-hud-collapsed-ico {
   display: none;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   object-fit: contain;
-  opacity: 0.9;
-  filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.55));
+  opacity: 0.92;
+  /* Cyan-tinted glow to match hub border/accent color */
+  filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.7)) drop-shadow(0 0 2px rgba(0, 212, 255, 0.4));
   cursor: pointer;
   transition: opacity 0.15s, filter 0.15s;
 }
 .ml-hud-collapsed-ico:hover {
   opacity: 1;
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.85));
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 1)) drop-shadow(0 0 4px rgba(0, 212, 255, 0.6));
 }
 
 /* ── Collapsed state ─────────────────────────────────────────────────────── */
 .ml-hud.is-collapsed {
   width: auto !important;
   max-width: none !important;
-  padding: 4px !important;
-  background: rgba(6, 10, 20, 0.55) !important;
-  border: 1px solid rgba(0, 212, 255, 0.22) !important;
+  padding: 5px !important;
+  background: rgba(6, 10, 20, 0.65) !important;
+  border: 1px solid rgba(0, 212, 255, 0.3) !important;
   border-radius: 8px !important;
-  cursor: pointer;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.12) !important;
   transform: none !important;  /* cancel mobile scale when showing icon only */
 }
 .ml-hud.is-collapsed .ml-hud-collapsed-ico { display: block; }
@@ -654,13 +661,11 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .ml-hud.is-collapsed .ml-hud-cells,
 .ml-hud.is-collapsed .ml-hud-metrics { display: none !important; }
 
-/* ── Head is the collapse trigger — pointer cursor + subtle hint ─────────── */
+/* ── Hub head keeps its layout, cursor inherited from parent ─────────────── */
 .ml-hud-head {
   position: relative;
-  cursor: pointer;
-  user-select: none;
 }
-.ml-hud-head:hover .ml-hud-title {
+.ml-hud:not(.is-collapsed):hover .ml-hud-title {
   opacity: 0.75;
 }
 

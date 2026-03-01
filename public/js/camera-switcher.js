@@ -258,6 +258,10 @@ const CameraSwitcher = (() => {
     if (!isAI) document.getElementById('stream-offline-overlay')?.classList.add('hidden');
     _setNonAiOverlay(!isAI);
 
+    // Hide AI-only widgets when viewing a non-AI camera
+    document.getElementById('ml-hud')?.classList.toggle('hidden', !isAI);
+    document.getElementById('count-widget')?.classList.toggle('hidden', !isAI);
+
     const label = document.getElementById('active-cam-label');
     if (label) label.textContent = cam.name;
 

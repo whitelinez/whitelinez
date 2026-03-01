@@ -4272,73 +4272,28 @@ button {
 /* Final mobile HUD clamp: force compact size in bottom-right */
 @media (max-width: 640px) {
   .ml-hud {
-    width: min(104px, 40vw) !important;
-    max-width: 104px !important;
+    width: min(118px, 46vw) !important;
+    max-width: 118px !important;
     right: 4px !important;
     bottom: 4px !important;
     padding: 1px !important;
     border-radius: 0 !important;
     z-index: 8;
-  }
-
-  .ml-hud-head {
-    margin-bottom: 1px;
-    gap: 2px;
-  }
-
-  .ml-hud-title {
-    font-size: 0.38rem !important;
-    letter-spacing: 0.07em;
-  }
-
-  .ml-hud-state {
-    font-size: 0.38rem !important;
-    padding: 1px 2px !important;
-  }
-
-  .ml-hud-msg,
-  .ml-hud-verbose {
-    font-size: 0.34rem !important;
-    line-height: 1.2;
-    margin-bottom: 1px;
-  }
-
-  .ml-hud-chips,
-  .ml-hud-cells {
-    gap: 1px !important;
-  }
-
-  .ml-chip {
-    padding: 1px 2px !important;
-    font-size: 0.32rem;
-  }
-
-  .ml-cell-track {
-    height: 3px !important;
-  }
-
-  .ml-cell-row strong {
-    font-size: 0.38rem !important;
-  }
-
-  .ml-hud-metrics {
-    font-size: 0.36rem !important;
-    gap: 2px;
-  }
-
-  .ml-ico {
-    width: 5px !important;
-    height: 5px !important;
+    /* Scale the whole panel down from its bottom-right anchor so it
+       occupies less of the video frame without losing any information. */
+    transform: scale(0.72);
+    transform-origin: bottom right;
   }
 }
 
-/* Extra-small phones — hide metrics row entirely to cut height further */
+/* Extra-small phones — scale down further, hide verbose + metrics */
 @media (max-width: 430px) {
   .ml-hud {
-    width: min(92px, 36vw) !important;
-    max-width: 92px !important;
+    transform: scale(0.6);
+    transform-origin: bottom right;
   }
 
+  .ml-hud-verbose,
   .ml-hud-metrics {
     display: none !important;
   }
@@ -5592,6 +5547,22 @@ button {
 .non-ai-btn:hover {
   background: rgba(0,212,255,0.18);
   border-color: rgba(0,212,255,0.65);
+}
+
+@media (max-width: 640px) {
+  .non-ai-inner {
+    padding: 8px 10px;
+    gap: 4px;
+    max-width: 170px;
+    border-radius: 7px;
+  }
+  .non-ai-inner svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .non-ai-title { font-size: 0.66rem; }
+  .non-ai-sub   { font-size: 0.6rem; }
+  .non-ai-btn   { font-size: 0.6rem; padding: 4px 8px; }
 }
 
 /* =============================================

@@ -1,7 +1,8 @@
 /**
- * GET /api/stream
- * Server-side HLS manifest proxy through Railway backend.
- * Uses a short-lived HMAC token and fetches /stream/live.m3u8 from backend.
+ * GET /api/stream           — HLS manifest proxy
+ * GET /api/stream?p=<enc>   — HLS segment proxy (keeps CDN URL hidden from browser)
+ *
+ * Dual-mode keeps us within Vercel Hobby's 12-function limit.
  */
 import crypto from "crypto";
 
@@ -21,21 +22,49 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const secret = process.env.WS_AUTH_SECRET;
   const railwayUrl = process.env.RAILWAY_BACKEND_URL;
-  if (!secret || !railwayUrl) {
+  if (!railwayUrl) {
+    return res.status(500).json({ error: "Stream not configured" });
+  }
+
+  const backendBase = railwayUrl.replace(/\/+$/, "");
+
+  // ── Segment proxy mode ──────────────────────────────────────────────────
+  // When ?p= is present, forward to Railway /stream/ts which proxies to CDN.
+  const p = req.query?.p;
+  if (p) {
+    if (typeof p !== "string" || p.length > 512) {
+      return res.status(400).end();
+    }
+    try {
+      const upstream = await fetch(
+        `${backendBase}/stream/ts?p=${encodeURIComponent(p)}`,
+        { headers: { "User-Agent": "Vercel-SegmentProxy/1.0" } }
+      );
+      if (!upstream.ok) return res.status(502).end();
+      const contentType = upstream.headers.get("content-type") || "video/MP2T";
+      const buffer = await upstream.arrayBuffer();
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=10");
+      return res.status(200).send(Buffer.from(buffer));
+    } catch {
+      return res.status(502).end();
+    }
+  }
+
+  // ── Manifest proxy mode ─────────────────────────────────────────────────
+  const secret = process.env.WS_AUTH_SECRET;
+  if (!secret) {
     return res.status(500).json({ error: "Stream not configured" });
   }
 
   const token = generateHmacToken(secret);
   const aliasRaw = String(req.query?.alias || "").trim();
   const alias = /^[A-Za-z0-9_-]+$/.test(aliasRaw) ? aliasRaw : "";
-  const backendHttpBase = railwayUrl.replace(/\/+$/, "");
   const manifestUrl =
-    `${backendHttpBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`
+    `${backendBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`
     + (alias ? `&alias=${encodeURIComponent(alias)}` : "");
 
-  // Fetch backend-generated manifest (backend handles ipcamlive URL + rewrite)
   try {
     const upstream = await fetch(manifestUrl);
     if (!upstream.ok) {
@@ -48,7 +77,7 @@ export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-cache, no-store");
     return res.status(200).send(text);
   } catch (err) {
-    console.error("[/api/stream] backend fetch error:", err);
+    console.error("[/api/stream] manifest fetch error:", err);
     return res.status(502).json({ error: "Stream unavailable" });
   }
 }

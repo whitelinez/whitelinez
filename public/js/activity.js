@@ -99,10 +99,12 @@ const Activity = (() => {
         (profiles || []).forEach(p => { nameMap[p.user_id] = p.username; });
       } catch { /* graceful */ }
 
-      const medals = ["🥇", "🥈", "🥉"];
+      const medalColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
       container.innerHTML = sorted.map(([uid, stats], i) => {
         const name     = nameMap[uid] || ("Player " + uid.slice(0, 5));
-        const rank     = i < 3 ? `<span class="lb-medal">${medals[i]}</span>` : `<span class="lb-rank-num">#${i + 1}</span>`;
+        const rank     = i < 3
+          ? `<span class="lb-medal" style="color:${medalColors[i]};border-color:${medalColors[i]}">${i + 1}</span>`
+          : `<span class="lb-rank-num">#${i + 1}</span>`;
         const topClass = i < 3 ? ` lb-row-top lb-row-top-${i}` : "";
         const detail   = [
           `${stats.guesses} guess${stats.guesses !== 1 ? "es" : ""}`,

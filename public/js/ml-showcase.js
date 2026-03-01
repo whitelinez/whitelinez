@@ -228,21 +228,34 @@ const MlShowcase = (() => {
       const det = Number(r.detections_count || 0);
       const c = Number(r.avg_confidence || 0);
       const rawModel = String(r.model_name || "live");
-      // Strip date/hash suffixes like _20250212_abc123f → show clean family name
-      const cleanModel = rawModel === "live" ? "live"
-        : rawModel.replace(/_v\d+[_\-][0-9]{8}[_\-][0-9a-f]+$/i, "")
-                  .replace(/_[0-9]{8}[_\-][0-9a-f]+$/i, "")
-                  .replace(/_[0-9a-f]{6,}$/i, "");
-      const model = escHtml(cleanModel);
+      // Never show raw filenames — map to friendly label
+      const modelLabel = rawModel === "live" ? "AI SCAN" : "AI ENGINE";
       const b = r.breakdown || {};
-      const detail = [Number(b.car || 0), Number(b.truck || 0), Number(b.bus || 0), Number(b.motorcycle || 0)]
-        .some((v) => v > 0)
-        ? ` | C:${Number(b.car || 0)} T:${Number(b.truck || 0)} B:${Number(b.bus || 0)} M:${Number(b.motorcycle || 0)}`
-        : "";
+      const confPct = Number.isFinite(c) && c > 0 ? Math.round(c * 100) : null;
+      const confColor = confPct >= 70 ? 'var(--green)' : confPct >= 50 ? 'var(--accent)' : 'var(--muted)';
+
+      const vehicleIcons = [];
+      if (Number(b.car || 0) > 0) vehicleIcons.push(
+        `<span class="mls-vi"><svg viewBox="0 0 22 12" width="14" height="8" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M1 8h20M4 8l2.5-4.5a1 1 0 0 1 .9-.5h7.2a1 1 0 0 1 .9.5L18 8"/><rect x="1" y="8" width="20" height="2.5" rx="0.5"/><circle cx="6" cy="11" r="1.2"/><circle cx="16" cy="11" r="1.2"/></svg>${Number(b.car||0)}</span>`
+      );
+      if (Number(b.truck || 0) > 0) vehicleIcons.push(
+        `<span class="mls-vi"><svg viewBox="0 0 24 13" width="14" height="8" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="1" y="4" width="14" height="7" rx="0.5"/><path d="M15 6.5h4.5l2.5 2.5v2.5H15z"/><circle cx="5.5" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/></svg>${Number(b.truck||0)}</span>`
+      );
+      if (Number(b.motorcycle || 0) > 0) vehicleIcons.push(
+        `<span class="mls-vi"><svg viewBox="0 0 22 13" width="14" height="8" stroke="currentColor" stroke-width="1.5" fill="none"><circle cx="5" cy="10" r="2.8"/><circle cx="17" cy="10" r="2.8"/><path d="M5 10L9 5L13 5L17 10"/></svg>${Number(b.motorcycle||0)}</span>`
+      );
+
       return `
         <div class="mls-item">
-          <span class="mls-item-main">${model} | ${det} detections | ${Number.isFinite(c) && c > 0 ? `${(c * 100).toFixed(1)}% conf` : "conf n/a"}${detail}${rawModel === "live" ? ` | ${liveFrameRate.toFixed(1)} frames/min` : ""}</span>
-          <span class="mls-item-meta">${escHtml(ago(r.captured_at))}</span>
+          <div class="mls-item-top">
+            <span class="mls-dot"></span>
+            <span class="mls-det-count">${det}</span>
+            <span class="mls-det-label">objects</span>
+            <div class="mls-conf-track"><span class="mls-conf-bar" style="width:${confPct||0}%;background:${confColor}"></span></div>
+            <span class="mls-conf-val" style="color:${confColor}">${confPct ? confPct + '%' : '—'}</span>
+            <span class="mls-item-meta">${escHtml(ago(r.captured_at))}</span>
+          </div>
+          ${vehicleIcons.length ? `<div class="mls-item-vehicles">${vehicleIcons.join('')}</div>` : ''}
         </div>
       `;
     }).join("");

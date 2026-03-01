@@ -26,6 +26,11 @@ const CameraSwitcher = (() => {
       _aiAlias = _cameras.find(c => c.is_active)?.ipcam_alias || null;
       _activeAlias = _aiAlias;
 
+      // Set header cam chip to human-readable name on load
+      const activeCam = _cameras.find(c => c.ipcam_alias === _aiAlias);
+      const camNameEl = document.getElementById('header-cam-name');
+      if (camNameEl && activeCam) camNameEl.textContent = activeCam.name || activeCam.ipcam_alias;
+
       _buildIframe();
       _buildModal();
       _wireCameraTile();
@@ -270,6 +275,9 @@ const CameraSwitcher = (() => {
 
     const label = document.getElementById('active-cam-label');
     if (label) label.textContent = cam.name;
+
+    const camNameEl = document.getElementById('header-cam-name');
+    if (camNameEl) camNameEl.textContent = cam.name || alias;
 
     window.dispatchEvent(new CustomEvent('camera:switched', {
       detail: { alias, cameraId: cam.id, name: cam.name, isAI }

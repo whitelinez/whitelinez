@@ -2604,6 +2604,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-copy-capture-error")?.addEventListener("click", copyLatestCaptureError);
   document.getElementById("aud-refresh-btn")?.addEventListener("click", () => loadAudiencePanel(true));
   document.getElementById("aud-source-filter")?.addEventListener("change", () => loadAudiencePanel(false));
+  let _mappingActive = false;
   window.addEventListener("admin:panel-change", (e) => {
     const panel = String(e?.detail?.panel || "");
     if (panel === "audience") loadAudiencePanel(true);
@@ -2616,6 +2617,26 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => window.AdminLine?.refresh?.(), 80);
       }
     }
+    if (panel === "mapping") {
+      if (!_mappingActive) {
+        _mappingActive = true;
+        window.AdminMapping?.start(activeCameraId);
+      }
+    } else if (_mappingActive) {
+      _mappingActive = false;
+      window.AdminMapping?.stop();
+    }
+  });
+
+  // Wire mapping panel action buttons
+  document.getElementById("mapping-save-btn")?.addEventListener("click", () => {
+    window.AdminMapping?.saveMap();
+  });
+  document.getElementById("mapping-undo-btn")?.addEventListener("click", () => {
+    window.AdminMapping?.undoPoint();
+  });
+  document.getElementById("mapping-cancel-btn")?.addEventListener("click", () => {
+    window.AdminMapping?.cancelDrawing();
   });
 
   // initAdminSections() fires admin:panel-change before the listener above is registered.
@@ -2626,6 +2647,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_initPanel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
     if (_initPanel === "streams") { window.AdminStreams?.init(); }
     if (_initPanel === "model")   { window.AdminModel?.init(); window.AdminModel?.start(); }
+    if (_initPanel === "mapping") { _mappingActive = true; window.AdminMapping?.start(activeCameraId); }
   }
   window.AdminModel?.init();
 

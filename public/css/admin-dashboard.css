@@ -1232,6 +1232,170 @@
 /* ── Bet Validation ──────────────────────────────────────────── */
 /* Uses card-box slim */
 
+/* ── Scene Map / Mapping Panel ───────────────────────────────── */
+.mapping-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: start;
+}
+
+.mapping-canvas-col {
+  display: grid;
+  gap: 8px;
+}
+
+.mapping-sidebar {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.mapping-tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.mapping-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--as);
+  border: 1px solid var(--abr);
+  border-radius: var(--r-sm);
+  color: var(--am);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 110ms;
+  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mapping-tool-btn:hover { border-color: var(--acc); color: var(--at); }
+.mapping-tool-btn.active {
+  background: rgba(15,185,177,0.1);
+  border-color: rgba(15,185,177,0.45);
+  color: #a8fff7;
+}
+
+.mapping-tool-geom {
+  margin-left: auto;
+  opacity: 0.45;
+  font-size: 8px;
+}
+
+.mapping-feature-list {
+  display: grid;
+  gap: 3px;
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.mapping-feature-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 90ms;
+  font-size: 10px;
+  color: var(--at);
+}
+.mapping-feature-row:hover { background: var(--as2); border-color: var(--abr); }
+.mapping-feature-row.selected {
+  background: rgba(15,185,177,0.08);
+  border-color: rgba(15,185,177,0.35);
+}
+
+.mf-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.mf-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.mf-pts {
+  font-size: 8px;
+  color: var(--am);
+  white-space: nowrap;
+}
+
+.mf-del-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--am);
+  font-size: 9px;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  opacity: 0.5;
+  transition: opacity 90ms, color 90ms;
+  font-family: inherit;
+}
+.mf-del-btn:hover { opacity: 1; color: #ef4444; }
+
+.mf-count {
+  font-size: 9px;
+  color: var(--am);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mapping-no-features {
+  margin: 0;
+  font-size: 10px;
+  color: var(--am);
+  padding: 8px 0;
+}
+
+.mapping-draw-hint {
+  margin: 0;
+  font-size: 10px;
+  color: var(--am);
+  font-style: italic;
+  padding: 2px 4px;
+}
+
+.mapping-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mapping-actions .btn-outline,
+.mapping-actions .btn-primary {
+  flex: 1;
+  min-height: 28px;
+  font-size: 9px;
+}
+
+.mapping-status {
+  margin: 0;
+  font-size: 10px;
+  color: var(--am);
+  min-height: 14px;
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1280px) {
   .overview-metrics-primary   { grid-template-columns: repeat(3, minmax(0,1fr)); }
@@ -1266,6 +1430,7 @@
     width: calc(100% + 28px);
   }
   .zone-editor-workflow { grid-template-columns: 1fr; }
+  .mapping-layout { grid-template-columns: 1fr; }
   .stream-canvas-wrapper { position: relative; top: auto; }
   .hv-body     { grid-template-columns: 1fr; }
   .hv-services { grid-template-columns: repeat(2, 1fr); }

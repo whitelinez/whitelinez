@@ -83,6 +83,14 @@
         <span>AI Engine</span>
       </button>
 
+      <button class="admin-nav-btn" data-panel="mapping">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M1 3l5 2 4-2 5 2v9l-5-2-4 2-5-2V3z"/>
+          <path d="M6 5v9M10 3v9"/>
+        </svg>
+        <span>Scene Map</span>
+      </button>
+
       <span class="sidebar-section-label">System</span>
 
       <button class="admin-nav-btn" data-panel="health">
@@ -1106,6 +1114,49 @@
         </div>
       </section>
 
+      <!-- ══ Scene Map ══════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-mapping">
+        <div class="panel-head">
+          <h2>Scene Map</h2>
+          <p>Annotate road geometry — roads, lanes, junctions, exclusions, and landmarks.</p>
+        </div>
+
+        <div class="mapping-layout">
+          <!-- Canvas col -->
+          <div class="mapping-canvas-col">
+            <div class="stream-canvas-wrapper" style="min-height:clamp(280px,44vh,520px);">
+              <video id="mapping-video" autoplay muted playsinline
+                     style="width:100%;height:100%;object-fit:contain;display:block;"></video>
+              <canvas id="mapping-canvas"
+                      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+            </div>
+            <p id="mapping-draw-hint" class="mapping-draw-hint">Select a tool to start annotating.</p>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="mapping-sidebar">
+            <div class="card-box" style="margin-bottom:10px;">
+              <h3>Draw Tool</h3>
+              <div id="mapping-tool-grid" class="mapping-tool-grid"></div>
+            </div>
+
+            <div class="card-box" style="margin-bottom:10px;">
+              <h3>Features <span id="mapping-feature-count" class="mf-count"></span></h3>
+              <div id="mapping-feature-list" class="mapping-feature-list">
+                <p class="mapping-no-features">No features yet.</p>
+              </div>
+            </div>
+
+            <div class="mapping-actions">
+              <button class="btn-outline" id="mapping-undo-btn" title="Undo last point (Ctrl+Z)">Undo Point</button>
+              <button class="btn-outline" id="mapping-cancel-btn" title="Cancel drawing (Esc)">Cancel</button>
+              <button class="btn-primary" id="mapping-save-btn">Save Map</button>
+            </div>
+            <p id="mapping-status" class="mapping-status"></p>
+          </div>
+        </div>
+      </section>
+
     </div><!-- .admin-workspace -->
   </main>
 </div><!-- .admin-layout -->
@@ -1128,6 +1179,7 @@
 <script src="/js/admin-banners.js"></script>
 <script src="/js/admin-streams.js"></script>
 <script src="/js/admin-landmarks.js"></script>
+<script src="/js/admin-mapping.js"></script>
 <script src="/js/admin-model.js"></script>
 </body>
 </html>

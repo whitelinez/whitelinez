@@ -20,7 +20,7 @@ const DetectionOverlay = (() => {
   const QUEUE_MAX_AGE_MS  = 15_000;  // drop entries older than 15s
   const QUEUE_MATCH_TOL_MS = 800;    // ±800ms — tighter now that lag is stable at ~4s
   const QUEUE_POLL_MS = 200;         // continuous poll interval (ms) independent of WS
-  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
+  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v5";
   let pixiApp = null;
   let pixiEnabled = false;
   let isMobileClient = false;

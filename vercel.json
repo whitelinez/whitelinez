@@ -39,7 +39,7 @@
                                           "memory":  128,
                                           "maxDuration":  10
                                       },
-                      "api/stream/ts.js":  {
+                      "api/stream-ts.js":  {
                                                "memory":  128,
                                                "maxDuration":  25
                                            }

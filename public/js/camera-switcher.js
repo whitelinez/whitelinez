@@ -29,6 +29,7 @@ const CameraSwitcher = (() => {
       _buildIframe();
       _buildModal();
       _wireCameraTile();
+      _wireNonAiOverlay();
       _loadFpsBadges();
     } catch {}
   }
@@ -165,6 +166,23 @@ const CameraSwitcher = (() => {
     });
   }
 
+  // ── Non-AI overlay ────────────────────────────────────────────
+  function _wireNonAiOverlay() {
+    const btn = document.getElementById("btn-go-ai-cam");
+    if (!btn) return;
+    // Populate AI camera name
+    const aiCam = _cameras.find(c => c.is_active);
+    const nameEl = document.getElementById("non-ai-cam-name");
+    if (nameEl && aiCam?.name) nameEl.textContent = aiCam.name;
+    btn.addEventListener("click", () => {
+      if (_aiAlias) _switchTo(_aiAlias);
+    });
+  }
+
+  function _setNonAiOverlay(visible) {
+    document.getElementById("non-ai-overlay")?.classList.toggle("hidden", !visible);
+  }
+
   // ── Wire the CAMERAS banner tile (rendered dynamically) ───────
   function _wireCameraTile() {
     document.addEventListener('click', e => {
@@ -230,6 +248,7 @@ const CameraSwitcher = (() => {
     }
 
     if (!isAI) document.getElementById('stream-offline-overlay')?.classList.add('hidden');
+    _setNonAiOverlay(!isAI);
 
     const label = document.getElementById('active-cam-label');
     if (label) label.textContent = cam.name;

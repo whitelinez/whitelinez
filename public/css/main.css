@@ -5513,6 +5513,76 @@ button {
 }
 
 /* =============================================
+   NON-AI CAMERA OVERLAY
+   ============================================= */
+
+.non-ai-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 0 18px 16px;
+  pointer-events: none;
+}
+.non-ai-overlay.hidden { display: none; }
+
+.non-ai-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(6, 10, 20, 0.82);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 10px;
+  padding: 14px 16px 14px;
+  max-width: 260px;
+  backdrop-filter: blur(6px);
+  pointer-events: all;
+  color: rgba(220, 232, 245, 0.9);
+}
+.non-ai-inner svg {
+  color: rgba(251,146,60,0.7);
+  flex-shrink: 0;
+}
+.non-ai-title {
+  font-family: "Archivo", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(251,146,60,0.9);
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.non-ai-sub {
+  font-size: 0.72rem;
+  color: rgba(180,210,240,0.7);
+  margin: 0;
+}
+.non-ai-sub strong {
+  color: rgba(0,212,255,0.85);
+  font-weight: 600;
+}
+.non-ai-btn {
+  margin-top: 4px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(0,212,255,0.4);
+  background: rgba(0,212,255,0.1);
+  color: #00d4ff;
+  font-family: "Archivo", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  align-self: flex-start;
+}
+.non-ai-btn:hover {
+  background: rgba(0,212,255,0.18);
+  border-color: rgba(0,212,255,0.65);
+}
+
+/* =============================================
    STREAM OFFLINE OVERLAY
    ============================================= */
 

@@ -103,6 +103,19 @@
           </div>
         </div>
 
+        <!-- Non-AI camera notice — shown when viewing a camera without active AI -->
+        <div id="non-ai-overlay" class="non-ai-overlay hidden">
+          <div class="non-ai-inner">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <line x1="1" y1="1" x2="23" y2="23" stroke-width="1.8"/>
+            </svg>
+            <p class="non-ai-title">AI not active on this camera</p>
+            <p class="non-ai-sub">Today's AI stream: <strong id="non-ai-cam-name">—</strong></p>
+            <button id="btn-go-ai-cam" class="non-ai-btn">Switch to AI Camera</button>
+          </div>
+        </div>
+
         <div id="count-widget" class="count-widget">
 
           <!-- Normal mode: global total + breakdown -->

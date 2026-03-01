@@ -286,7 +286,9 @@ const CameraSwitcher = (() => {
 
   function isOnAiCam() { return _activeAlias === _aiAlias; }
 
-  return { init, isOnAiCam };
+  function switchTo(alias) { _switchTo(alias); }
+
+  return { init, isOnAiCam, switchTo };
 })();
 
 window.CameraSwitcher = CameraSwitcher;

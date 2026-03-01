@@ -489,7 +489,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
         const pill = e.target.closest(".cam-pill");
         if (!pill || pill.classList.contains("active")) return;
         const alias = pill.dataset.alias || "";
-        if (alias) Stream.setAlias(alias);
+        if (alias) CameraSwitcher.switchTo(alias);
       });
     }
   }

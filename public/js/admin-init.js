@@ -1009,103 +1009,161 @@ function renderHealthOverview(health, errMsg = "") {
   const box = document.getElementById("health-overview");
   if (!box) return;
   if (!health) {
-    box.innerHTML = `<p class="muted" style="font-size:0.82rem;">/health unavailable${errMsg ? ` (${errMsg})` : ""}</p>`;
+    box.innerHTML = `<div class="hv-error">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <span>Health endpoint unavailable${errMsg ? ` — ${errMsg}` : ""}</span>
+    </div>`;
     return;
   }
 
-  const statusText = (ok) => ok ? "OK" : "Down";
-  const dot = (ok) => `<span class="health-dot ${ok ? "ok" : "down"}"></span>${statusText(ok)}`;
-  const weather = health.weather_api || {};
-  const weatherStatus = String(weather.status || "not_checked");
-  const weatherOk = weatherStatus === "ok";
-  const weatherLabel =
-    weatherStatus === "ok" ? "OK" :
-    weatherStatus === "stale" ? "Stale" :
-    weatherStatus === "error" ? "Error" : "Not checked";
-  const weatherAge = Number.isFinite(Number(weather.cache_age_sec))
-    ? `${Number(weather.cache_age_sec)}s ago`
-    : "-";
+  const weather    = health.weather_api || {};
+  const weatherSt  = String(weather.status || "not_checked");
+  const weatherOk  = weatherSt === "ok";
+  const weatherAge = Number.isFinite(Number(weather.cache_age_sec)) ? `${Number(weather.cache_age_sec)}s ago` : "-";
   const weatherMeta = weather?.latest
-    ? `${String(weather.latest.lighting || "-")} / ${String(weather.latest.weather || "-")}`
-    : (weather.last_error ? "fetch failed" : "waiting");
+    ? `${weather.latest.lighting || "-"} / ${weather.latest.weather || "-"}`
+    : (weather.last_error ? "Fetch failed" : "Waiting");
 
-  const publicWs = Number(health.public_ws_connections || 0);
-  const authWs = Number(health.user_ws_connections || 0);
-  const totalWs = Number(health.total_ws_connections || (publicWs + Number(health.user_ws_sockets || 0)));
-  const runtimeVisits = Number(health.public_ws_total_visits || 0);
-  const wsBar = Math.max(0, Math.min(100, totalWs * 6));
-  const visitBar = Math.max(0, Math.min(100, runtimeVisits > 0 ? Math.log10(runtimeVisits + 1) * 25 : 0));
-  const watchdogOk = Boolean(health.watchdog_task_running);
+  const publicWs     = Number(health.public_ws_connections || 0);
+  const authWs       = Number(health.user_ws_connections || 0);
+  const totalWs      = Number(health.total_ws_connections || (publicWs + Number(health.user_ws_sockets || 0)));
+  const visits       = Number(health.public_ws_total_visits || 0);
+  const watchdogOk   = Boolean(health.watchdog_task_running);
   const restartCounts = health.watchdog_restart_counts || {};
-  const restartTotal =
-    Number(restartCounts.refresh || 0) +
-    Number(restartCounts.ai || 0) +
-    Number(restartCounts.round || 0) +
-    Number(restartCounts.resolver || 0) +
-    Number(restartCounts.ml_retrain || 0);
+  const restartTotal = ["refresh","ai","round","resolver","ml_retrain"].reduce((s,k) => s + Number(restartCounts[k]||0), 0);
+  const fps          = Number(health.ai_fps_estimate || 0);
+  const framesTotal  = Number(health.ai_frames_total || 0);
+  const heartbeatOk  = !Boolean(health.ai_heartbeat_stale);
+  const frameAge     = health.ai_last_frame_age_sec == null ? null : Number(health.ai_last_frame_age_sec);
+  const streamOk     = Boolean(health.stream_configured ?? health.stream_url);
 
-  box.innerHTML = `
-    <div class="health-grid">
-      <div class="health-item">
-        <p class="health-item-title">API</p>
-        <p class="health-item-value">${dot(health.status === "ok")}</p>
+  const svcFlags = [
+    health.status === "ok",
+    Boolean(health.ai_task_running),
+    Boolean(health.refresh_task_running),
+    Boolean(health.round_task_running),
+    Boolean(health.resolver_task_running),
+    watchdogOk, streamOk, heartbeatOk,
+  ];
+  const onlineCount = svcFlags.filter(Boolean).length;
+  const allOk = onlineCount === svcFlags.length;
+
+  const svc = (icon, name, isOk, meta = "") => `
+    <div class="hv-svc-card ${isOk ? "hv-ok" : "hv-down"}">
+      <div class="hv-svc-icon">${icon}</div>
+      <div class="hv-svc-body">
+        <div class="hv-svc-name">${name}</div>
+        ${meta ? `<div class="hv-svc-meta">${meta}</div>` : ""}
       </div>
-      <div class="health-item">
-        <p class="health-item-title">AI Task</p>
-        <p class="health-item-value">${dot(Boolean(health.ai_task_running))}</p>
+      <div class="hv-svc-badge">${isOk ? "OK" : "DOWN"}</div>
+    </div>`;
+
+  const row = (label, val) =>
+    `<div class="hv-row"><span class="hv-row-label">${label}</span><span class="hv-row-val">${val}</span></div>`;
+
+  box.innerHTML = `<div class="hv-wrap">
+
+    <div class="hv-summary ${allOk ? "hv-all-ok" : "hv-has-err"}">
+      <div class="hv-sum-left">
+        <div class="hv-sum-icon">
+          ${allOk
+            ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>`
+            : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>`
+          }
+        </div>
+        <div>
+          <div class="hv-sum-title">${allOk ? "All Systems Operational" : `${svcFlags.length - onlineCount} Service${svcFlags.length - onlineCount !== 1 ? "s" : ""} Degraded`}</div>
+          <div class="hv-sum-sub">${onlineCount} / ${svcFlags.length} services online</div>
+        </div>
       </div>
-      <div class="health-item">
-        <p class="health-item-title">Refresh Task</p>
-        <p class="health-item-value">${dot(Boolean(health.refresh_task_running))}</p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Round Task</p>
-        <p class="health-item-value">${dot(Boolean(health.round_task_running))}</p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Resolver Task</p>
-        <p class="health-item-value">${dot(Boolean(health.resolver_task_running))}</p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Auto Recovery</p>
-        <p class="health-item-value">${dot(watchdogOk)} <span class="muted">${restartTotal.toLocaleString()} restarts</span></p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Stream URL</p>
-        <p class="health-item-value">${dot(Boolean(health.stream_configured ?? health.stream_url))}</p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">AI Heartbeat</p>
-        <p class="health-item-value">${dot(!Boolean(health.ai_heartbeat_stale))} <span class="muted">${health.ai_last_frame_age_sec == null ? "-" : `${Number(health.ai_last_frame_age_sec).toFixed(1)}s`}</span></p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">AI FPS</p>
-        <p class="health-item-value">${Number(health.ai_fps_estimate || 0).toFixed(2)} fps <span class="muted">${Number(health.ai_frames_total || 0).toLocaleString()} frames</span></p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Public WS / User WS</p>
-        <p class="health-item-value">${publicWs} / ${authWs} users</p>
-        <div class="health-inline-bar"><span style="width:${wsBar}%"></span></div>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Public Visits (Runtime)</p>
-        <p class="health-item-value">${runtimeVisits.toLocaleString()}</p>
-        <div class="health-inline-bar"><span style="width:${visitBar}%"></span></div>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Active Round</p>
-        <p class="health-item-value">${health.active_round_id ? `${String(health.active_round_status || "active").toUpperCase()} (${String(health.active_round_id).slice(0, 8)}...)` : "none"}</p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Weather API</p>
-        <p class="health-item-value"><span class="health-dot ${weatherOk ? "ok" : "down"}"></span>${weatherLabel} (${weatherAge})</p>
-      </div>
-      <div class="health-item">
-        <p class="health-item-title">Weather Snapshot</p>
-        <p class="health-item-value">${weatherMeta}</p>
+      <div class="hv-sum-pills">
+        <span class="hv-pill">${fps.toFixed(1)} fps</span>
+        <span class="hv-pill">${totalWs} connected</span>
+        <span class="hv-pill">${framesTotal.toLocaleString()} frames</span>
       </div>
     </div>
-  `;
+
+    <div class="hv-services">
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="5" rx="1.5"/><rect x="2" y="10" width="20" height="5" rx="1.5"/><rect x="2" y="17" width="20" height="4" rx="1.5"/><circle cx="19" cy="5.5" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg>`,
+        "API Server", health.status === "ok")}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M4 14h16M9 4v16M15 4v16"/></svg>`,
+        "AI Detection", Boolean(health.ai_task_running), fps > 0 ? `${fps.toFixed(1)} fps` : "idle")}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`,
+        "URL Refresh", Boolean(health.refresh_task_running))}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+        "Round Engine", Boolean(health.round_task_running), health.active_round_id ? "Round active" : "Idle")}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="20 6 9 17 4 12"/><path d="M2 20h20" stroke-opacity="0.3"/></svg>`,
+        "Bet Resolver", Boolean(health.resolver_task_running))}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4" stroke-width="1.6"/></svg>`,
+        "Auto Recovery", watchdogOk, restartTotal > 0 ? `${restartTotal} restart${restartTotal !== 1 ? "s" : ""}` : "Clean")}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/><circle cx="7.5" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>`,
+        "Stream URL", streamOk)}
+      ${svc(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+        "AI Heartbeat", heartbeatOk, frameAge != null ? `${frameAge.toFixed(1)}s ago` : "-")}
+    </div>
+
+    <div class="hv-stats">
+      <div class="hv-stat-card">
+        <div class="hv-stat-head">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          Connections
+        </div>
+        <div class="hv-stat-nums">
+          <div class="hv-stat-big">${totalWs}</div>
+          <div class="hv-stat-sub">live users</div>
+        </div>
+        ${row("Public WS", publicWs)}
+        ${row("Auth WS", authWs)}
+        ${row("Session visits", visits.toLocaleString())}
+        <div class="hv-bar-wrap"><span class="hv-bar-fill" style="width:${Math.min(100, totalWs * 10)}%"></span></div>
+      </div>
+
+      <div class="hv-stat-card">
+        <div class="hv-stat-head">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M4 14h16M9 4v16M15 4v16"/></svg>
+          AI Performance
+        </div>
+        <div class="hv-stat-nums">
+          <div class="hv-stat-big">${fps.toFixed(1)}</div>
+          <div class="hv-stat-sub">fps</div>
+        </div>
+        ${row("Frames processed", framesTotal.toLocaleString())}
+        ${row("Last frame", frameAge != null ? `${frameAge.toFixed(1)}s ago` : "—")}
+        ${row("Heartbeat", heartbeatOk ? "Live" : "Stale")}
+        <div class="hv-bar-wrap"><span class="hv-bar-fill" style="width:${Math.min(100, (fps / 30) * 100)}%"></span></div>
+      </div>
+
+      <div class="hv-stat-card ${weatherOk ? "" : "hv-stat-warn"}">
+        <div class="hv-stat-head">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>
+          Weather API
+        </div>
+        <div class="hv-stat-nums">
+          <div class="hv-stat-big ${weatherOk ? "hv-txt-ok" : weatherSt === "stale" ? "hv-txt-warn" : "hv-txt-down"}">${weatherOk ? "OK" : weatherSt === "stale" ? "Stale" : "Err"}</div>
+          <div class="hv-stat-sub">${weatherAge}</div>
+        </div>
+        ${row("Lighting", weather?.latest?.lighting || "—")}
+        ${row("Condition", weather?.latest?.weather || "—")}
+        ${row("Status", weatherSt)}
+      </div>
+
+      <div class="hv-stat-card">
+        <div class="hv-stat-head">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Recovery
+        </div>
+        <div class="hv-stat-nums">
+          <div class="hv-stat-big ${watchdogOk ? "hv-txt-ok" : "hv-txt-down"}">${watchdogOk ? "OK" : "Off"}</div>
+          <div class="hv-stat-sub">watchdog</div>
+        </div>
+        ${row("Total restarts", restartTotal)}
+        ${row("AI", restartCounts.ai || 0)}
+        ${row("Refresh", restartCounts.refresh || 0)}
+        ${row("Round", restartCounts.round || 0)}
+      </div>
+    </div>
+
+  </div>`;
 }
 
 function shortUserAgent(raw) {

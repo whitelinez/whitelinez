@@ -617,63 +617,112 @@
 .overview-feed-card #health-overview,
 .overview-feed-card #recent-rounds { max-height: 250px; }
 
-.health-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
-  gap: 8px;
+/* ── Health Panel Visual System ──────────────────────────────── */
+.hv-wrap { display: flex; flex-direction: column; gap: 14px; }
+
+.hv-error {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px; border-radius: var(--r-md);
+  background: rgba(224,74,95,0.07); border: 1px solid rgba(224,74,95,0.2);
+  color: var(--am); font-size: 13px;
 }
-.health-item {
-  background: var(--as2);
-  border: 1px solid var(--abr);
-  border-radius: var(--r-md);
-  padding: 10px;
+
+/* Summary bar */
+.hv-summary {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 16px; border-radius: var(--r-md); border: 1px solid;
 }
-.health-item-title {
-  margin: 0 0 4px;
-  font-size: 8px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--am);
-  font-weight: 700;
+.hv-summary.hv-all-ok  { background: rgba(24,199,122,0.05); border-color: rgba(24,199,122,0.22); }
+.hv-summary.hv-has-err { background: rgba(255,164,0,0.05);  border-color: rgba(255,164,0,0.22);  }
+.hv-sum-left { display: flex; align-items: center; gap: 12px; }
+.hv-sum-icon {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
 }
-.health-item-value {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: #eef6ff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+.hv-summary.hv-all-ok  .hv-sum-icon { background: rgba(24,199,122,0.12); color: var(--ok); }
+.hv-summary.hv-has-err .hv-sum-icon { background: rgba(255,164,0,0.12);  color: #ffb730;   }
+.hv-sum-title { font-size: 13px; font-weight: 700; color: #eef6ff; line-height: 1.2; }
+.hv-sum-sub   { font-size: 11px; color: var(--am); margin-top: 3px; }
+.hv-sum-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.hv-pill {
+  font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--abr);
+  color: var(--am); letter-spacing: 0.04em; white-space: nowrap;
 }
+
+/* Service grid */
+.hv-services {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.hv-svc-card {
+  background: var(--as2); border: 1px solid var(--abr);
+  border-radius: var(--r-md); padding: 12px;
+  display: flex; align-items: flex-start; gap: 10px;
+  transition: border-color 200ms, background 200ms;
+}
+.hv-svc-card.hv-ok   { border-left: 3px solid rgba(24,199,122,0.4); }
+.hv-svc-card.hv-down { border-left: 3px solid rgba(224,74,95,0.5); background: rgba(224,74,95,0.03); }
+.hv-svc-icon {
+  width: 34px; height: 34px; border-radius: var(--r-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.hv-svc-card.hv-ok   .hv-svc-icon { background: rgba(24,199,122,0.1); color: var(--ok); }
+.hv-svc-card.hv-down .hv-svc-icon { background: rgba(224,74,95,0.12); color: var(--err); }
+.hv-svc-body { flex: 1; min-width: 0; }
+.hv-svc-name { font-size: 11px; font-weight: 700; color: #eef6ff; line-height: 1.2; }
+.hv-svc-meta { font-size: 10px; color: var(--am); margin-top: 2px; }
+.hv-svc-badge {
+  font-size: 8px; font-weight: 800; letter-spacing: 0.1em;
+  padding: 2px 5px; border-radius: 4px; flex-shrink: 0; align-self: flex-start;
+}
+.hv-svc-card.hv-ok   .hv-svc-badge { background: rgba(24,199,122,0.12); color: var(--ok); }
+.hv-svc-card.hv-down .hv-svc-badge { background: rgba(224,74,95,0.15);  color: var(--err); }
+
+/* Stats row */
+.hv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.hv-stat-card {
+  background: var(--as2); border: 1px solid var(--abr);
+  border-radius: var(--r-md); padding: 12px;
+}
+.hv-stat-card.hv-stat-warn { border-color: rgba(255,164,0,0.22); background: rgba(255,164,0,0.03); }
+.hv-stat-head {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  color: var(--am); font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.hv-stat-nums { display: flex; align-items: baseline; gap: 5px; margin-bottom: 10px; }
+.hv-stat-big  { font-size: 26px; font-weight: 800; color: #eef6ff; line-height: 1; }
+.hv-stat-sub  { font-size: 10px; color: var(--am); }
+.hv-stat-big.hv-txt-ok   { color: var(--ok); }
+.hv-stat-big.hv-txt-warn { color: #ffb730; }
+.hv-stat-big.hv-txt-down { color: var(--err); }
+.hv-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.hv-row:last-of-type { border-bottom: none; }
+.hv-row-label { font-size: 10px; color: var(--am); }
+.hv-row-val   { font-size: 10px; font-weight: 600; color: #d0dff0; }
+.hv-bar-wrap  {
+  margin-top: 9px; height: 3px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); overflow: hidden;
+}
+.hv-bar-fill {
+  display: block; height: 100%; border-radius: inherit;
+  background: var(--acc); transition: width 420ms ease;
+}
+
+/* Legacy dot (keep for other uses) */
 .health-dot {
-  width: 7px; height: 7px;
-  border-radius: 999px;
-  display: inline-block;
-  flex-shrink: 0;
+  width: 7px; height: 7px; border-radius: 999px;
+  display: inline-block; flex-shrink: 0;
 }
-.health-dot.ok {
-  background: var(--ok);
-  animation: pulse-ok 2.6s ease infinite;
-}
+.health-dot.ok   { background: var(--ok); animation: pulse-ok 2.6s ease infinite; }
 .health-dot.down { background: var(--err); }
 
 @keyframes pulse-ok {
   0%,100% { box-shadow: 0 0 0 2px rgba(24,199,122,0.18); }
   50%      { box-shadow: 0 0 0 4px rgba(24,199,122,0.06); }
-}
-
-.health-inline-bar {
-  margin-top: 6px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.06);
-  overflow: hidden;
-}
-.health-inline-bar > span {
-  display: block; height: 100%; border-radius: inherit;
-  background: var(--acc); width: 0%;
-  transition: width 350ms ease;
 }
 
 /* ── Data List / Rounds List ─────────────────────────────────── */
@@ -1211,7 +1260,9 @@
   }
   .zone-editor-workflow { grid-template-columns: 1fr; }
   .stream-canvas-wrapper { position: relative; top: auto; }
-  .health-grid { grid-template-columns: repeat(2,1fr); }
+  .hv-services { grid-template-columns: repeat(2, 1fr); }
+  .hv-stats    { grid-template-columns: repeat(2, 1fr); }
+  .hv-sum-pills { display: none; }
 }
 
 @media (max-width: 640px) {
@@ -1226,5 +1277,7 @@
   .detection-status-grid { grid-template-columns: 1fr 1fr; }
   .ml-kpi-grid       { grid-template-columns: 1fr 1fr; }
   .user-card-top     { flex-direction: column; }
-  .health-grid       { grid-template-columns: 1fr; }
+  .hv-services { grid-template-columns: 1fr 1fr; }
+  .hv-stats    { grid-template-columns: 1fr 1fr; }
+  .hv-summary  { flex-direction: column; align-items: flex-start; gap: 8px; }
 }

@@ -8510,7 +8510,7 @@ button {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CAMERA SWITCHER — iframe + picker modal
+   CAMERA SWITCHER — iframe + picker modal with live previews
    ═══════════════════════════════════════════════════════ */
 
 /* Full-cover iframe inside stream-wrapper */
@@ -8529,118 +8529,187 @@ button {
   position: fixed;
   inset: 0;
   z-index: 1200;
-  background: rgba(0,0,0,0.82);
+  background: rgba(0,0,0,0.88);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  padding: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .cam-picker-modal.hidden { display: none; }
 
-/* Modal panel — slides up from bottom */
+/* Modal panel */
 .cam-picker-inner {
   width: 100%;
-  max-width: 560px;
-  max-height: 80vh;
-  background: var(--surface, #111);
-  border-top: 1px solid rgba(255,255,255,0.08);
+  max-width: 680px;
+  max-height: 88vh;
+  background: #0f0f0f;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-bottom: none;
   border-radius: 16px 16px 0 0;
   overflow-y: auto;
-  padding: 20px 18px 32px;
+  padding: 18px 16px 40px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
+/* Header */
 .cam-picker-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+.cam-picker-head-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 .cam-picker-title {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: var(--muted, #888);
+  color: #ccc;
+}
+.cam-picker-count {
+  font-size: 0.65rem;
+  color: var(--muted, #666);
 }
 .cam-picker-close {
   background: none;
   border: none;
-  color: var(--muted, #888);
+  color: var(--muted, #666);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.1rem;
   padding: 4px 8px;
   line-height: 1;
+  transition: color 0.1s;
 }
 .cam-picker-close:hover { color: #fff; }
 
-/* Area label */
+/* Area section */
+.cp-area-section { margin-bottom: 20px; }
 .cp-area-label {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(0,212,255,0.7);
-  margin-bottom: 8px;
-  margin-top: 4px;
+  color: rgba(0,212,255,0.65);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0,212,255,0.1);
 }
 
-/* Camera grid within an area */
+/* Camera grid */
 .cp-area-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 8px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
 }
 
 /* Camera card */
 .cp-cam-card {
   position: relative;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 8px;
-  padding: 12px 12px 10px;
+  border-radius: 10px;
+  overflow: hidden;
   cursor: pointer;
-  text-align: left;
-  transition: background 0.15s, border-color 0.15s;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  transition: border-color 0.15s, transform 0.1s;
+  outline: none;
 }
-.cp-cam-card:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.14);
-}
+.cp-cam-card:hover  { border-color: rgba(255,255,255,0.18); transform: translateY(-1px); }
+.cp-cam-card:focus  { border-color: rgba(0,212,255,0.4); }
 .cp-cam-card.cp-cam-active {
-  border-color: rgba(0,212,255,0.5);
-  background: rgba(0,212,255,0.06);
+  border-color: rgba(0,212,255,0.55);
+  box-shadow: 0 0 0 1px rgba(0,212,255,0.2);
 }
-.cp-cam-card.cp-cam-ai {
-  border-color: rgba(0,200,100,0.35);
-}
+.cp-cam-card.cp-cam-ai { border-color: rgba(0,200,100,0.3); }
 .cp-cam-card.cp-cam-ai.cp-cam-active {
-  border-color: rgba(0,200,100,0.6);
-  background: rgba(0,200,100,0.07);
+  border-color: rgba(0,200,100,0.65);
+  box-shadow: 0 0 0 1px rgba(0,200,100,0.2);
 }
 
+/* Live preview */
+.cp-preview-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  overflow: hidden;
+}
+.cp-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.cp-preview-wrap.cp-preview-loaded .cp-preview-iframe { opacity: 1; }
+.cp-preview-wrap.cp-preview-loaded .cp-preview-loader { opacity: 0; pointer-events: none; }
+
+/* Loader pulse inside preview */
+.cp-preview-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s;
+}
+.cp-preview-loader span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.08);
+  border-top-color: rgba(255,255,255,0.35);
+  animation: cp-spin 0.8s linear infinite;
+}
+@keyframes cp-spin { to { transform: rotate(360deg); } }
+
+/* Click shield — sits over iframe to capture pointer events */
+.cp-click-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+}
+
+/* Card info row */
+.cp-cam-info {
+  padding: 8px 10px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
 .cp-ai-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: rgba(0,220,120,0.9);
-  margin-bottom: 2px;
+}
+.cp-ai-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(0,220,120,0.9);
+  animation: cp-pulse 1.8s ease-in-out infinite;
+}
+@keyframes cp-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
 }
 .cp-cam-name {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #e8e8e8;
+  color: #ddd;
   line-height: 1.3;
-}
-.cp-cam-area {
-  font-size: 0.68rem;
-  color: var(--muted, #777);
 }
 
 /* Active cam label in stream UI */

@@ -1,14 +1,15 @@
 /**
  * camera-switcher.js
  * Camera picker modal triggered by the CAMERAS banner tile.
- * Loads cameras from Supabase, grouped by area.
- * Switches between HLS/AI stream (primary) and ipcamlive iframe (others).
+ * Live previews via stagger-loaded ipcamlive iframes.
+ * Click-shield div over each preview captures clicks (iframes eat pointer events).
  */
 const CameraSwitcher = (() => {
   let _cameras = [];
   let _aiAlias = null;
   let _activeAlias = null;
   let _modal = null;
+  let _previewsLoaded = false;
 
   const _AI_SHOW = ['live-video', 'detection-canvas', 'zone-canvas', 'fps-overlay'];
 
@@ -31,7 +32,7 @@ const CameraSwitcher = (() => {
     } catch {}
   }
 
-  // ── Inject iframe into stream-wrapper ────────────────────────
+  // ── Inject full-cover iframe into stream-wrapper ──────────────
   function _buildIframe() {
     const wrapper = document.querySelector('.stream-wrapper');
     if (!wrapper || document.getElementById('camera-iframe')) return;
@@ -57,17 +58,30 @@ const CameraSwitcher = (() => {
 
     let gridHtml = '';
     Object.entries(areas).forEach(([area, cams]) => {
-      gridHtml += `<div class="cp-area-label">${area}</div><div class="cp-area-grid">`;
+      gridHtml += `<div class="cp-area-section">
+        <div class="cp-area-label">${area}</div>
+        <div class="cp-area-grid">`;
       cams.forEach(c => {
         const isAI = c.is_active;
         gridHtml += `
-          <button class="cp-cam-card${isAI ? ' cp-cam-ai' : ''}" data-alias="${c.ipcam_alias}">
-            ${isAI ? '<span class="cp-ai-badge">AI LIVE</span>' : ''}
-            <span class="cp-cam-name">${c.name}</span>
-            <span class="cp-cam-area">${c.area || ''}</span>
-          </button>`;
+          <div class="cp-cam-card${isAI ? ' cp-cam-ai' : ''}" data-alias="${c.ipcam_alias}" tabindex="0" role="button" aria-label="${c.name}">
+            <div class="cp-preview-wrap">
+              <iframe class="cp-preview-iframe"
+                data-alias="${c.ipcam_alias}"
+                data-host="${c.player_host || 'g3'}"
+                allow="autoplay"
+                scrolling="no"
+                frameborder="0"></iframe>
+              <div class="cp-click-shield"></div>
+              <div class="cp-preview-loader"><span></span></div>
+            </div>
+            <div class="cp-cam-info">
+              ${isAI ? '<span class="cp-ai-badge"><span class="cp-ai-dot"></span>AI LIVE</span>' : ''}
+              <span class="cp-cam-name">${c.name}</span>
+            </div>
+          </div>`;
       });
-      gridHtml += `</div>`;
+      gridHtml += `</div></div>`;
     });
 
     const modal = document.createElement('div');
@@ -76,7 +90,10 @@ const CameraSwitcher = (() => {
     modal.innerHTML = `
       <div class="cam-picker-inner">
         <div class="cam-picker-head">
-          <span class="cam-picker-title">CAMERA SELECT</span>
+          <div class="cam-picker-head-left">
+            <span class="cam-picker-title">CAMERA SELECT</span>
+            <span class="cam-picker-count">${_cameras.length} feeds</span>
+          </div>
           <button class="cam-picker-close" aria-label="Close">✕</button>
         </div>
         <div class="cam-picker-grid">${gridHtml}</div>
@@ -86,18 +103,22 @@ const CameraSwitcher = (() => {
     _modal = modal;
 
     modal.querySelector('.cam-picker-close').addEventListener('click', _closeModal);
-    modal.addEventListener('click', e => { if (e.target === modal) _closeModal(); });
-    modal.querySelectorAll('.cp-cam-card').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _switchTo(btn.dataset.alias);
-        _closeModal();
-      });
+    modal.addEventListener('click', e => {
+      if (e.target === modal) { _closeModal(); return; }
+      const card = e.target.closest('.cp-cam-card');
+      if (card) { _switchTo(card.dataset.alias); _closeModal(); }
+    });
+    modal.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const card = e.target.closest('.cp-cam-card');
+        if (card) { _switchTo(card.dataset.alias); _closeModal(); }
+      }
+      if (e.key === 'Escape') _closeModal();
     });
   }
 
   // ── Wire the CAMERAS banner tile (rendered dynamically) ───────
   function _wireCameraTile() {
-    // Use event delegation — tile is re-rendered by banners.js
     document.addEventListener('click', e => {
       if (e.target.closest('#bnr-camera-tile')) _openModal();
     });
@@ -106,17 +127,35 @@ const CameraSwitcher = (() => {
   function _openModal() {
     if (!_modal) return;
     _modal.classList.remove('hidden');
-    // Highlight current camera
-    _modal.querySelectorAll('.cp-cam-card').forEach(btn => {
-      btn.classList.toggle('cp-cam-active', btn.dataset.alias === _activeAlias);
+    document.body.style.overflow = 'hidden';
+
+    // Highlight current selection
+    _modal.querySelectorAll('.cp-cam-card').forEach(card => {
+      card.classList.toggle('cp-cam-active', card.dataset.alias === _activeAlias);
     });
+
+    // Stagger-load previews (only once)
+    if (!_previewsLoaded) {
+      _previewsLoaded = true;
+      _modal.querySelectorAll('.cp-preview-iframe').forEach((iframe, i) => {
+        setTimeout(() => {
+          const host = iframe.dataset.host || 'g3';
+          const alias = iframe.dataset.alias;
+          iframe.src = `https://${host}.ipcamlive.com/player/player.php?alias=${alias}&autoplay=1`;
+          iframe.addEventListener('load', () => {
+            iframe.closest('.cp-preview-wrap')?.classList.add('cp-preview-loaded');
+          }, { once: true });
+        }, i * 500);
+      });
+    }
   }
 
   function _closeModal() {
     _modal?.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
-  // ── Switch stream ─────────────────────────────────────────────
+  // ── Switch main stream ────────────────────────────────────────
   function _switchTo(alias) {
     if (alias === _activeAlias) return;
     _activeAlias = alias;
@@ -142,10 +181,8 @@ const CameraSwitcher = (() => {
       }
     }
 
-    // Hide offline overlay when on non-AI cam
     if (!isAI) document.getElementById('stream-offline-overlay')?.classList.add('hidden');
 
-    // Update current cam name in stream UI
     const label = document.getElementById('active-cam-label');
     if (label) label.textContent = cam.name;
 

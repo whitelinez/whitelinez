@@ -37,11 +37,7 @@
     "functions":  {
                       "api/**/*.js":  {
                                           "memory":  128,
-                                          "maxDuration":  10
-                                      },
-                      "api/stream-ts.js":  {
-                                               "memory":  128,
-                                               "maxDuration":  25
-                                           }
+                                          "maxDuration":  25
+                                      }
                   }
 }

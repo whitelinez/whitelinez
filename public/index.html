@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>AI Traffic Jamaica — Live CCTV Vehicle Detection &amp; Prediction Game</title>
 
   <!-- ── SEO ──────────────────────────────────────────────────────────────── -->
@@ -78,7 +78,8 @@
   <link rel="shortcut icon" href="/img/gfdaw-removebg-preview.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" />
+  <meta name="theme-color" content="#080C14" />
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/vercel-analytics-init.js"></script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -86,14 +87,34 @@
 <body class="dark">
 
   <header class="site-header">
+    <!-- Left: Logo -->
     <a href="/" class="logo" id="site-logo">
       <span class="logo-img-wrap">
-        <img class="logo-icon" src="/img/iconinframes.png" alt="AI TRAFFIC JAMAICA" />
+        <img class="logo-icon" src="/img/iconinframes.png" alt="TRAFFIC.AI JAMAICA" />
         <img class="logo-ai-frame" src="/img/aiframes.png" alt="" aria-hidden="true" />
       </span>
-      <span class="logo-title">AI TRAFFIC JAMAICA</span>
+      <span class="logo-title-block">
+        <span class="logo-part-main">TRAFFIC.AI</span>
+        <span class="logo-part-loc">JAMAICA</span>
+      </span>
     </a>
-    <nav>
+
+    <!-- Centre: Live context -->
+    <div class="header-live-ctx">
+      <button id="header-cam-chip" class="header-cam-chip" title="Switch camera">
+        <span class="header-cam-dot"></span>
+        <span id="header-cam-name" class="header-cam-name">Loading…</span>
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <span id="header-watching" class="header-watching hidden">
+        <span class="header-watching-dot"></span>
+        <span id="header-watching-val">0</span> watching
+      </span>
+    </div>
+
+    <!-- Right: Actions + auth -->
+    <nav class="header-nav">
+      <button id="header-play-cta" class="header-play-btn" title="Make a prediction">PLAY</button>
       <span id="nav-balance" class="nav-balance hidden">
         <span id="nav-balance-val">0</span><span class="nav-balance-label">PTS</span>
       </span>
@@ -115,8 +136,6 @@
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true">
             <path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4" stroke-width="1.9"/>
             <circle cx="12" cy="12" r="2.2" stroke-width="1.6"/>
-            <line x1="12" y1="9.5" x2="12" y2="9.8" stroke-width="1.4"/><line x1="12" y1="14.2" x2="12" y2="14.5" stroke-width="1.4"/>
-            <line x1="9.5" y1="12" x2="9.8" y2="12" stroke-width="1.4"/><line x1="14.2" y1="12" x2="14.5" y2="12" stroke-width="1.4"/>
           </svg>
         </a>
         <a href="/account" class="nav-icon-btn nav-avatar-btn" title="Account">
@@ -126,6 +145,9 @@
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
       </span>
+      <button id="btn-gov-mode" class="nav-icon-btn nav-gov-btn" title="Analytics view">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><polyline points="7 10 10 7 13 10 17 6"/></svg>
+      </button>
     </nav>
   </header>
 
@@ -202,153 +224,135 @@
 
         <div id="count-widget" class="count-widget">
 
-          <!-- Normal mode: global total + breakdown -->
+          <!-- Normal mode: vehicle breakdown strip -->
           <div id="cw-normal" class="cw-normal-wrap">
-            <div class="count-widget-total">
-              <span id="cw-total">-</span>
-              <span id="cw-total-label" class="cw-label">TOTAL</span>
-            </div>
+            <span class="cw-vehicle-item">
+              <svg class="vehicle-icon car cw-vehicle-icon" viewBox="0 0 22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Cars">
+                <path d="M1 8h20M4 8l2.5-4.5a1 1 0 0 1 .9-.5h7.2a1 1 0 0 1 .9.5L18 8"/>
+                <rect x="1" y="8" width="20" height="2.5" rx="0.5"/>
+                <circle cx="6" cy="11" r="1.2"/><circle cx="16" cy="11" r="1.2"/>
+              </svg>
+              <span id="cw-cars" class="cw-vehicle-num">-</span>
+            </span>
+            <span class="cw-vehicle-item">
+              <svg class="vehicle-icon truck cw-vehicle-icon" viewBox="0 0 24 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Trucks">
+                <rect x="1" y="4" width="14" height="7" rx="0.5"/>
+                <path d="M15 6.5h4.5l2.5 2.5v2.5H15z"/>
+                <circle cx="5.5" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/>
+                <line x1="1" y1="7.5" x2="15" y2="7.5"/>
+              </svg>
+              <span id="cw-trucks" class="cw-vehicle-num">-</span>
+            </span>
+            <span class="cw-vehicle-item">
+              <svg class="vehicle-icon bus cw-vehicle-icon" viewBox="0 0 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Buses">
+                <rect x="1" y="2" width="20" height="8.5" rx="1"/>
+                <line x1="1" y1="5.5" x2="21" y2="5.5"/>
+                <line x1="7" y1="2" x2="7" y2="10.5"/><line x1="14" y1="2" x2="14" y2="10.5"/>
+                <circle cx="6" cy="12" r="1.2"/><circle cx="16" cy="12" r="1.2"/>
+              </svg>
+              <span id="cw-buses" class="cw-vehicle-num">-</span>
+            </span>
+            <span class="cw-vehicle-item">
+              <svg class="vehicle-icon moto cw-vehicle-icon" viewBox="0 0 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Motos">
+                <circle cx="5" cy="10" r="2.8"/><circle cx="17" cy="10" r="2.8"/>
+                <path d="M5 10 L9 5 L13 5 L17 10"/>
+                <path d="M13 5 L15 3 L18 3"/><line x1="9" y1="5" x2="9" y2="3"/>
+              </svg>
+              <span id="cw-motos" class="cw-vehicle-num">-</span>
+            </span>
           </div>
 
           <!-- Guess mode: X/Y progress toward target -->
           <div id="cw-guess-mode" class="cw-guess-mode hidden">
+            <span class="cw-gm-label">MY GUESS</span>
             <div class="cw-gm-nums">
               <span id="cw-gm-current">0</span>
               <span class="cw-gm-sep">/</span>
               <span id="cw-gm-target">—</span>
             </div>
-            <span class="cw-gm-label">MY GUESS</span>
             <div class="cw-gm-bar-wrap">
               <div id="cw-gm-bar" class="cw-gm-bar"></div>
             </div>
           </div>
 
-          <div class="count-widget-breakdown">
-            <!-- Car: sleek sedan side-profile -->
-            <span class="cw-item">
-              <svg class="vehicle-icon car" viewBox="0 0 22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Cars">
-                <path d="M1 8h20M4 8l2.5-4.5a1 1 0 0 1 .9-.5h7.2a1 1 0 0 1 .9.5L18 8"/>
-                <rect x="1" y="8" width="20" height="2.5" rx="0.5"/>
-                <circle cx="6" cy="11" r="1.2"/>
-                <circle cx="16" cy="11" r="1.2"/>
-              </svg>
-              <strong id="cw-cars">-</strong>
-            </span>
-            <!-- Truck: cab + trailer -->
-            <span class="cw-item">
-              <svg class="vehicle-icon truck" viewBox="0 0 24 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Trucks">
-                <rect x="1" y="4" width="14" height="7" rx="0.5"/>
-                <path d="M15 6.5h4.5l2.5 2.5v2.5H15z"/>
-                <circle cx="5.5" cy="12" r="1.2"/>
-                <circle cx="18.5" cy="12" r="1.2"/>
-                <line x1="1" y1="7.5" x2="15" y2="7.5"/>
-              </svg>
-              <strong id="cw-trucks">-</strong>
-            </span>
-            <!-- Bus: tall rectangular body -->
-            <span class="cw-item">
-              <svg class="vehicle-icon bus" viewBox="0 0 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Buses">
-                <rect x="1" y="2" width="20" height="8.5" rx="1"/>
-                <line x1="1" y1="5.5" x2="21" y2="5.5"/>
-                <line x1="7" y1="2" x2="7" y2="10.5"/>
-                <line x1="14" y1="2" x2="14" y2="10.5"/>
-                <circle cx="6" cy="12" r="1.2"/>
-                <circle cx="16" cy="12" r="1.2"/>
-              </svg>
-              <strong id="cw-buses">-</strong>
-            </span>
-            <!-- Moto: two wheels + minimal frame -->
-            <span class="cw-item">
-              <svg class="vehicle-icon moto" viewBox="0 0 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Motorcycles">
-                <circle cx="5" cy="10" r="2.8"/>
-                <circle cx="17" cy="10" r="2.8"/>
-                <path d="M5 10 L9 5 L13 5 L17 10"/>
-                <path d="M13 5 L15 3 L18 3"/>
-                <line x1="9" y1="5" x2="9" y2="3"/>
-              </svg>
-              <strong id="cw-motos">-</strong>
-            </span>
+          <!-- Right side: total + status -->
+          <div class="cw-total-wrap">
+            <span class="cw-total-label">TOTAL</span>
+            <span id="cw-total" class="cw-total-val">-</span>
+            <div id="cw-ws-dot" class="cw-ws-dot cw-ws-err"></div>
           </div>
-          <div id="cw-ws-dot" class="cw-ws-dot cw-ws-err"></div>
-          <div class="cw-cam-footer">
-            <span id="cw-fps" class="cw-fps">--.- fps</span>
-            <span id="cw-cam-label" class="cw-cam-label hidden"></span>
-            <span id="cw-snapshot-badge" class="cw-snapshot-badge hidden">SNAPSHOT</span>
-          </div>
+
+          <!-- Hidden elements (JS writes to these; kept for compat) -->
+          <span id="cw-fps" class="cw-fps" aria-hidden="true">--.- fps</span>
+          <span id="cw-cam-label" class="cw-cam-label hidden"></span>
+          <span id="cw-snapshot-badge" class="cw-snapshot-badge hidden">SNAPSHOT</span>
         </div>
 
-        <div id="ml-hud" class="ml-hud">
-          <!-- Collapsed state: only this icon is visible; click to expand -->
-          <img src="/img/aiframes.png" class="ml-hud-collapsed-ico" alt="Show Vision HUD" title="Show Vision HUD" aria-label="Show Vision HUD" />
-
-          <div class="ml-hud-head" title="Minimise Vision HUD">
-            <span class="ml-hud-title">VISION HUD</span>
-            <span id="ml-hud-level" class="ml-hud-state">
-              <svg id="ml-hud-wx-svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" style="width:9px;height:9px;flex-shrink:0"><path id="ml-hud-wx-path" d=""/></svg>
-              <span id="ml-hud-wx-text">Idle</span>
-            </span>
+        <div id="ml-hud" class="ml-hud" title="Toggle AI details">
+          <!-- Compact view (default) -->
+          <div class="aip-compact">
+            <div class="aip-live-row">
+              <span class="aip-pulse-dot"></span>
+              <span class="aip-live-label">AI LIVE</span>
+              <span class="aip-expand-ico" aria-hidden="true">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </div>
+            <p id="ml-hud-msg" class="aip-stats-row">Initializing…</p>
+            <div class="aip-load-bar-wrap">
+              <div id="aip-load-fill" class="aip-load-fill" style="width:0%"></div>
+            </div>
+            <span id="ml-hud-scene-conf" class="aip-load-label">LIGHT</span>
           </div>
 
-          <p id="ml-hud-msg" class="ml-hud-msg">Initializing live scene scan...</p>
-          <p id="ml-hud-bot" class="ml-hud-bot"></p>
-          <p id="ml-hud-verbose" class="ml-hud-verbose">Scene lock scanning | retrain idle | scene --</p>
-
-          <div class="ml-hud-chips">
-            <span class="ml-chip">
-              <span class="ml-chip-label">
-                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M3 12h18"></path>
-                  <path d="M12 3a14 14 0 0 1 0 18"></path>
-                </svg>
-                Live Objects
+          <!-- Expanded view (toggled by click) -->
+          <div class="aip-expanded">
+            <div class="aip-exp-head">
+              <span class="ml-hud-title">VISION HUD</span>
+              <span id="ml-hud-level" class="ml-hud-state">
+                <svg id="ml-hud-wx-svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" style="width:9px;height:9px;flex-shrink:0"><path id="ml-hud-wx-path" d=""/></svg>
+                <span id="ml-hud-wx-text">Idle</span>
               </span>
-              <strong id="ml-hud-profile">0</strong>
-            </span>
-            <span class="ml-chip">
-              <span class="ml-chip-label">
-                <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M12 7v5l3 2"></path>
-                </svg>
-                Confidence
+            </div>
+            <p id="ml-hud-bot" class="ml-hud-bot"></p>
+            <p id="ml-hud-verbose" class="ml-hud-verbose">Scene lock scanning | retrain idle | scene --</p>
+            <div class="ml-hud-chips">
+              <span class="ml-chip">
+                <span class="ml-chip-label">Live Objects</span>
+                <strong id="ml-hud-profile">0</strong>
               </span>
-              <strong id="ml-hud-delay">0%</strong>
-            </span>
-          </div>
-
-          <div class="ml-hud-cells">
-            <div class="ml-cell-row">
-              <span class="ml-cell-label">Detection Rate</span>
-              <strong id="ml-hud-conf">0.0/m</strong>
-              <div class="ml-cell-track">
-                <div id="ml-hud-conf-bar" class="ml-cell-fill" style="--pct:0"></div>
+              <span class="ml-chip">
+                <span class="ml-chip-label">Confidence</span>
+                <strong id="ml-hud-delay">0%</strong>
+              </span>
+            </div>
+            <div class="ml-hud-cells">
+              <div class="ml-cell-row">
+                <span class="ml-cell-label">Detection Rate</span>
+                <strong id="ml-hud-conf">0.0/m</strong>
+                <div class="ml-cell-track">
+                  <div id="ml-hud-conf-bar" class="ml-cell-fill" style="--pct:0"></div>
+                </div>
+              </div>
+              <div class="ml-cell-row ml-cell-row-traffic">
+                <span class="ml-cell-label">Traffic Load</span>
+                <span id="ml-hud-traffic-msg" class="ml-cell-note">Waiting for data…</span>
               </div>
             </div>
-            <div class="ml-cell-row ml-cell-row-traffic">
-              <span class="ml-cell-label">Traffic Load</span>
-              <strong id="ml-hud-scene-conf">Light</strong>
-              <span id="ml-hud-traffic-msg" class="ml-cell-note">Waiting for enough frames to estimate live traffic load.</span>
+            <div class="ml-hud-metrics">
+              <span>Frames <strong id="ml-hud-frames">0</strong></span>
+              <span>Objects <strong id="ml-hud-dets">0</strong></span>
             </div>
           </div>
 
-          <div class="ml-hud-metrics">
-            <span>
-              <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="14" rx="2"></rect>
-                <path d="M8 20h8"></path>
-              </svg>
-              Frames <strong id="ml-hud-frames">0</strong>
-            </span>
-            <span>
-              <svg class="ml-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="8" cy="8" r="3"></circle>
-                <circle cx="16" cy="14" r="3"></circle>
-                <path d="M5 19c1.5-2 4.5-2 6 0"></path>
-              </svg>
-              Objects <strong id="ml-hud-dets">0</strong>
-            </span>
-          </div>
+          <!-- Hidden compat element -->
+          <img src="/img/aiframes.png" class="ml-hud-collapsed-ico" alt="" aria-hidden="true" style="display:none" />
+        </div>
+
+        <!-- Scene chips: weather + location, bottom-right above count strip -->
+        <div id="scene-chips" class="scene-chips">
+          <span id="chip-weather" class="scene-chip hidden"></span>
+          <span id="chip-location" class="scene-chip hidden"></span>
         </div>
 
         <div id="stream-chat-overlay" class="stream-chat-overlay">
@@ -360,14 +364,16 @@
         </div>
 
       </div>
+      <!-- Camera pill strip (populated by JS, hidden when ≤1 camera) -->
+      <div id="cam-pill-strip" class="cam-pill-strip" aria-label="Camera selector"></div>
     </section>
 
     <aside class="sidebar">
       <div class="sidebar-tabs">
-        <button class="tab-btn active" data-tab="markets">Rounds</button>
-        <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
-        <button class="tab-btn" data-tab="chat">Chat <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span></button>
-        <button class="tab-btn" data-tab="ml-showcase">AI</button>
+        <button class="tab-btn active" data-tab="markets">PLAY</button>
+        <button class="tab-btn" data-tab="leaderboard">RANKINGS</button>
+        <button class="tab-btn" data-tab="chat">LIVE <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span></button>
+        <button class="tab-btn" data-tab="ml-showcase">INTEL</button>
       </div>
 
       <div id="tab-markets" class="tab-content active">
@@ -412,73 +418,61 @@
         </p>
       </div>
 
-      <div id="tab-ml-showcase" class="tab-content">
+      <div id="tab-ml-showcase" class="tab-content intel-panel">
 
-        <!-- Banner + console unified card -->
-        <div class="ai-unit">
-          <div class="ai-banner-wrap">
-            <img class="ai-banner-img" src="/img/ai%20banner.png" alt="Live AI Engine" />
+        <div class="intel-header">
+          <div class="intel-title">TRAFFIC INTELLIGENCE</div>
+          <div class="intel-status-row">
+            <span class="intel-online-dot"></span>
+            <span class="intel-online-label">ONLINE</span>
           </div>
+        </div>
 
-          <!-- Merged console — connected directly below banner -->
-          <div class="ai-console ai-console-attached">
-            <div class="ai-console-bar yolo-label yolo-label-green">
-              <span class="ai-con-prompt">&gt;_</span>
-              <span class="ai-con-title">AI ENGINE — LIVE FEED</span>
-              <span class="ai-con-online"><span class="mls-pulse"></span>ONLINE</span>
-            </div>
-            <div class="ai-console-body">
-              <div class="ai-con-line">
-                <span class="ai-con-label">LIVE OBJECTS (SESSION)</span>
-                <span id="mls-live-objects" class="ai-con-val primary">0</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">RATE</span>
-                <span id="mls-live-rate" class="ai-con-val dim">0.0 objects/min</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">LAST TELEMETRY</span>
-                <span id="mls-last-seen" class="ai-con-val dim">Waiting...</span>
-              </div>
-              <div class="ai-con-line">
-                <span class="ai-con-label">ROWS (24H)</span>
-                <span id="mls-rows-24h" class="ai-con-val primary">0</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">MODEL</span>
-                <span id="mls-model-name" class="ai-con-val dim">-</span>
-              </div>
-              <div class="ai-con-divider"></div>
-              <div class="ai-con-line">
-                <span class="ai-con-label">LIFETIME VEHICLES</span>
-                <span id="mls-lifetime-total" class="ai-con-val primary">—</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">CARS</span>
-                <span id="mls-lt-car" class="ai-con-val dim">—</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">TRUCKS</span>
-                <span id="mls-lt-truck" class="ai-con-val dim">—</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">BUSES</span>
-                <span id="mls-lt-bus" class="ai-con-val dim">—</span>
-              </div>
-              <div class="ai-con-line sub">
-                <span class="ai-con-label">MOTORCYCLES</span>
-                <span id="mls-lt-moto" class="ai-con-val dim">—</span>
-              </div>
-              <div class="ai-con-divider"></div>
-              <div class="ai-con-stream-head">
-                <span class="mls-pulse"></span>
-                <span>CAPTURE STREAM</span>
-              </div>
-            </div>
-            <div id="mls-stream-list" class="mls-stream-list">
-              <p class="loading">Collecting live AI events...</p>
-            </div>
-          </div>
+        <!-- SESSION section -->
+        <div class="intel-section-head">SESSION</div>
+        <div class="intel-stat-row">
+          <span class="intel-stat-key">Vehicles counted</span>
+          <span id="mls-lifetime-total" class="intel-stat-val">—</span>
+        </div>
+        <div class="intel-stat-row">
+          <span class="intel-stat-key">Detection rate</span>
+          <span id="mls-live-rate" class="intel-stat-val intel-stat-muted">—</span>
+        </div>
+        <div class="intel-stat-row">
+          <span class="intel-stat-key">Live objects</span>
+          <span id="mls-live-objects" class="intel-stat-val">—</span>
+        </div>
+
+        <!-- Breakdown row -->
+        <div class="intel-breakdown">
+          <span class="intel-bd-item">🚗 <span id="mls-lt-car">—</span></span>
+          <span class="intel-bd-item">🚛 <span id="mls-lt-truck">—</span></span>
+          <span class="intel-bd-item">🚌 <span id="mls-lt-bus">—</span></span>
+          <span class="intel-bd-item">🏍 <span id="mls-lt-moto">—</span></span>
+        </div>
+
+        <!-- AI MODEL section -->
+        <div class="intel-section-head">AI MODEL</div>
+        <div class="intel-stat-row">
+          <span class="intel-stat-key">Model</span>
+          <span id="mls-model-name" class="intel-stat-val intel-stat-muted">—</span>
+        </div>
+        <div class="intel-stat-row">
+          <span class="intel-stat-key">Updated</span>
+          <span id="mls-last-seen" class="intel-stat-val intel-stat-muted">—</span>
+        </div>
+
+        <!-- DATA section -->
+        <div class="intel-section-head">DATA</div>
+        <div class="intel-stat-row">
+          <span class="intel-stat-key">Events (24h)</span>
+          <span id="mls-rows-24h" class="intel-stat-val">—</span>
+        </div>
+
+        <!-- LIVE STREAM section -->
+        <div class="intel-section-head">LIVE STREAM</div>
+        <div id="mls-stream-list" class="intel-stream-list">
+          <p class="loading" style="font-size:10px;color:var(--muted);padding:8px 0;">Collecting events…</p>
         </div>
 
       </div>
@@ -488,21 +482,21 @@
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           Back
         </button>
-        <h3 id="bp-title">Traffic Guess</h3>
+        <h3 id="bp-title" class="bp-prediction-title">MAKE YOUR PREDICTION</h3>
         <p id="bp-market-label" class="bp-market-label"></p>
 
         <div class="bp-field">
           <label>Observation Window</label>
           <div class="bp-pills" id="bp-window-pills">
-            <button class="pill active" data-val="60">1 min</button>
-            <button class="pill" data-val="180">3 min</button>
-            <button class="pill" data-val="300">5 min</button>
+            <button class="pill active" data-val="60">1 MIN</button>
+            <button class="pill" data-val="180">3 MIN</button>
+            <button class="pill" data-val="300">5 MIN</button>
           </div>
         </div>
 
         <div class="bp-field">
-          <label for="bp-count">Your Guess</label>
-          <p class="bp-field-hint">How many vehicles will pass in your window?</p>
+          <label for="bp-count">Your Prediction</label>
+          <p class="bp-field-hint">How many vehicles will cross the zone?</p>
           <div class="bp-count-row">
             <button class="btn-count-adj" id="bp-count-minus">−</button>
             <input id="bp-count" type="number" min="0" max="10000" value="5" />
@@ -510,8 +504,15 @@
           </div>
         </div>
 
-        <!-- Scoring explanation -->
-        <div class="bp-score-card">
+        <!-- Prize hint (shown before submit) -->
+        <div id="bp-prize-hint" class="bp-prize-hint">
+          <span class="bp-ph-row"><span class="bp-ph-badge bp-ph-exact">EXACT</span> Perfect match → Maximum pts</span>
+          <span class="bp-ph-row"><span class="bp-ph-badge bp-ph-close">CLOSE</span> Within ±3 → Partial pts</span>
+          <span class="bp-ph-row"><span class="bp-ph-badge bp-ph-miss">MISS</span> Too far off → 0 pts</span>
+        </div>
+
+        <!-- Scoring explanation (kept for compat, hidden) -->
+        <div class="bp-score-card" style="display:none;">
           <div class="bp-sc-row bp-sc-exact">
             <span class="bp-sc-badge">EXACT</span>
             <span class="bp-sc-desc">Perfect match → Maximum points</span>
@@ -527,7 +528,7 @@
         </div>
 
         <p id="bp-error" class="bp-error" role="alert"></p>
-        <button id="bp-submit" class="btn-primary btn-full">Submit Guess</button>
+        <button id="bp-submit" class="btn-primary btn-full">Submit Prediction</button>
 
         <div id="bp-active-bet" class="bp-active-bet hidden">
           <div class="bpa-header">
@@ -755,6 +756,89 @@
       <p class="cam-modal-hint">Click <strong>Preview</strong> to watch a live feed before switching. Click <strong>Switch Here</strong> to change the main stream.</p>
       <div id="cam-modal-body" class="cam-modal-body">
         <p class="cam-modal-empty">Loading cameras...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Onboarding Overlay (first-visit) ────────────────────────────────── -->
+  <div id="onboarding-overlay" class="onboarding-overlay hidden" role="dialog" aria-modal="true" aria-label="Welcome">
+    <div class="ob-inner">
+      <button id="ob-skip" class="ob-skip" aria-label="Skip">Skip intro</button>
+      <div id="ob-step-1" class="ob-step active">
+        <div class="ob-step-num">1 OF 3</div>
+        <h2 class="ob-title">Watch real traffic.</h2>
+        <p class="ob-body">AI counts every vehicle in real time on a live Jamaican road camera. The detection zone? Every vehicle that crosses it — the AI sees it.</p>
+      </div>
+      <div id="ob-step-2" class="ob-step">
+        <div class="ob-step-num">2 OF 3</div>
+        <h2 class="ob-title">A round opens.</h2>
+        <p class="ob-body">Predict how many vehicles will cross in 1, 3, or 5 minutes. Pick your window and lock in your number before the countdown ends.</p>
+      </div>
+      <div id="ob-step-3" class="ob-step">
+        <div class="ob-step-num">3 OF 3</div>
+        <h2 class="ob-title">The AI counts. You score.</h2>
+        <p class="ob-body">Exact prediction scores the most. Within ±3 earns partial points. Miss and you get nothing. Climb the leaderboard across multiple rounds.</p>
+      </div>
+      <div class="ob-nav">
+        <div class="ob-dots">
+          <span class="ob-dot active" data-step="1"></span>
+          <span class="ob-dot" data-step="2"></span>
+          <span class="ob-dot" data-step="3"></span>
+        </div>
+        <button id="ob-next" class="ob-next">NEXT →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Government / Analytics Mode Overlay ──────────────────────────────── -->
+  <div id="gov-overlay" class="gov-overlay hidden" role="dialog" aria-modal="true" aria-label="Traffic Analytics">
+    <div class="gov-header">
+      <div>
+        <div class="gov-title">TRAFFIC INTELLIGENCE — LIVE</div>
+        <div class="gov-subtitle" id="gov-cam-subtitle">Loading feed…</div>
+      </div>
+      <button id="btn-close-gov" class="gov-close-btn">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4L4 12M4 4l8 8"/></svg>
+        EXIT ANALYTICS
+      </button>
+    </div>
+    <div class="gov-body">
+      <div class="gov-video-col">
+        <div id="gov-video-slot" class="gov-video-slot" aria-label="Live feed"></div>
+        <div class="gov-stat-grid">
+          <div class="gov-stat-card">
+            <div id="gov-total" class="gov-stat-val">—</div>
+            <div class="gov-stat-label">Vehicles Today</div>
+          </div>
+          <div class="gov-stat-card">
+            <div id="gov-rate" class="gov-stat-val">—</div>
+            <div class="gov-stat-label">Detection Rate</div>
+          </div>
+          <div class="gov-stat-card">
+            <div id="gov-load" class="gov-stat-val">—</div>
+            <div class="gov-stat-label">Traffic Load</div>
+          </div>
+          <div class="gov-stat-card">
+            <div id="gov-scene" class="gov-stat-val">—</div>
+            <div class="gov-stat-label">Scene</div>
+          </div>
+        </div>
+      </div>
+      <div class="gov-data-col">
+        <div class="gov-section-head">VEHICLE BREAKDOWN</div>
+        <div class="gov-breakdown">
+          <div class="gov-bd-row">🚗 Cars <span id="gov-cars">—</span></div>
+          <div class="gov-bd-row">🚛 Trucks <span id="gov-trucks">—</span></div>
+          <div class="gov-bd-row">🚌 Buses <span id="gov-buses">—</span></div>
+          <div class="gov-bd-row">🏍 Motos <span id="gov-motos">—</span></div>
+        </div>
+        <div class="gov-section-head">AI SYSTEM</div>
+        <div class="gov-sysinfo">
+          <div class="gov-sys-row"><span>Model</span><span id="gov-model">—</span></div>
+          <div class="gov-sys-row"><span>Last update</span><span id="gov-last">—</span></div>
+          <div class="gov-sys-row"><span>Camera</span><span id="gov-cam-name">—</span></div>
+        </div>
+        <div class="gov-attr">Powered by YOLO computer vision · Real-time edge inference</div>
       </div>
     </div>
   </div>

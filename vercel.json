@@ -3,6 +3,10 @@
     "cleanUrls": true,
     "rewrites":  [
                      {
+                         "source":  "/api/admin/ml-:slug",
+                         "destination":  "/api/admin/ml?_route=:slug"
+                     },
+                     {
                          "source":  "/api/(.*)",
                          "destination":  "/api/$1"
                      }

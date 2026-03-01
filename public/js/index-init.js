@@ -318,6 +318,19 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     MlOverlay.resetForNewScene();
     // Immediately reload detection zones + landmarks for the switched-to camera
     ZoneOverlay.reloadZones(alias || null);
+    // Update header cam chip label
+    const chipNameEl = document.getElementById("header-cam-name");
+    if (chipNameEl && alias) chipNameEl.textContent = alias;
+    // Update scene chip location
+    const chipLocEl = document.getElementById("chip-location");
+    if (chipLocEl && alias) {
+      chipLocEl.textContent = "📍 " + alias;
+      chipLocEl.classList.remove("hidden");
+    }
+    // Update active pill
+    document.querySelectorAll(".cam-pill").forEach(p => {
+      p.classList.toggle("active", (p.dataset.alias || "") === (alias || ""));
+    });
   });
 
   // Stream offline overlay + camera failover
@@ -465,6 +478,56 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     LiveBet.onBetResolved(e.detail);
     refreshNavBalance();
   });
+
+  // ── Header cam chip — initial set from loaded camera list ──────────────────
+  {
+    const firstCam = _streamCameras[0];
+    if (firstCam) {
+      const chipNameEl = document.getElementById("header-cam-name");
+      if (chipNameEl) chipNameEl.textContent = firstCam.ipcam_alias || "Live Camera";
+      const chipLocEl = document.getElementById("chip-location");
+      if (chipLocEl) {
+        chipLocEl.textContent = "📍 " + (firstCam.ipcam_alias || "Jamaica");
+        chipLocEl.classList.remove("hidden");
+      }
+    }
+  }
+
+  // ── Camera pill strip render ────────────────────────────────────────────────
+  {
+    const pillStrip = document.getElementById("cam-pill-strip");
+    if (pillStrip && _streamCameras.length > 0) {
+      const firstAlias = _streamCameras[0]?.ipcam_alias || "";
+      pillStrip.innerHTML = _streamCameras.map(c => {
+        const alias = c.ipcam_alias || "";
+        return `<button class="cam-pill${alias === firstAlias ? ' active' : ''}" data-alias="${alias}">
+          <span class="cam-pill-dot"></span>${alias || "Camera"}
+        </button>`;
+      }).join("");
+      if (_streamCameras.length < 2) pillStrip.style.display = "none";
+      pillStrip.addEventListener("click", (e) => {
+        const pill = e.target.closest(".cam-pill");
+        if (!pill || pill.classList.contains("active")) return;
+        const alias = pill.dataset.alias || "";
+        if (alias) Stream.setAlias(alias);
+      });
+    }
+  }
+
+  // ── Health fetch — watching count ─────────────────────────────────────────
+  try {
+    const hRes = await fetch("/api/health");
+    if (hRes.ok) {
+      const hData = await hRes.json();
+      const watchers = Number(hData.total_ws_connections || 0);
+      const watchEl = document.getElementById("header-watching");
+      const watchValEl = document.getElementById("header-watching-val");
+      if (watchEl && watchers > 0) {
+        if (watchValEl) watchValEl.textContent = watchers;
+        watchEl.classList.remove("hidden");
+      }
+    }
+  } catch { /* non-critical */ }
 })();
 
 
@@ -777,6 +840,294 @@ function _connectUserWs(session) {
       if (errorEl) errorEl.textContent = err.message || "Registration failed.";
       submitBtn.disabled = false;
       submitBtn.textContent = "Create Account";
+    }
+  });
+}());
+
+// ── Header PLAY CTA ──────────────────────────────────────────────────────────
+(function _initPlayCta() {
+  const btn = document.getElementById("header-play-cta");
+  if (!btn) return;
+
+  // Update button state when a round opens / closes
+  function _syncPlayBtn() {
+    const roundOpen = !!document.querySelector(".bp-panel-active, #bet-panel:not(.hidden)");
+    btn.classList.toggle("round-open", roundOpen);
+    btn.textContent = roundOpen ? "PREDICT NOW" : "PLAY";
+  }
+
+  btn.addEventListener("click", () => {
+    // Scroll sidebar to PLAY tab
+    const playTab = document.querySelector('.tab-btn[data-tab="markets"]');
+    if (playTab) playTab.click();
+    document.getElementById("sidebar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  window.addEventListener("round:opened",  _syncPlayBtn);
+  window.addEventListener("round:closed",  _syncPlayBtn);
+  window.addEventListener("bet:placed",    _syncPlayBtn);
+}());
+
+
+// ── Government Mode Overlay ──────────────────────────────────────────────────
+(function _initGovMode() {
+  const govOverlay  = document.getElementById("gov-overlay");
+  const openBtn     = document.getElementById("btn-gov-mode");
+  const closeBtn    = document.getElementById("btn-close-gov");
+  const videoSlot   = document.getElementById("gov-video-slot");
+  const liveVideo   = document.getElementById("live-video");
+  const camSubtitle = document.getElementById("gov-cam-subtitle");
+
+  if (!govOverlay || !openBtn) return;
+
+  let _govOpen = false;
+
+  function _populateGovStats() {
+    // Populate from count widget values (already populated by FloatingCount)
+    const copy = (fromId, toId) => {
+      const src = document.getElementById(fromId);
+      const dst = document.getElementById(toId);
+      if (src && dst) dst.textContent = src.textContent || "—";
+    };
+    copy("cw-total",   "gov-total");
+    copy("cw-cars",    "gov-cars");
+    copy("cw-trucks",  "gov-trucks");
+    copy("cw-buses",   "gov-buses");
+    copy("cw-motos",   "gov-motos");
+    copy("mls-live-rate",     "gov-rate");
+    copy("mls-model-name",    "gov-model");
+    copy("mls-last-seen",     "gov-last");
+    copy("header-cam-name",   "gov-cam-name");
+
+    // Camera subtitle
+    const camName = document.getElementById("header-cam-name")?.textContent || "";
+    if (camSubtitle && camName) camSubtitle.textContent = camName;
+
+    // Traffic load (rough heuristic from live objects)
+    const liveObj = Number(document.getElementById("mls-live-objects")?.textContent) || 0;
+    const loadEl  = document.getElementById("gov-load");
+    if (loadEl) {
+      if      (liveObj === 0)  loadEl.textContent = "—";
+      else if (liveObj <= 2)   loadEl.textContent = "LOW";
+      else if (liveObj <= 5)   loadEl.textContent = "MOD";
+      else                     loadEl.textContent = "HIGH";
+    }
+
+    // Scene from chip
+    const scene = document.getElementById("chip-location")?.textContent || "—";
+    const sceneEl = document.getElementById("gov-scene");
+    if (sceneEl) sceneEl.textContent = scene.replace("📍 ", "");
+  }
+
+  function openGov() {
+    if (_govOpen) return;
+    _govOpen = true;
+    govOverlay.classList.remove("hidden");
+    // Move live-video into gov overlay (preserves HLS state)
+    if (videoSlot && liveVideo) videoSlot.appendChild(liveVideo);
+    _populateGovStats();
+    // Refresh stats every 3 s while open
+    govOverlay._statsInterval = setInterval(_populateGovStats, 3000);
+  }
+
+  function closeGov() {
+    if (!_govOpen) return;
+    _govOpen = false;
+    govOverlay.classList.add("hidden");
+    clearInterval(govOverlay._statsInterval);
+    // Move video back to stream-wrapper (before detection-canvas)
+    const streamWrapper = document.querySelector(".stream-wrapper");
+    const detCanvas     = document.getElementById("detection-canvas");
+    if (streamWrapper && liveVideo) {
+      streamWrapper.insertBefore(liveVideo, detCanvas || null);
+    }
+  }
+
+  openBtn.addEventListener("click",  openGov);
+  closeBtn?.addEventListener("click", closeGov);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _govOpen) closeGov(); });
+
+  // Update gov stats on count updates if overlay is open
+  window.addEventListener("count:update", () => { if (_govOpen) _populateGovStats(); });
+}());
+
+
+// ── ML HUD expand / collapse toggle (new AI Pulse design) ───────────────────
+(function _initAiPulseToggle() {
+  const hud = document.getElementById("ml-hud");
+  if (!hud) return;
+
+  // Replace old is-collapsed toggle with new is-expanded toggle
+  // (old code still runs for is-collapsed; this adds is-expanded)
+  hud.addEventListener("click", () => {
+    hud.classList.toggle("is-expanded");
+  });
+}());
+
+
+// ── Onboarding Overlay ───────────────────────────────────────────────────────
+(function _initOnboarding() {
+  const OB_KEY    = "wlz.onboarding.done";
+  const overlay   = document.getElementById("onboarding-overlay");
+  const skipBtn   = document.getElementById("ob-skip");
+  const nextBtn   = document.getElementById("ob-next");
+  const steps     = Array.from(document.querySelectorAll(".ob-step"));
+  const dots      = Array.from(document.querySelectorAll(".ob-dot"));
+
+  if (!overlay || !steps.length) return;
+  if (localStorage.getItem(OB_KEY)) return; // already seen
+
+  let _step = 0;
+
+  function _setStep(n) {
+    _step = n;
+    steps.forEach((s, i) => s.classList.toggle("active", i === n));
+    dots.forEach((d,  i) => d.classList.toggle("active", i === n));
+    if (nextBtn) nextBtn.textContent = n < steps.length - 1 ? "NEXT →" : "LET'S GO →";
+  }
+
+  function _done() {
+    localStorage.setItem(OB_KEY, "1");
+    overlay.classList.add("hidden");
+  }
+
+  _setStep(0);
+  overlay.classList.remove("hidden");
+
+  nextBtn?.addEventListener("click", () => {
+    if (_step < steps.length - 1) _setStep(_step + 1);
+    else _done();
+  });
+  skipBtn?.addEventListener("click", _done);
+
+  document.addEventListener("keydown", (e) => {
+    if (!overlay.classList.contains("hidden")) {
+      if (e.key === "ArrowRight" || e.key === "Enter") nextBtn?.click();
+      if (e.key === "Escape") _done();
+    }
+  });
+}());
+
+
+// ── Mobile Nav — bottom sheet + swipe gestures ───────────────────────────────
+(function _initMobileNav() {
+  const sidebar      = document.querySelector(".sidebar");
+  const streamPanel  = document.querySelector(".stream-panel");
+  const tabBtns      = document.querySelectorAll(".tab-btn");
+  if (!sidebar || !tabBtns.length) return;
+
+  const isMobile = () => window.innerWidth < 768;
+
+  // ── Bottom sheet toggle ──────────────────────────────────────────────────
+  function expandTo(tabBtn) {
+    sidebar.classList.add("expanded");
+    tabBtns.forEach(b => b.classList.remove("active"));
+    if (tabBtn) tabBtn.classList.add("active");
+    // Show the right tab content
+    const target = tabBtn?.dataset?.tab;
+    if (target) {
+      document.querySelectorAll(".tab-content").forEach(el => {
+        el.classList.toggle("active", el.id === `tab-${target}`);
+      });
+    }
+  }
+
+  function collapse() {
+    sidebar.classList.remove("expanded");
+  }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!isMobile()) return; // desktop handles tabs via existing logic
+
+      const alreadyActive = btn.classList.contains("active") && sidebar.classList.contains("expanded");
+      if (alreadyActive) {
+        collapse();
+        tabBtns.forEach(b => b.classList.remove("active"));
+      } else {
+        expandTo(btn);
+        // Trigger lazy-load for leaderboard
+        if (btn.dataset.tab === "leaderboard" && window.Activity) {
+          const lbWin = parseInt(document.querySelector(".lb-wtab.active")?.dataset?.win || 60);
+          Activity.loadLeaderboard(lbWin);
+        }
+      }
+    });
+  });
+
+  // Auto-expand to PLAY tab if an active round is running
+  function _autoExpandIfRound() {
+    if (!isMobile()) return;
+    const hasBetPanel = document.querySelector("#bet-panel:not(.hidden)");
+    const hasMarkets  = document.querySelector("#markets-container .market-card");
+    if (hasBetPanel || hasMarkets) {
+      const playBtn = document.querySelector('.tab-btn[data-tab="markets"]');
+      if (playBtn) expandTo(playBtn);
+    }
+  }
+  // Check after markets load
+  window.addEventListener("markets:loaded", _autoExpandIfRound);
+  setTimeout(_autoExpandIfRound, 2500); // fallback
+
+  // ── Swipe up on stream → expand PLAY tab ───────────────────────────────
+  let _touchStartY = 0;
+  let _touchStartX = 0;
+
+  streamPanel?.addEventListener("touchstart", e => {
+    _touchStartY = e.touches[0].clientY;
+    _touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  streamPanel?.addEventListener("touchend", e => {
+    if (!isMobile()) return;
+    const deltaY = _touchStartY - e.changedTouches[0].clientY;
+    const deltaX = Math.abs(_touchStartX - e.changedTouches[0].clientX);
+    if (deltaY > 55 && deltaX < 40) {
+      const playBtn = document.querySelector('.tab-btn[data-tab="markets"]');
+      expandTo(playBtn);
+    }
+  }, { passive: true });
+
+  // ── Swipe down on sidebar → collapse ───────────────────────────────────
+  let _sidebarTouchStartY = 0;
+  sidebar.addEventListener("touchstart", e => {
+    _sidebarTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  sidebar.addEventListener("touchend", e => {
+    if (!isMobile()) return;
+    const delta = e.changedTouches[0].clientY - _sidebarTouchStartY;
+    if (delta > 55 && sidebar.classList.contains("expanded")) {
+      collapse();
+      tabBtns.forEach(b => b.classList.remove("active"));
+    }
+  }, { passive: true });
+
+  // ── Visual viewport — keyboard detection for chat ────────────────────────
+  if ("visualViewport" in window) {
+    window.visualViewport.addEventListener("resize", () => {
+      const keyboardOpen = window.visualViewport.height < window.innerHeight * 0.75;
+      document.querySelector("#tab-chat")?.classList.toggle("keyboard-open", keyboardOpen);
+      // Scroll chat to bottom when keyboard opens
+      if (keyboardOpen) {
+        const msgs = document.getElementById("chat-messages");
+        if (msgs) msgs.scrollTop = msgs.scrollHeight;
+      }
+    });
+  }
+
+  // ── Resize: on desktop restore normal layout ────────────────────────────
+  window.addEventListener("resize", () => {
+    if (!isMobile()) {
+      sidebar.classList.remove("expanded");
+      // Re-activate first active tab on desktop
+      const activeContent = document.querySelector(".tab-content.active");
+      if (activeContent) {
+        const tabId = activeContent.id.replace("tab-", "");
+        tabBtns.forEach(b => {
+          b.classList.toggle("active", b.dataset.tab === tabId);
+        });
+      }
     }
   });
 }());

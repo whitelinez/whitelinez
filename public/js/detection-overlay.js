@@ -531,11 +531,12 @@ const DetectionOverlay = (() => {
       const defaultConf = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
       const label = labelText || `${String(det?.cls || "vehicle").toUpperCase()}${defaultConf}`;
       ctx.setLineDash([]);
-      ctx.font = "11px Inter, sans-serif";
-      const padX = 6;
-      const padY = 4;
-      const tw = Math.max(30, Math.ceil(ctx.measureText(label).width + padX * 2));
-      const th = 18;
+      const _lfs = isMobileClient ? "9px" : "11px";
+      ctx.font = `${_lfs} Inter, sans-serif`;
+      const padX = isMobileClient ? 4 : 6;
+      const padY = isMobileClient ? 3 : 4;
+      const tw = Math.max(24, Math.ceil(ctx.measureText(label).width + padX * 2));
+      const th = isMobileClient ? 14 : 18;
       const lx = p1.x;
       const ly = Math.max(2, p1.y - th - 2);
       ctx.fillStyle = hexToRgba(color, opts.labelBgAlpha ?? 0.85);

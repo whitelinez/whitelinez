@@ -365,7 +365,7 @@
 /* ── KPI Row ─────────────────────────────────────────────────── */
 .overview-metrics-primary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -429,6 +429,29 @@
   color: var(--at);
 }
 .btn-secondary:hover:not(:disabled) { border-color: var(--acc); color: #b8fff9; }
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--btn-h);
+  padding: 0 11px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--abr);
+  background: transparent;
+  color: var(--at);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 110ms, color 110ms;
+  font-family: inherit;
+}
+.btn-outline:hover:not(:disabled) { border-color: rgba(15,185,177,0.5); color: #b8fff9; }
+.btn-outline:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── Form ────────────────────────────────────────────────────── */
 .field { display: grid; gap: 4px; }
@@ -1396,6 +1419,28 @@
   min-height: 14px;
 }
 
+/* ── Profiles panel layout ───────────────────────────────────── */
+.profiles-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+/* ── Dashboard camera switch card ────────────────────────────── */
+.dash-cam-switch h3 { margin: 0 0 10px; }
+.dash-cam-switch select {
+  width: 100%;
+  background: var(--as2);
+  border: 1px solid var(--abr);
+  color: var(--at);
+  border-radius: var(--r-sm);
+  padding: 5px 8px;
+  font-size: 11px;
+  font-family: inherit;
+}
+.dash-cam-switch select:focus { outline: none; border-color: var(--acc); }
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1280px) {
   .overview-metrics-primary   { grid-template-columns: repeat(3, minmax(0,1fr)); }
@@ -1431,6 +1476,7 @@
   }
   .zone-editor-workflow { grid-template-columns: 1fr; }
   .mapping-layout { grid-template-columns: 1fr; }
+  .profiles-layout { grid-template-columns: 1fr; }
   .stream-canvas-wrapper { position: relative; top: auto; }
   .hv-body     { grid-template-columns: 1fr; }
   .hv-services { grid-template-columns: repeat(2, 1fr); }

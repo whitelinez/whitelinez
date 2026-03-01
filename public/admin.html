@@ -37,7 +37,7 @@
     </div>
 
     <nav class="sidebar-nav">
-      <span class="sidebar-section-label">Operations</span>
+      <span class="sidebar-section-label">Live Ops</span>
 
       <button class="admin-nav-btn active" data-panel="overview">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -46,14 +46,53 @@
           <rect x="1" y="9" width="6" height="6" rx="1.2"/>
           <rect x="9" y="9" width="6" height="6" rx="1.2"/>
         </svg>
-        <span>Overview</span>
+        <span>Dashboard</span>
       </button>
 
       <button class="admin-nav-btn" data-panel="bets">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
           <path d="M2 13V8M5.5 13V5M9 13V7M12.5 13V2"/>
         </svg>
-        <span>Bets</span>
+        <span>Rounds &amp; Bets</span>
+      </button>
+
+      <span class="sidebar-section-label">Cameras</span>
+
+      <button class="admin-nav-btn" data-panel="cameras">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="4" width="10" height="8" rx="1.2"/>
+          <path d="M11 7l4-2v6l-4-2"/>
+          <circle cx="4" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Camera Manager</span>
+      </button>
+
+      <span class="sidebar-section-label">AI Engine</span>
+
+      <button class="admin-nav-btn" data-panel="detection">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z"/>
+          <circle cx="8" cy="8" r="2"/>
+        </svg>
+        <span>Detection</span>
+      </button>
+
+      <button class="admin-nav-btn" data-panel="visual">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="2" width="14" height="10" rx="1.5"/>
+          <path d="M5 14h6M8 12v2"/>
+          <path d="M4 6l2 2 3-3 2 2"/>
+        </svg>
+        <span>Visual</span>
+      </button>
+
+      <button class="admin-nav-btn" data-panel="profiles">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M2 4h12M2 8h8M2 12h10"/>
+          <circle cx="13" cy="10" r="2.2"/>
+          <path d="M13 7.8V8M13 12v.2"/>
+        </svg>
+        <span>Profiles</span>
       </button>
 
       <span class="sidebar-section-label">Intelligence</span>
@@ -64,23 +103,7 @@
           <path d="M8 2.5V8l3 2"/>
           <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
         </svg>
-        <span>Model</span>
-      </button>
-
-      <button class="admin-nav-btn" data-panel="ml">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="4" y="4" width="8" height="8" rx="1"/>
-          <path d="M4 6H2M4 10H2M12 6h2M12 10h2M6 4V2M10 4V2M6 12v2M10 12v2"/>
-        </svg>
-        <span>ML Control</span>
-      </button>
-
-      <button class="admin-nav-btn" data-panel="detection">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z"/>
-          <circle cx="8" cy="8" r="2"/>
-        </svg>
-        <span>AI Engine</span>
+        <span>Model Status</span>
       </button>
 
       <button class="admin-nav-btn" data-panel="mapping">
@@ -100,7 +123,14 @@
         <span>Health</span>
       </button>
 
-      <span class="sidebar-section-label">People</span>
+      <button class="admin-nav-btn" data-panel="banners">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="3" width="14" height="10" rx="2"/>
+          <path d="M1 6h14"/>
+          <path d="M5 10h4"/>
+        </svg>
+        <span>Content</span>
+      </button>
 
       <button class="admin-nav-btn" data-panel="audience">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -117,26 +147,6 @@
           <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
         </svg>
         <span>Users</span>
-      </button>
-
-      <span class="sidebar-section-label">Content</span>
-
-      <button class="admin-nav-btn" data-panel="banners">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="1" y="3" width="14" height="10" rx="2"/>
-          <path d="M1 6h14"/>
-          <path d="M5 10h4"/>
-        </svg>
-        <span>Banners</span>
-      </button>
-
-      <button class="admin-nav-btn" data-panel="streams">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="1" y="4" width="10" height="8" rx="1.2"/>
-          <path d="M11 7l4-2v6l-4-2"/>
-          <circle cx="4" cy="8" r="1.2" fill="currentColor" stroke="none"/>
-        </svg>
-        <span>Streams</span>
       </button>
     </nav>
 
@@ -166,7 +176,7 @@
            ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel active" id="panel-overview">
         <div class="panel-head">
-          <h2>Overview</h2>
+          <h2>Dashboard</h2>
           <p>Live telemetry, round control, and active connections.</p>
         </div>
 
@@ -189,6 +199,10 @@
             <div class="stat-label">Online Users</div>
           </div>
           <div class="stat-card is-primary">
+            <div class="stat-val" id="stat-ai-fps">-</div>
+            <div class="stat-label">AI FPS</div>
+          </div>
+          <div class="stat-card is-primary">
             <div class="stat-val" id="stat-visits">-</div>
             <div class="stat-label">Visits (Runtime)</div>
           </div>
@@ -199,6 +213,19 @@
           <div class="stat-card is-secondary"><div class="stat-val" id="ml-points-24h">-</div><div class="stat-label">Rows (24h)</div></div>
           <div class="stat-card is-secondary"><div class="stat-val" id="ml-conf-avg">-</div><div class="stat-label">Avg Confidence</div></div>
           <div class="stat-card is-secondary"><div class="stat-val" id="ml-model-active">-</div><div class="stat-label">Active Model</div></div>
+        </div>
+
+        <!-- Camera Switch -->
+        <div class="card-box dash-cam-switch" style="margin-bottom:10px;">
+          <h3>Force Camera Switch</h3>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div class="field" style="flex:1;min-width:180px;max-width:320px;">
+              <label for="dash-cam-select">Active AI Camera</label>
+              <select id="dash-cam-select"><option value="">Loading cameras…</option></select>
+            </div>
+            <button id="dash-cam-switch-btn" class="btn-primary" type="button">Switch &amp; Reset AI</button>
+            <span id="dash-cam-switch-msg" class="line-status"></span>
+          </div>
         </div>
 
         <!-- Bottom row: Rounds + Connections -->
@@ -220,7 +247,7 @@
       <section class="admin-panel" id="panel-ml">
         <div class="panel-head">
           <h2>ML Control</h2>
-          <p>Dataset management and model training pipeline. Runtime profiles live in AI Engine → Profiles.</p>
+          <p>Dataset management and model training pipeline. Runtime profiles live in the <strong>Profiles</strong> panel.</p>
         </div>
 
         <div class="admin-model-banner">
@@ -230,117 +257,47 @@
         </div>
 
         <div class="ml-control-wrap">
-          <p class="muted" style="font-size:0.82rem;padding:16px 0;">Dataset capture, annotation, and retraining pipeline controls coming soon. Runtime tuning has moved to <strong>AI Engine → Profiles</strong>.</p>
+          <p class="muted" style="font-size:0.82rem;padding:16px 0;">Dataset capture, annotation, and retraining pipeline controls coming soon. Runtime tuning has moved to the <strong>Profiles</strong> panel.</p>
         </div>
 
       </section>
 
       <!-- ═══════════════════════════════════════════════════════
-           AI ENGINE PANEL
+           DETECTION PANEL (Zones + Count Tuning)
            ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-detection">
         <div class="panel-head">
-          <h2>AI Engine</h2>
-          <p>Zones, inference tuning, overlay customization, and runtime profiles for live detection.</p>
+          <h2>Detection</h2>
+          <p>Zone editor and count tuning. <span class="muted">Visual overlay → Visual · Runtime profiles → Profiles</span></p>
         </div>
 
-        <!-- Sub-nav -->
-        <div class="det-subnav">
-          <button class="det-subnav-btn active" data-det-tab="zones">Zones</button>
-          <button class="det-subnav-btn" data-det-tab="inference">Inference</button>
-          <button class="det-subnav-btn" data-det-tab="overlay">Overlay</button>
-          <button class="det-subnav-btn" data-det-tab="profiles">Profiles</button>
-        </div>
-
-        <!-- ── ZONES TAB ─────────────────────────────────────── -->
-        <div class="det-tab active" id="det-tab-zones">
-          <div class="zone-editor-workflow">
-            <!-- Live preview -->
-            <div class="stream-canvas-wrapper ae-preview">
-              <video id="admin-video" muted playsinline autoplay></video>
-              <canvas id="line-canvas"></canvas>
-              <canvas id="landmark-canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
-              <div class="ae-preview-label">LIVE PREVIEW <span id="zone-editor-cam-label" class="zone-editor-cam-label"></span></div>
-            </div>
-            <!-- Controls sidebar -->
-            <div class="zone-controls-dock">
-              <div class="admin-line-controls">
-                <div class="zone-toggle-group">
-                  <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
-                  <button id="btn-zone-count" class="zone-toggle count active">Count</button>
-                  <button id="btn-zone-ground" class="zone-toggle">3D Mask</button>
-                  <button id="btn-zone-landmarks" class="zone-toggle" type="button" title="Place landmark labels (bus stops, signs, etc.)">Labels</button>
-                  <button id="btn-zone-guides" class="zone-toggle active" type="button" title="Toggle perspective guides">Guides</button>
-                  <button id="btn-zone-snap" class="zone-toggle active" type="button" title="Snap clicks to perspective guides">Snap</button>
-                </div>
-                <button id="btn-clear-line" class="btn-secondary" type="button">Clear</button>
-                <button id="btn-save-line" class="btn-primary" type="button" disabled>Save Zones</button>
-                <button id="btn-save-landmarks" class="btn-primary" type="button" disabled style="display:none;">Save Labels</button>
-                <span id="line-status" class="line-status"></span>
-              </div>
-            </div>
+        <div class="zone-editor-workflow">
+          <!-- Live preview -->
+          <div class="stream-canvas-wrapper ae-preview">
+            <video id="admin-video" muted playsinline autoplay></video>
+            <canvas id="line-canvas"></canvas>
+            <canvas id="landmark-canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+            <div class="ae-preview-label">LIVE PREVIEW <span id="zone-editor-cam-label" class="zone-editor-cam-label"></span></div>
           </div>
-        </div>
-
-        <!-- ── INFERENCE TAB ──────────────────────────────────── -->
-        <div class="det-tab" id="det-tab-inference">
-          <div class="ae-inference-grid">
-
-            <div class="card-box">
-              <h3>Feed Appearance</h3>
-              <p class="admin-hint">Tune camera brightness/colour. Push changes live to public view.</p>
-              <div class="field-row simplified-field-row">
-                <div class="field" style="max-width:210px">
-                  <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
-                  <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
-                </div>
-                <div class="field" style="max-width:210px">
-                  <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
-                  <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
-                </div>
-                <div class="field" style="max-width:210px">
-                  <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
-                  <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
-                </div>
+          <!-- Controls sidebar -->
+          <div class="zone-controls-dock">
+            <div class="admin-line-controls">
+              <div class="zone-toggle-group">
+                <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
+                <button id="btn-zone-count" class="zone-toggle count active">Count</button>
+                <button id="btn-zone-ground" class="zone-toggle">3D Mask</button>
+                <button id="btn-zone-landmarks" class="zone-toggle" type="button" title="Place landmark labels (bus stops, signs, etc.)">Labels</button>
+                <button id="btn-zone-guides" class="zone-toggle active" type="button" title="Toggle perspective guides">Guides</button>
+                <button id="btn-zone-snap" class="zone-toggle active" type="button" title="Snap clicks to perspective guides">Snap</button>
               </div>
-              <div class="field-row simplified-field-row">
-                <div class="field" style="max-width:210px">
-                  <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
-                  <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
-                </div>
-                <div class="field" style="max-width:210px">
-                  <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
-                  <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
-                </div>
-              </div>
-              <div class="field-row simplified-field-row">
-                <div class="field" style="max-width:200px">
-                  <label for="feed-push-public">Push To Public View</label>
-                  <select id="feed-push-public">
-                    <option value="1">Enabled</option>
-                    <option value="0">Disabled</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:200px">
-                  <label for="feed-auto-preset">Auto Day/Night Preset</label>
-                  <select id="feed-auto-preset">
-                    <option value="0">Disabled</option>
-                    <option value="1">Enabled</option>
-                  </select>
-                </div>
-              </div>
-              <div class="count-tuning-actions">
-                <button id="btn-feed-preset-day" class="btn-secondary" type="button">Day Preset</button>
-                <button id="btn-feed-preset-night" class="btn-secondary" type="button">Night Preset</button>
-                <button id="btn-feed-apply-auto" class="btn-secondary" type="button">Auto Now</button>
-                <button id="btn-video-push-public" class="btn-primary" type="button">Push To Public</button>
-                <span id="feed-settings-msg" class="line-status"></span>
-              </div>
+              <button id="btn-clear-line" class="btn-secondary" type="button">Clear</button>
+              <button id="btn-save-line" class="btn-primary" type="button" disabled>Save Zones</button>
+              <button id="btn-save-landmarks" class="btn-primary" type="button" disabled style="display:none;">Save Labels</button>
+              <span id="line-status" class="line-status"></span>
             </div>
 
-            <div class="card-box">
-              <h3>Count Tuning</h3>
-              <p class="admin-hint">Controls for stable, accurate vehicle counting.</p>
+            <div class="card-box count-tuning-box compact-controls" style="margin-top:10px;">
+              <h4>Count Tuning</h4>
               <div class="count-tuning-grid">
                 <div class="field">
                   <label for="count-min-track-frames">Min Track Frames</label>
@@ -366,263 +323,373 @@
               <div class="count-tuning-actions">
                 <button id="btn-count-preset-balanced" class="btn-secondary" type="button">Day (Clear)</button>
                 <button id="btn-count-preset-night" class="btn-secondary" type="button">Night (Low-Light)</button>
-                <button id="btn-save-count-settings" class="btn-secondary" type="button">Save Count Tuning</button>
+                <button id="btn-save-count-settings" class="btn-primary" type="button">Save Count Tuning</button>
                 <span id="count-settings-status" class="line-status"></span>
               </div>
             </div>
-
           </div>
         </div>
 
-        <!-- ── OVERLAY TAB ────────────────────────────────────── -->
-        <div class="det-tab" id="det-tab-overlay">
+      </section>
 
-          <div class="detection-status-grid">
-            <article class="stat-card is-secondary">
-              <div class="stat-val" id="det-status-model">-</div>
-              <div class="stat-label">Active Model</div>
-            </article>
-            <article class="stat-card is-secondary">
-              <div class="stat-val" id="det-status-conf">-</div>
-              <div class="stat-label">Avg Confidence</div>
-            </article>
-            <article class="stat-card is-secondary">
-              <div class="stat-val" id="det-status-last">-</div>
-              <div class="stat-label">Last Telemetry</div>
-            </article>
-            <article class="stat-card is-secondary">
-              <div class="stat-val" id="det-status-scan">FULL</div>
-              <div class="stat-label">Feed Scan Mode</div>
-            </article>
-          </div>
-
-          <div class="overview-grid detection-workflow-grid" style="margin-top:10px;">
-            <section class="card-box card-box-priority">
-              <h3>Detection Runtime</h3>
-              <div class="rounds-list data-list">
-                <div class="round-row"><div class="round-row-info"><span class="round-row-id">AI Loop</span><span class="round-row-meta" id="det-runtime-ai">Checking...</span></div></div>
-                <div class="round-row"><div class="round-row-info"><span class="round-row-id">Stream URL</span><span class="round-row-meta" id="det-runtime-stream">Checking...</span></div></div>
-                <div class="round-row"><div class="round-row-info"><span class="round-row-id">Night Profile State</span><span class="round-row-meta" id="det-runtime-night">Checking...</span></div></div>
-                <div class="round-row"><div class="round-row-info"><span class="round-row-id">Runtime Profile</span><span class="round-row-meta" id="det-runtime-profile">Checking...</span></div></div>
-                <div class="round-row"><div class="round-row-info"><span class="round-row-id">Runtime Reason</span><span class="round-row-meta" id="det-runtime-reason">Checking...</span></div></div>
-                <div class="round-row"><div class="round-row-info"><span class="round-row-id">Current Focus</span><span class="round-row-meta" id="det-runtime-focus">Full-feed detection with zone-aware counting</span></div></div>
-              </div>
-            </section>
-
-            <section class="card-box card-box-secondary">
-              <h3>Overlay Customization</h3>
-              <div class="field-row">
-                <div class="field" style="max-width:170px">
-                  <label for="det-box-style">Box Style</label>
-                  <select id="det-box-style">
-                    <option value="solid">Solid</option>
-                    <option value="dashed">Dashed</option>
-                    <option value="corner">Corner</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:160px">
-                  <label for="det-line-width">Line Width</label>
-                  <input id="det-line-width" type="range" min="1" max="5" step="0.5" value="2" />
-                </div>
-                <div class="field" style="max-width:160px">
-                  <label for="det-fill-alpha">Fill Opacity</label>
-                  <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.05" value="0.10" />
-                </div>
-                <div class="field" style="max-width:160px">
-                  <label for="det-max-boxes">Max Boxes</label>
-                  <input id="det-max-boxes" type="number" min="1" max="40" value="10" />
-                </div>
-              </div>
-              <div class="field-row">
-                <div class="field" style="max-width:160px"><label for="det-color-car">Car Color</label><input id="det-color-car" type="color" value="#29B6F6" /></div>
-                <div class="field" style="max-width:160px"><label for="det-color-truck">Truck Color</label><input id="det-color-truck" type="color" value="#FF7043" /></div>
-                <div class="field" style="max-width:160px"><label for="det-color-bus">Bus Color</label><input id="det-color-bus" type="color" value="#AB47BC" /></div>
-                <div class="field" style="max-width:160px"><label for="det-color-motorcycle">Motorcycle Color</label><input id="det-color-motorcycle" type="color" value="#FFD600" /></div>
-              </div>
-              <div class="field-row">
-                <div class="field" style="max-width:190px">
-                  <label for="det-show-labels">Show Labels</label>
-                  <select id="det-show-labels">
-                    <option value="1">Enabled</option>
-                    <option value="0">Disabled</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:245px">
-                  <label for="det-show-zone-only">Render Boxes In Detect Zone Only</label>
-                  <select id="det-show-zone-only">
-                    <option value="0">No (Full Feed)</option>
-                    <option value="1" selected>Yes (Visual Filter)</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field-row">
-                <div class="field" style="max-width:200px">
-                  <label for="det-ground-enabled">Ground Overlay</label>
-                  <select id="det-ground-enabled">
-                    <option value="1">Enabled</option>
-                    <option value="0">Disabled</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:200px">
-                  <label for="det-ground-alpha">Ground Opacity</label>
-                  <input id="det-ground-alpha" type="range" min="0" max="0.45" step="0.05" value="0.16" />
-                </div>
-                <div class="field" style="max-width:200px">
-                  <label for="det-ground-grid">Ground Grid Density</label>
-                  <input id="det-ground-grid" type="number" min="2" max="16" value="6" />
-                </div>
-                <div class="field" style="max-width:200px">
-                  <label for="det-ground-cutout">Vehicle Cutout</label>
-                  <input id="det-ground-cutout" type="range" min="0" max="0.85" step="0.05" value="0.38" />
-                </div>
-              </div>
-              <div class="field-row">
-                <div class="field" style="max-width:148px"><label for="det-ground-x1">Quad X1 (top-left)</label><input id="det-ground-x1" type="number" min="0" max="1" step="0.05" value="0.34" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-y1">Quad Y1</label><input id="det-ground-y1" type="number" min="0" max="1" step="0.05" value="0.58" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-x2">Quad X2 (top-right)</label><input id="det-ground-x2" type="number" min="0" max="1" step="0.05" value="0.78" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-y2">Quad Y2</label><input id="det-ground-y2" type="number" min="0" max="1" step="0.05" value="0.58" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-x3">Quad X3 (bottom-right)</label><input id="det-ground-x3" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-y3">Quad Y3</label><input id="det-ground-y3" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-x4">Quad X4 (bottom-left)</label><input id="det-ground-x4" type="number" min="0" max="1" step="0.05" value="0.08" /></div>
-                <div class="field" style="max-width:148px"><label for="det-ground-y4">Quad Y4</label><input id="det-ground-y4" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
-              </div>
-              <div class="ml-control-actions">
-                <button id="btn-det-preset-balanced" class="btn-secondary" type="button">Day Overlay</button>
-                <button id="btn-det-preset-night" class="btn-secondary" type="button">Night Overlay</button>
-                <button id="btn-det-save" class="btn-primary" type="button">Save Detection Settings</button>
-                <button id="btn-det-reset" class="btn-secondary" type="button">Reset Defaults</button>
-                <span id="det-settings-msg" class="muted"></span>
-              </div>
-            </section>
-          </div>
-
+      <!-- ═══════════════════════════════════════════════════════
+           CAMERA MANAGER PANEL
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-cameras">
+        <div class="panel-head">
+          <h2>Camera Manager</h2>
+          <p>Manage live camera sources and tune video feed appearance.</p>
         </div>
 
-        <!-- ── PROFILES TAB ───────────────────────────────────── -->
-        <div class="det-tab" id="det-tab-profiles">
-          <div class="ml-control-wrap">
+        <p id="streams-msg" class="streams-msg"></p>
 
-            <!-- Night Profile -->
-            <div>
-              <h4 style="margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--am);font-weight:700;">
-                <span>Night Tracking Profile</span>
-                <span id="night-profile-status" class="ml-status-chip">Unknown</span>
-              </h4>
-              <p id="night-profile-window" class="muted" style="font-size:0.78rem;margin:0 0 8px;">Window: --</p>
-              <div class="field-row">
-                <div class="field" style="max-width:160px">
-                  <label for="night-profile-enabled">Enable Night Profile</label>
-                  <select id="night-profile-enabled">
-                    <option value="1">Enabled</option>
-                    <option value="0">Disabled</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:120px">
-                  <label for="night-start-hour">Start Hour</label>
-                  <input id="night-start-hour" type="number" min="0" max="23" value="18" />
-                </div>
-                <div class="field" style="max-width:120px">
-                  <label for="night-end-hour">End Hour</label>
-                  <input id="night-end-hour" type="number" min="0" max="23" value="6" />
-                </div>
-              </div>
-              <div class="field-row">
-                <div class="field" style="max-width:175px">
-                  <label for="night-profile-mode">Night Preset</label>
-                  <select id="night-profile-mode">
-                    <option value="conservative">Conservative</option>
-                    <option value="aggressive">Aggressive</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:120px">
-                  <label for="night-yolo-conf">Night Conf</label>
-                  <input id="night-yolo-conf" type="number" min="0.01" max="0.99" step="0.01" value="0.30" />
-                </div>
-                <div class="field" style="max-width:140px">
-                  <label for="night-infer-size">Night Infer Size</label>
-                  <input id="night-infer-size" type="number" min="320" max="1280" step="32" value="640" />
-                </div>
-                <div class="field" style="max-width:110px">
-                  <label for="night-iou">Night IOU</label>
-                  <input id="night-iou" type="number" min="0.05" max="0.95" step="0.01" value="0.45" />
-                </div>
-                <div class="field" style="max-width:120px">
-                  <label for="night-max-det">Night Max Det</label>
-                  <input id="night-max-det" type="number" min="10" max="500" value="120" />
-                </div>
-              </div>
-              <div class="ml-control-actions">
-                <button id="btn-apply-night-preset" class="btn-secondary" type="button">Apply Preset</button>
-                <button id="btn-save-night-profile" class="btn-secondary" type="button">Save Night Profile</button>
-                <span id="night-profile-msg" class="muted"></span>
-              </div>
+        <div class="card-box" style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <h3 style="margin:0;">Camera Sources</h3>
+            <button id="streams-autopick-btn" class="streams-autopick-btn" style="display:none;" title="Select the camera with the highest quality score">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              AUTO-PICK BEST
+            </button>
+          </div>
+          <div id="streams-list"><p class="loading">Loading...</p></div>
+        </div>
 
-              <div class="night-live-panel">
-                <h5>Night Tracking Live Data</h5>
-                <p id="night-live-summary" class="muted">Checking live night tracking state...</p>
-                <div id="night-live-grid" class="night-live-grid">
-                  <div class="night-live-item"><span>Local Time</span><strong id="night-live-now">-</strong></div>
-                  <div class="night-live-item"><span>Window State</span><strong id="night-live-window-state">-</strong></div>
-                  <div class="night-live-item"><span>Effective Thresholds</span><strong id="night-live-thresholds">-</strong></div>
-                  <div class="night-live-item"><span>Capture Counters</span><strong id="night-live-counters">-</strong></div>
-                  <div class="night-live-item"><span>Latest Telemetry</span><strong id="night-live-telemetry">-</strong></div>
-                  <div class="night-live-item"><span>Latest Training</span><strong id="night-live-training">-</strong></div>
-                </div>
+        <div class="card-box" style="margin-bottom:14px;">
+          <h3>Feed Appearance</h3>
+          <p class="admin-hint">Tune camera brightness/colour. Push changes live to public view.</p>
+          <div class="field-row simplified-field-row">
+            <div class="field" style="max-width:210px">
+              <label for="det-video-brightness">Brightness <span id="det-video-brightness-val" class="muted">100%</span></label>
+              <input id="det-video-brightness" type="range" min="50" max="180" step="1" value="100" />
+            </div>
+            <div class="field" style="max-width:210px">
+              <label for="det-video-contrast">Contrast <span id="det-video-contrast-val" class="muted">100%</span></label>
+              <input id="det-video-contrast" type="range" min="50" max="200" step="1" value="100" />
+            </div>
+            <div class="field" style="max-width:210px">
+              <label for="det-video-saturate">Saturation <span id="det-video-saturate-val" class="muted">100%</span></label>
+              <input id="det-video-saturate" type="range" min="0" max="220" step="1" value="100" />
+            </div>
+            <div class="field" style="max-width:210px">
+              <label for="det-video-hue">Hue Rotate <span id="det-video-hue-val" class="muted">0deg</span></label>
+              <input id="det-video-hue" type="range" min="0" max="360" step="1" value="0" />
+            </div>
+            <div class="field" style="max-width:210px">
+              <label for="det-video-blur">Blur <span id="det-video-blur-val" class="muted">0.0px</span></label>
+              <input id="det-video-blur" type="range" min="0" max="4" step="0.1" value="0" />
+            </div>
+          </div>
+          <div class="field-row simplified-field-row">
+            <div class="field" style="max-width:200px">
+              <label for="feed-push-public">Push To Public View</label>
+              <select id="feed-push-public">
+                <option value="1">Enabled</option>
+                <option value="0">Disabled</option>
+              </select>
+            </div>
+            <div class="field" style="max-width:200px">
+              <label for="feed-auto-preset">Auto Day/Night Preset</label>
+              <select id="feed-auto-preset">
+                <option value="0">Disabled</option>
+                <option value="1">Enabled</option>
+              </select>
+            </div>
+          </div>
+          <div class="count-tuning-actions">
+            <button id="btn-feed-preset-day" class="btn-secondary" type="button">Day Preset</button>
+            <button id="btn-feed-preset-night" class="btn-secondary" type="button">Night Preset</button>
+            <button id="btn-feed-apply-auto" class="btn-secondary" type="button">Auto Now</button>
+            <button id="btn-video-push-public" class="btn-primary" type="button">Push To Public</button>
+            <span id="feed-settings-msg" class="line-status"></span>
+          </div>
+        </div>
+
+        <div class="card-box" id="streams-form-card">
+          <h3 id="streams-form-heading">Add Camera</h3>
+          <p class="admin-hint">Use an ipcam alias (short name) or paste a full HLS URL (https://...). The label is shown to users in the camera switcher.</p>
+          <form id="streams-form">
+            <div class="field-row">
+              <div class="field">
+                <label for="streams-form-name">Display Name</label>
+                <input id="streams-form-name" type="text" maxlength="60" placeholder="e.g. Main Street, North Gate…" />
               </div>
             </div>
-
-            <!-- Adaptive Runtime -->
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--abr);">
-              <h4 style="margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--am);font-weight:700;">
-                <span>Adaptive Runtime Profile</span>
-                <span id="runtime-profile-status" class="ml-status-chip">Unknown</span>
-              </h4>
-              <p id="runtime-profile-live" class="muted" style="font-size:0.78rem;margin:0 0 8px;">Waiting for live runtime state...</p>
-              <div class="field-row">
-                <div class="field" style="max-width:160px">
-                  <label for="runtime-profile-mode">Mode</label>
-                  <select id="runtime-profile-mode">
-                    <option value="auto">Auto</option>
-                    <option value="manual">Manual</option>
-                  </select>
-                </div>
-                <div class="field" style="max-width:210px">
-                  <label for="runtime-manual-profile">Manual Profile</label>
-                  <select id="runtime-manual-profile"></select>
-                </div>
-                <div class="field" style="max-width:200px">
-                  <label for="runtime-manual-until">Manual Until (optional)</label>
-                  <input id="runtime-manual-until" type="datetime-local" />
-                </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="streams-form-alias">Stream Alias or URL</label>
+                <input id="streams-form-alias" type="text" placeholder="my-cam-alias  or  https://stream.example.com/live.m3u8" required />
+                <p class="admin-hint" style="margin:4px 0 0;">Short alias → proxied via /api/stream. Full URL → loaded directly.</p>
               </div>
-              <div class="field-row">
-                <div class="field" style="max-width:170px">
-                  <label for="runtime-autotune-interval">Autotune Interval (sec)</label>
-                  <input id="runtime-autotune-interval" type="number" min="5" max="300" value="20" />
-                </div>
-                <div class="field" style="max-width:165px">
-                  <label for="runtime-cooldown-sec">Switch Cooldown (sec)</label>
-                  <input id="runtime-cooldown-sec" type="number" min="15" max="3600" value="600" />
-                </div>
-                <div class="field" style="max-width:165px">
-                  <label for="runtime-stream-grab-latest">Stream Grab Latest</label>
-                  <select id="runtime-stream-grab-latest">
-                    <option value="1">Enabled</option>
-                    <option value="0">Disabled</option>
-                  </select>
-                </div>
-              </div>
-              <div class="ml-control-actions">
-                <button id="btn-save-runtime-profile" class="btn-secondary" type="button">Save Runtime Profile</button>
-                <button id="btn-runtime-force-auto" class="btn-secondary" type="button">Force Auto</button>
-                <span id="runtime-profile-msg" class="muted"></span>
-              </div>
-              <p id="runtime-profile-error" class="auth-error" role="alert" style="display:none;margin-top:8px;"></p>
             </div>
+            <div class="field" style="flex-direction:row;align-items:center;gap:10px;">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+                <input id="streams-form-active" type="checkbox" checked />
+                <span>Active (visible to users)</span>
+              </label>
+            </div>
+            <p id="streams-form-msg" class="form-msg" style="margin-top:6px;"></p>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button type="submit" class="btn-primary" id="streams-form-submit">Add Camera</button>
+              <button type="button" class="btn-outline" id="streams-form-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
 
-          </div>
+      <!-- ═══════════════════════════════════════════════════════
+           VISUAL PANEL (Overlay + Detection Runtime)
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-visual">
+        <div class="panel-head">
+          <h2>Visual</h2>
+          <p>Overlay style, detection box colors, ground plane, and scan mode diagnostics.</p>
         </div>
 
+        <div class="detection-status-grid">
+          <article class="stat-card is-secondary">
+            <div class="stat-val" id="det-status-model">-</div>
+            <div class="stat-label">Active Model</div>
+          </article>
+          <article class="stat-card is-secondary">
+            <div class="stat-val" id="det-status-conf">-</div>
+            <div class="stat-label">Avg Confidence</div>
+          </article>
+          <article class="stat-card is-secondary">
+            <div class="stat-val" id="det-status-last">-</div>
+            <div class="stat-label">Last Telemetry</div>
+          </article>
+          <article class="stat-card is-secondary">
+            <div class="stat-val" id="det-status-scan">FULL</div>
+            <div class="stat-label">Feed Scan Mode</div>
+          </article>
+        </div>
+
+        <div class="overview-grid detection-workflow-grid" style="margin-top:10px;">
+          <section class="card-box card-box-priority">
+            <h3>Detection Runtime</h3>
+            <div class="rounds-list data-list">
+              <div class="round-row"><div class="round-row-info"><span class="round-row-id">AI Loop</span><span class="round-row-meta" id="det-runtime-ai">Checking...</span></div></div>
+              <div class="round-row"><div class="round-row-info"><span class="round-row-id">Stream URL</span><span class="round-row-meta" id="det-runtime-stream">Checking...</span></div></div>
+              <div class="round-row"><div class="round-row-info"><span class="round-row-id">Night Profile State</span><span class="round-row-meta" id="det-runtime-night">Checking...</span></div></div>
+              <div class="round-row"><div class="round-row-info"><span class="round-row-id">Runtime Profile</span><span class="round-row-meta" id="det-runtime-profile">Checking...</span></div></div>
+              <div class="round-row"><div class="round-row-info"><span class="round-row-id">Runtime Reason</span><span class="round-row-meta" id="det-runtime-reason">Checking...</span></div></div>
+              <div class="round-row"><div class="round-row-info"><span class="round-row-id">Current Focus</span><span class="round-row-meta" id="det-runtime-focus">Full-feed detection with zone-aware counting</span></div></div>
+            </div>
+          </section>
+
+          <section class="card-box card-box-secondary">
+            <h3>Overlay Customization</h3>
+            <div class="field-row">
+              <div class="field" style="max-width:170px">
+                <label for="det-box-style">Box Style</label>
+                <select id="det-box-style">
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="corner">Corner</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-line-width">Line Width</label>
+                <input id="det-line-width" type="range" min="1" max="5" step="0.5" value="2" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-fill-alpha">Fill Opacity</label>
+                <input id="det-fill-alpha" type="range" min="0" max="0.45" step="0.05" value="0.10" />
+              </div>
+              <div class="field" style="max-width:160px">
+                <label for="det-max-boxes">Max Boxes</label>
+                <input id="det-max-boxes" type="number" min="1" max="40" value="10" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="max-width:160px"><label for="det-color-car">Car Color</label><input id="det-color-car" type="color" value="#29B6F6" /></div>
+              <div class="field" style="max-width:160px"><label for="det-color-truck">Truck Color</label><input id="det-color-truck" type="color" value="#FF7043" /></div>
+              <div class="field" style="max-width:160px"><label for="det-color-bus">Bus Color</label><input id="det-color-bus" type="color" value="#AB47BC" /></div>
+              <div class="field" style="max-width:160px"><label for="det-color-motorcycle">Motorcycle Color</label><input id="det-color-motorcycle" type="color" value="#FFD600" /></div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="max-width:190px">
+                <label for="det-show-labels">Show Labels</label>
+                <select id="det-show-labels">
+                  <option value="1">Enabled</option>
+                  <option value="0">Disabled</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:245px">
+                <label for="det-show-zone-only">Render Boxes In Detect Zone Only</label>
+                <select id="det-show-zone-only">
+                  <option value="0">No (Full Feed)</option>
+                  <option value="1" selected>Yes (Visual Filter)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="max-width:200px">
+                <label for="det-ground-enabled">Ground Overlay</label>
+                <select id="det-ground-enabled">
+                  <option value="1">Enabled</option>
+                  <option value="0">Disabled</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:200px">
+                <label for="det-ground-alpha">Ground Opacity</label>
+                <input id="det-ground-alpha" type="range" min="0" max="0.45" step="0.05" value="0.16" />
+              </div>
+              <div class="field" style="max-width:200px">
+                <label for="det-ground-grid">Ground Grid Density</label>
+                <input id="det-ground-grid" type="number" min="2" max="16" value="6" />
+              </div>
+              <div class="field" style="max-width:200px">
+                <label for="det-ground-cutout">Vehicle Cutout</label>
+                <input id="det-ground-cutout" type="range" min="0" max="0.85" step="0.05" value="0.38" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="max-width:148px"><label for="det-ground-x1">Quad X1 (top-left)</label><input id="det-ground-x1" type="number" min="0" max="1" step="0.05" value="0.34" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-y1">Quad Y1</label><input id="det-ground-y1" type="number" min="0" max="1" step="0.05" value="0.58" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-x2">Quad X2 (top-right)</label><input id="det-ground-x2" type="number" min="0" max="1" step="0.05" value="0.78" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-y2">Quad Y2</label><input id="det-ground-y2" type="number" min="0" max="1" step="0.05" value="0.58" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-x3">Quad X3 (bottom-right)</label><input id="det-ground-x3" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-y3">Quad Y3</label><input id="det-ground-y3" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-x4">Quad X4 (bottom-left)</label><input id="det-ground-x4" type="number" min="0" max="1" step="0.05" value="0.08" /></div>
+              <div class="field" style="max-width:148px"><label for="det-ground-y4">Quad Y4</label><input id="det-ground-y4" type="number" min="0" max="1" step="0.05" value="0.98" /></div>
+            </div>
+            <div class="ml-control-actions">
+              <button id="btn-det-preset-balanced" class="btn-secondary" type="button">Day Overlay</button>
+              <button id="btn-det-preset-night" class="btn-secondary" type="button">Night Overlay</button>
+              <button id="btn-det-save" class="btn-primary" type="button">Save Visual Settings</button>
+              <button id="btn-det-reset" class="btn-secondary" type="button">Reset Defaults</button>
+              <span id="det-settings-msg" class="muted"></span>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           PROFILES PANEL (Night + Adaptive Runtime)
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-profiles">
+        <div class="panel-head">
+          <h2>Profiles</h2>
+          <p>Night tracking and adaptive runtime profiles for the AI detection engine.</p>
+        </div>
+
+        <div class="profiles-layout">
+          <div class="card-box">
+            <h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              Night Tracking Profile
+              <span id="night-profile-status" class="ml-status-chip">Unknown</span>
+            </h3>
+            <p id="night-profile-window" class="muted" style="font-size:0.78rem;margin:0 0 10px;">Window: --</p>
+            <div class="field-row">
+              <div class="field" style="max-width:160px">
+                <label for="night-profile-enabled">Enable Night Profile</label>
+                <select id="night-profile-enabled">
+                  <option value="1">Enabled</option>
+                  <option value="0">Disabled</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:120px">
+                <label for="night-start-hour">Start Hour</label>
+                <input id="night-start-hour" type="number" min="0" max="23" value="18" />
+              </div>
+              <div class="field" style="max-width:120px">
+                <label for="night-end-hour">End Hour</label>
+                <input id="night-end-hour" type="number" min="0" max="23" value="6" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="max-width:175px">
+                <label for="night-profile-mode">Night Preset</label>
+                <select id="night-profile-mode">
+                  <option value="conservative">Conservative</option>
+                  <option value="aggressive">Aggressive</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:120px">
+                <label for="night-yolo-conf">Night Conf</label>
+                <input id="night-yolo-conf" type="number" min="0.01" max="0.99" step="0.01" value="0.30" />
+              </div>
+              <div class="field" style="max-width:140px">
+                <label for="night-infer-size">Night Infer Size</label>
+                <input id="night-infer-size" type="number" min="320" max="1280" step="32" value="640" />
+              </div>
+              <div class="field" style="max-width:110px">
+                <label for="night-iou">Night IOU</label>
+                <input id="night-iou" type="number" min="0.05" max="0.95" step="0.01" value="0.45" />
+              </div>
+              <div class="field" style="max-width:120px">
+                <label for="night-max-det">Night Max Det</label>
+                <input id="night-max-det" type="number" min="10" max="500" value="120" />
+              </div>
+            </div>
+            <div class="ml-control-actions">
+              <button id="btn-apply-night-preset" class="btn-secondary" type="button">Apply Preset</button>
+              <button id="btn-save-night-profile" class="btn-primary" type="button">Save Night Profile</button>
+              <span id="night-profile-msg" class="muted"></span>
+            </div>
+            <div class="night-live-panel">
+              <h5>Night Tracking Live Data</h5>
+              <p id="night-live-summary" class="muted">Checking live night tracking state...</p>
+              <div id="night-live-grid" class="night-live-grid">
+                <div class="night-live-item"><span>Local Time</span><strong id="night-live-now">-</strong></div>
+                <div class="night-live-item"><span>Window State</span><strong id="night-live-window-state">-</strong></div>
+                <div class="night-live-item"><span>Effective Thresholds</span><strong id="night-live-thresholds">-</strong></div>
+                <div class="night-live-item"><span>Capture Counters</span><strong id="night-live-counters">-</strong></div>
+                <div class="night-live-item"><span>Latest Telemetry</span><strong id="night-live-telemetry">-</strong></div>
+                <div class="night-live-item"><span>Latest Training</span><strong id="night-live-training">-</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-box">
+            <h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              Adaptive Runtime Profile
+              <span id="runtime-profile-status" class="ml-status-chip">Unknown</span>
+            </h3>
+            <p id="runtime-profile-live" class="muted" style="font-size:0.78rem;margin:0 0 10px;">Waiting for live runtime state...</p>
+            <div class="field-row">
+              <div class="field" style="max-width:160px">
+                <label for="runtime-profile-mode">Mode</label>
+                <select id="runtime-profile-mode">
+                  <option value="auto">Auto</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:210px">
+                <label for="runtime-manual-profile">Manual Profile</label>
+                <select id="runtime-manual-profile"></select>
+              </div>
+              <div class="field" style="max-width:200px">
+                <label for="runtime-manual-until">Manual Until (optional)</label>
+                <input id="runtime-manual-until" type="datetime-local" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="max-width:170px">
+                <label for="runtime-autotune-interval">Autotune Interval (sec)</label>
+                <input id="runtime-autotune-interval" type="number" min="5" max="300" value="20" />
+              </div>
+              <div class="field" style="max-width:165px">
+                <label for="runtime-cooldown-sec">Switch Cooldown (sec)</label>
+                <input id="runtime-cooldown-sec" type="number" min="15" max="3600" value="600" />
+              </div>
+              <div class="field" style="max-width:165px">
+                <label for="runtime-stream-grab-latest">Stream Grab Latest</label>
+                <select id="runtime-stream-grab-latest">
+                  <option value="1">Enabled</option>
+                  <option value="0">Disabled</option>
+                </select>
+              </div>
+            </div>
+            <div class="ml-control-actions">
+              <button id="btn-save-runtime-profile" class="btn-primary" type="button">Save Runtime Profile</button>
+              <button id="btn-runtime-force-auto" class="btn-secondary" type="button">Force Auto</button>
+              <span id="runtime-profile-msg" class="muted"></span>
+            </div>
+            <p id="runtime-profile-error" class="auth-error" role="alert" style="display:none;margin-top:8px;"></p>
+          </div>
+        </div>
       </section>
 
       <!-- ═══════════════════════════════════════════════════════
@@ -630,7 +697,7 @@
            ═══════════════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-bets">
         <div class="panel-head">
-          <h2>Bets</h2>
+          <h2>Rounds &amp; Bets</h2>
           <p>Round controls, session scheduling, and recent bet activity.</p>
         </div>
 
@@ -816,7 +883,7 @@
       <!-- ══ Model ══════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-model">
         <div class="panel-head">
-          <h2>Model</h2>
+          <h2>Model Status</h2>
           <p>Live AI inference status — model identity, scene context, detection activity, and task health.</p>
         </div>
         <div id="model-panel-root">
@@ -941,7 +1008,7 @@
       <!-- ══ Banners ════════════════════════════════════════════ -->
       <section class="admin-panel" id="panel-banners">
         <div class="panel-head">
-          <h2>Banners</h2>
+          <h2>Content</h2>
           <p>Create and manage announcement banners shown to users when no round is active.</p>
         </div>
 
@@ -1046,69 +1113,6 @@
                 Create Banner
               </button>
               <button type="button" class="btn-outline" id="abn-form-cancel">Cancel</button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════════════════════
-           STREAMS PANEL
-           ═══════════════════════════════════════════════════════ -->
-      <section class="admin-panel" id="panel-streams">
-        <div class="panel-head">
-          <h2>Streams</h2>
-          <p>Manage live camera sources. Add streams by ipcam alias or direct HLS URL.</p>
-        </div>
-
-        <p id="streams-msg" class="streams-msg"></p>
-
-        <!-- Camera list -->
-        <div class="card-box" style="margin-bottom:18px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-            <h3 style="margin:0;">Camera Sources</h3>
-            <button id="streams-autopick-btn" class="streams-autopick-btn" style="display:none;" title="Select the camera with the highest quality score">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              AUTO-PICK BEST
-            </button>
-          </div>
-          <div id="streams-list">
-            <p class="loading">Loading...</p>
-          </div>
-        </div>
-
-        <!-- Add / Edit form -->
-        <div class="card-box" id="streams-form-card">
-          <h3 id="streams-form-heading">Add Stream</h3>
-          <p class="admin-hint">Use an ipcam alias (short name) or paste a full HLS URL (https://...). The label is shown to users in the camera switcher.</p>
-
-          <form id="streams-form">
-            <div class="field-row">
-              <div class="field">
-                <label for="streams-form-name">Display Name</label>
-                <input id="streams-form-name" type="text" maxlength="60" placeholder="e.g. Main Street, North Gate…" />
-              </div>
-            </div>
-
-            <div class="field-row">
-              <div class="field">
-                <label for="streams-form-alias">Stream Alias or URL</label>
-                <input id="streams-form-alias" type="text" placeholder="my-cam-alias  or  https://stream.example.com/live.m3u8" required />
-                <p class="admin-hint" style="margin:4px 0 0;">Short alias → proxied via /api/stream. Full URL → loaded directly.</p>
-              </div>
-            </div>
-
-            <div class="field" style="flex-direction:row;align-items:center;gap:10px;">
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
-                <input id="streams-form-active" type="checkbox" checked />
-                <span>Active (visible to users)</span>
-              </label>
-            </div>
-
-            <p id="streams-form-msg" class="form-msg" style="margin-top:6px;"></p>
-
-            <div style="display:flex;gap:8px;margin-top:10px;">
-              <button type="submit" class="btn-primary" id="streams-form-submit">Add Stream</button>
-              <button type="button" class="btn-outline" id="streams-form-cancel">Cancel</button>
             </div>
           </form>
         </div>

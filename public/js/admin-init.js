@@ -722,6 +722,8 @@ async function loadStats() {
         if (usersEl) usersEl.textContent = Number(hData.total_ws_connections ?? 0).toLocaleString();
         const visitsEl = document.getElementById("stat-visits");
         if (visitsEl) visitsEl.textContent = Number(hData.public_ws_total_visits ?? 0).toLocaleString();
+        const fpsEl = document.getElementById("stat-ai-fps");
+        if (fpsEl) fpsEl.textContent = hData.ai_fps_estimate != null ? Number(hData.ai_fps_estimate).toFixed(1) : "—";
         renderHealthOverview(hData);
       } else {
         renderHealthOverview(null, `HTTP ${h.status}`);
@@ -2609,13 +2611,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const panel = String(e?.detail?.panel || "");
     if (panel === "audience") loadAudiencePanel(true);
     if (panel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
-    if (panel === "streams") { window.AdminStreams?.init(); }
+    if (panel === "cameras") { window.AdminStreams?.init(); }
     if (panel === "detection") {
-      // Ensure zone editor renders when AI Engine panel first opens
-      const activeTab = document.querySelector(".det-subnav-btn.active")?.dataset?.detTab || "zones";
-      if (activeTab === "zones") {
-        setTimeout(() => window.AdminLine?.refresh?.(), 80);
-      }
+      // Ensure zone editor renders when Detection panel first opens
+      setTimeout(() => window.AdminLine?.refresh?.(), 80);
     }
     if (panel === "mapping") {
       if (!_mappingActive) {
@@ -2627,6 +2626,49 @@ document.addEventListener("DOMContentLoaded", () => {
       window.AdminMapping?.stop();
     }
   });
+
+  // Wire Dashboard → Force Camera Switch
+  (async function initDashCamSwitch() {
+    const sel = document.getElementById("dash-cam-select");
+    const btn = document.getElementById("dash-cam-switch-btn");
+    const msg = document.getElementById("dash-cam-switch-msg");
+    if (!sel || !btn) return;
+    try {
+      const { data: cams } = await window.sb
+        .from("cameras")
+        .select("id, name, ipcam_alias, is_active")
+        .order("area", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (cams?.length) {
+        sel.innerHTML = cams.map(c =>
+          `<option value="${c.ipcam_alias}"${c.is_active ? " selected" : ""}>${c.name}${c.is_active ? " (active)" : ""}</option>`
+        ).join("");
+      }
+    } catch { /* non-fatal */ }
+    btn.addEventListener("click", async () => {
+      const alias = sel.value;
+      if (!alias) return;
+      btn.disabled = true;
+      if (msg) { msg.textContent = "Switching…"; msg.className = "line-status"; }
+      try {
+        const token = await window.Auth?.getToken?.();
+        const r = await fetch("/api/admin/camera-switch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ alias }),
+        });
+        const d = await r.json();
+        if (r.ok) {
+          if (msg) { msg.textContent = d.message || "Switched."; msg.className = "line-status success"; }
+        } else {
+          if (msg) { msg.textContent = d.error || `Error ${r.status}`; msg.className = "line-status error"; }
+        }
+      } catch (err) {
+        if (msg) { msg.textContent = "Request failed."; msg.className = "line-status error"; }
+      }
+      btn.disabled = false;
+    });
+  })();
 
   // Wire mapping panel action buttons
   document.getElementById("mapping-save-btn")?.addEventListener("click", () => {
@@ -2645,7 +2687,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const _initPanel = localStorage.getItem("whitelinez.admin.active_panel") || "overview";
     if (_initPanel === "audience") loadAudiencePanel(true);
     if (_initPanel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
-    if (_initPanel === "streams") { window.AdminStreams?.init(); }
+    if (_initPanel === "cameras") { window.AdminStreams?.init(); }
     if (_initPanel === "model")   { window.AdminModel?.init(); window.AdminModel?.start(); }
     if (_initPanel === "mapping") { _mappingActive = true; window.AdminMapping?.start(activeCameraId); }
   }

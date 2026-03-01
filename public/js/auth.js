@@ -19,7 +19,7 @@ const Auth = (() => {
   async function logout() {
     const { error } = await window.sb.auth.signOut();
     if (error) throw error;
-    window.location.href = "/index.html";
+    window.location.href = "/";
   }
 
   async function getSession() {
@@ -32,7 +32,7 @@ const Auth = (() => {
     return session?.access_token ?? null;
   }
 
-  async function requireAuth(redirectTo = "/login.html") {
+  async function requireAuth(redirectTo = "/login") {
     const session = await getSession();
     if (!session) {
       window.location.href = redirectTo;
@@ -41,7 +41,7 @@ const Auth = (() => {
     return session;
   }
 
-  async function requireAdmin(redirectTo = "/index.html") {
+  async function requireAdmin(redirectTo = "/") {
     const session = await requireAuth();
     if (!session) return null;
     const role = session.user?.app_metadata?.role;
@@ -70,7 +70,7 @@ const Auth = (() => {
     return data.session.access_token;
   }
 
-  async function signInWithGoogle(redirectTo = window.location.origin + "/index.html") {
+  async function signInWithGoogle(redirectTo = window.location.origin + "/") {
     const { error } = await window.sb.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },

@@ -1,5 +1,5 @@
 Auth.getSession().then(s => {
-  if (s) window.location.href = "/account.html";
+  if (s) window.location.href = "/account";
 });
 
 document.getElementById("reg-form").addEventListener("submit", async (e) => {

@@ -114,7 +114,7 @@ function initUsernameEdit() {
 }
 
 async function init() {
-  const session = await Auth.requireAuth("/login.html");
+  const session = await Auth.requireAuth("/login");
   if (!session) return;
   currentSession = session;
 
@@ -371,7 +371,7 @@ async function loadHistory() {
 
   const resolved = (data || []).filter((b) => b.status !== "pending");
   if (error || !resolved.length) {
-    container.innerHTML = `<p class="muted">No resolved guesses yet. <a href="/index.html">Make your first guess!</a></p>`;
+    container.innerHTML = `<p class="muted">No resolved guesses yet. <a href="/">Make your first guess!</a></p>`;
     return;
   }
 

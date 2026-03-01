@@ -1,6 +1,6 @@
 function redirectByRole(session) {
   const role = session?.user?.app_metadata?.role;
-  window.location.href = role === "admin" ? "/admin.html" : "/index.html";
+  window.location.href = role === "admin" ? "/admin" : "/";
 }
 
 Auth.getSession().then(s => {

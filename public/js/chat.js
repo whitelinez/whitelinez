@@ -128,7 +128,7 @@ const Chat = (() => {
       _username = guest.username;
       if (hint) {
         hint.classList.remove("hidden");
-        hint.innerHTML = `Chatting as <strong>${esc(_username)}</strong>. <a href="/login.html">Login</a> to keep a profile.`;
+        hint.innerHTML = `Chatting as <strong>${esc(_username)}</strong>. <a href="/login">Login</a> to keep a profile.`;
       }
     }
     if (inputRow) inputRow.style.display = "";

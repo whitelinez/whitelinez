@@ -460,7 +460,27 @@ const MlOverlay = (() => {
     _bound = false;
   }
 
-  return { init, destroy };
+  function resetForNewScene() {
+    state.startedAt      = Date.now();
+    state.frames         = 0;
+    state.detections     = 0;
+    state.confSum        = 0;
+    state.confCount      = 0;
+    state.liveObjectsNow = 0;
+    state.detRatePerMin  = 0;
+    state.crossingRatePerMin = 0;
+    state.lastTickMs     = null;
+    state.lastCrossingTotal = null;
+    state.lastCaptureTsMs = null;
+    state.sceneLighting  = "unknown";
+    state.sceneWeather   = "unknown";
+    state.sceneConfidence = 0;
+    state.seededFromTelemetry = false;
+    render();
+    seedFromTelemetry();
+  }
+
+  return { init, destroy, resetForNewScene };
 })();
 
 window.MlOverlay = MlOverlay;

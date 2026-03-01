@@ -28,7 +28,20 @@ const FloatingCount = (() => {
       const { cameraId, name, isAI } = e.detail || {};
       _currentCameraId = cameraId || null;
       _setCamLabel(name || null, isAI);
-      if (!isAI && cameraId) _loadCameraSnapshot(cameraId);
+      if (isAI) {
+        // Reset count display until new stream data arrives
+        _lastTotal = 0;
+        const totalEl = document.getElementById("cw-total");
+        if (totalEl) totalEl.textContent = "0";
+        ["cw-cars","cw-trucks","cw-buses","cw-motos"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = "0";
+        });
+        const fpsEl = document.getElementById("cw-fps");
+        if (fpsEl) fpsEl.textContent = "--";
+      } else if (cameraId) {
+        _loadCameraSnapshot(cameraId);
+      }
     });
 
     // Enter guess mode when a guess is submitted.

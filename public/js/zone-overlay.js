@@ -471,7 +471,9 @@ const ZoneOverlay = (() => {
     }
   }
 
-  return { init };
+  function reloadZones() { loadAndDraw(); }
+
+  return { init, reloadZones };
 })();
 
 window.ZoneOverlay = ZoneOverlay;

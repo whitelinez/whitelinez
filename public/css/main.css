@@ -5624,6 +5624,30 @@ button {
    STREAM OFFLINE OVERLAY
    ============================================= */
 
+/* Stream switching overlay */
+.stream-switching-overlay {
+  position: absolute; inset: 0; z-index: 91;
+  background: rgba(4, 6, 14, 0.7);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.stream-switching-overlay.hidden { display: none; }
+.sso-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.sso-spinner {
+  animation: sso-spin 1s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes sso-spin { to { transform: rotate(360deg); } }
+.sso-steps { display: flex; flex-direction: column; gap: 4px; text-align: center; }
+.sso-step {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(0, 212, 255, 0.35); margin: 0; transition: color 250ms, opacity 250ms;
+}
+.sso-step.active { color: #00d4ff; }
+.sso-step.done   { color: rgba(24, 199, 122, 0.7); }
+
 .stream-offline-overlay {
   position: absolute;
   inset: 0;

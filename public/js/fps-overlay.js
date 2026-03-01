@@ -89,7 +89,14 @@ const FpsOverlay = (() => {
     _vfcId = null;
   }
 
-  return { init, destroy };
+  function reset() {
+    _samples = [];
+    _lastNow = 0;
+    _lastVideoTime = -1;
+    if (_el) { _el.textContent = "FPS --.-"; _el.className = _el.className.replace(/fps-\w+/g, "").trim(); }
+  }
+
+  return { init, destroy, reset };
 })();
 
 window.FpsOverlay = FpsOverlay;

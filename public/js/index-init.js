@@ -278,6 +278,46 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
   } catch { /* silent — stream works without failover list */ }
 
+  // Stream switching overlay — shown when user picks a new AI camera
+  let _switchTimer1 = null, _switchTimer2 = null;
+  function _showSwitchOverlay() {
+    const ov = document.getElementById("stream-switching-overlay");
+    if (!ov) return;
+    ["sso-step-1","sso-step-2","sso-step-3"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove("active","done"); }
+    });
+    document.getElementById("sso-step-1")?.classList.add("active");
+    ov.classList.remove("hidden");
+    clearTimeout(_switchTimer1); clearTimeout(_switchTimer2);
+    _switchTimer1 = setTimeout(() => {
+      document.getElementById("sso-step-1")?.classList.replace("active","done");
+      document.getElementById("sso-step-2")?.classList.add("active");
+    }, 800);
+    _switchTimer2 = setTimeout(() => {
+      document.getElementById("sso-step-2")?.classList.replace("active","done");
+      document.getElementById("sso-step-3")?.classList.add("active");
+    }, 1800);
+  }
+  function _hideSwitchOverlay() {
+    clearTimeout(_switchTimer1); clearTimeout(_switchTimer2);
+    const ov = document.getElementById("stream-switching-overlay");
+    ov?.classList.add("hidden");
+  }
+
+  window.addEventListener("stream:switching", () => { _showSwitchOverlay(); });
+
+  window.addEventListener("camera:switched", (e) => {
+    const { isAI } = e.detail || {};
+    if (!isAI) { _hideSwitchOverlay(); return; }
+    // Reset FPS samples so we get clean readings for the new stream
+    FpsOverlay.reset();
+    // Reset Vision HUD counters + re-seed from new camera's telemetry
+    MlOverlay.resetForNewScene();
+    // Immediately reload detection zones for the new active camera
+    ZoneOverlay.reloadZones();
+  });
+
   // Stream offline overlay + camera failover
   window.addEventListener("stream:status", (e) => {
     const overlay = document.getElementById("stream-offline-overlay");
@@ -302,6 +342,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     } else if (e.detail?.status === "ok") {
       overlay?.classList.add("hidden");
       _failoverPending = false;
+      _hideSwitchOverlay();
     }
   });
 

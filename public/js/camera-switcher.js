@@ -244,6 +244,11 @@ const CameraSwitcher = (() => {
       if (el) el.style.display = isAI ? '' : 'none';
     });
 
+    if (isAI) {
+      window.dispatchEvent(new CustomEvent('stream:switching', { detail: { alias } }));
+      window.Stream?.setAlias(alias);
+    }
+
     if (iframe) {
       if (isAI) {
         iframe.src = '';

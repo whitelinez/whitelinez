@@ -826,6 +826,7 @@ const DetectionOverlay = (() => {
 
   function clearDetections() {
     latestDetections = [];
+    detectionQueue.length = 0;  // flush time-sync queue for old camera
     lastFrameKey = "";
     forceRender = true;
     if (rafId) cancelAnimationFrame(rafId);

@@ -359,21 +359,46 @@ const AdminStreams = (() => {
     document.getElementById("streams-form-card")?.scrollIntoView({ behavior: "smooth" });
   }
 
-  // ── AI camera selection (exclusive — only one active at a time) ──────────────
+  // ── AI camera selection (exclusive — one atomic backend call) ────────────────
   async function _setAiCamera(id) {
-    // Deactivate all others first, then activate the chosen one
-    const { error: e1 } = await window.sb
-      .from("cameras")
-      .update({ is_active: false })
-      .neq("id", id);
-    if (e1) { _msg("Error: " + e1.message, true); return; }
-    const { error: e2 } = await window.sb
-      .from("cameras")
-      .update({ is_active: true })
-      .eq("id", id);
-    if (e2) { _msg("Error: " + e2.message, true); return; }
-    _msg("AI camera set. Backend will switch within ~4 min.");
-    await _load();
+    const btn = document.querySelector(`[data-action="set-ai"][data-id="${id}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = "Switching…"; }
+
+    try {
+      const session = await window.Auth?.getSession?.();
+      const jwt = session?.access_token || null;
+
+      const res = await fetch("/api/admin/camera-switch", {
+        method: "POST",
+        headers: {
+          "Authorization": jwt ? `Bearer ${jwt}` : "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ camera_id: id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        _msg("Switch failed: " + (data.detail || data.error || res.status), true);
+        return;
+      }
+
+      _msg("Camera switched. AI reset, tracker cleared, scene lock lifted.");
+
+      // Clear stale detection boxes from previous camera immediately
+      window.DetectionOverlay?.clearDetections?.();
+
+      // If zone editor is open, reload zones for new camera
+      const cam = _cameras.find(c => String(c.id) === String(id));
+      if (cam) {
+        window.ZoneOverlay?.reloadZones?.(cam.ipcam_alias);
+        window.Stream?.setAlias?.(cam.ipcam_alias);
+      }
+
+      await _load();
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "Set as AI Cam"; }
+    }
   }
 
   async function _deactivateAi(id) {

@@ -58,6 +58,15 @@
 
       <span class="sidebar-section-label">Intelligence</span>
 
+      <button class="admin-nav-btn" data-panel="model">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="8" cy="8" r="5.5"/>
+          <path d="M8 2.5V8l3 2"/>
+          <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Model</span>
+      </button>
+
       <button class="admin-nav-btn" data-panel="ml">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
           <rect x="4" y="4" width="8" height="8" rx="1"/>
@@ -773,6 +782,123 @@
       <!-- ═══════════════════════════════════════════════════════
            SYSTEM HEALTH PANEL
            ═══════════════════════════════════════════════════════ -->
+      <!-- ══ Model ══════════════════════════════════════════════ -->
+      <section class="admin-panel" id="panel-model">
+        <div class="panel-head">
+          <h2>Model</h2>
+          <p>Live AI inference status — model identity, scene context, detection activity, and task health.</p>
+        </div>
+        <div id="model-panel-root">
+          <!-- Hero bar -->
+          <div class="mp-hero" id="mp-hero">
+            <div class="mp-hero-left">
+              <span class="mp-status-dot" id="mp-status-dot"></span>
+              <span class="mp-status-label" id="mp-status-label">—</span>
+              <span class="mp-model-name" id="mp-model-name">—</span>
+            </div>
+            <div class="mp-hero-chips">
+              <span class="mp-chip" id="mp-chip-device">—</span>
+              <span class="mp-chip" id="mp-chip-conf">conf —</span>
+              <span class="mp-chip mp-chip-muted" id="mp-chip-frame">frame —</span>
+            </div>
+          </div>
+
+          <!-- Three columns -->
+          <div class="mp-grid">
+            <!-- Scene -->
+            <div class="mp-card" id="mp-scene-card">
+              <div class="mp-card-label">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                Scene
+              </div>
+              <div class="mp-scene-rows">
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">Camera</span>
+                  <span class="mp-scene-val" id="mp-camera-name">—</span>
+                </div>
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">Lighting</span>
+                  <span class="mp-scene-val" id="mp-lighting">—</span>
+                </div>
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">Weather</span>
+                  <span class="mp-scene-val" id="mp-weather">—</span>
+                </div>
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">Scene conf</span>
+                  <span class="mp-scene-val" id="mp-scene-conf">—</span>
+                </div>
+              </div>
+              <div class="mp-scene-conf-bar-wrap">
+                <div class="mp-scene-conf-bar" id="mp-scene-conf-bar" style="width:0%"></div>
+              </div>
+            </div>
+
+            <!-- Detections -->
+            <div class="mp-card" id="mp-det-card">
+              <div class="mp-card-label">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01"/></svg>
+                Detections
+              </div>
+              <div class="mp-det-classes" id="mp-det-classes">
+                <!-- rendered by JS -->
+              </div>
+              <div class="mp-det-meta">
+                <span>Total: <b id="mp-det-total">0</b></span>
+                <span>Avg conf: <b id="mp-det-conf">—</b></span>
+                <span>Crossings: <b id="mp-det-crossings">0</b></span>
+              </div>
+              <div class="mp-det-ts">Last event: <span id="mp-det-ts">—</span></div>
+            </div>
+
+            <!-- Performance -->
+            <div class="mp-card" id="mp-perf-card">
+              <div class="mp-card-label">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Performance
+              </div>
+              <div class="mp-perf-big">
+                <div class="mp-perf-stat">
+                  <span class="mp-perf-val" id="mp-fps">—</span>
+                  <span class="mp-perf-unit">fps</span>
+                </div>
+                <div class="mp-perf-divider"></div>
+                <div class="mp-perf-stat">
+                  <span class="mp-perf-val" id="mp-frames">—</span>
+                  <span class="mp-perf-unit">frames</span>
+                </div>
+              </div>
+              <div class="mp-perf-rows">
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">Device</span>
+                  <span class="mp-scene-val" id="mp-device-full">—</span>
+                </div>
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">CUDA</span>
+                  <span class="mp-scene-val" id="mp-cuda">—</span>
+                </div>
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">DB write lag</span>
+                  <span class="mp-scene-val" id="mp-db-lag">—</span>
+                </div>
+                <div class="mp-scene-row">
+                  <span class="mp-scene-key">Last error</span>
+                  <span class="mp-scene-val mp-scene-val-muted" id="mp-last-error">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tasks bar -->
+          <div class="mp-tasks" id="mp-tasks">
+            <div class="mp-tasks-label">Backend tasks</div>
+            <div class="mp-tasks-row" id="mp-tasks-row">
+              <!-- rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="admin-panel" id="panel-health">
         <div class="panel-head">
           <h2>System Health &amp; Recovery</h2>
@@ -978,5 +1104,6 @@
 <script src="/js/admin-runtime-profile.js"></script>
 <script src="/js/admin-banners.js"></script>
 <script src="/js/admin-streams.js"></script>
+<script src="/js/admin-model.js"></script>
 </body>
 </html>

@@ -2561,7 +2561,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_initPanel === "audience") loadAudiencePanel(true);
     if (_initPanel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
     if (_initPanel === "streams") { window.AdminStreams?.init(); }
+    if (_initPanel === "model")   { window.AdminModel?.init(); window.AdminModel?.start(); }
   }
+  window.AdminModel?.init();
 
   // Market type visibility
   document.getElementById("market-type")?.addEventListener("change", (e) => {

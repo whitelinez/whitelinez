@@ -8938,6 +8938,99 @@ button {
   padding: 1px 6px;
 }
 
+/* ── Quality badges ──────────────────────────────────────────── */
+
+/* Admin streams row quality badge */
+.stream-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 1px 6px;
+  border: 1px solid;
+}
+.stream-quality-good {
+  color: #4ade80;
+  background: rgba(74,222,128,0.07);
+  border-color: rgba(74,222,128,0.22);
+}
+.stream-quality-mid {
+  color: #facc15;
+  background: rgba(250,204,21,0.07);
+  border-color: rgba(250,204,21,0.22);
+}
+.stream-quality-bad {
+  color: #f87171;
+  background: rgba(248,113,113,0.07);
+  border-color: rgba(248,113,113,0.22);
+}
+
+/* Camera picker quality badge */
+.cp-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 1px 5px;
+  border: 1px solid;
+  margin-top: 2px;
+}
+.cp-quality-good {
+  color: #4ade80;
+  background: rgba(74,222,128,0.07);
+  border-color: rgba(74,222,128,0.2);
+}
+.cp-quality-mid {
+  color: #facc15;
+  background: rgba(250,204,21,0.07);
+  border-color: rgba(250,204,21,0.2);
+}
+.cp-quality-bad {
+  color: #f87171;
+  background: rgba(248,113,113,0.07);
+  border-color: rgba(248,113,113,0.2);
+}
+
+/* Lighting label inside quality badges */
+.stream-lighting-tag,
+.cp-lighting-tag {
+  font-size: 0.6rem;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.stream-lighting-day, .cp-lighting-day { color: #fbbf24; }
+.stream-lighting-dusk, .cp-lighting-dusk { color: #fb923c; }
+.stream-lighting-night, .cp-lighting-night { color: #818cf8; }
+
+/* Auto-pick best camera button */
+.streams-autopick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Archivo", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #4ade80;
+  background: rgba(74,222,128,0.08);
+  border: 1px solid rgba(74,222,128,0.28);
+  border-radius: 5px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.streams-autopick-btn:hover {
+  background: rgba(74,222,128,0.16);
+  border-color: rgba(74,222,128,0.45);
+}
+
 /* Active cam label in stream UI */
 #active-cam-label {
   font-size: 0.7rem;

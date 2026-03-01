@@ -17,7 +17,7 @@ const CameraSwitcher = (() => {
     try {
       const { data } = await window.sb
         .from('cameras')
-        .select('id, name, area, ipcam_alias, player_host, is_active')
+        .select('id, name, area, ipcam_alias, player_host, is_active, quality_snapshot')
         .order('area', { ascending: true })
         .order('created_at', { ascending: true });
 
@@ -111,6 +111,13 @@ const CameraSwitcher = (() => {
         <div class="cp-area-grid">`;
       cams.forEach(c => {
         const isAI = c.is_active;
+        const q = c.quality_snapshot;
+        const qScore = q?.quality_score != null ? Math.round(q.quality_score) : null;
+        const qCls = qScore == null ? '' : qScore >= 70 ? 'cp-quality-good' : qScore >= 40 ? 'cp-quality-mid' : 'cp-quality-bad';
+        const lightTag = q?.lighting ? `<span class="cp-lighting-tag cp-lighting-${q.lighting}">${q.lighting}</span>` : '';
+        const qualBadge = qScore != null
+          ? `<span class="cp-quality-badge ${qCls}" title="Brightness:${q.brightness} Sharpness:${q.sharpness} Contrast:${q.contrast}">${lightTag}Q:${qScore}</span>`
+          : '';
         gridHtml += `
           <div class="cp-cam-card${isAI ? ' cp-cam-ai' : ''}" data-alias="${c.ipcam_alias}" tabindex="0" role="button" aria-label="${c.name}">
             <div class="cp-preview-wrap">
@@ -127,6 +134,7 @@ const CameraSwitcher = (() => {
               ${isAI ? '<span class="cp-ai-badge"><span class="cp-ai-dot"></span>AI LIVE</span>' : ''}
               <span class="cp-cam-name">${c.name}</span>
               <span class="cp-fps-badge hidden"></span>
+              ${qualBadge}
             </div>
           </div>`;
       });

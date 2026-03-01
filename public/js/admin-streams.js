@@ -38,7 +38,7 @@ const AdminStreams = (() => {
 
     const { data, error } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, is_active, feed_appearance, player_host, area")
+      .select("id, ipcam_alias, created_at, is_active, feed_appearance, player_host, area, quality_snapshot")
       .order("created_at", { ascending: false });
 
     if (error) { _msg("Load failed: " + error.message, true); return; }
@@ -96,6 +96,25 @@ const AdminStreams = (() => {
     return active[0]?.id ?? null;
   }
 
+  // ── Quality helpers ───────────────────────────────────────────
+  function _qualityBadge(q) {
+    if (!q || q.quality_score == null) return "";
+    const score = Math.round(q.quality_score);
+    const cls = score >= 70 ? "stream-quality-good" : score >= 40 ? "stream-quality-mid" : "stream-quality-bad";
+    const light = q.lighting ? `<span class="stream-lighting-tag stream-lighting-${q.lighting}">${q.lighting}</span>` : "";
+    return `<span class="stream-quality-badge ${cls}" title="Brightness: ${q.brightness}  Sharpness: ${q.sharpness}  Contrast: ${q.contrast}">${light}Q:${score}</span>`;
+  }
+
+  function _autoPick() {
+    const scored = _cameras.filter(c => c.quality_snapshot?.quality_score != null);
+    if (!scored.length) { _msg("No quality data yet — wait for probe cycle.", true); return; }
+    scored.sort((a, b) => b.quality_snapshot.quality_score - a.quality_snapshot.quality_score);
+    const best = scored[0];
+    if (confirm(`Set "${best.feed_appearance?.label || best.ipcam_alias}" as AI camera? (score: ${Math.round(best.quality_snapshot.quality_score)})`)) {
+      _setAiCamera(String(best.id));
+    }
+  }
+
   // ── Render list ───────────────────────────────────────────────
   function _render() {
     const el = document.getElementById("streams-list");
@@ -108,6 +127,13 @@ const AdminStreams = (() => {
 
     const defaultId = _getDefaultCamId();
 
+    // Render "Auto-pick Best" button above list
+    const hasQuality = _cameras.some(c => c.quality_snapshot?.quality_score != null);
+    const autoPickEl = document.getElementById("streams-autopick-btn");
+    if (autoPickEl) {
+      autoPickEl.style.display = hasQuality ? "" : "none";
+    }
+
     el.innerHTML = _cameras.map(cam => {
       const label     = cam?.feed_appearance?.label || "";
       const alias     = cam.ipcam_alias || "";
@@ -115,10 +141,11 @@ const AdminStreams = (() => {
       const typeTag   = isIpcam ? "ipcamlive" : "Direct URL";
       const host      = cam.player_host || "g3";
       const area      = cam.area ? `<span class="stream-area-tag">${esc(cam.area)}</span>` : "";
-      const fpsVal    = _fpsMap[cam.id];
-      const fpsBadge  = fpsVal != null
+      const fpsVal      = _fpsMap[cam.id];
+      const fpsBadge    = fpsVal != null
         ? `<span class="stream-fps-badge">${Number(fpsVal).toFixed(1)} fps</span>`
         : "";
+      const qualBadge   = _qualityBadge(cam.quality_snapshot);
       const isDefault = cam.is_active && String(cam.id) === String(defaultId);
       const activeCls  = cam.is_active ? "stream-badge-active" : "stream-badge-inactive";
       const activeText = cam.is_active ? "AI Active" : "Inactive";
@@ -157,6 +184,7 @@ const AdminStreams = (() => {
             ${liveBadge}
             ${area}
             ${fpsBadge}
+            ${qualBadge}
             <span class="stream-badge ${activeCls}">${activeText}</span>
             <span class="stream-type-tag">${typeTag}</span>
           </div>
@@ -366,6 +394,8 @@ const AdminStreams = (() => {
   function init() {
     _load();
     _wireForm();
+    document.getElementById("streams-autopick-btn")
+      ?.addEventListener("click", _autoPick);
   }
 
   return { init, reload: _load };

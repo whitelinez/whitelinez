@@ -1203,7 +1203,12 @@
   .sidebar-overlay.visible { display: block; }
   .sidebar-toggle { display: flex; }
   .admin-main { margin-left: 0; padding: 0 14px 40px; }
-  .admin-topbar { display: flex; }
+  .admin-topbar {
+    display: flex;
+    margin: 0 -14px;
+    padding: 10px 14px;
+    width: calc(100% + 28px);
+  }
   .zone-editor-workflow { grid-template-columns: 1fr; }
   .stream-canvas-wrapper { position: relative; top: auto; }
   .health-grid { grid-template-columns: repeat(2,1fr); }
@@ -1211,6 +1216,7 @@
 
 @media (max-width: 640px) {
   .admin-main { padding: 0 10px 32px; }
+  .admin-topbar { margin: 0 -10px; width: calc(100% + 20px); padding: 10px 10px; }
   .overview-metrics-primary   { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .overview-metrics-secondary { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .ml-pipeline-grid  { grid-template-columns: 1fr; }

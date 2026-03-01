@@ -4272,8 +4272,8 @@ button {
 /* Final mobile HUD clamp: force compact size in bottom-right */
 @media (max-width: 640px) {
   .ml-hud {
-    width: min(118px, 46vw) !important;
-    max-width: 118px !important;
+    width: min(104px, 40vw) !important;
+    max-width: 104px !important;
     right: 4px !important;
     bottom: 4px !important;
     padding: 1px !important;
@@ -4282,53 +4282,65 @@ button {
   }
 
   .ml-hud-head {
-    margin-bottom: 2px;
-    gap: 3px;
+    margin-bottom: 1px;
+    gap: 2px;
   }
 
   .ml-hud-title {
-    font-size: 0.4rem !important;
-    letter-spacing: 0.08em;
+    font-size: 0.38rem !important;
+    letter-spacing: 0.07em;
   }
 
   .ml-hud-state {
-    font-size: 0.4rem !important;
-    padding: 1px 3px !important;
+    font-size: 0.38rem !important;
+    padding: 1px 2px !important;
   }
 
   .ml-hud-msg,
   .ml-hud-verbose {
-    font-size: 0.36rem !important;
+    font-size: 0.34rem !important;
     line-height: 1.2;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
   }
 
   .ml-hud-chips,
   .ml-hud-cells {
-    gap: 2px !important;
+    gap: 1px !important;
   }
 
   .ml-chip {
-    padding: 2px 3px !important;
-    font-size: 0.34rem;
+    padding: 1px 2px !important;
+    font-size: 0.32rem;
   }
 
   .ml-cell-track {
-    height: 4px !important;
+    height: 3px !important;
   }
 
   .ml-cell-row strong {
-    font-size: 0.42rem !important;
+    font-size: 0.38rem !important;
   }
 
   .ml-hud-metrics {
-    font-size: 0.4rem !important;
-    gap: 3px;
+    font-size: 0.36rem !important;
+    gap: 2px;
   }
 
   .ml-ico {
-    width: 6px !important;
-    height: 6px !important;
+    width: 5px !important;
+    height: 5px !important;
+  }
+}
+
+/* Extra-small phones — hide metrics row entirely to cut height further */
+@media (max-width: 430px) {
+  .ml-hud {
+    width: min(92px, 36vw) !important;
+    max-width: 92px !important;
+  }
+
+  .ml-hud-metrics {
+    display: none !important;
   }
 }
 

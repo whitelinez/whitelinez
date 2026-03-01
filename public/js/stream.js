@@ -51,10 +51,12 @@ const Stream = (() => {
       _mediaRecoveryAttempts = 0;
       hlsInstance = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,     // off — reduces bufferAppendError on non-LL servers
-        backBufferLength: 10,
-        maxBufferLength: 15,
-        maxMaxBufferLength: 30,
+        lowLatencyMode: true,          // LL-HLS — reduces video lag from ~10s to ~2-4s
+        backBufferLength: 2,           // was 10 — minimal back buffer
+        maxBufferLength: 4,            // was 15 — stay close to live edge
+        maxMaxBufferLength: 8,         // was 30
+        liveSyncDurationCount: 1,      // try to stay 1 segment from live edge
+        liveMaxLatencyDurationCount: 3,
         fragLoadingMaxRetry: 4,
         levelLoadingMaxRetry: 4,
         manifestLoadingMaxRetry: 3,
@@ -129,7 +131,22 @@ const Stream = (() => {
 
   function getWssUrl() { return _wssUrl; }
 
-  return { init, destroy, setAlias, getWssUrl };
+  /**
+   * Returns how many ms the video element's playback lags behind the live edge.
+   * Uses the buffered range end (live edge) minus currentTime.
+   * Falls back to 0 when the video hasn't loaded yet.
+   */
+  function getVideoLag(videoEl) {
+    const vid = videoEl || currentVideoEl;
+    if (!vid) return 0;
+    try {
+      if (!vid.buffered.length) return 0;
+      const liveEdge = vid.buffered.end(vid.buffered.length - 1);
+      return Math.max(0, (liveEdge - vid.currentTime) * 1000);
+    } catch { return 0; }
+  }
+
+  return { init, destroy, setAlias, getWssUrl, getVideoLag };
 })();
 
 window.Stream = Stream;

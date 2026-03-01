@@ -13,7 +13,11 @@ const Counter = (() => {
   let lastCountTsMs = 0;
   let lastKnownTotal = 0;
   const MAX_BACKOFF = 30000;
-  const MAX_BOX_STALE_MS = 350;
+  // detection-overlay.js now queues detections and delays rendering by measured
+  // video lag, so we pass detections through for up to 12s. The overlay's queue
+  // pruning handles anything older. 350ms was stripping boxes before they could
+  // be time-matched to the video frame.
+  const MAX_BOX_STALE_MS = 12_000;
 
   function setStatus(ok) {
     if (window.FloatingCount) FloatingCount.setStatus(ok);

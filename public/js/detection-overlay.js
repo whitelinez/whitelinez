@@ -11,6 +11,14 @@ const DetectionOverlay = (() => {
   let latestDetections = [];
   let _detectZone = null;   // {points:[{x,y}]} or null — set by ZoneOverlay on load
   let rafId = null;
+
+  // ── Time-sync queue ───────────────────────────────────────────
+  // Detections arrive ~175ms after captured_at (real-time), but the HLS video
+  // is buffered 2-10s behind. We queue detections with their server timestamp
+  // and hold them until the video catches up to that moment in time.
+  const detectionQueue = [];     // [{ capturedAtMs, detections }], oldest first
+  const QUEUE_MAX_AGE_MS = 15_000;   // drop entries older than 15s
+  const QUEUE_MATCH_TOL_MS = 2_000;  // accept a queue entry within ±2s of target
   const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
   let pixiApp = null;
   let pixiEnabled = false;
@@ -468,7 +476,7 @@ const DetectionOverlay = (() => {
         out.push(det);
         continue;
       }
-      const alpha = 0.42;
+      const alpha = 0.28;  // lower = smoother box coasting between frames
       const sm = {
         ...det,
         x1: prev.x1 + (det.x1 - prev.x1) * alpha,
@@ -594,6 +602,47 @@ const DetectionOverlay = (() => {
     txt.y = ly + 2;
   }
 
+  /**
+   * Returns how many ms the video display lags behind the live edge.
+   * Used to compute which detection frame to render for the currently shown frame.
+   */
+  function estimateVideoLagMs() {
+    if (!video) return 0;
+    try {
+      if (!video.buffered.length) return 0;
+      const liveEdge = video.buffered.end(video.buffered.length - 1);
+      return Math.max(0, (liveEdge - video.currentTime) * 1000);
+    } catch { return 0; }
+  }
+
+  /**
+   * Picks the best matching entry from the detectionQueue for the video's
+   * current playback position. Prunes entries too old to be relevant.
+   * Falls back to latestDetections if the queue is empty or no match found.
+   */
+  function _pickFromQueue() {
+    if (!detectionQueue.length) return latestDetections;
+
+    const lagMs    = estimateVideoLagMs();
+    const targetMs = Date.now() - lagMs;
+
+    // Prune entries older than the target window
+    const cutoff = targetMs - QUEUE_MAX_AGE_MS;
+    while (detectionQueue.length > 1 && detectionQueue[0].capturedAtMs < cutoff) {
+      detectionQueue.shift();
+    }
+
+    // Find entry whose captured_at is closest to the video's current moment
+    let best = detectionQueue[0];
+    let bestDelta = Math.abs(best.capturedAtMs - targetMs);
+    for (let i = 1; i < detectionQueue.length; i++) {
+      const d = Math.abs(detectionQueue[i].capturedAtMs - targetMs);
+      if (d < bestDelta) { bestDelta = d; best = detectionQueue[i]; }
+    }
+
+    return bestDelta <= QUEUE_MATCH_TOL_MS ? best.detections : latestDetections;
+  }
+
   function init(videoEl, canvasEl) {
     video  = videoEl;
     canvas = canvasEl;
@@ -626,6 +675,13 @@ const DetectionOverlay = (() => {
 
     window.addEventListener("count:update", (e) => {
       latestDetections = e.detail?.detections ?? [];
+
+      // Push into time-sync queue so renderFrame can delay rendering to match video
+      const capturedAtMs = e.detail?.captured_at ? Date.parse(e.detail.captured_at) : NaN;
+      if (Number.isFinite(capturedAtMs)) {
+        detectionQueue.push({ capturedAtMs, detections: latestDetections });
+      }
+
       const nextKey = buildFrameKey(latestDetections);
       if (nextKey !== lastFrameKey) {
         forceRender = true;
@@ -645,7 +701,8 @@ const DetectionOverlay = (() => {
   function renderFrame() {
     rafId = null;
     if (!forceRender) return;
-    draw(latestDetections);
+    // Use time-matched queue entry so boxes align with the video frame being shown
+    draw(_pickFromQueue());
   }
 
   function syncSize() {
@@ -697,7 +754,8 @@ const DetectionOverlay = (() => {
       else laneDetections.push(det);
     }
 
-    const liveLane = laneDetections.slice(0, laneMaxBoxes);
+    const smoothed  = smoothLaneDetections(laneDetections, Date.now());
+    const liveLane  = smoothed.slice(0, laneMaxBoxes);
     for (const det of liveLane) {
       drawDetectionBox(det, bounds, {
         style: settings.box_style,

@@ -728,37 +728,44 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .ml-hud:hover { border-color: rgba(0, 212, 255, 0.45); }
 
-/* Compact view */
-.aip-compact { display: block; }
-.aip-live-row {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-  color: var(--cyan); font-family: "Inter", sans-serif;
-  margin-bottom: 5px;
+/* Compact view — icon badge row */
+.aip-compact {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 8px;
+}
+.aip-badge {
+  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
 }
 .aip-pulse-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--green); flex-shrink: 0;
   animation: pulse-dot 1.5s infinite;
 }
-.aip-live-label { flex: 1; }
-.aip-expand-ico { color: var(--muted); margin-left: auto; }
-.aip-stats-row {
-  font-size: 11px; color: var(--text); margin: 0 0 7px;
-  line-height: 1.35; font-family: "Inter", sans-serif;
+.aip-cam-ico { color: var(--cyan); opacity: 0.85; }
+.aip-stats {
+  display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0;
 }
-.aip-load-bar-wrap {
-  height: 3px; background: var(--bg3); border-radius: 2px; margin-bottom: 4px;
+.aip-stat {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  color: var(--text); background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border); border-radius: 3px;
+  padding: 2px 5px; flex-shrink: 0;
 }
-.aip-load-fill {
-  height: 100%; border-radius: 2px;
-  background: var(--green);
-  transition: width 1.2s ease, background 1.2s ease;
+.aip-stat svg { color: var(--muted); flex-shrink: 0; }
+.aip-stat strong { font-weight: 600; min-width: 18px; }
+.aip-expand-ico {
+  color: var(--muted); flex-shrink: 0; margin-left: auto;
+  transition: transform 0.2s;
 }
-.aip-load-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
-  color: var(--muted); font-family: "Inter", sans-serif;
-}
+.aip-hidden { display: none !important; }
+/* Legacy compat — these classes no longer render but keep them harmless */
+.aip-live-row { display: none; }
+.aip-live-label { display: none; }
+.aip-stats-row { display: none; }
+.aip-load-bar-wrap { display: none; }
+.aip-load-fill { display: none; }
+.aip-load-label { display: none; }
 
 /* Expanded view (hidden by default) */
 .aip-expanded { display: none; margin-top: 10px; border-top: 1px solid rgba(0,212,255,0.12); padding-top: 8px; }
@@ -10452,5 +10459,97 @@ button {
   .sidebar-tabs { /* keep desktop tab bar design */ }
   .tab-btn { font-size: 11px; padding: 10px 4px; }
   .gov-body { grid-template-columns: 1fr 240px; }
+}
+
+/* ============================================================
+   FINAL OVERRIDES — enforces correct v3 designs last in cascade
+   ============================================================ */
+
+/* ── Count widget: bottom strip (desktop) ── */
+.count-widget {
+  position: absolute !important;
+  bottom: 0 !important;
+  top: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 44px !important;
+  padding: 0 14px !important;
+  gap: 16px !important;
+  clip-path: none !important;
+  border-radius: 0 !important;
+  border-top: 1px solid rgba(255,184,0,0.15) !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  background: rgba(8,12,20,0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.count-widget::before { display: none !important; }
+.count-widget:hover,
+.count-widget.cw-active {
+  clip-path: none !important;
+  background: rgba(8,12,20,0.92) !important;
+  border-color: rgba(255,184,0,0.28) !important;
+  box-shadow: none !important;
+}
+
+/* ── AI Pulse HUD: compact pill (desktop) ── */
+.ml-hud {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: auto !important;
+  min-width: 160px !important;
+  max-width: 280px !important;
+  padding: 0 !important;
+  background: rgba(8,12,20,0.82) !important;
+  border: 1px solid rgba(0,212,255,0.25) !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.ml-hud.is-expanded .aip-compact { border-radius: 8px 8px 0 0; }
+
+/* ── Tab icons: hidden on desktop, shown on mobile ── */
+.tab-icon { display: none; }
+
+/* ── Mobile overrides ── */
+@media (max-width: 767px) {
+  /* Count strip — mobile size */
+  .count-widget {
+    height: 40px !important;
+    padding: 0 10px !important;
+    gap: 12px !important;
+  }
+  /* AI Pulse — full-width strip on mobile */
+  .ml-hud {
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    bottom: auto !important;
+    min-width: unset !important;
+    max-width: none !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0,212,255,0.15) !important;
+    height: 28px !important;
+  }
+  .aip-compact { padding: 3px 8px !important; }
+  .aip-stat { font-size: 9px !important; padding: 1px 4px !important; }
+  /* Replace emoji ::before with inline SVG icons */
+  .tab-btn::before { content: none !important; display: none !important; }
+  .tab-icon { display: block !important; }
 }
 

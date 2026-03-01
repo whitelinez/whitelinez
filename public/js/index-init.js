@@ -36,7 +36,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   async function resolveActiveCamera() {
     const { data, error } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, feed_appearance")
+      .select("id, name, ipcam_alias, created_at, feed_appearance")
       .eq("is_active", true);
     if (error) throw error;
     const cams = Array.isArray(data) ? data : [];
@@ -266,7 +266,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   try {
     const { data: camData } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at")
+      .select("id, name, ipcam_alias, created_at")
       .eq("is_active", true);
     if (Array.isArray(camData)) {
       _streamCameras = camData
@@ -484,10 +484,10 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     const firstCam = _streamCameras[0];
     if (firstCam) {
       const chipNameEl = document.getElementById("header-cam-name");
-      if (chipNameEl) chipNameEl.textContent = firstCam.ipcam_alias || "Live Camera";
+      if (chipNameEl) chipNameEl.textContent = firstCam.name || firstCam.ipcam_alias || "Live Camera";
       const chipLocEl = document.getElementById("chip-location");
       if (chipLocEl) {
-        chipLocEl.textContent = "📍 " + (firstCam.ipcam_alias || "Jamaica");
+        chipLocEl.textContent = "📍 " + (firstCam.name || firstCam.ipcam_alias || "Jamaica");
         chipLocEl.classList.remove("hidden");
       }
     }
@@ -500,8 +500,9 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
       const firstAlias = _streamCameras[0]?.ipcam_alias || "";
       pillStrip.innerHTML = _streamCameras.map(c => {
         const alias = c.ipcam_alias || "";
+        const label = c.name || alias || "Camera";
         return `<button class="cam-pill${alias === firstAlias ? ' active' : ''}" data-alias="${alias}">
-          <span class="cam-pill-dot"></span>${alias || "Camera"}
+          <span class="cam-pill-dot"></span>${label}
         </button>`;
       }).join("");
       if (_streamCameras.length < 2) pillStrip.style.display = "none";

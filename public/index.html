@@ -94,7 +94,7 @@
         <img class="logo-ai-frame" src="/img/aiframes.png" alt="" aria-hidden="true" />
       </span>
       <span class="logo-title-block">
-        <span class="logo-part-main">TRAFFIC.AI</span>
+        <span class="logo-part-main">AI TRAFFIC</span>
         <span class="logo-part-loc">JAMAICA</span>
       </span>
     </a>
@@ -289,20 +289,35 @@
         </div>
 
         <div id="ml-hud" class="ml-hud" title="Toggle AI details">
-          <!-- Compact view (default) -->
+          <!-- Compact view (default) — icon-based stat badges -->
           <div class="aip-compact">
-            <div class="aip-live-row">
+            <!-- Live indicator -->
+            <div class="aip-badge">
               <span class="aip-pulse-dot"></span>
-              <span class="aip-live-label">AI LIVE</span>
-              <span class="aip-expand-ico" aria-hidden="true">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="aip-cam-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </div>
+            <!-- 3 live stat chips -->
+            <div class="aip-stats">
+              <span class="aip-stat" title="Live objects in frame">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                <strong id="ml-hud-profile">—</strong>
+              </span>
+              <span class="aip-stat" title="Detection confidence">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <strong id="ml-hud-delay">—</strong>
+              </span>
+              <span class="aip-stat aip-stat-load" title="Traffic load">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><rect x="2" y="14" width="3" height="6" rx="1"/><rect x="9" y="9" width="3" height="11" rx="1"/><rect x="16" y="4" width="3" height="16" rx="1"/></svg>
+                <strong id="ml-hud-scene-conf">—</strong>
               </span>
             </div>
-            <p id="ml-hud-msg" class="aip-stats-row">Initializing…</p>
-            <div class="aip-load-bar-wrap">
-              <div id="aip-load-fill" class="aip-load-fill" style="width:0%"></div>
-            </div>
-            <span id="ml-hud-scene-conf" class="aip-load-label">LIGHT</span>
+            <!-- Expand chevron -->
+            <span class="aip-expand-ico" aria-hidden="true">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+            <!-- Hidden compat: ml-overlay.js writes here, kept for JS contract -->
+            <p id="ml-hud-msg" class="aip-hidden" aria-hidden="true"></p>
+            <div id="aip-load-fill" style="display:none"></div>
           </div>
 
           <!-- Expanded view (toggled by click) -->
@@ -316,16 +331,6 @@
             </div>
             <p id="ml-hud-bot" class="ml-hud-bot"></p>
             <p id="ml-hud-verbose" class="ml-hud-verbose">Scene lock scanning | retrain idle | scene --</p>
-            <div class="ml-hud-chips">
-              <span class="ml-chip">
-                <span class="ml-chip-label">Live Objects</span>
-                <strong id="ml-hud-profile">0</strong>
-              </span>
-              <span class="ml-chip">
-                <span class="ml-chip-label">Confidence</span>
-                <strong id="ml-hud-delay">0%</strong>
-              </span>
-            </div>
             <div class="ml-hud-cells">
               <div class="ml-cell-row">
                 <span class="ml-cell-label">Detection Rate</span>
@@ -349,10 +354,10 @@
           <img src="/img/aiframes.png" class="ml-hud-collapsed-ico" alt="" aria-hidden="true" style="display:none" />
         </div>
 
-        <!-- Scene chips: weather + location, bottom-right above count strip -->
+        <!-- Scene chip: weather only (location shown in header cam chip) -->
         <div id="scene-chips" class="scene-chips">
           <span id="chip-weather" class="scene-chip hidden"></span>
-          <span id="chip-location" class="scene-chip hidden"></span>
+          <span id="chip-location" style="display:none" aria-hidden="true"></span>
         </div>
 
         <div id="stream-chat-overlay" class="stream-chat-overlay">
@@ -370,10 +375,22 @@
 
     <aside class="sidebar">
       <div class="sidebar-tabs">
-        <button class="tab-btn active" data-tab="markets">PLAY</button>
-        <button class="tab-btn" data-tab="leaderboard">RANKINGS</button>
-        <button class="tab-btn" data-tab="chat">LIVE <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span></button>
-        <button class="tab-btn" data-tab="ml-showcase">INTEL</button>
+        <button class="tab-btn active" data-tab="markets">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          PLAY
+        </button>
+        <button class="tab-btn" data-tab="leaderboard">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
+          RANKINGS
+        </button>
+        <button class="tab-btn" data-tab="chat">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          LIVE <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span>
+        </button>
+        <button class="tab-btn" data-tab="ml-showcase">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M4.9 19.1l2.1-2.1M16.9 7.1l2.1-2.1"/></svg>
+          INTEL
+        </button>
       </div>
 
       <div id="tab-markets" class="tab-content active">
@@ -445,10 +462,22 @@
 
         <!-- Breakdown row -->
         <div class="intel-breakdown">
-          <span class="intel-bd-item">🚗 <span id="mls-lt-car">—</span></span>
-          <span class="intel-bd-item">🚛 <span id="mls-lt-truck">—</span></span>
-          <span class="intel-bd-item">🚌 <span id="mls-lt-bus">—</span></span>
-          <span class="intel-bd-item">🏍 <span id="mls-lt-moto">—</span></span>
+          <span class="intel-bd-item">
+            <svg width="14" height="8" viewBox="0 0 22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-label="Cars"><path d="M1 8h20M4 8l2.5-4.5a1 1 0 0 1 .9-.5h7.2a1 1 0 0 1 .9.5L18 8"/><rect x="1" y="8" width="20" height="2.5" rx="0.5"/><circle cx="6" cy="11" r="1.2"/><circle cx="16" cy="11" r="1.2"/></svg>
+            <span id="mls-lt-car">—</span>
+          </span>
+          <span class="intel-bd-item">
+            <svg width="14" height="8" viewBox="0 0 24 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-label="Trucks"><rect x="1" y="4" width="14" height="7" rx="0.5"/><path d="M15 6.5h4.5l2.5 2.5v2.5H15z"/><circle cx="5.5" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/><line x1="1" y1="7.5" x2="15" y2="7.5"/></svg>
+            <span id="mls-lt-truck">—</span>
+          </span>
+          <span class="intel-bd-item">
+            <svg width="14" height="8" viewBox="0 0 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-label="Buses"><rect x="1" y="2" width="20" height="8.5" rx="1"/><line x1="1" y1="5.5" x2="21" y2="5.5"/><line x1="7" y1="2" x2="7" y2="10.5"/><line x1="14" y1="2" x2="14" y2="10.5"/><circle cx="6" cy="12" r="1.2"/><circle cx="16" cy="12" r="1.2"/></svg>
+            <span id="mls-lt-bus">—</span>
+          </span>
+          <span class="intel-bd-item">
+            <svg width="14" height="8" viewBox="0 0 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-label="Motos"><circle cx="5" cy="10" r="2.8"/><circle cx="17" cy="10" r="2.8"/><path d="M5 10 L9 5 L13 5 L17 10"/><path d="M13 5 L15 3 L18 3"/><line x1="9" y1="5" x2="9" y2="3"/></svg>
+            <span id="mls-lt-moto">—</span>
+          </span>
         </div>
 
         <!-- AI MODEL section -->

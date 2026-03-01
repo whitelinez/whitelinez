@@ -228,7 +228,12 @@ const MlShowcase = (() => {
       const det = Number(r.detections_count || 0);
       const c = Number(r.avg_confidence || 0);
       const rawModel = String(r.model_name || "live");
-      const model = escHtml(rawModel);
+      // Strip date/hash suffixes like _20250212_abc123f → show clean family name
+      const cleanModel = rawModel === "live" ? "live"
+        : rawModel.replace(/_v\d+[_\-][0-9]{8}[_\-][0-9a-f]+$/i, "")
+                  .replace(/_[0-9]{8}[_\-][0-9a-f]+$/i, "")
+                  .replace(/_[0-9a-f]{6,}$/i, "");
+      const model = escHtml(cleanModel);
       const b = r.breakdown || {};
       const detail = [Number(b.car || 0), Number(b.truck || 0), Number(b.bus || 0), Number(b.motorcycle || 0)]
         .some((v) => v > 0)

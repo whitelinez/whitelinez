@@ -1030,19 +1030,13 @@ function _connectUserWs(session) {
     });
   });
 
-  // Auto-expand to PLAY tab if an active round is running
-  function _autoExpandIfRound() {
+  // Auto-expand PLAY tab on mobile — always show game content by default
+  function _autoExpand() {
     if (!isMobile()) return;
-    const hasBetPanel = document.querySelector("#bet-panel:not(.hidden)");
-    const hasMarkets  = document.querySelector("#markets-container .market-card");
-    if (hasBetPanel || hasMarkets) {
-      const playBtn = document.querySelector('.tab-btn[data-tab="markets"]');
-      if (playBtn) expandTo(playBtn);
-    }
+    const playBtn = document.querySelector('.tab-btn[data-tab="markets"]');
+    if (playBtn) expandTo(playBtn);
   }
-  // Check after markets load
-  window.addEventListener("markets:loaded", _autoExpandIfRound);
-  setTimeout(_autoExpandIfRound, 2500); // fallback
+  setTimeout(_autoExpand, 300); // after DOM settles
 
   // ── Swipe up on stream → expand PLAY tab ───────────────────────────────
   let _touchStartY = 0;

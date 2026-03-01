@@ -10579,24 +10579,6 @@ button {
   /* Count widget — minimal floating number on mobile too */
   .count-widget { top: 35% !important; left: 10px !important; }
   #cw-total { font-size: 40px !important; }
-  /* AI Pulse — full-width strip on mobile */
-  .ml-hud {
-    top: 0 !important;
-    right: 0 !important;
-    left: 0 !important;
-    bottom: auto !important;
-    min-width: unset !important;
-    max-width: none !important;
-    width: 100% !important;
-    border-radius: 0 !important;
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: 1px solid rgba(0,212,255,0.15) !important;
-    height: 28px !important;
-  }
-  .aip-compact { padding: 3px 8px !important; }
-  .aip-stat { font-size: 9px !important; padding: 1px 4px !important; }
   /* Replace emoji ::before with inline SVG icons */
   .tab-btn::before { content: none !important; display: none !important; }
   .tab-icon { display: block !important; }

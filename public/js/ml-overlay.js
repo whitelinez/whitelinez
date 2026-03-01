@@ -23,6 +23,9 @@ const MlOverlay = (() => {
     crossingRatePerMin: 0,
     lastTickMs: null,
     lastCrossingTotal: null,
+    // Sliding-window crossing events for stable rate calculation
+    // Each entry: { ms: timestamp, count: new_crossings }
+    _crossingWindow: [],
   };
 
   let _bound = false;
@@ -93,8 +96,7 @@ const MlOverlay = (() => {
     if (isLiveTick) {
       const newCrossings = Math.max(0, Number(data?.new_crossings ?? 0));
       state.detections += newCrossings;
-      const instDetRate = newCrossings / dtMin;
-      state.detRatePerMin = (state.detRatePerMin * 0.7) + (instDetRate * 0.3);
+      // detRatePerMin is computed in the sliding-window block below
     }
     // liveObjectsNow uses bounding-box count when fresh, otherwise holds its value
     if (dets.length > 0) {
@@ -122,13 +124,27 @@ const MlOverlay = (() => {
       state.sceneConfidence = Math.max(0, Math.min(1, sceneConfidence));
     }
 
-    // new_crossings = per-frame vehicle crossing count from backend (same field
-    // used by floating-count.js / zone-overlay.js). Skip bootstrap frames since
-    // those carry new_crossings:0 and would drag the rate toward zero.
+    // new_crossings = per-frame vehicle crossing count from backend.
+    // Use a 60-second sliding window so the rate stays non-zero between events
+    // rather than collapsing to 0 with a per-frame EWMA.
     if (!data?.bootstrap && dtMin != null) {
+      const nowMs = Date.now();
       const newCrossings = Math.max(0, Number(data?.new_crossings ?? 0));
-      const instCrossRate = newCrossings / dtMin;
-      state.crossingRatePerMin = (state.crossingRatePerMin * 0.65) + (instCrossRate * 0.35);
+      if (newCrossings > 0) {
+        state._crossingWindow.push({ ms: nowMs, count: newCrossings });
+      }
+      // Evict events older than 60s
+      const cutoffMs = nowMs - 60000;
+      while (state._crossingWindow.length && state._crossingWindow[0].ms < cutoffMs) {
+        state._crossingWindow.shift();
+      }
+      // Rate = crossings in last 60s / 1 min
+      const windowTotal = state._crossingWindow.reduce((s, e) => s + e.count, 0);
+      const windowSec = state._crossingWindow.length > 0
+        ? Math.max(1, (nowMs - state._crossingWindow[0].ms) / 1000)
+        : 60;
+      state.crossingRatePerMin = (windowTotal / windowSec) * 60;
+      state.detRatePerMin = state.crossingRatePerMin;
     }
 
     const ts = Date.parse(String(data?.captured_at || ""));
@@ -471,6 +487,7 @@ const MlOverlay = (() => {
     state.crossingRatePerMin = 0;
     state.lastTickMs     = null;
     state.lastCrossingTotal = null;
+    state._crossingWindow = [];
     state.lastCaptureTsMs = null;
     state.sceneLighting  = "unknown";
     state.sceneWeather   = "unknown";

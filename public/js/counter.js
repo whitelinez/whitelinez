@@ -104,7 +104,7 @@ const Counter = (() => {
       if (!res.ok) throw new Error(`token fetch ${res.status}`);
       ({ token, wss_url: wssUrl } = await res.json());
       window._wsToken = token;
-      window._wssUrl = wssUrl;
+      // wssUrl is module-scoped — not written to window to avoid casual exposure.
     } catch (err) {
       setStatus(false);
       reconnectTimer = setTimeout(() => {

@@ -6,13 +6,14 @@
 import crypto from "crypto";
 
 function generateHmacToken(secret) {
-  const ts = Math.floor(Date.now() / 1000).toString();
-  const payload = `${ts}.`;
+  const ts    = Math.floor(Date.now() / 1000).toString();
+  const nonce = crypto.randomBytes(8).toString("hex"); // v2: ts.nonce.sig
+  const payload = `${ts}.${nonce}.`;                   // extra="" → trailing dot
   const sig = crypto
     .createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
-  return `${ts}.${sig}`;
+  return `${ts}.${nonce}.${sig}`;
 }
 
 export default async function handler(req, res) {

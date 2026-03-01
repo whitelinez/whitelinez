@@ -8,6 +8,7 @@ const Stream = (() => {
   let currentAlias = "";
   let currentVideoEl = null;
   let retryTimer = null;
+  let _wssUrl = null;   // Railway WS URL — kept in module scope, NOT on window
 
   function emitStatus(status, detail = {}) {
     window.dispatchEvent(new CustomEvent("stream:status", { detail: { status, ...detail } }));
@@ -21,10 +22,7 @@ const Stream = (() => {
   }
 
   function buildStreamUrl() {
-    // Direct HLS URL — bypass proxy
-    if (currentAlias && /^https?:\/\//i.test(currentAlias)) {
-      return currentAlias;
-    }
+    // Always route through the Vercel proxy — never expose the upstream URL.
     const qs = currentAlias ? `?alias=${encodeURIComponent(currentAlias)}` : "";
     return `/api/stream${qs}`;
   }
@@ -39,9 +37,10 @@ const Stream = (() => {
     if (!res.ok) throw new Error("Failed to get stream token");
     const { wss_url, token } = await res.json();
 
-    // Store token for WebSocket consumers (counter.js, markets.js)
+    // Share token with other modules (counter.js etc.) via window.
+    // wss_url is kept in module scope only — not exposed on window.
     window._wsToken = token;
-    window._wssUrl = wss_url;
+    _wssUrl = wss_url;
 
     // Stream proxied through Vercel — avoids ipcamlive CORS restriction
     const streamUrl = buildStreamUrl();
@@ -64,7 +63,8 @@ const Stream = (() => {
       });
       hlsInstance.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
-          console.error("[Stream] Fatal HLS error:", data);
+          // Log type/details only — do not log the full data object (may contain URLs).
+          console.error("[Stream] Fatal HLS error:", data?.type, data?.details);
           emitStatus("down", { alias: currentAlias, reason: data?.details || "fatal_error" });
           clearRetry();
           retryTimer = setTimeout(() => init(videoEl, { alias: currentAlias }), 5000); // retry
@@ -101,7 +101,9 @@ const Stream = (() => {
     }
   }
 
-  return { init, destroy, setAlias };
+  function getWssUrl() { return _wssUrl; }
+
+  return { init, destroy, setAlias, getWssUrl };
 })();
 
 window.Stream = Stream;

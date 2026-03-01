@@ -465,10 +465,11 @@ function _connectUserWs(session) {
   async function connect() {
     const jwt = await Auth.getJwt();
     if (!jwt) return;
-    const wssUrl = window._wssUrl;
+    const wssUrl = (typeof Stream !== "undefined" && Stream.getWssUrl)
+      ? Stream.getWssUrl()
+      : null;
     if (!wssUrl) {
-      // Derive from public WS URL by replacing /ws/live → /ws/account
-      // Try again once ws token is available
+      // WS URL not ready yet — retry after stream.js has fetched the token.
       setTimeout(connect, 3000);
       return;
     }
@@ -516,9 +517,10 @@ function _connectUserWs(session) {
     };
   }
 
-  // Wait for ws token to be available (set by Counter.init/stream.js)
+  // Wait for WS URL to be ready (populated by stream.js after /api/token fetch)
   waitForToken = setInterval(() => {
-    if (window._wssUrl) {
+    const ready = typeof Stream !== "undefined" && Stream.getWssUrl && Stream.getWssUrl();
+    if (ready) {
       clearInterval(waitForToken);
       connect();
     }

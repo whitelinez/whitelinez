@@ -38,7 +38,7 @@ const AdminStreams = (() => {
 
     const { data, error } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, is_active, feed_appearance")
+      .select("id, ipcam_alias, created_at, is_active, feed_appearance, player_host, area")
       .order("created_at", { ascending: false });
 
     if (error) { _msg("Load failed: " + error.message, true); return; }
@@ -77,37 +77,55 @@ const AdminStreams = (() => {
     const defaultId = _getDefaultCamId();
 
     el.innerHTML = _cameras.map(cam => {
-      const label    = _camLabel(cam);
-      const alias    = cam.ipcam_alias || "";
-      const typeTag  = _isUrl(alias) ? "Direct URL" : "Alias";
+      const label     = cam?.feed_appearance?.label || "";
+      const alias     = cam.ipcam_alias || "";
+      const isIpcam   = !_isUrl(alias);
+      const typeTag   = isIpcam ? "ipcamlive" : "Direct URL";
+      const host      = cam.player_host || "g3";
+      const area      = cam.area ? `<span class="stream-area-tag">${esc(cam.area)}</span>` : "";
       const isDefault = cam.is_active && String(cam.id) === String(defaultId);
       const activeCls  = cam.is_active ? "stream-badge-active" : "stream-badge-inactive";
-      const activeText = cam.is_active ? "Active" : "Inactive";
+      const activeText = cam.is_active ? "AI Active" : "Inactive";
       const liveBadge  = isDefault
         ? '<span class="stream-live-badge"><span class="stream-live-dot"></span>LIVE ON PUBLIC</span>'
         : "";
 
-      const aiIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
+      const aiIcon  = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
       const offIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
+
+      // ipcam: inline iframe preview (auto-loaded staggered after render)
+      // direct URL: click-to-play HLS video
+      const previewBlock = isIpcam
+        ? `<div class="stream-row-iframe-wrap" id="sprv-${cam.id}">
+             <div class="stream-row-iframe-loader"><span class="sprv-spinner"></span></div>
+             <iframe class="stream-row-iframe" id="sprv-iframe-${cam.id}"
+               data-alias="${esc(alias)}" data-host="${esc(host)}"
+               allowfullscreen allow="autoplay" frameborder="0"></iframe>
+           </div>`
+        : `<div class="stream-row-preview-wrap hidden" id="sprv-${cam.id}">
+             <video class="stream-row-video" data-cam-id="${cam.id}" muted playsinline></video>
+             <button class="stream-prv-close" data-id="${cam.id}">&#x2715;</button>
+           </div>`;
+
+      const previewBtn = isIpcam ? "" : `
+            <button class="btn-sm stream-btn-preview" data-action="preview" data-id="${cam.id}" data-alias="${esc(alias)}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="14" height="10" rx="1.5"/><path d="M16 10l5-3v10l-5-3"/></svg>
+              Preview
+            </button>`;
 
       return `
         <div class="stream-row ${isDefault ? "stream-row-live" : ""}" data-id="${cam.id}">
           <div class="stream-row-info">
-            <span class="stream-row-label">${esc(label)}</span>
+            ${label ? `<span class="stream-row-label">${esc(label)}</span>` : ""}
             <span class="stream-row-alias">${esc(alias)}</span>
             ${liveBadge}
+            ${area}
             <span class="stream-badge ${activeCls}">${activeText}</span>
             <span class="stream-type-tag">${typeTag}</span>
           </div>
-          <div class="stream-row-preview-wrap hidden" id="sprv-${cam.id}">
-            <video class="stream-row-video" data-cam-id="${cam.id}" muted playsinline></video>
-            <button class="stream-prv-close" data-id="${cam.id}">&#x2715;</button>
-          </div>
+          ${previewBlock}
           <div class="stream-row-actions">
-            <button class="btn-sm stream-btn-preview" data-action="preview" data-id="${cam.id}" data-alias="${esc(alias)}">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="14" height="10" rx="1.5"/><path d="M16 10l5-3v10l-5-3"/></svg>
-              Preview
-            </button>
+            ${previewBtn}
             <button class="btn-sm stream-btn-edit" data-action="edit" data-id="${cam.id}">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit
@@ -130,6 +148,19 @@ const AdminStreams = (() => {
     });
     el.querySelectorAll(".stream-prv-close").forEach(btn => {
       btn.addEventListener("click", () => _stopPreview(btn.dataset.id));
+    });
+
+    // Auto-load ipcam iframe previews (staggered 600ms apart)
+    el.querySelectorAll(".stream-row-iframe").forEach((iframe, i) => {
+      setTimeout(() => {
+        const alias = iframe.dataset.alias;
+        const host  = iframe.dataset.host || "g3";
+        iframe.src = `https://${host}.ipcamlive.com/player/player.php?alias=${encodeURIComponent(alias)}&autoplay=1`;
+        iframe.addEventListener("load", () => {
+          const wrap = iframe.closest(".stream-row-iframe-wrap");
+          wrap?.classList.add("sprv-loaded");
+        }, { once: true });
+      }, i * 600);
     });
   }
 

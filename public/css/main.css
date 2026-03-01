@@ -5862,6 +5862,62 @@ button {
   padding: 2px 7px;
 }
 
+/* ipcam inline iframe preview */
+.stream-row-iframe-wrap {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #050810;
+  aspect-ratio: 16/9;
+  max-width: 360px;
+  margin: 4px 0 2px;
+}
+.stream-row-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.sprv-loaded .stream-row-iframe {
+  opacity: 1;
+}
+.stream-row-iframe-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: opacity 0.3s;
+}
+.sprv-loaded .stream-row-iframe-loader {
+  opacity: 0;
+  pointer-events: none;
+}
+.sprv-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0,212,255,0.15);
+  border-top-color: rgba(0,212,255,0.7);
+  border-radius: 50%;
+  animation: sprv-spin 0.8s linear infinite;
+}
+@keyframes sprv-spin { to { transform: rotate(360deg); } }
+
+.stream-area-tag {
+  font-size: 0.65rem;
+  font-family: "JetBrains Mono", monospace;
+  color: rgba(0,212,255,0.6);
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
 .stream-row-preview-wrap {
   position: relative;
   border-radius: 6px;

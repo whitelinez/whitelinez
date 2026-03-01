@@ -12,6 +12,7 @@ const ZoneOverlay = (() => {
   let _dpr = 1;
   let countLine = null;
   let detectZone = null;
+  let landmarks = [];
   let latestDetections = [];
   let overlaySettings = {
     ground_overlay_enabled: true,
@@ -147,7 +148,7 @@ const ZoneOverlay = (() => {
     if (alias) {
       const { data, error } = await window.sb
         .from("cameras")
-        .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance")
+        .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance, landmarks")
         .eq("ipcam_alias", alias)
         .limit(1);
       if (error) throw error;
@@ -156,7 +157,7 @@ const ZoneOverlay = (() => {
     // Fallback: load the active camera's zones
     const { data, error } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance")
+      .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance, landmarks")
       .eq("is_active", true);
     if (error) throw error;
     const cams = Array.isArray(data) ? data : [];
@@ -235,8 +236,9 @@ const ZoneOverlay = (() => {
   async function loadAndDraw(alias) {
     try {
       const cam = await resolveCamera(alias || null);
-      countLine = cam?.count_line ?? null;
+      countLine  = cam?.count_line  ?? null;
       detectZone = cam?.detect_zone ?? null;
+      landmarks  = Array.isArray(cam?.landmarks) ? cam.landmarks : [];
       const detOverlay = cam?.feed_appearance?.detection_overlay || {};
       overlaySettings = {
         ...overlaySettings,
@@ -316,6 +318,8 @@ const ZoneOverlay = (() => {
       const color = isFlashing ? "#00FF88" : "#FFD600";
       _drawZone(countLine, color, isFlashing, String(confirmedTotal), pt, _hoverCountLine);
     }
+
+    _drawLandmarks(bounds);
   }
 
   function drawPixi() {
@@ -334,6 +338,9 @@ const ZoneOverlay = (() => {
       const color = isFlashing ? "#00FF88" : "#FFD600";
       _drawZonePixi(countLine, color, isFlashing, String(confirmedTotal), pt, _hoverCountLine);
     }
+
+    // Landmarks render on the 2D ctx even when Pixi is active (text/labels)
+    if (ctx) _drawLandmarks(getContentBounds(video));
   }
 
   function _toPoints(zone, pt) {
@@ -462,6 +469,82 @@ const ZoneOverlay = (() => {
         addPixiLabel(label, mx, my, colorNum);
       }
     }
+  }
+
+  const LM_TYPE_COLOR = {
+    busstop:  '#00d4ff',
+    sign:     '#f59e0b',
+    crossing: '#fbbf24',
+    light:    '#22c55e',
+    junction: '#94a3b8',
+    camera:   '#64748b',
+    road:     '#e2e8f0',
+    note:     '#a78bfa',
+  };
+  const LM_TYPE_ABBR = {
+    busstop: 'B', sign: 'S', crossing: 'X', light: 'L',
+    junction: 'J', camera: 'C', road: 'R', note: 'N',
+  };
+
+  function _drawLandmarks(bounds) {
+    if (!ctx || !Array.isArray(landmarks) || !landmarks.length) return;
+    landmarks.forEach((lm) => {
+      if (typeof lm.x !== 'number' || typeof lm.y !== 'number') return;
+      const px  = lm.x * bounds.w + bounds.x;
+      const py  = lm.y * bounds.h + bounds.y;
+      const col = LM_TYPE_COLOR[lm.type] || '#a78bfa';
+      const abbr = LM_TYPE_ABBR[lm.type] || 'N';
+      const R   = 9;
+
+      // Stem
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px, py - R - 4);
+      ctx.strokeStyle = col + 'aa';
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(px, py - R - 4, R, 0, Math.PI * 2);
+      ctx.fillStyle   = '#0d1117cc';
+      ctx.fill();
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+
+      // Abbr
+      ctx.font         = '700 8px "JetBrains Mono", monospace';
+      ctx.fillStyle    = col;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(abbr, px, py - R - 4);
+
+      // Label tag
+      if (lm.label) {
+        ctx.font = '500 9px Manrope, sans-serif';
+        const tw  = ctx.measureText(lm.label).width;
+        const pad = 4;
+        const bw  = tw + pad * 2;
+        const bh  = 9 + pad * 2;
+        const bx  = px - bw / 2;
+        const by  = py - R - 4 - R - 4 - bh;
+
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 3);
+        else ctx.rect(bx, by, bw, bh);
+        ctx.fillStyle   = '#0d1117ee';
+        ctx.fill();
+        ctx.strokeStyle = col + '55';
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+
+        ctx.fillStyle    = col + 'ee';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(lm.label, px, by + bh - pad - 1);
+      }
+    });
   }
 
   function applyVehicleOcclusion() {

@@ -202,6 +202,7 @@
               <div class="stream-canvas-wrapper">
                 <video id="admin-video" muted playsinline autoplay></video>
                 <canvas id="line-canvas"></canvas>
+                <canvas id="landmark-canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
               </div>
               <div class="zone-controls-dock">
                 <div class="admin-line-controls">
@@ -209,11 +210,13 @@
                     <button id="btn-zone-detect" class="zone-toggle detect">Detect</button>
                     <button id="btn-zone-count" class="zone-toggle count active">Count</button>
                     <button id="btn-zone-ground" class="zone-toggle">3D Mask</button>
+                    <button id="btn-zone-landmarks" class="zone-toggle" type="button" title="Place landmark labels (bus stops, signs, etc.)">Labels</button>
                     <button id="btn-zone-guides" class="zone-toggle active" type="button" title="Toggle perspective guides">Guides</button>
                     <button id="btn-zone-snap" class="zone-toggle active" type="button" title="Snap clicks to perspective guides">Snap</button>
                   </div>
                   <button id="btn-clear-line" class="btn-secondary" type="button">Clear</button>
                   <button id="btn-save-line" class="btn-primary" type="button" disabled>Save Zones</button>
+                  <button id="btn-save-landmarks" class="btn-primary" type="button" disabled style="display:none;">Save Labels</button>
                   <span id="line-status" class="line-status"></span>
                 </div>
 
@@ -1104,6 +1107,7 @@
 <script src="/js/admin-runtime-profile.js"></script>
 <script src="/js/admin-banners.js"></script>
 <script src="/js/admin-streams.js"></script>
+<script src="/js/admin-landmarks.js"></script>
 <script src="/js/admin-model.js"></script>
 </body>
 </html>

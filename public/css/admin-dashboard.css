@@ -1553,3 +1553,76 @@
   .mp-perf-card { grid-column: span 1; }
   .mp-hero { flex-direction: column; align-items: flex-start; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   LANDMARK EDITOR
+   ══════════════════════════════════════════════════════════════ */
+
+/* Landmark mode toggle button colour */
+#btn-zone-landmarks       { color: #a78bfa; }
+#btn-zone-landmarks.active{ background: rgba(167,139,250,0.18); border-color: rgba(167,139,250,0.5); color: #c4b5fd; }
+
+/* Add-landmark popover */
+.lm-popover {
+  position: absolute;
+  z-index: 100;
+  width: 200px;
+  background: #161c27;
+  border: 1px solid rgba(167,139,250,0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+.lm-popover.hidden { display: none; }
+
+.lm-pop-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a78bfa;
+  margin-bottom: 8px;
+}
+.lm-pop-select,
+.lm-pop-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  padding: 5px 8px;
+  margin-bottom: 7px;
+  font-family: inherit;
+  outline: none;
+}
+.lm-pop-select:focus,
+.lm-pop-input:focus { border-color: rgba(167,139,250,0.5); }
+
+.lm-pop-actions { display: flex; gap: 6px; }
+.lm-pop-btn {
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.lm-pop-btn-add    { background: rgba(167,139,250,0.2); border-color: rgba(167,139,250,0.4); color: #c4b5fd; }
+.lm-pop-btn-add:hover { background: rgba(167,139,250,0.32); }
+.lm-pop-btn-cancel { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); color: #64748b; }
+.lm-pop-btn-cancel:hover { background: rgba(255,255,255,0.08); color: #94a3b8; }
+
+/* Save Labels button — matches btn-primary style but smaller */
+#btn-save-landmarks {
+  background: rgba(167,139,250,0.15) !important;
+  border: 1px solid rgba(167,139,250,0.4) !important;
+  color: #c4b5fd !important;
+}
+#btn-save-landmarks:hover:not(:disabled) {
+  background: rgba(167,139,250,0.28) !important;
+}

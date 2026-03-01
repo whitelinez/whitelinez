@@ -279,6 +279,11 @@ const AdminStreams = (() => {
         // Switch AdminLine to this camera (re-init updates cameraId + reloads zones)
         AdminLine.init(videoEl, canvasEl, camId);
         AdminLine.loadZones?.();
+        // Switch landmarks editor to this camera
+        const lmCanvas = document.getElementById('landmark-canvas');
+        if (lmCanvas && window.AdminLandmarks) {
+          AdminLandmarks.reinit(videoEl, lmCanvas, camId);
+        }
       }
     }
 

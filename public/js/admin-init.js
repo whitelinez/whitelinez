@@ -2505,8 +2505,32 @@ async function init() {
 
   const video  = document.getElementById("admin-video");
   const canvas = document.getElementById("line-canvas");
+  const lmCanvas = document.getElementById("landmark-canvas");
   await Stream.init(video);
   AdminLine.init(video, canvas, cameraId);
+  if (lmCanvas && window.AdminLandmarks) {
+    AdminLandmarks.init(video, lmCanvas, cameraId);
+    AdminLandmarks.loadLandmarks();
+    // Wire Landmarks mode toggle button
+    document.getElementById("btn-zone-landmarks")?.addEventListener("click", () => {
+      AdminLandmarks.toggle();
+      const isActive = document.getElementById("btn-zone-landmarks")?.classList.contains("active");
+      document.getElementById("btn-save-landmarks").style.display = isActive ? "" : "none";
+      // Deactivate zone-drawing mode so clicks don't conflict
+      if (isActive) {
+        ["btn-zone-detect","btn-zone-count","btn-zone-ground"].forEach(id => {
+          document.getElementById(id)?.classList.remove("active");
+        });
+      }
+    });
+    // Wire save button
+    document.getElementById("btn-save-landmarks")?.addEventListener("click", async () => {
+      const btn = document.getElementById("btn-save-landmarks");
+      if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+      await AdminLandmarks.saveLandmarks();
+      if (btn) { btn.disabled = false; btn.textContent = "Save Labels"; }
+    });
+  }
   await loadCameraFeedAppearance();
 
   // Load stats + recent rounds

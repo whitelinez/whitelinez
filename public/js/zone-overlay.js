@@ -239,6 +239,8 @@ const ZoneOverlay = (() => {
       countLine  = cam?.count_line  ?? null;
       detectZone = cam?.detect_zone ?? null;
       landmarks  = Array.isArray(cam?.landmarks) ? cam.landmarks : [];
+      // Share detect zone with DetectionOverlay so it can clip outside-scan boxes
+      window.DetectionOverlay?.setDetectZone?.(detectZone);
       const detOverlay = cam?.feed_appearance?.detection_overlay || {};
       overlaySettings = {
         ...overlaySettings,
@@ -565,7 +567,13 @@ const ZoneOverlay = (() => {
     }
   }
 
-  function reloadZones(alias) { loadAndDraw(alias || null); }
+  function reloadZones(alias) {
+    // Clear stale detection boxes immediately before loading new zones
+    latestDetections = [];
+    confirmedTotal = 0;
+    draw();
+    loadAndDraw(alias || null);
+  }
 
   return { init, reloadZones };
 })();

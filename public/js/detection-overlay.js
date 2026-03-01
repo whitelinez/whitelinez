@@ -9,6 +9,7 @@ const DetectionOverlay = (() => {
   let canvas, ctx, video;
   let _dpr = 1;
   let latestDetections = [];
+  let _detectZone = null;   // {points:[{x,y}]} or null — set by ZoneOverlay on load
   let rafId = null;
   const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
   let pixiApp = null;
@@ -721,23 +722,67 @@ const DetectionOverlay = (() => {
       .sort((a, b) => Number(b?.conf || 0) - Number(a?.conf || 0))
       .slice(0, outsideMax);
 
-    for (const det of fresh) {
-      drawDetectionBox(det, bounds, {
-        style: "dashed",
-        lineWidth: 1.0,
-        alpha: 0,
-        fill: false,
-        showLabels: settings.outside_scan_show_labels === true,
-        labelText: "SCAN",
-        labelBgAlpha: 0.10,
-        labelColor: "#D7E6F5",
-      });
+    if (fresh.length && !pixiEnabled && ctx) {
+      // Clip outside-scan boxes to the detect zone polygon so they don't bleed
+      // beyond the area the model is actually watching.
+      const clipped = _detectZone && _buildDetectZonePath(bounds);
+      if (clipped) ctx.save();
+      for (const det of fresh) {
+        drawDetectionBox(det, bounds, {
+          style: "dashed",
+          lineWidth: 1.0,
+          alpha: 0,
+          fill: false,
+          showLabels: settings.outside_scan_show_labels === true,
+          labelText: "SCAN",
+          labelBgAlpha: 0.10,
+          labelColor: "#D7E6F5",
+        });
+      }
+      if (clipped) ctx.restore();
     }
     if (pixiEnabled) endPixiFrame();
     forceRender = false;
   }
 
-  return { init };
+  function clearDetections() {
+    latestDetections = [];
+    lastFrameKey = "";
+    forceRender = true;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(renderFrame);
+  }
+
+  // Called by ZoneOverlay when it loads a new camera's detect_zone
+  function setDetectZone(zone) {
+    _detectZone = zone || null;
+  }
+
+  // Build a canvas clip path from the detect zone polygon and apply it.
+  // Returns true if clipping was applied (caller must ctx.restore() after drawing).
+  function _buildDetectZonePath(bounds) {
+    if (!ctx || !_detectZone) return false;
+    let pts = null;
+    if (Array.isArray(_detectZone.points) && _detectZone.points.length >= 3) {
+      pts = _detectZone.points.map(p => contentToPixel(p.x, p.y, bounds));
+    } else if (_detectZone.x3 !== undefined) {
+      pts = [
+        contentToPixel(_detectZone.x1, _detectZone.y1, bounds),
+        contentToPixel(_detectZone.x2, _detectZone.y2, bounds),
+        contentToPixel(_detectZone.x3, _detectZone.y3, bounds),
+        contentToPixel(_detectZone.x4, _detectZone.y4, bounds),
+      ];
+    }
+    if (!pts || pts.length < 3) return false;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    ctx.clip();
+    return true;
+  }
+
+  return { init, clearDetections, setDetectZone };
 })();
 
 window.DetectionOverlay = DetectionOverlay;

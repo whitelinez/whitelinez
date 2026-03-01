@@ -222,17 +222,24 @@ const AdminStreams = (() => {
       btn.addEventListener("click", () => _stopPreview(btn.dataset.id));
     });
 
-    // Auto-load ipcam iframe previews (staggered 600ms apart)
-    el.querySelectorAll(".stream-row-iframe").forEach((iframe, i) => {
-      setTimeout(() => {
+    // Lazy-load ipcam iframes — only load when scrolled into view
+    const _iframeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const iframe = entry.target;
+        if (iframe.src) return; // already loaded
         const alias = iframe.dataset.alias;
         const host  = iframe.dataset.host || "g3";
         iframe.src = `https://${host}.ipcamlive.com/player/player.php?alias=${encodeURIComponent(alias)}&autoplay=1`;
         iframe.addEventListener("load", () => {
-          const wrap = iframe.closest(".stream-row-iframe-wrap");
-          wrap?.classList.add("sprv-loaded");
+          iframe.closest(".stream-row-iframe-wrap")?.classList.add("sprv-loaded");
         }, { once: true });
-      }, i * 600);
+        _iframeObserver.unobserve(iframe);
+      });
+    }, { rootMargin: "100px" });
+
+    el.querySelectorAll(".stream-row-iframe").forEach(iframe => {
+      _iframeObserver.observe(iframe);
     });
   }
 

@@ -63,18 +63,21 @@ const CameraSwitcher = (() => {
         const fpsEl = _modal?.querySelector(`.cp-cam-card[data-alias="${cam.ipcam_alias}"] .cp-fps-badge`);
         if (!fpsEl) return;
 
+        let fps = null;
         if (cam.is_active && aiFps != null) {
-          fpsEl.textContent = `${Number(aiFps).toFixed(1)} fps`;
-          fpsEl.classList.remove("hidden");
-          return;
+          fps = Number(aiFps);
+        } else {
+          const ts = groups[cam.id];
+          if (ts && ts.length >= 2) {
+            const elapsed = (new Date(ts.at(-1)) - new Date(ts[0])) / 1000;
+            if (elapsed > 0) fps = ts.length / elapsed;
+          }
         }
-
-        const ts = groups[cam.id];
-        if (!ts || ts.length < 2) return;
-        const elapsed = (new Date(ts.at(-1)) - new Date(ts[0])) / 1000;
-        if (elapsed <= 0) return;
-        const fps = ts.length / elapsed;
-        fpsEl.textContent = `${fps.toFixed(1)} fps`;
+        if (fps == null) return;
+        // Human-friendly label instead of raw "x.x fps"
+        const label = fps >= 8 ? 'Smooth' : fps >= 4 ? 'Live' : fps > 0 ? 'Slow' : null;
+        if (!label) return;
+        fpsEl.textContent = label;
         fpsEl.classList.remove("hidden");
       });
     } catch {}
@@ -94,51 +97,49 @@ const CameraSwitcher = (() => {
   }
 
   // ── Build picker modal ────────────────────────────────────────
+  function _qualityLabel(score) {
+    if (score == null) return '';
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good';
+    if (score >= 40) return 'Fair';
+    return 'Poor';
+  }
+
   function _buildModal() {
     if (document.getElementById('cam-picker-modal')) return;
 
-    const areas = {};
-    _cameras.forEach(c => {
-      const a = c.area || 'Other';
-      if (!areas[a]) areas[a] = [];
-      areas[a].push(c);
-    });
-
+    // Flat grid — no area categories
     let gridHtml = '';
-    Object.entries(areas).forEach(([area, cams]) => {
-      gridHtml += `<div class="cp-area-section">
-        <div class="cp-area-label">${area}</div>
-        <div class="cp-area-grid">`;
-      cams.forEach(c => {
-        const isAI = c.is_active;
-        const q = c.quality_snapshot;
-        const qScore = q?.quality_score != null ? Math.round(q.quality_score) : null;
-        const qCls = qScore == null ? '' : qScore >= 70 ? 'cp-quality-good' : qScore >= 40 ? 'cp-quality-mid' : 'cp-quality-bad';
-        const lightTag = q?.lighting ? `<span class="cp-lighting-tag cp-lighting-${q.lighting}">${q.lighting}</span>` : '';
-        const qualBadge = qScore != null
-          ? `<span class="cp-quality-badge ${qCls}" title="Brightness:${q.brightness} Sharpness:${q.sharpness} Contrast:${q.contrast}">${lightTag}Q:${qScore}</span>`
-          : '';
-        gridHtml += `
-          <div class="cp-cam-card${isAI ? ' cp-cam-ai' : ''}" data-alias="${c.ipcam_alias}" tabindex="0" role="button" aria-label="${c.name}">
-            <div class="cp-preview-wrap">
-              <iframe class="cp-preview-iframe"
-                data-alias="${c.ipcam_alias}"
-                data-host="${c.player_host || 'g3'}"
-                allow="autoplay"
-                scrolling="no"
-                frameborder="0"></iframe>
-              <div class="cp-click-shield"></div>
-              <div class="cp-preview-loader"><span></span></div>
-            </div>
-            <div class="cp-cam-info">
-              ${isAI ? '<span class="cp-ai-badge"><span class="cp-ai-dot"></span>AI LIVE</span>' : ''}
-              <span class="cp-cam-name">${c.name}</span>
+    _cameras.forEach(c => {
+      const isAI = c.is_active;
+      const q = c.quality_snapshot;
+      const qScore = q?.quality_score != null ? Math.round(q.quality_score) : null;
+      const qCls = qScore == null ? '' : qScore >= 60 ? 'cp-quality-good' : qScore >= 40 ? 'cp-quality-mid' : 'cp-quality-bad';
+      const lightIcon = q?.lighting === 'night' ? '🌙' : q?.lighting === 'day' ? '☀' : '';
+      const qualBadge = qScore != null
+        ? `<span class="cp-quality-badge ${qCls}">${lightIcon ? `<span class="cp-light-icon">${lightIcon}</span>` : ''}${_qualityLabel(qScore)}</span>`
+        : '';
+      gridHtml += `
+        <div class="cp-cam-card${isAI ? ' cp-cam-ai' : ''}" data-alias="${c.ipcam_alias}" tabindex="0" role="button" aria-label="${c.name}">
+          <div class="cp-preview-wrap">
+            <iframe class="cp-preview-iframe"
+              data-alias="${c.ipcam_alias}"
+              data-host="${c.player_host || 'g3'}"
+              allow="autoplay"
+              scrolling="no"
+              frameborder="0"></iframe>
+            <div class="cp-click-shield"></div>
+            <div class="cp-preview-loader"><span></span></div>
+          </div>
+          <div class="cp-cam-info">
+            ${isAI ? '<span class="cp-ai-badge"><span class="cp-ai-dot"></span>AI Live</span>' : ''}
+            <span class="cp-cam-name">${c.name}</span>
+            <div class="cp-cam-meta">
               <span class="cp-fps-badge hidden"></span>
               ${qualBadge}
             </div>
-          </div>`;
-      });
-      gridHtml += `</div></div>`;
+          </div>
+        </div>`;
     });
 
     const modal = document.createElement('div');
@@ -148,7 +149,7 @@ const CameraSwitcher = (() => {
       <div class="cam-picker-inner">
         <div class="cam-picker-head">
           <div class="cam-picker-head-left">
-            <span class="cam-picker-title">CAMERA SELECT</span>
+            <span class="cam-picker-title">Live Cameras</span>
             <span class="cam-picker-count">${_cameras.length} feeds</span>
           </div>
           <button class="cam-picker-close" aria-label="Close">✕</button>

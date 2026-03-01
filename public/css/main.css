@@ -5545,79 +5545,73 @@ button {
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
-  padding: 0 0 18px 16px;
+  padding: 0 0 12px 12px;
   pointer-events: none;
 }
 .non-ai-overlay.hidden { display: none; }
 
+/* Compact single-row chip — doesn't block stream */
 .non-ai-inner {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: rgba(6, 10, 20, 0.82);
-  border: 1px solid rgba(0, 212, 255, 0.18);
-  border-radius: 10px;
-  padding: 14px 16px 14px;
-  max-width: 260px;
-  backdrop-filter: blur(6px);
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background: rgba(4, 7, 16, 0.72);
+  border: 1px solid rgba(251,146,60,0.25);
+  border-radius: 20px;
+  padding: 5px 10px 5px 8px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   pointer-events: all;
-  color: rgba(220, 232, 245, 0.9);
+  max-width: 280px;
 }
 .non-ai-inner svg {
-  color: rgba(251,146,60,0.7);
+  color: rgba(251,146,60,0.8);
   flex-shrink: 0;
+  width: 13px !important;
+  height: 13px !important;
 }
 .non-ai-title {
   font-family: "Archivo", sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: rgba(251,146,60,0.9);
-  letter-spacing: 0.01em;
-  margin: 0;
-}
-.non-ai-sub {
-  font-size: 0.72rem;
-  color: rgba(180,210,240,0.7);
-  margin: 0;
-}
-.non-ai-sub strong {
-  color: rgba(0,212,255,0.85);
+  font-size: 0.68rem;
   font-weight: 600;
+  color: rgba(220, 232, 245, 0.85);
+  letter-spacing: 0;
+  margin: 0;
+  white-space: nowrap;
 }
+/* Hide the subtitle — chip has no room */
+.non-ai-sub { display: none; }
 .non-ai-btn {
-  margin-top: 4px;
-  padding: 6px 12px;
-  border-radius: 7px;
-  border: 1px solid rgba(0,212,255,0.4);
+  margin: 0;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,212,255,0.35);
   background: rgba(0,212,255,0.1);
   color: #00d4ff;
   font-family: "Archivo", sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
-  align-self: flex-start;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .non-ai-btn:hover {
   background: rgba(0,212,255,0.18);
-  border-color: rgba(0,212,255,0.65);
+  border-color: rgba(0,212,255,0.6);
 }
 
 @media (max-width: 640px) {
+  .non-ai-overlay { padding: 0 0 8px 8px; }
   .non-ai-inner {
-    padding: 8px 10px;
-    gap: 4px;
-    max-width: 170px;
-    border-radius: 7px;
+    padding: 4px 8px 4px 7px;
+    gap: 6px;
+    max-width: 220px;
   }
-  .non-ai-inner svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-  .non-ai-title { font-size: 0.66rem; }
-  .non-ai-sub   { font-size: 0.6rem; }
-  .non-ai-btn   { font-size: 0.6rem; padding: 4px 8px; }
+  .non-ai-title { font-size: 0.6rem; }
+  .non-ai-btn   { font-size: 0.57rem; padding: 2px 7px; }
 }
 
 /* =============================================
@@ -8843,29 +8837,28 @@ button {
   position: fixed;
   inset: 0;
   z-index: 1200;
-  background: rgba(0,0,0,0.88);
+  background: transparent;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 .cam-picker-modal.hidden { display: none; }
 
 /* Modal panel */
 .cam-picker-inner {
   width: 100%;
-  max-width: 680px;
-  max-height: 88vh;
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.07);
+  max-width: 720px;
+  max-height: 72vh;
+  background: rgba(8, 10, 18, 0.96);
+  border: 1px solid rgba(255,255,255,0.08);
   border-bottom: none;
   border-radius: 16px 16px 0 0;
   overflow-y: auto;
-  padding: 18px 16px 40px;
+  padding: 16px 14px 36px;
   display: flex;
   flex-direction: column;
   gap: 0;
+  box-shadow: 0 -12px 48px rgba(0,0,0,0.7);
 }
 
 /* Header */
@@ -8873,7 +8866,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   flex-shrink: 0;
 }
 .cam-picker-head-left {
@@ -8882,10 +8875,10 @@ button {
   gap: 8px;
 }
 .cam-picker-title {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #ccc;
+  letter-spacing: 0.02em;
+  color: #dce8f5;
 }
 .cam-picker-count {
   font-size: 0.65rem;
@@ -8903,23 +8896,20 @@ button {
 }
 .cam-picker-close:hover { color: #fff; }
 
-/* Area section */
-.cp-area-section { margin-bottom: 20px; }
-.cp-area-label {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: rgba(0,212,255,0.65);
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(0,212,255,0.1);
-}
+/* Area section (kept for backwards compat, hidden) */
+.cp-area-section { margin-bottom: 0; }
+.cp-area-label { display: none; }
 
-/* Camera grid */
+/* Flat camera grid */
+.cam-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+/* Legacy area grid — same columns */
 .cp-area-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 10px;
 }
 
@@ -8997,15 +8987,15 @@ button {
   padding: 8px 10px 9px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 .cp-ai-badge {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.58rem;
+  gap: 4px;
+  font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   color: rgba(0,220,120,0.9);
 }
 .cp-ai-dot {
@@ -9014,30 +9004,38 @@ button {
   border-radius: 50%;
   background: rgba(0,220,120,0.9);
   animation: cp-pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
 }
 @keyframes cp-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.4; transform: scale(0.7); }
 }
 .cp-cam-name {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #ddd;
+  color: #dce8f5;
   line-height: 1.3;
 }
+/* Meta row: fps + quality inline */
+.cp-cam-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 1px;
+}
 
-/* FPS badge on camera picker cards */
+/* FPS badge — friendly word label */
 .cp-fps-badge {
-  font-family: "JetBrains Mono", monospace;
   font-size: 0.62rem;
+  font-weight: 600;
   color: rgba(0,212,255,0.75);
   background: rgba(0,212,255,0.08);
   border: 1px solid rgba(0,212,255,0.18);
-  border-radius: 3px;
-  padding: 1px 5px;
-  margin-left: auto;
-  align-self: center;
+  border-radius: 20px;
+  padding: 1px 7px;
 }
+.cp-fps-badge.hidden { display: none; }
 
 /* FPS badge in admin streams list */
 .stream-fps-badge {
@@ -9084,29 +9082,31 @@ button {
 .cp-quality-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.58rem;
+  gap: 4px;
+  font-size: 0.62rem;
   font-weight: 600;
-  border-radius: 3px;
-  padding: 1px 5px;
+  border-radius: 20px;
+  padding: 1px 8px;
   border: 1px solid;
-  margin-top: 2px;
+}
+.cp-light-icon {
+  font-size: 0.6rem;
+  line-height: 1;
 }
 .cp-quality-good {
   color: #4ade80;
-  background: rgba(74,222,128,0.07);
-  border-color: rgba(74,222,128,0.2);
+  background: rgba(74,222,128,0.09);
+  border-color: rgba(74,222,128,0.25);
 }
 .cp-quality-mid {
   color: #facc15;
-  background: rgba(250,204,21,0.07);
-  border-color: rgba(250,204,21,0.2);
+  background: rgba(250,204,21,0.09);
+  border-color: rgba(250,204,21,0.25);
 }
 .cp-quality-bad {
   color: #f87171;
-  background: rgba(248,113,113,0.07);
-  border-color: rgba(248,113,113,0.2);
+  background: rgba(248,113,113,0.09);
+  border-color: rgba(248,113,113,0.25);
 }
 
 /* Lighting label inside quality badges */

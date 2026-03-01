@@ -195,7 +195,7 @@ const Banners = (() => {
           <h3 class="bnr-detail-hero-title">${_esc(b.title)}</h3>
         </div>` : `<h3 class="bnr-detail-title-plain">${_esc(b.title)}</h3>`}
         <div class="bnr-detail-body">
-          <div class="bnr-detail-info">${b.info || ""}</div>
+          <div class="bnr-detail-info">${_esc(b.info || "")}</div>
         </div>
       </div>`;
   }

@@ -911,25 +911,6 @@
   <script src="/js/camera-switcher.js"></script>
   <script src="/js/admin-widget-layout.js"></script>
   <script src="/js/index-init.js"></script>
-  <script>
-    // ── Nav dropdown toggle ───────────────────────────────────────
-    (function () {
-      const trigger = document.getElementById('nav-avatar-trigger');
-      const dropdown = document.getElementById('nav-dropdown');
-      if (!trigger || !dropdown) return;
-      trigger.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const open = !dropdown.hidden;
-        dropdown.hidden = open;
-        trigger.setAttribute('aria-expanded', String(!open));
-      });
-      document.addEventListener('click', function () {
-        dropdown.hidden = true;
-        trigger.setAttribute('aria-expanded', 'false');
-      });
-      dropdown.addEventListener('click', function (e) { e.stopPropagation(); });
-    })();
-  </script>
 </body>
 </html>
 

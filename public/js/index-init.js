@@ -1110,4 +1110,24 @@ function _connectUserWs(session) {
       }
     }
   });
+
+  // ── Nav user dropdown ───────────────────────────────────────────────────
+  (function _initNavDropdown() {
+    const trigger  = document.getElementById("nav-avatar-trigger");
+    const dropdown = document.getElementById("nav-dropdown");
+    if (!trigger || !dropdown) return;
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !dropdown.hidden;
+      dropdown.hidden = open;
+      trigger.setAttribute("aria-expanded", String(!open));
+    });
+    document.addEventListener("click", () => {
+      dropdown.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    });
+    // Clicks inside dropdown don't close it
+    dropdown.addEventListener("click", (e) => e.stopPropagation());
+  }());
+
 }());

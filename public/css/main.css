@@ -618,8 +618,50 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   text-align: right;
 }
 
+/* ── Collapsed icon (hidden by default) ─────────────────────────────────── */
+.ml-hud-collapsed-ico {
+  display: none;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.55));
+  cursor: pointer;
+  transition: opacity 0.15s, filter 0.15s;
+}
+.ml-hud-collapsed-ico:hover {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.85));
+}
+
+/* ── Collapsed state ─────────────────────────────────────────────────────── */
+.ml-hud.is-collapsed {
+  width: auto !important;
+  max-width: none !important;
+  padding: 4px !important;
+  background: rgba(6, 10, 20, 0.55) !important;
+  border: 1px solid rgba(0, 212, 255, 0.22) !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transform: none !important;  /* cancel mobile scale when showing icon only */
+}
+.ml-hud.is-collapsed .ml-hud-collapsed-ico { display: block; }
+.ml-hud.is-collapsed .ml-hud-head,
+.ml-hud.is-collapsed .ml-hud-msg,
+.ml-hud.is-collapsed .ml-hud-bot,
+.ml-hud.is-collapsed .ml-hud-verbose,
+.ml-hud.is-collapsed .ml-hud-chips,
+.ml-hud.is-collapsed .ml-hud-cells,
+.ml-hud.is-collapsed .ml-hud-metrics { display: none !important; }
+
+/* ── Head is the collapse trigger — pointer cursor + subtle hint ─────────── */
 .ml-hud-head {
   position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+.ml-hud-head:hover .ml-hud-title {
+  opacity: 0.75;
 }
 
 .ml-hud-title {

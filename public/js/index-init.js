@@ -1,5 +1,28 @@
 const GUEST_TS_KEY = "wlz.guest.session_ts";
 
+// ── Vision HUD collapse toggle ────────────────────────────────────────────
+(function () {
+  const hud = document.getElementById("ml-hud");
+  if (!hud) return;
+
+  // Restore persisted state
+  if (localStorage.getItem("wlz.hud.collapsed") === "1") {
+    hud.classList.add("is-collapsed");
+  }
+
+  // Click on the head → collapse
+  hud.querySelector(".ml-hud-head")?.addEventListener("click", () => {
+    hud.classList.add("is-collapsed");
+    localStorage.setItem("wlz.hud.collapsed", "1");
+  });
+
+  // Click on the collapsed icon → expand
+  hud.querySelector(".ml-hud-collapsed-ico")?.addEventListener("click", () => {
+    hud.classList.remove("is-collapsed");
+    localStorage.setItem("wlz.hud.collapsed", "0");
+  });
+}());
+
 (async () => {
   const PUBLIC_DAY_PRESET = {
     brightness: 102,

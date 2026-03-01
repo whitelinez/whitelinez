@@ -142,7 +142,18 @@ const ZoneOverlay = (() => {
     pixiTexts.push(node);
   }
 
-  async function resolveActiveCamera() {
+  async function resolveCamera(alias) {
+    // If alias provided, load that specific camera's zones
+    if (alias) {
+      const { data, error } = await window.sb
+        .from("cameras")
+        .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance")
+        .eq("ipcam_alias", alias)
+        .limit(1);
+      if (error) throw error;
+      if (Array.isArray(data) && data.length) return data[0];
+    }
+    // Fallback: load the active camera's zones
     const { data, error } = await window.sb
       .from("cameras")
       .select("id, ipcam_alias, created_at, count_line, detect_zone, feed_appearance")
@@ -151,9 +162,9 @@ const ZoneOverlay = (() => {
     const cams = Array.isArray(data) ? data : [];
     if (!cams.length) return null;
     const rank = (cam) => {
-      const alias = String(cam?.ipcam_alias || "").trim();
-      if (!alias) return 0;
-      if (alias.toLowerCase() === "your-alias") return 1;
+      const a = String(cam?.ipcam_alias || "").trim();
+      if (!a) return 0;
+      if (a.toLowerCase() === "your-alias") return 1;
       return 2;
     };
     cams.sort((a, b) => {
@@ -221,9 +232,9 @@ const ZoneOverlay = (() => {
     }
   }
 
-  async function loadAndDraw() {
+  async function loadAndDraw(alias) {
     try {
-      const cam = await resolveActiveCamera();
+      const cam = await resolveCamera(alias || null);
       countLine = cam?.count_line ?? null;
       detectZone = cam?.detect_zone ?? null;
       const detOverlay = cam?.feed_appearance?.detection_overlay || {};
@@ -471,7 +482,7 @@ const ZoneOverlay = (() => {
     }
   }
 
-  function reloadZones() { loadAndDraw(); }
+  function reloadZones(alias) { loadAndDraw(alias || null); }
 
   return { init, reloadZones };
 })();

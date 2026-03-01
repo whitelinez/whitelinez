@@ -176,6 +176,9 @@ const AdminStreams = (() => {
               Preview
             </button>`;
 
+      const hasZones = !!(cam.count_line || cam.detect_zone);
+      const zonesIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="3 11 3 20 21 20 21 11 12 3 3 11"/><line x1="3" y1="20" x2="21" y2="20"/></svg>';
+
       return `
         <div class="stream-row ${isDefault ? "stream-row-live" : ""}" data-id="${cam.id}">
           <div class="stream-row-info">
@@ -187,6 +190,7 @@ const AdminStreams = (() => {
             ${qualBadge}
             <span class="stream-badge ${activeCls}">${activeText}</span>
             <span class="stream-type-tag">${typeTag}</span>
+            ${hasZones ? '<span class="stream-zones-badge">zones set</span>' : ""}
           </div>
           ${previewBlock}
           <div class="stream-row-actions">
@@ -194,6 +198,9 @@ const AdminStreams = (() => {
             <button class="btn-sm stream-btn-edit" data-action="edit" data-id="${cam.id}">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit
+            </button>
+            <button class="btn-sm stream-btn-zones ${hasZones ? "stream-btn-zones-set" : ""}" data-action="zones" data-id="${cam.id}" data-alias="${esc(alias)}">
+              ${zonesIcon} Zones
             </button>
             ${cam.is_active
               ? `<button class="btn-sm stream-btn-deactivate" data-action="deactivate-ai" data-id="${cam.id}">${offIcon} Remove AI</button>`
@@ -235,11 +242,52 @@ const AdminStreams = (() => {
     switch (btn.dataset.action) {
       case "preview":       _togglePreview(id, btn.dataset.alias); break;
       case "edit":          _startEdit(id); break;
+      case "zones":         _openZoneEditor(id, btn.dataset.alias); break;
       case "set-ai":        _setAiCamera(id); break;
       case "deactivate-ai": _deactivateAi(id); break;
       case "delete":        _deleteCamera(id); break;
     }
   }
+
+  // ── Zone Editor ───────────────────────────────────────────────
+  // Scrolls to existing admin zone editor section and loads the chosen camera
+  function _openZoneEditor(camId, alias) {
+    const cam = _cameras.find(c => String(c.id) === String(camId));
+    const label = cam?.feed_appearance?.label || alias || camId;
+
+    // Update the "currently editing" label in the zone editor header
+    const editingLabel = document.getElementById("zone-editor-cam-label");
+    if (editingLabel) editingLabel.textContent = label;
+
+    // Switch admin stream + AdminLine to this camera
+    if (window.AdminLine) {
+      const videoEl = document.getElementById("admin-video");
+      const canvasEl = document.getElementById("line-canvas");
+      if (videoEl && canvasEl) {
+        // Switch HLS stream to this camera's alias
+        const streamUrl = _isUrl(alias) ? alias : `/api/stream?alias=${encodeURIComponent(alias)}`;
+        if (window.Hls && Hls.isSupported()) {
+          if (_adminVideoHls) { _adminVideoHls.destroy(); }
+          _adminVideoHls = new Hls({ enableWorker: false, maxBufferLength: 8, maxMaxBufferLength: 16 });
+          _adminVideoHls.loadSource(streamUrl);
+          _adminVideoHls.attachMedia(videoEl);
+          _adminVideoHls.on(Hls.Events.MANIFEST_PARSED, () => { videoEl.play().catch(() => {}); });
+        } else if (videoEl.canPlayType?.("application/vnd.apple.mpegurl")) {
+          videoEl.src = streamUrl;
+          videoEl.play().catch(() => {});
+        }
+        // Switch AdminLine to this camera (re-init updates cameraId + reloads zones)
+        AdminLine.init(videoEl, canvasEl, camId);
+        AdminLine.loadZones?.();
+      }
+    }
+
+    // Scroll to zone editor section
+    const section = document.getElementById("zone-editor-section");
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  let _adminVideoHls = null;
 
   // ── Preview ───────────────────────────────────────────────────
   function _togglePreview(camId, alias) {

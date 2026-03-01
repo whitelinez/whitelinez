@@ -308,14 +308,14 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   window.addEventListener("stream:switching", () => { _showSwitchOverlay(); });
 
   window.addEventListener("camera:switched", (e) => {
-    const { isAI } = e.detail || {};
+    const { isAI, alias } = e.detail || {};
     if (!isAI) { _hideSwitchOverlay(); return; }
     // Reset FPS samples so we get clean readings for the new stream
     FpsOverlay.reset();
     // Reset Vision HUD counters + re-seed from new camera's telemetry
     MlOverlay.resetForNewScene();
-    // Immediately reload detection zones for the new active camera
-    ZoneOverlay.reloadZones();
+    // Immediately reload detection zones for the switched-to camera
+    ZoneOverlay.reloadZones(alias || null);
   });
 
   // Stream offline overlay + camera failover

@@ -905,7 +905,7 @@ const AdminLine = (() => {
     } catch {}
   }
 
-  return { init, clearActive, saveZones, refresh, saveCountSettingsOnly };
+  return { init, clearActive, saveZones, refresh, saveCountSettingsOnly, loadZones: loadExistingZones };
 })();
 
 window.AdminLine = AdminLine;

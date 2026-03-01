@@ -16,9 +16,10 @@ const DetectionOverlay = (() => {
   // Detections arrive ~175ms after captured_at (real-time), but the HLS video
   // is buffered 2-10s behind. We queue detections with their server timestamp
   // and hold them until the video catches up to that moment in time.
-  const detectionQueue = [];     // [{ capturedAtMs, detections }], oldest first
-  const QUEUE_MAX_AGE_MS = 15_000;   // drop entries older than 15s
-  const QUEUE_MATCH_TOL_MS = 2_000;  // accept a queue entry within ±2s of target
+  const detectionQueue = [];         // [{ capturedAtMs, detections }], oldest first
+  const QUEUE_MAX_AGE_MS  = 15_000;  // drop entries older than 15s
+  const QUEUE_MATCH_TOL_MS = 800;    // ±800ms — tighter now that lag is stable at ~4s
+  const QUEUE_POLL_MS = 200;         // continuous poll interval (ms) independent of WS
   const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
   let pixiApp = null;
   let pixiEnabled = false;
@@ -676,33 +677,53 @@ const DetectionOverlay = (() => {
     window.addEventListener("count:update", (e) => {
       latestDetections = e.detail?.detections ?? [];
 
-      // Push into time-sync queue so renderFrame can delay rendering to match video
+      // Push into time-sync queue so the poll loop can delay rendering to match video
       const capturedAtMs = e.detail?.captured_at ? Date.parse(e.detail.captured_at) : NaN;
       if (Number.isFinite(capturedAtMs)) {
         detectionQueue.push({ capturedAtMs, detections: latestDetections });
       }
 
+      // Debounce: only mark dirty when the detection set actually changed.
+      // The continuous poll loop drives rendering; WS events just feed the queue.
       const nextKey = buildFrameKey(latestDetections);
       if (nextKey !== lastFrameKey) {
-        forceRender = true;
         lastFrameKey = nextKey;
-      }
-      if (!rafId) {
-        rafId = requestAnimationFrame(renderFrame);
+        forceRender = true;
       }
     });
 
     window.addEventListener("detection:settings-update", (e) => {
       applySettings(e.detail);
-      if (!rafId) rafId = requestAnimationFrame(renderFrame);
+      forceRender = true;
     });
+
+    // ── Continuous queue poll ────────────────────────────────────
+    // Runs every QUEUE_POLL_MS regardless of WS cadence so the canvas
+    // re-evaluates _pickFromQueue() as video playback advances.
+    _startQueuePoll();
+  }
+
+  let _pollTimer = null;
+  function _startQueuePoll() {
+    if (_pollTimer) return;
+    _pollTimer = setInterval(() => {
+      const picked = _pickFromQueue();
+      const key    = buildFrameKey(picked);
+      if (key !== lastFrameKey) {
+        lastFrameKey = key;
+        forceRender  = true;
+      }
+      if (forceRender && !rafId) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
+    }, QUEUE_POLL_MS);
   }
 
   function renderFrame() {
     rafId = null;
     if (!forceRender) return;
-    // Use time-matched queue entry so boxes align with the video frame being shown
     draw(_pickFromQueue());
+    // forceRender cleared inside draw()
   }
 
   function syncSize() {

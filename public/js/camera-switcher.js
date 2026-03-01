@@ -17,7 +17,7 @@ const CameraSwitcher = (() => {
     try {
       const { data } = await window.sb
         .from('cameras')
-        .select('name, area, ipcam_alias, player_host, is_active')
+        .select('id, name, area, ipcam_alias, player_host, is_active')
         .order('area', { ascending: true })
         .order('created_at', { ascending: true });
 
@@ -186,7 +186,9 @@ const CameraSwitcher = (() => {
     const label = document.getElementById('active-cam-label');
     if (label) label.textContent = cam.name;
 
-    window.dispatchEvent(new CustomEvent('camera:switched', { detail: { alias, isAI, cam } }));
+    window.dispatchEvent(new CustomEvent('camera:switched', {
+      detail: { alias, cameraId: cam.id, name: cam.name, isAI }
+    }));
   }
 
   function isOnAiCam() { return _activeAlias === _aiAlias; }

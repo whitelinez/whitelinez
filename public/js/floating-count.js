@@ -7,15 +7,29 @@
  */
 
 const FloatingCount = (() => {
-  let _wrapper      = null;
-  let _lastTotal    = 0;
-  let _guessBaseline = null;   // total at moment guess was placed
-  let _guessTarget   = null;   // user's guessed count
+  let _wrapper         = null;
+  let _lastTotal       = 0;
+  let _guessBaseline   = null;   // total at moment guess was placed
+  let _guessTarget     = null;   // user's guessed count
+  let _currentCameraId = null;   // null = show all; set when camera is switched
 
   function init(streamWrapper) {
     _wrapper = streamWrapper;
 
-    window.addEventListener("count:update", (e) => update(e.detail));
+    window.addEventListener("count:update", (e) => {
+      const data = e.detail;
+      // Only update if no camera filter set, or payload matches current camera
+      if (_currentCameraId && data.camera_id && data.camera_id !== _currentCameraId) return;
+      update(data);
+    });
+
+    // Camera switched — show that camera's count
+    window.addEventListener("camera:switched", (e) => {
+      const { cameraId, name, isAI } = e.detail || {};
+      _currentCameraId = cameraId || null;
+      _setCamLabel(name || null, isAI);
+      if (!isAI && cameraId) _loadCameraSnapshot(cameraId);
+    });
 
     // Enter guess mode when a guess is submitted.
     window.addEventListener("bet:placed", (e) => {
@@ -98,6 +112,40 @@ const FloatingCount = (() => {
     const dot = document.getElementById("cw-ws-dot");
     if (!dot) return;
     dot.className = ok ? "cw-ws-dot cw-ws-ok" : "cw-ws-dot cw-ws-err";
+  }
+
+  function _setCamLabel(name, isAI) {
+    const el = document.getElementById("cw-cam-label");
+    if (!el) return;
+    if (name) {
+      el.textContent = name;
+      el.classList.remove("hidden");
+    } else {
+      el.classList.add("hidden");
+    }
+    // Show snapshot badge when not on the AI cam
+    const badge = document.getElementById("cw-snapshot-badge");
+    if (badge) badge.classList.toggle("hidden", !!isAI);
+  }
+
+  async function _loadCameraSnapshot(cameraId) {
+    try {
+      const { data } = await window.sb
+        .from("count_snapshots")
+        .select("camera_id, captured_at, total, count_in, count_out, vehicle_breakdown")
+        .eq("camera_id", cameraId)
+        .order("captured_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data) return;
+      update({
+        camera_id: data.camera_id,
+        total: data.total || 0,
+        vehicle_breakdown: data.vehicle_breakdown || {},
+        new_crossings: 0,
+        snapshot: true,
+      });
+    } catch {}
   }
 
   function spawnPop(n) {

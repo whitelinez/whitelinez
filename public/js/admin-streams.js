@@ -294,9 +294,11 @@ const AdminStreams = (() => {
       }
     }
 
-    // Scroll to zone editor section
-    const section = document.getElementById("zone-editor-section");
-    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Navigate to AI Engine → Zones tab
+    document.querySelector('.admin-nav-btn[data-panel="detection"]')?.click();
+    setTimeout(() => {
+      document.querySelector('.det-subnav-btn[data-det-tab="zones"]')?.click();
+    }, 60);
   }
 
   let _adminVideoHls = null;

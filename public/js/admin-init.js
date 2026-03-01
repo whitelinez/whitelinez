@@ -976,6 +976,37 @@ function persistMlDatasetUrl(url) {
   localStorage.setItem(ML_DATASET_URL_STORAGE_KEY, normalized);
 }
 
+function initDetSubnav() {
+  const btns = Array.from(document.querySelectorAll(".det-subnav-btn"));
+  const tabs  = Array.from(document.querySelectorAll(".det-tab"));
+  if (!btns.length) return;
+
+  function activateTab(target) {
+    btns.forEach(b => b.classList.toggle("active", b.dataset.detTab === target));
+    tabs.forEach(t => t.classList.toggle("active", t.id === `det-tab-${target}`));
+    if (target === "zones") {
+      // Refresh canvas sizing when zones tab becomes visible
+      setTimeout(() => window.AdminLine?.refresh?.(), 0);
+      setTimeout(() => window.AdminLine?.refresh?.(), 180);
+    }
+  }
+
+  btns.forEach(btn => {
+    btn.addEventListener("click", () => activateTab(btn.dataset.detTab));
+  });
+
+  // Restore last active sub-tab
+  const stored = localStorage.getItem("whitelinez.admin.det_tab") || "zones";
+  activateTab(stored);
+
+  // Persist on change
+  btns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      localStorage.setItem("whitelinez.admin.det_tab", btn.dataset.detTab);
+    });
+  });
+}
+
 function initAdminSections() {
   const navBtns = Array.from(document.querySelectorAll(".admin-nav-btn"));
   const panels = Array.from(document.querySelectorAll(".admin-panel"));
@@ -989,7 +1020,8 @@ function initAdminSections() {
     panels.forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${target}`));
     localStorage.setItem(storageKey, target);
     window.dispatchEvent(new CustomEvent("admin:panel-change", { detail: { panel: target } }));
-    if (target === "overview") {
+    if (target === "detection") {
+      // Refresh zone editor canvas when AI Engine panel becomes visible
       setTimeout(() => window.AdminLine?.refresh?.(), 0);
       setTimeout(() => window.AdminLine?.refresh?.(), 180);
     }
@@ -2561,6 +2593,7 @@ async function init() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initAdminSections();
+  initDetSubnav();
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
   document.getElementById("round-form")?.addEventListener("submit", handleSubmit);
   document.getElementById("btn-set-admin")?.addEventListener("click", handleSetAdmin);
@@ -2576,6 +2609,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (panel === "audience") loadAudiencePanel(true);
     if (panel === "banners") { window.AdminBanners?.init(); window.AdminBanners?.load(); }
     if (panel === "streams") { window.AdminStreams?.init(); }
+    if (panel === "detection") {
+      // Ensure zone editor renders when AI Engine panel first opens
+      const activeTab = document.querySelector(".det-subnav-btn.active")?.dataset?.detTab || "zones";
+      if (activeTab === "zones") {
+        setTimeout(() => window.AdminLine?.refresh?.(), 80);
+      }
+    }
   });
 
   // initAdminSections() fires admin:panel-change before the listener above is registered.

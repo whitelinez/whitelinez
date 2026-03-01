@@ -1626,3 +1626,64 @@
 #btn-save-landmarks:hover:not(:disabled) {
   background: rgba(167,139,250,0.28) !important;
 }
+
+/* ── AI Engine Panel ─────────────────────────────────────────── */
+.det-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 6px;
+  background: var(--as2);
+  border: 1px solid var(--abr);
+  border-radius: var(--r-md);
+}
+.det-subnav-btn {
+  border: 1px solid var(--abr);
+  background: var(--as);
+  color: var(--am);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 110ms;
+}
+.det-subnav-btn:hover  { border-color: rgba(15,185,177,0.4); color: var(--at); }
+.det-subnav-btn.active { background: rgba(15,185,177,0.1); border-color: rgba(15,185,177,0.46); color: #a8fff7; }
+
+.det-tab { display: none; }
+.det-tab.active { display: block; }
+
+.ae-preview {
+  background: #000;
+}
+.ae-preview-label {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 5;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15,185,177,0.85);
+  background: rgba(0,0,0,0.55);
+  padding: 2px 7px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Inference tab */
+.ae-inference-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .ae-inference-grid { grid-template-columns: 1fr; }
+}

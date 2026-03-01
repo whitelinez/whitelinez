@@ -43,8 +43,40 @@ const AdminStreams = (() => {
 
     if (error) { _msg("Load failed: " + error.message, true); return; }
     _cameras = Array.isArray(data) ? data : [];
+
+    // Fetch FPS per camera from ml_detection_events (last 5 min)
+    const since = new Date(Date.now() - 5 * 60_000).toISOString();
+    const [fpsResp, healthResp] = await Promise.all([
+      window.sb
+        .from("ml_detection_events")
+        .select("camera_id, captured_at")
+        .gte("captured_at", since)
+        .order("captured_at", { ascending: true }),
+      fetch("/api/health").then(r => r.json()).catch(() => null),
+    ]);
+
+    const fpsRows = fpsResp?.data || [];
+    const groups = {};
+    fpsRows.forEach(r => {
+      (groups[r.camera_id] = groups[r.camera_id] || []).push(r.captured_at);
+    });
+    _fpsMap = {};
+    const aiFps = healthResp?.ai_fps_estimate ?? null;
+    _cameras.forEach(cam => {
+      if (cam.is_active && aiFps != null) {
+        _fpsMap[cam.id] = aiFps;
+        return;
+      }
+      const ts = groups[cam.id];
+      if (!ts || ts.length < 2) return;
+      const elapsed = (new Date(ts.at(-1)) - new Date(ts[0])) / 1000;
+      if (elapsed > 0) _fpsMap[cam.id] = ts.length / elapsed;
+    });
+
     _render();
   }
+
+  let _fpsMap = {};
 
   // ── Determine which camera the public page loads by default ──
   function _getDefaultCamId() {
@@ -83,6 +115,10 @@ const AdminStreams = (() => {
       const typeTag   = isIpcam ? "ipcamlive" : "Direct URL";
       const host      = cam.player_host || "g3";
       const area      = cam.area ? `<span class="stream-area-tag">${esc(cam.area)}</span>` : "";
+      const fpsVal    = _fpsMap[cam.id];
+      const fpsBadge  = fpsVal != null
+        ? `<span class="stream-fps-badge">${Number(fpsVal).toFixed(1)} fps</span>`
+        : "";
       const isDefault = cam.is_active && String(cam.id) === String(defaultId);
       const activeCls  = cam.is_active ? "stream-badge-active" : "stream-badge-inactive";
       const activeText = cam.is_active ? "AI Active" : "Inactive";
@@ -120,6 +156,7 @@ const AdminStreams = (() => {
             <span class="stream-row-alias">${esc(alias)}</span>
             ${liveBadge}
             ${area}
+            ${fpsBadge}
             <span class="stream-badge ${activeCls}">${activeText}</span>
             <span class="stream-type-tag">${typeTag}</span>
           </div>

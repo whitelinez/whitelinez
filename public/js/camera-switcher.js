@@ -29,6 +29,53 @@ const CameraSwitcher = (() => {
       _buildIframe();
       _buildModal();
       _wireCameraTile();
+      _loadFpsBadges();
+    } catch {}
+  }
+
+  // ── Fetch FPS per camera from ml_detection_events ────────────
+  async function _loadFpsBadges() {
+    try {
+      const since = new Date(Date.now() - 5 * 60_000).toISOString();
+      const { data: rows } = await window.sb
+        .from("ml_detection_events")
+        .select("camera_id, captured_at")
+        .gte("captured_at", since)
+        .order("captured_at", { ascending: true });
+
+      if (!rows?.length) return;
+
+      // Group by camera_id, compute events/sec
+      const groups = {};
+      rows.forEach(r => {
+        (groups[r.camera_id] = groups[r.camera_id] || []).push(r.captured_at);
+      });
+
+      // Also poll health for current AI FPS
+      let aiFps = null;
+      try {
+        const h = await fetch("/api/health").then(r => r.json());
+        aiFps = h?.ai_fps_estimate ?? null;
+      } catch {}
+
+      _cameras.forEach(cam => {
+        const fpsEl = _modal?.querySelector(`.cp-cam-card[data-alias="${cam.ipcam_alias}"] .cp-fps-badge`);
+        if (!fpsEl) return;
+
+        if (cam.is_active && aiFps != null) {
+          fpsEl.textContent = `${Number(aiFps).toFixed(1)} fps`;
+          fpsEl.classList.remove("hidden");
+          return;
+        }
+
+        const ts = groups[cam.id];
+        if (!ts || ts.length < 2) return;
+        const elapsed = (new Date(ts.at(-1)) - new Date(ts[0])) / 1000;
+        if (elapsed <= 0) return;
+        const fps = ts.length / elapsed;
+        fpsEl.textContent = `${fps.toFixed(1)} fps`;
+        fpsEl.classList.remove("hidden");
+      });
     } catch {}
   }
 
@@ -78,6 +125,7 @@ const CameraSwitcher = (() => {
             <div class="cp-cam-info">
               ${isAI ? '<span class="cp-ai-badge"><span class="cp-ai-dot"></span>AI LIVE</span>' : ''}
               <span class="cp-cam-name">${c.name}</span>
+              <span class="cp-fps-badge hidden"></span>
             </div>
           </div>`;
       });

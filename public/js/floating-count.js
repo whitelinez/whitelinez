@@ -92,12 +92,18 @@ const FloatingCount = (() => {
     const trucksEl = document.getElementById("cw-trucks");
     const busesEl  = document.getElementById("cw-buses");
     const motosEl  = document.getElementById("cw-motos");
+    const fpsEl    = document.getElementById("cw-fps");
 
     if (totalEl)  totalEl.textContent  = total.toLocaleString();
     if (carsEl)   carsEl.textContent   = bd.car        ?? 0;
     if (trucksEl) trucksEl.textContent = bd.truck      ?? 0;
     if (busesEl)  busesEl.textContent  = bd.bus        ?? 0;
     if (motosEl)  motosEl.textContent  = bd.motorcycle ?? 0;
+    if (fpsEl) {
+      const fps = data.fps ?? data.fps_estimate ?? null;
+      fpsEl.textContent = fps != null ? `${Number(fps).toFixed(1)} fps` : "--.- fps";
+      fpsEl.className = "cw-fps" + (fps == null ? " cw-fps-na" : fps < 3 ? " cw-fps-bad" : "");
+    }
 
     // Update guess-mode progress bar if active
     if (_guessBaseline !== null && _guessTarget !== null) {
@@ -130,19 +136,37 @@ const FloatingCount = (() => {
 
   async function _loadCameraSnapshot(cameraId) {
     try {
-      const { data } = await window.sb
-        .from("count_snapshots")
-        .select("camera_id, captured_at, total, count_in, count_out, vehicle_breakdown")
-        .eq("camera_id", cameraId)
-        .order("captured_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!data) return;
+      const [snapResp, fpsResp] = await Promise.all([
+        window.sb
+          .from("count_snapshots")
+          .select("camera_id, captured_at, total, count_in, count_out, vehicle_breakdown")
+          .eq("camera_id", cameraId)
+          .order("captured_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        // Compute FPS: events in last 5 min / elapsed seconds
+        window.sb
+          .from("ml_detection_events")
+          .select("captured_at")
+          .eq("camera_id", cameraId)
+          .gte("captured_at", new Date(Date.now() - 5 * 60_000).toISOString())
+          .order("captured_at", { ascending: true }),
+      ]);
+
+      let fps = null;
+      const rows = fpsResp?.data || [];
+      if (rows.length >= 2) {
+        const elapsed = (new Date(rows.at(-1).captured_at) - new Date(rows[0].captured_at)) / 1000;
+        if (elapsed > 0) fps = rows.length / elapsed;
+      }
+
+      const snap = snapResp?.data;
       update({
-        camera_id: data.camera_id,
-        total: data.total || 0,
-        vehicle_breakdown: data.vehicle_breakdown || {},
+        camera_id: cameraId,
+        total: snap?.total || 0,
+        vehicle_breakdown: snap?.vehicle_breakdown || {},
         new_crossings: 0,
+        fps,
         snapshot: true,
       });
     } catch {}

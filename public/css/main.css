@@ -5376,12 +5376,20 @@ button {
   font-family: "JetBrains Mono", monospace;
   padding: 10px 16px;
 }
-.chat-login-hint a {
+.chat-login-hint a,
+.chat-login-link {
   color: #00d4ff;
   font-weight: 700;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
 }
-.chat-login-hint a:hover {
+.chat-login-hint a:hover,
+.chat-login-link:hover {
   color: #7de8ff;
   text-decoration: underline;
 }

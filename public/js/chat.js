@@ -128,7 +128,10 @@ const Chat = (() => {
       _username = guest.username;
       if (hint) {
         hint.classList.remove("hidden");
-        hint.innerHTML = `Chatting as <strong>${esc(_username)}</strong>. <a href="/login">Login</a> to keep a profile.`;
+        hint.innerHTML = `Chatting as <strong>${esc(_username)}</strong>. <button class="chat-login-link" id="chat-hint-login-btn">Login</button> to keep a profile.`;
+        document.getElementById("chat-hint-login-btn")?.addEventListener("click", () => {
+          document.getElementById("btn-open-login")?.click();
+        });
       }
     }
     if (inputRow) inputRow.style.display = "";

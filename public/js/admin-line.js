@@ -11,28 +11,30 @@
  */
 
 const AdminLine = (() => {
+  // Preset A — Day / clear conditions
   const DEFAULT_COUNT_SETTINGS = {
     min_track_frames: 6,
-    min_box_area_ratio: 0.004,
-    min_confidence: 0.30,
-    allowed_classes: ["car", "truck", "bus", "motorcycle"],
-    class_min_confidence: {
-      car: 0.30,
-      truck: 0.42,
-      bus: 0.45,
-      motorcycle: 0.32,
-    },
-  };
-  const COUNT_SETTINGS_NIGHT_PRESET = {
-    min_track_frames: 8,
     min_box_area_ratio: 0.003,
-    min_confidence: 0.22,
+    min_confidence: 0.35,
     allowed_classes: ["car", "truck", "bus", "motorcycle"],
     class_min_confidence: {
-      car: 0.22,
+      car: 0.35,
       truck: 0.38,
       bus: 0.40,
-      motorcycle: 0.25,
+      motorcycle: 0.30,
+    },
+  };
+  // Preset B — Night / low-light
+  const COUNT_SETTINGS_NIGHT_PRESET = {
+    min_track_frames: 4,
+    min_box_area_ratio: 0.003,
+    min_confidence: 0.25,
+    allowed_classes: ["car", "truck", "bus", "motorcycle"],
+    class_min_confidence: {
+      car: 0.25,
+      truck: 0.28,
+      bus: 0.30,
+      motorcycle: 0.22,
     },
   };
 

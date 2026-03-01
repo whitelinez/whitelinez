@@ -150,36 +150,15 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     const src = String(seed || "whitelinez-user");
     let hash = 0;
     for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
-    const h = Math.abs(hash) % 360;
-    const h2 = (h + 32) % 360;
-    // Skin tone palette (light → dark)
-    const skins = [
-      "hsl(28,72%,72%)", "hsl(26,62%,64%)", "hsl(24,56%,56%)",
-      "hsl(21,50%,46%)", "hsl(18,44%,36%)",
-    ];
-    // Hair color palette
-    const hairs = ["#17100a", "#3b2008", "#6b3510", "#c48a10", "#7a1515"];
-    const skin  = skins[Math.abs(hash >> 4) % skins.length];
-    const hair  = hairs[Math.abs(hash >> 8) % hairs.length];
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
-      <defs>
-        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='hsl(${h},60%,28%)'/>
-          <stop offset='100%' stop-color='hsl(${h2},68%,16%)'/>
-        </linearGradient>
-        <clipPath id='c'><circle cx='48' cy='48' r='48'/></clipPath>
-      </defs>
-      <circle cx='48' cy='48' r='48' fill='url(#g)'/>
-      <ellipse cx='48' cy='92' rx='40' ry='26' fill='rgba(0,0,0,0.30)' clip-path='url(#c)'/>
-      <rect x='43' y='63' width='10' height='15' rx='5' fill='${skin}' clip-path='url(#c)'/>
-      <circle cx='48' cy='44' r='23' fill='${skin}'/>
-      <path d='M25 44 Q26 18 48 16 Q70 18 71 44 Q66 28 48 27 Q30 28 25 44Z' fill='${hair}' clip-path='url(#c)'/>
-      <ellipse cx='40' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
-      <ellipse cx='56' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
-      <ellipse cx='41.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
-      <ellipse cx='57.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
-      <path d='M40 52 Q48 59 56 52' stroke='rgba(8,4,2,0.28)' stroke-width='2.8' fill='none' stroke-linecap='round'/>
-      <circle cx='48' cy='48' r='46' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='1.5'/>
+    const abs = Math.abs(hash);
+    const palette = ["#00d4ff","#22c55e","#a78bfa","#f472b6","#fb923c","#4ade80","#e879f9","#60a5fa","#f59e0b","#2dd4bf"];
+    const accent = palette[abs % palette.length];
+    // Plain SVG silhouette: circle head + body fill, flat monochrome
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <rect width='64' height='64' rx='8' fill='#0c1320'/>
+      <circle cx='32' cy='23' r='12' fill='${accent}' opacity='0.88'/>
+      <path d='M8 62 Q8 44 32 40 Q56 44 56 62Z' fill='${accent}' opacity='0.7'/>
+      <rect width='64' height='64' rx='8' fill='none' stroke='${accent}' stroke-width='1' opacity='0.18'/>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }

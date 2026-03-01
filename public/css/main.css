@@ -4090,10 +4090,10 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 .chat-avatar {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 5px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid var(--border);
+  border: none;
   background: var(--bg3);
 }
 
@@ -10465,39 +10465,105 @@ button {
    FINAL OVERRIDES — enforces correct v3 designs last in cascade
    ============================================================ */
 
-/* ── Count widget: top-left HUD (revert bottom-strip) ── */
+/* ══════════════════════════════════════════════════════════════
+   NAV DROPDOWN
+   ══════════════════════════════════════════════════════════════ */
+.nav-user-menu {
+  position: relative;
+}
+.nav-avatar-trigger {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  padding: 3px 6px 3px 3px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.nav-avatar-trigger:hover { border-color: rgba(0,212,255,0.35); }
+.nav-avatar-trigger[aria-expanded="true"] { border-color: rgba(0,212,255,0.45); }
+.nav-avatar-trigger[aria-expanded="true"] .nav-dd-chevron { transform: rotate(180deg); }
+.nav-avatar {
+  width: 26px; height: 26px; border-radius: 5px; object-fit: cover; display: block;
+}
+.nav-dd-chevron { color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+.nav-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  min-width: 170px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+  z-index: 200;
+}
+.nav-dropdown[hidden] { display: none; }
+.nav-dd-balance {
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 10px 6px;
+  font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--accent);
+}
+.nav-dd-balance svg { color: var(--accent); flex-shrink: 0; }
+.nav-dd-balance .nav-balance-label { font-size: 10px; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.nav-dd-sep {
+  height: 1px; background: var(--border); margin: 4px 0;
+}
+.nav-dd-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 7px 10px;
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500;
+  color: var(--text); text-decoration: none;
+  background: none; border: none; cursor: pointer;
+  border-radius: 5px; text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-dd-item:hover { background: rgba(255,255,255,0.06); color: var(--cyan); }
+.nav-dd-item svg { color: var(--muted); flex-shrink: 0; }
+.nav-dd-item:hover svg { color: var(--cyan); }
+.nav-dd-logout { color: var(--muted); }
+.nav-dd-logout:hover { background: rgba(255,61,107,0.08); color: var(--red); }
+.nav-dd-logout:hover svg { color: var(--red); }
+
+/* ══════════════════════════════════════════════════════════════
+   COUNT WIDGET — minimal floating number (no vehicle breakdown)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Count widget: minimal floating number only ── */
 .count-widget {
   position: absolute !important;
-  top: 12px !important;
-  left: 12px !important;
-  bottom: auto !important;
-  right: auto !important;
-  min-width: 148px !important;
-  max-width: 160px !important;
-  width: auto !important;
-  height: auto !important;
-  padding: 6px 8px 7px 8px !important;
-  gap: 0 !important;
-  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)) !important;
-  border-radius: 0 !important;
-  border: 1px solid rgba(255,214,0,0.42) !important;
-  background: rgba(4,7,14,0.72) !important;
-  backdrop-filter: blur(3px) !important;
-  -webkit-backdrop-filter: blur(3px) !important;
-  box-shadow: 0 0 18px rgba(255,214,0,0.06), inset 0 0 0 1px rgba(255,214,0,0.06) !important;
+  top: 38% !important;
+  left: 14px !important;
+  bottom: auto !important; right: auto !important;
+  min-width: 0 !important; max-width: none !important; width: auto !important; height: auto !important;
+  padding: 0 !important; gap: 0 !important;
+  clip-path: none !important; border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
   display: block !important;
+  pointer-events: none;
 }
-.count-widget:hover,
-.count-widget.cw-active {
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)) !important;
-  border-color: rgba(255,214,0,0.72) !important;
-  background: rgba(4,7,14,0.88) !important;
+/* Hide vehicle breakdown + label + ws dot — just the number */
+.cw-normal-wrap  { display: none !important; }
+.cw-total-label  { display: none !important; }
+.cw-ws-dot       { display: none !important; }
+.cw-snapshot-badge { display: none !important; }
+.count-widget::before { display: none !important; }
+/* The total number itself — large amber numeral */
+.cw-total-wrap {
+  display: block !important;
+  margin: 0 !important; padding: 0 !important;
 }
-/* Tighten layout so 4 vehicles fit in ~148px */
-.cw-normal-wrap { gap: 10px !important; }
-.cw-vehicle-item { gap: 3px !important; }
-.cw-vehicle-icon { width: 18px !important; height: 10px !important; }
-.cw-vehicle-num  { font-size: 14px !important; }
+#cw-total {
+  display: block !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 56px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  color: var(--accent) !important;
+  text-shadow: 0 0 20px rgba(255,184,0,0.35) !important;
+  letter-spacing: -1px !important;
+}
+.count-widget:hover, .count-widget.cw-active {
+  clip-path: none !important; background: transparent !important; border: none !important;
+}
 
 /* ── AI Pulse HUD: compact pill (desktop) ── */
 .ml-hud {
@@ -10516,15 +10582,9 @@ button {
 
 /* ── Mobile overrides ── */
 @media (max-width: 767px) {
-  /* Count widget — same HUD position but smaller on mobile */
-  .count-widget {
-    top: 8px !important;
-    left: 8px !important;
-    min-width: 130px !important;
-    max-width: 145px !important;
-  }
-  .cw-vehicle-num  { font-size: 13px !important; }
-  .cw-vehicle-icon { width: 16px !important; height: 9px !important; }
+  /* Count widget — minimal floating number on mobile too */
+  .count-widget { top: 35% !important; left: 10px !important; }
+  #cw-total { font-size: 40px !important; }
   /* AI Pulse — full-width strip on mobile */
   .ml-hud {
     top: 0 !important;

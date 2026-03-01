@@ -43,45 +43,13 @@ const Chat = (() => {
   }
 
   function defaultAvatar(seed) {
-    const src = String(seed || "whitelinez-user");
-    let hash = 0;
-    for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
-    const abs = Math.abs(hash);
-    // Background palettes — dark cyber tones anchored around cyan/purple/teal
-    const bgs = [
-      ["#091a22", "#0e2d3a"], // deep teal
-      ["#0a0f1e", "#102040"], // navy blue
-      ["#120a1e", "#1e0f35"], // deep purple
-      ["#0d1a10", "#0f2d18"], // dark green
-      ["#1a0d0d", "#2d1010"], // dark red
-    ];
-    const bg = bgs[abs % bgs.length];
     const accent = _userAccent(seed);
-    // Initials from seed (first 1-2 chars)
-    const initials = src.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
-    const fontSize = initials.length > 1 ? 34 : 42;
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
-      <defs>
-        <linearGradient id='bg${abs}' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='${bg[0]}'/>
-          <stop offset='100%' stop-color='${bg[1]}'/>
-        </linearGradient>
-        <clipPath id='cr${abs}'><rect width='96' height='96' rx='12'/></clipPath>
-      </defs>
-      <rect width='96' height='96' rx='12' fill='url(#bg${abs})'/>
-      <!-- Corner brackets -->
-      <path d='M6 18 L6 6 L18 6' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
-      <path d='M78 6 L90 6 L90 18' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
-      <path d='M6 78 L6 90 L18 90' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
-      <path d='M78 90 L90 90 L90 78' stroke='${accent}' stroke-width='2.5' fill='none' stroke-linecap='round' opacity='0.55'/>
-      <!-- Initials -->
-      <text x='48' y='54' text-anchor='middle' dominant-baseline='middle'
-        font-family='JetBrains Mono,Fira Code,monospace' font-size='${fontSize}'
-        font-weight='700' fill='${accent}' opacity='0.92'
-        letter-spacing='-1'>${initials}</text>
-      <!-- Subtle bottom glow -->
-      <rect x='0' y='70' width='96' height='26' fill='${accent}' opacity='0.04' rx='0'/>
-      <rect width='96' height='96' rx='12' fill='none' stroke='${accent}' stroke-width='1.5' opacity='0.18'/>
+    // Plain SVG silhouette: circle head + body fill, flat monochrome
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <rect width='64' height='64' rx='8' fill='#0c1320'/>
+      <circle cx='32' cy='23' r='12' fill='${accent}' opacity='0.88'/>
+      <path d='M8 62 Q8 44 32 40 Q56 44 56 62Z' fill='${accent}' opacity='0.7'/>
+      <rect width='64' height='64' rx='8' fill='none' stroke='${accent}' stroke-width='1' opacity='0.18'/>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }

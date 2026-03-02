@@ -10131,40 +10131,40 @@ button {
   .cw-vehicle-num { font-size: 15px; }
   .cw-total-val   { font-size: 20px; }
 
-  /* ── Vision HUD — desktop-style box, bottom-RIGHT on mobile ── */
+  /* ── Vision HUD — small transparent overlay, bottom-RIGHT ── */
   .ml-hud {
     position: absolute !important;
     top: auto    !important;
     left: auto   !important;
-    right: 8px   !important;
-    bottom: 48px !important;  /* above 40px count strip */
-    width: 175px !important;
-    max-width: 175px !important;
+    right: 6px   !important;
+    bottom: 48px !important;
+    width: 120px !important;
+    max-width: 120px !important;
     height: auto !important;
     min-width: unset !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(0,212,255,0.25) !important;
-    background: rgba(8,12,20,0.88) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    padding: 8px 10px !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     overflow: visible !important;
-    transform: none !important;       /* cancel scale() from 640px/430px rules */
+    transform: none !important;
     transform-origin: unset !important;
     z-index: 6 !important;
   }
   /* Restore all sections hidden by intermediate breakpoints */
-  .ml-hud-msg     { display: block  !important; font-size: 0.62rem; margin-bottom: 4px; }
-  .ml-hud-verbose { display: block  !important; font-size: 0.38rem; margin-bottom: 2px; }
-  .ml-hud-metrics { display: flex   !important; font-size: 0.40rem; }
-  .ml-hud-cells   { display: grid   !important; }
-  /* Scale remaining text slightly smaller than desktop */
-  .ml-hud-title        { font-size: 0.52rem; }
-  .ml-hud-bot          { font-size: 0.52rem; margin-bottom: 2px; }
-  .ml-cell-label       { font-size: 0.38rem; }
-  .ml-cell-row strong  { font-size: 0.44rem; }
-  .ml-cell-note        { font-size: 0.38rem; }
-  .ml-cell-track       { height: 5px; }
+  .ml-hud-msg     { display: block !important; font-size: 0.52rem; margin-bottom: 2px; }
+  .ml-hud-verbose { display: block !important; font-size: 0.34rem; margin-bottom: 1px; }
+  .ml-hud-metrics { display: flex  !important; font-size: 0.34rem; }
+  .ml-hud-cells   { display: grid  !important; margin-bottom: 1px; }
+  .ml-hud-title        { font-size: 0.44rem; }
+  .ml-hud-bot          { font-size: 0.44rem; margin-bottom: 1px; }
+  .ml-cell-label       { font-size: 0.32rem; }
+  .ml-cell-row strong  { font-size: 0.38rem; }
+  .ml-cell-note        { font-size: 0.32rem; }
+  .ml-cell-track       { height: 4px; }
 
   /* ── Stream chat overlay — watching count + messages, top-RIGHT ── */
   .stream-chat-overlay {

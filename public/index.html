@@ -99,18 +99,8 @@
       </span>
     </a>
 
-    <!-- Centre: Live context -->
-    <div class="header-live-ctx">
-      <button id="header-cam-chip" class="header-cam-chip" title="Switch camera">
-        <span class="header-cam-dot"></span>
-        <span id="header-cam-name" class="header-cam-name">Loading…</span>
-        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <span id="header-watching" class="header-watching hidden">
-        <span class="header-watching-dot"></span>
-        <span id="header-watching-val">0</span> watching
-      </span>
-    </div>
+    <!-- #header-cam-name kept hidden for JS (camera-switcher + gov mode) -->
+    <span id="header-cam-name" style="display:none" aria-hidden="true"></span>
 
     <!-- Right: Actions + auth -->
     <nav class="header-nav">

@@ -19,6 +19,10 @@
   --shadow:  0 4px 24px rgba(0,0,0,0.5);
   --sidebar-w: 380px;
   --header-h:  56px;
+
+  /* ── Widget positions — edit these to move HUD widgets ── */
+  --cw-top:  44px;   /* count widget: distance from top of stream */
+  --cw-left: 12px;   /* count widget: distance from left edge */
 }
 
 body.dark {
@@ -6624,8 +6628,8 @@ button {
 /* Override base count-widget layout */
 .count-widget {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: var(--cw-top);
+  left: var(--cw-left);
   min-width: 148px;
   padding: 8px 10px 9px 10px;
   z-index: 6;
@@ -6919,10 +6923,7 @@ button {
 .bnr-tile-camera .bnr-tile-content,
 .bnr-tile-camera .bnr-tile-footer { display: none; }
 
-/* ── Count widget — move down slightly ── */
-.count-widget {
-  top: 44px !important;
-}
+/* count widget position — controlled via --cw-top/--cw-left in :root */
 
 /* Camera-specific background — cyan tint instead of yellow */
 .bnr-tile-camera .bnr-tile-bg-empty {
@@ -10590,8 +10591,7 @@ button {
 
 /* ── Mobile overrides ── */
 @media (max-width: 767px) {
-  /* Count widget — minimal floating number on mobile too */
-  .count-widget { top: 35% !important; left: 10px !important; }
+  /* Count widget — mobile uses bottom strip (see 10096 block) */
   #cw-total { font-size: 40px !important; }
   /* Replace emoji ::before with inline SVG icons */
   .tab-btn::before { content: none !important; display: none !important; }
@@ -10650,5 +10650,17 @@ button {
 [class*="bnr-green"] {
   animation: none !important;
   box-shadow: none !important;
+}
+
+/* =============================================
+   WIDGET POSITIONS — single source of truth
+   Edit vars in :root to reposition widgets.
+   These rules always win via cascade position.
+   ============================================= */
+.count-widget {
+  top:  var(--cw-top)  !important;
+  left: var(--cw-left) !important;
+  right: auto          !important;
+  bottom: auto         !important;
 }
 

@@ -10138,8 +10138,8 @@ button {
     left: auto   !important;
     right: 0px   !important;
     bottom: 8px  !important;
-    width: 90px  !important;
-    max-width: 90px !important;
+    width: 66px  !important;
+    max-width: 66px !important;
     height: auto !important;
     min-width: unset !important;
     border-radius: 0 !important;
@@ -10161,12 +10161,12 @@ button {
   .ml-hud-bot          { display: none !important; }
   .ml-cell-row-traffic { display: none !important; }
   /* Keep: detection rate row + metrics */
-  .ml-hud-metrics { display: flex  !important; font-size: 0.30rem; }
-  .ml-hud-cells   { display: grid  !important; margin-bottom: 2px; }
-  .ml-hud-title        { font-size: 0.38rem; }
-  .ml-cell-label       { font-size: 0.28rem; }
-  .ml-cell-row strong  { font-size: 0.32rem; }
-  .ml-cell-track       { height: 3px; }
+  .ml-hud-metrics { display: flex  !important; font-size: 0.24rem; }
+  .ml-hud-cells   { display: grid  !important; margin-bottom: 1px; }
+  .ml-hud-title        { font-size: 0.30rem; }
+  .ml-cell-label       { font-size: 0.22rem; }
+  .ml-cell-row strong  { font-size: 0.26rem; }
+  .ml-cell-track       { height: 2px; }
 
   /* ── Stream chat overlay — watching count + messages, top-RIGHT ── */
   .stream-chat-overlay {

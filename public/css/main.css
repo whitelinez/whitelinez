@@ -8119,61 +8119,37 @@ button {
 .cw-normal-wrap { display: flex; flex-direction: column; gap: 0; }
 .cw-normal-wrap.hidden { display: none; }
 
-/* ── Guess mode strip — second row below count widget ─────────── */
+/* ── Guess mode — inline inside count widget ──────────────────── */
 .cw-guess-mode {
-  position: absolute;
-  top: 84px; left: 0; right: 0;
-  height: 44px;
-  background: rgba(8, 12, 20, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 184, 0, 0.15);
   display: flex;
   align-items: center;
-  padding: 0 14px;
-  gap: 16px;
-  z-index: 6;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 .cw-guess-mode.hidden { display: none !important; }
 
 .cw-gm-nums {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 3px;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-/* current count — matches cw-vehicle-num but green */
-.cw-gm-nums #cw-gm-current {
-  font-family: "Rajdhani", "Archivo", sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--green);
-  transition: color 0.3s;
+  flex-shrink: 0;
 }
 .cw-gm-sep {
   font-family: "Rajdhani", "Archivo", sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: var(--muted);
-}
-/* target — matches cw-total-val in amber */
-.cw-gm-target {
-  font-family: "Rajdhani", "Archivo", sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--accent);
   line-height: 1;
 }
-/* progress bar — sits in the right gutter */
 .cw-gm-bar-wrap {
   flex: 1;
-  max-width: 120px;
   height: 4px;
   background: rgba(255,255,255,0.08);
   border-radius: 2px;
   overflow: hidden;
-  margin-left: auto;
+  min-width: 30px;
 }
 .cw-gm-bar {
   height: 100%;
@@ -10099,13 +10075,6 @@ button {
   }
   .cw-vehicle-num { font-size: 15px; }
   .cw-total-val   { font-size: 20px; }
-
-  /* ── Guess strip — sits above the bottom count strip on mobile ── */
-  .cw-guess-mode {
-    top: auto !important;
-    bottom: 40px !important;
-    height: 40px;
-  }
 
   /* ── Vision HUD — small transparent overlay, bottom-RIGHT ── */
   .ml-hud {

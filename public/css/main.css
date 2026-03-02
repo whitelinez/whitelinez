@@ -10155,16 +10155,18 @@ button {
     z-index: 6 !important;
   }
   /* Restore all sections hidden by intermediate breakpoints */
-  .ml-hud-msg     { display: block !important; font-size: 0.44rem; margin-bottom: 2px; }
-  .ml-hud-verbose { display: block !important; font-size: 0.30rem; margin-bottom: 1px; }
+  /* Hide everything except weather, detection rate, frames, objects */
+  .ml-hud-msg          { display: none !important; }
+  .ml-hud-verbose      { display: none !important; }
+  .ml-hud-bot          { display: none !important; }
+  .ml-cell-row-traffic { display: none !important; }
+  /* Keep: detection rate row + metrics */
   .ml-hud-metrics { display: flex  !important; font-size: 0.30rem; }
-  .ml-hud-cells   { display: grid  !important; margin-bottom: 1px; }
+  .ml-hud-cells   { display: grid  !important; margin-bottom: 2px; }
   .ml-hud-title        { font-size: 0.38rem; }
-  .ml-hud-bot          { font-size: 0.38rem; margin-bottom: 1px; }
   .ml-cell-label       { font-size: 0.28rem; }
   .ml-cell-row strong  { font-size: 0.32rem; }
-  .ml-cell-note        { font-size: 0.28rem; }
-  .ml-cell-track       { height: 4px; }
+  .ml-cell-track       { height: 3px; }
 
   /* ── Stream chat overlay — watching count + messages, top-RIGHT ── */
   .stream-chat-overlay {

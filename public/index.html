@@ -268,19 +268,6 @@
             </span>
           </div>
 
-          <!-- Guess mode: X/Y progress toward target -->
-          <div id="cw-guess-mode" class="cw-guess-mode hidden">
-            <span class="cw-gm-label">MY GUESS</span>
-            <div class="cw-gm-nums">
-              <span id="cw-gm-current">0</span>
-              <span class="cw-gm-sep">/</span>
-              <span id="cw-gm-target">—</span>
-            </div>
-            <div class="cw-gm-bar-wrap">
-              <div id="cw-gm-bar" class="cw-gm-bar"></div>
-            </div>
-          </div>
-
           <!-- Right side: total + status -->
           <div class="cw-total-wrap">
             <span class="cw-total-label">TOTAL</span>
@@ -292,6 +279,19 @@
           <span id="cw-fps" class="cw-fps" aria-hidden="true">--.- fps</span>
           <span id="cw-cam-label" class="cw-cam-label hidden"></span>
           <span id="cw-snapshot-badge" class="cw-snapshot-badge hidden">SNAPSHOT</span>
+        </div>
+
+        <!-- Guess mode strip — appears below count widget when a guess is active -->
+        <div id="cw-guess-mode" class="cw-guess-mode hidden">
+          <div class="cw-strip-label">MY GUESS</div>
+          <div class="cw-gm-nums">
+            <span id="cw-gm-current" class="cw-vehicle-num">0</span>
+            <span class="cw-gm-sep">/</span>
+            <span id="cw-gm-target" class="cw-gm-target">—</span>
+          </div>
+          <div class="cw-gm-bar-wrap">
+            <div id="cw-gm-bar" class="cw-gm-bar"></div>
+          </div>
         </div>
 
         <div id="ml-hud" class="ml-hud" title="Toggle AI details">

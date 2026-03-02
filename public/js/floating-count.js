@@ -59,7 +59,7 @@ const FloatingCount = (() => {
   // ── Mode switches ─────────────────────────────────────────────
 
   function _enterGuessMode() {
-    document.getElementById("cw-normal")?.classList.add("hidden");
+    // cw-normal stays visible — guess strip is now a separate row below
     const gm = document.getElementById("cw-guess-mode");
     if (gm) gm.classList.remove("hidden");
 
@@ -72,7 +72,6 @@ const FloatingCount = (() => {
   function _exitGuessMode() {
     _guessBaseline = null;
     _guessTarget   = null;
-    document.getElementById("cw-normal")?.classList.remove("hidden");
     document.getElementById("cw-guess-mode")?.classList.add("hidden");
   }
 

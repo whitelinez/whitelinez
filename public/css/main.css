@@ -9976,6 +9976,7 @@ button {
     aspect-ratio: unset !important;
     position: relative;
     overflow: hidden;
+    touch-action: pan-x pan-y; /* prevent pinch-zoom hijacking viewport */
   }
   .stream-wrapper video {
     position: absolute;
@@ -10077,14 +10078,21 @@ button {
 
   /* ── Tab content ── */
   .tab-content {
+    display: none;
     flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* Most tabs: scroll as a single column */
+  .tab-content.active {
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 14px;
-    display: none;
   }
-  .tab-content.active { display: flex; flex-direction: column; }
 
   /* ── Header mobile adjustments ── */
   .logo-part-loc    { display: none; }
@@ -10269,12 +10277,15 @@ button {
     padding: 0;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;       /* lets it shrink inside flex parent */
+    overflow: hidden;
   }
   .chat-tab-header { padding: 10px 14px 6px 14px; flex-shrink: 0; }
   .chat-meta-row   { padding: 0 14px 6px; flex-shrink: 0; }
   #chat-messages {
     flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
@@ -10293,7 +10304,7 @@ button {
   .chat-input-row input {
     height: 44px;
     border-radius: 22px;
-    font-size: 14px;
+    font-size: 16px; /* 16px prevents iOS Safari auto-zoom on focus */
   }
   .chat-input-row .btn-primary {
     width: 44px;

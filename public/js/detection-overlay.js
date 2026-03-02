@@ -286,6 +286,89 @@ const DetectionOverlay = (() => {
     g.moveTo(x + c, y + h); g.lineTo(x, y + h); g.lineTo(x, y + h - c);
   }
 
+  // ── Outside-scan reticle (unvalidated vehicles) ───────────────
+  // Thin pulsing cyan crosshair corners — "I see you but not counting yet"
+  function _drawScanReticle(det, bounds) {
+    const p1 = contentToPixel(det.x1, det.y1, bounds);
+    const p2 = contentToPixel(det.x2, det.y2, bounds);
+    const bw = p2.x - p1.x, bh = p2.y - p1.y;
+    if (bw < 4 || bh < 4) return;
+    const t = Date.now() / 1000;
+    const pulse = 0.3 + 0.25 * Math.sin(t * Math.PI * 2.2);
+    const tc = Math.max(5, Math.min(16, Math.floor(Math.min(bw, bh) * 0.20)));
+    ctx.save();
+    ctx.strokeStyle = `rgba(0,212,255,${pulse})`;
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'round';
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    // TL
+    ctx.moveTo(p1.x, p1.y + tc); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p1.x + tc, p1.y);
+    // TR
+    ctx.moveTo(p2.x - tc, p1.y); ctx.lineTo(p2.x, p1.y); ctx.lineTo(p2.x, p1.y + tc);
+    // BR
+    ctx.moveTo(p2.x, p2.y - tc); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p2.x - tc, p2.y);
+    // BL
+    ctx.moveTo(p1.x + tc, p2.y); ctx.lineTo(p1.x, p2.y); ctx.lineTo(p1.x, p2.y - tc);
+    ctx.stroke();
+    // Dim label: "Car?"
+    const CLS_NAME = { car: 'Car', truck: 'Truck', bus: 'Bus', motorcycle: 'Moto' };
+    const clsStr = (CLS_NAME[String(det?.cls || '').toLowerCase()] || 'Vehicle') + '?';
+    const fs = isMobileClient ? 8 : 9;
+    ctx.font = `600 ${fs}px "JetBrains Mono", monospace`;
+    const tw = ctx.measureText(clsStr).width;
+    const px = 3, py = 1;
+    const tx = p1.x, ty = p1.y - (fs + py * 2);
+    if (ty >= 0) {
+      ctx.fillStyle = `rgba(0,180,220,${pulse * 0.75})`;
+      ctx.fillRect(tx, ty, tw + px * 2, fs + py * 2);
+      ctx.fillStyle = `rgba(0,0,0,0.85)`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(clsStr, tx + px, ty + py);
+    }
+    ctx.restore();
+  }
+
+  // ── Inside-zone validation box (being confirmed/counted) ──────
+  // Glowing corner brackets with label — "this one counts"
+  function _drawValidationBox(det, bounds) {
+    const p1 = contentToPixel(det.x1, det.y1, bounds);
+    const p2 = contentToPixel(det.x2, det.y2, bounds);
+    const bw = p2.x - p1.x, bh = p2.y - p1.y;
+    if (bw < 4 || bh < 4) return;
+    const color = settings.colors?.[det.cls] || '#66BB6A';
+    const lw = Math.max(1.5, Number(settings.line_width || 2));
+    ctx.save();
+    // Glow halo
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.setLineDash([]);
+    drawCornerBox(p1.x, p1.y, bw, bh, color, lw);
+    ctx.shadowBlur = 0;
+    // Label: "Car 73%"
+    const CLS_NAME = { car: 'Car', truck: 'Truck', bus: 'Bus', motorcycle: 'Moto' };
+    const clsStr = CLS_NAME[String(det?.cls || '').toLowerCase()] || 'Vehicle';
+    const confStr = det.conf != null ? ` ${Math.round(Number(det.conf) * 100)}%` : '';
+    const label = clsStr + confStr;
+    const fs = isMobileClient ? 9 : 10;
+    ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
+    const tw = ctx.measureText(label).width;
+    const px = 4, py = 2;
+    const tx = p1.x, ty = p1.y - (fs + py * 2);
+    const ty2 = ty >= 0 ? ty : p1.y;
+    ctx.fillStyle = color;
+    ctx.fillRect(tx, ty2, tw + px * 2, fs + py * 2);
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(label, tx + px, ty2 + py);
+    ctx.restore();
+  }
+
   function canUseUnsafeEval() {
     try {
       // Pixi shader bootstrap uses Function/eval under the hood unless unsafe-eval is allowed.
@@ -796,15 +879,20 @@ const DetectionOverlay = (() => {
 
     const smoothed  = smoothLaneDetections(laneDetections, Date.now());
     const liveLane  = smoothed.slice(0, laneMaxBoxes);
-    for (const det of liveLane) {
-      drawDetectionBox(det, bounds, {
-        style: settings.box_style,
-        lineWidth: Math.max(1, Number(settings.line_width || 2)),
-        alpha: 0,
-        fill: false,
-        showLabels: settings.show_labels !== false,
-        labelBgAlpha: 0.90,
-      });
+    if (!pixiEnabled && ctx) {
+      for (const det of liveLane) {
+        _drawValidationBox(det, bounds);
+      }
+    } else {
+      for (const det of liveLane) {
+        drawDetectionBox(det, bounds, {
+          style: settings.box_style,
+          lineWidth: Math.max(1, Number(settings.line_width || 2)),
+          alpha: 0,
+          fill: false,
+          showLabels: settings.show_labels !== false,
+        });
+      }
     }
 
     if (settings.detect_zone_only || settings.outside_scan_enabled === false) {
@@ -812,7 +900,7 @@ const DetectionOverlay = (() => {
       return;
     }
 
-    const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.45));
+    const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.20));
     const outsideHardCap = isMobileClient ? 24 : 35;
     const outsideMax = Math.max(1, Math.min(outsideHardCap, Number(settings.outside_scan_max_boxes) || 25));
     const fresh = outsideDetections
@@ -821,23 +909,19 @@ const DetectionOverlay = (() => {
       .slice(0, outsideMax);
 
     if (fresh.length && !pixiEnabled && ctx) {
-      // Clip outside-scan boxes to the detect zone polygon so they don't bleed
-      // beyond the area the model is actually watching.
-      const clipped = _detectZone && _buildDetectZonePath(bounds);
-      if (clipped) ctx.save();
+      for (const det of fresh) {
+        _drawScanReticle(det, bounds);
+      }
+    } else if (fresh.length && pixiEnabled) {
       for (const det of fresh) {
         drawDetectionBox(det, bounds, {
           style: "dashed",
           lineWidth: 1.0,
           alpha: 0,
           fill: false,
-          showLabels: settings.outside_scan_show_labels === true,
-          labelText: "SCAN",
-          labelBgAlpha: 0.10,
-          labelColor: "#D7E6F5",
+          showLabels: false,
         });
       }
-      if (clipped) ctx.restore();
     }
     if (pixiEnabled) endPixiFrame();
     forceRender = false;

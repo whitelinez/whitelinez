@@ -216,12 +216,13 @@ const LiveBet = (() => {
     const resultEl = document.getElementById("bp-result");
     if (!resultEl) {
       // Fallback toast if HTML not present
-      _showToast(
-        data.won
-          ? `WIN! +${Number(data.payout || 0).toLocaleString()} pts — count was ${data.actual} (you guessed: ${data.exact})`
-          : `MISS — count was ${data.actual}, you guessed ${data.exact}`,
-        data.won ? "win" : "loss"
-      );
+      const tier = data.score_tier || (data.won ? (String(data.actual) === String(data.exact) ? "exact" : "close") : "miss");
+      const toastMsg = tier === "exact"
+        ? `EXACT! +${Number(data.payout || 0).toLocaleString()} pts — count was ${data.actual}`
+        : tier === "close"
+          ? `CLOSE! +${Number(data.payout || 0).toLocaleString()} pts — count was ${data.actual}, you guessed ${data.exact}`
+          : `MISS — count was ${data.actual}, you guessed ${data.exact}`;
+      _showToast(toastMsg, tier === "miss" ? "loss" : "win");
       return;
     }
 

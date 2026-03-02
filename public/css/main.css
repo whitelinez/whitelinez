@@ -10136,8 +10136,8 @@ button {
     position: absolute !important;
     top: auto    !important;
     left: auto   !important;
-    right: 6px   !important;
-    bottom: 48px !important;
+    right: 0px   !important;
+    bottom: 44px !important;
     width: 120px !important;
     max-width: 120px !important;
     height: auto !important;

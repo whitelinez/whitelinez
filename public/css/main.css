@@ -10684,14 +10684,16 @@ button {
 }
 
 /* =============================================
-   WIDGET POSITIONS — single source of truth
-   Edit vars in :root to reposition widgets.
-   These rules always win via cascade position.
+   WIDGET POSITIONS — single source of truth (desktop only)
+   Edit --cw-top / --cw-left in :root to reposition.
+   Mobile uses its own bottom-strip rule above.
    ============================================= */
-.count-widget {
-  top:  var(--cw-top)  !important;
-  left: var(--cw-left) !important;
-  right: auto          !important;
-  bottom: auto         !important;
+@media (min-width: 768px) {
+  .count-widget {
+    top:  var(--cw-top)  !important;
+    left: var(--cw-left) !important;
+    right: auto          !important;
+    bottom: auto         !important;
+  }
 }
 

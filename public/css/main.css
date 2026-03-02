@@ -10160,8 +10160,9 @@ button {
   .ml-hud-verbose      { display: none !important; }
   .ml-hud-bot          { display: none !important; }
   .ml-cell-row-traffic { display: none !important; }
-  /* Keep: detection rate row + metrics */
+  /* Keep: detection rate row + metrics (frames only) */
   .ml-hud-metrics { display: flex  !important; font-size: 0.24rem; }
+  .ml-hud-metrics span:nth-child(2) { display: none !important; }
   .ml-hud-cells   { display: grid  !important; margin-bottom: 1px; }
   .ml-hud-title        { font-size: 0.30rem; }
   .ml-cell-label       { font-size: 0.22rem; }

@@ -1334,14 +1334,17 @@ function _connectUserWs(session) {
     _pl.show();
     _pl.set(0, "Initialising…");
 
-    // Step 1 — force-reload zones (user drew them in admin)
+    // Step 1 — fire-and-forget zone reload (best-effort, must not block)
     _pl.set(10, "Loading zone data…");
-    try { await window.DetectionOverlay.forceReloadZones(); } catch {}
+    try { window.DetectionOverlay?.forceReloadZones?.(); } catch {}
     _pl.set(35, "Zone data ready");
 
-    // Step 2 — load Chart.js
+    // Step 2 — load Chart.js (5s timeout so a slow CDN never blocks the overlay)
     _pl.set(40, "Loading chart engine…");
-    await new Promise(resolve => _loadChartJs(resolve));
+    await new Promise(resolve => {
+      _loadChartJs(resolve);
+      setTimeout(resolve, 5000); // fallback — charts will init lazily if needed
+    });
     _pl.set(65, "Chart engine ready");
 
     // Default to today's data if no date range has been chosen yet

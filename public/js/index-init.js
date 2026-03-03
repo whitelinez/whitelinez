@@ -1406,11 +1406,37 @@ function _connectUserWs(session) {
     document.querySelector(".gov-kpi-strip")?.classList.toggle("is-loading", on);
   }
 
+  // ── Intro card dismiss (persisted in localStorage) ───────────────────────
+  const _INTRO_LS_PREFIX = "wl_intro_";
+
+  function _dismissIntro(key) {
+    try { localStorage.setItem(_INTRO_LS_PREFIX + key, "1"); } catch {}
+    const card = document.getElementById("gov-intro-" + key);
+    if (card) card.style.display = "none";
+  }
+
+  function _restoreIntros() {
+    ["live", "analytics", "agencies", "export"].forEach(key => {
+      try {
+        if (localStorage.getItem(_INTRO_LS_PREFIX + key)) {
+          const card = document.getElementById("gov-intro-" + key);
+          if (card) card.style.display = "none";
+        }
+      } catch {}
+    });
+  }
+
+  overlay.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-intro-key]");
+    if (btn) _dismissIntro(btn.dataset.introKey);
+  });
+
   async function openGov() {
     if (_open) return;
     _open = true;
     overlay.classList.remove("hidden");
     document.body.style.overflow = "hidden";
+    _restoreIntros();
     _moveOverlaysToGov();
 
     // Show loading bar until first live data arrives

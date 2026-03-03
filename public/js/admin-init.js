@@ -2616,6 +2616,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Ensure zone editor renders when Detection panel first opens
       setTimeout(() => window.AdminLine?.refresh?.(), 80);
     }
+    if (panel === "analytics-zones") {
+      window.AdminZones?.init();
+      window.AdminZones?.start(activeCameraId);
+    }
     if (panel === "mapping") {
       if (!_mappingActive) {
         _mappingActive = true;

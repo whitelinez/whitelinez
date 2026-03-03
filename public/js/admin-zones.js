@@ -39,24 +39,6 @@ const AdminZones = (() => {
     bgCtx   = bgCanvas.getContext("2d");
     drawCtx = drawCanvas.getContext("2d");
 
-    // Camera select
-    document.getElementById("az-camera-select")?.addEventListener("change", e => {
-      cameraId = e.target.value || null;
-      savedZones = [];
-      draftZones = [];
-      cancelDraw();
-      if (cameraId) {
-        captureFrame();
-        loadZones();
-        document.getElementById("az-draw-btn").removeAttribute("disabled");
-      } else {
-        frameImg = null;
-        setMsg("Select a camera to begin");
-        document.getElementById("az-draw-btn").setAttribute("disabled", "");
-        renderAll();
-      }
-    });
-
     // Zone type → show/hide speed distance, update legend
     document.getElementById("az-zone-type")?.addEventListener("change", updateTypeUI);
     updateTypeUI();
@@ -87,29 +69,41 @@ const AdminZones = (() => {
     // Resize
     window.addEventListener("resize", () => { resizeCanvas(); renderAll(); });
 
-    populateCameraSelect();
     resizeCanvas();
     startRaf();
   }
 
-  // ── Camera select population ───────────────────────────────────────────────
-  async function populateCameraSelect() {
-    const sel = document.getElementById("az-camera-select");
-    if (!sel) return;
-    try {
-      const { data } = await window.sb
-        .from("cameras")
-        .select("id,name,alias")
-        .order("name");
-      (data || []).forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c.id;
-        opt.textContent = c.name || c.alias || c.id;
-        sel.appendChild(opt);
-      });
-    } catch (e) {
-      console.warn("[AdminZones] camera list failed:", e);
+  // ── Start with a known camera ID (called from admin-init after resolving active cam) ──
+  async function start(camId) {
+    if (!camId) return;
+    cameraId = camId;
+
+    // Update hidden input (kept for any legacy reads) + label
+    const hiddenSel = document.getElementById("az-camera-select");
+    if (hiddenSel) hiddenSel.value = camId;
+
+    // Resolve camera name for display
+    const lbl = document.getElementById("az-cam-label");
+    if (lbl) {
+      try {
+        const { data } = await window.sb
+          .from("cameras")
+          .select("name,alias")
+          .eq("id", camId)
+          .maybeSingle();
+        lbl.textContent = data?.name || data?.alias || camId;
+      } catch (_) {
+        lbl.textContent = camId;
+      }
     }
+
+    // Enable draw button and kick off frame + zones load
+    document.getElementById("az-draw-btn")?.removeAttribute("disabled");
+    savedZones = [];
+    draftZones = [];
+    cancelDraw();
+    captureFrame();
+    loadZones();
   }
 
   // ── Frame capture ──────────────────────────────────────────────────────────
@@ -461,35 +455,7 @@ const AdminZones = (() => {
     if (cameraId) captureFrame();
   }
 
-  return { init, onPanelActivated };
+  return { init, start, onPanelActivated };
 })();
 
-// Integrate with admin panel switcher
-document.addEventListener("DOMContentLoaded", () => {
-  // Wait for admin-init to be ready, then hook into panel switching
-  const originalSwitch = window._adminSwitchPanel;
-  function hookPanelSwitch() {
-    const btns = document.querySelectorAll(".admin-nav-btn[data-panel]");
-    btns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (btn.dataset.panel === "analytics-zones") {
-          setTimeout(() => AdminZones.onPanelActivated(), 50);
-        }
-      });
-    });
-  }
-  // Init when panel is first shown
-  const panelEl = document.getElementById("panel-analytics-zones");
-  if (panelEl) {
-    const obs = new MutationObserver(muts => {
-      muts.forEach(m => {
-        if (m.type === "attributes" && panelEl.classList.contains("active")) {
-          AdminZones.init();
-          obs.disconnect();
-        }
-      });
-    });
-    obs.observe(panelEl, { attributes: true, attributeFilter: ["class"] });
-  }
-  hookPanelSwitch();
-});
+// admin-init.js handles panel-change and calls AdminZones.init() + AdminZones.start(activeCameraId)

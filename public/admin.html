@@ -1198,12 +1198,11 @@
           <!-- ── Controls column ── -->
           <div class="az-controls-col">
 
-            <!-- Camera select -->
+            <!-- Active camera indicator (auto-resolved, no manual select needed) -->
             <div class="az-card">
               <div class="az-card-head">Camera</div>
-              <select class="az-select" id="az-camera-select">
-                <option value="">— select camera —</option>
-              </select>
+              <div class="az-cam-label" id="az-cam-label" style="font-size:12px;color:var(--accent,#FFB800);padding:4px 0">Resolving…</div>
+              <input type="hidden" id="az-camera-select" value="" />
             </div>
 
             <!-- New zone form -->

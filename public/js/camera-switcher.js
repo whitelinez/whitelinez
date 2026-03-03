@@ -128,18 +128,27 @@ const CameraSwitcher = (() => {
       : '';
 
     const isYT = !!c.youtube_url;
-    const previewAttr = isYT
-      ? `data-yt-url="${c.youtube_url}"`
-      : `data-alias="${c.ipcam_alias}" data-host="${c.player_host || 'g3'}"`;
-
     const ytBadge = isYT ? '<span class="cp-yt-badge">▶ YouTube</span>' : '';
+
+    // YouTube: use thumbnail image (embeds blocked by many channels)
+    // ipcam: use lazy-loaded iframe
+    const previewInner = isYT
+      ? (() => {
+          const vid = _ytVideoId(c.youtube_url);
+          const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : '';
+          return `<img class="cp-yt-thumb" src="${thumb}" alt="${c.name}" loading="lazy">
+                  <div class="cp-yt-play-icon">▶</div>`;
+        })()
+      : `<iframe class="cp-preview-iframe"
+           data-alias="${c.ipcam_alias}" data-host="${c.player_host || 'g3'}"
+           allow="autoplay" scrolling="no" frameborder="0"></iframe>
+         <div class="cp-preview-loader"><span></span></div>`;
 
     return `
       <div class="cp-cam-card${isAI ? ' cp-cam-ai' : ''}" data-cam-id="${c.id}" tabindex="0" role="button" aria-label="${c.name}">
-        <div class="cp-preview-wrap">
-          <iframe class="cp-preview-iframe" ${previewAttr} allow="autoplay" scrolling="no" frameborder="0"></iframe>
+        <div class="cp-preview-wrap${isYT ? ' cp-preview-loaded' : ''}">
+          ${previewInner}
           <div class="cp-click-shield"></div>
-          <div class="cp-preview-loader"><span></span></div>
         </div>
         <div class="cp-cam-info">
           ${isAI ? '<span class="cp-ai-badge"><span class="cp-ai-dot"></span>AI Live</span>' : ''}
@@ -243,19 +252,14 @@ const CameraSwitcher = (() => {
       card.classList.toggle('cp-cam-active', card.dataset.camId === _activeId);
     });
 
-    // Stagger-load previews (only once)
+    // Stagger-load ipcam iframe previews (YouTube cards already show thumbnails)
     if (!_previewsLoaded) {
       _previewsLoaded = true;
       _modal.querySelectorAll('.cp-preview-iframe').forEach((iframe, i) => {
         setTimeout(() => {
-          if (iframe.dataset.ytUrl) {
-            const vid = _ytVideoId(iframe.dataset.ytUrl);
-            if (vid) iframe.src = `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1`;
-          } else {
-            const host = iframe.dataset.host || 'g3';
-            const alias = iframe.dataset.alias;
-            if (alias) iframe.src = `https://${host}.ipcamlive.com/player/player.php?alias=${alias}&autoplay=1`;
-          }
+          const host = iframe.dataset.host || 'g3';
+          const alias = iframe.dataset.alias;
+          if (alias) iframe.src = `https://${host}.ipcamlive.com/player/player.php?alias=${alias}&autoplay=1`;
           iframe.addEventListener('load', () => {
             iframe.closest('.cp-preview-wrap')?.classList.add('cp-preview-loaded');
           }, { once: true });
@@ -267,6 +271,27 @@ const CameraSwitcher = (() => {
   function _closeModal() {
     _modal?.classList.add('hidden');
     document.body.style.overflow = '';
+  }
+
+  // ── YouTube watch overlay (embedding disabled) ────────────────
+  function _showYtWatchOverlay(cam) {
+    const wrapper = document.querySelector('.stream-wrapper');
+    if (!wrapper) return;
+    const vid   = _ytVideoId(cam.youtube_url);
+    const thumb = vid ? `https://img.youtube.com/vi/${vid}/maxresdefault.jpg` : '';
+    const div   = document.createElement('div');
+    div.id = 'yt-watch-overlay';
+    div.className = 'yt-watch-overlay';
+    div.innerHTML = `
+      ${thumb ? `<img class="yt-wo-thumb" src="${thumb}" alt="${cam.name}">` : ''}
+      <div class="yt-wo-body">
+        <div class="yt-wo-name">${cam.name}</div>
+        <div class="yt-wo-note">Live stream — embedding not available</div>
+        <a class="yt-wo-btn" href="${cam.youtube_url}" target="_blank" rel="noopener">
+          ▶ Watch Live on YouTube
+        </a>
+      </div>`;
+    wrapper.appendChild(div);
   }
 
   // ── Switch main stream ────────────────────────────────────────
@@ -292,14 +317,18 @@ const CameraSwitcher = (() => {
       window.Stream?.setAlias(cam.ipcam_alias || '');
     }
 
+    // Remove any existing YouTube watch overlay
+    document.getElementById('yt-watch-overlay')?.remove();
+
     if (iframe) {
       if (isAI) {
         iframe.src = '';
         iframe.style.display = 'none';
       } else if (isYT) {
-        const vid = _ytVideoId(cam.youtube_url);
-        iframe.src = vid ? `https://www.youtube.com/embed/${vid}?autoplay=1` : '';
-        iframe.style.display = vid ? 'block' : 'none';
+        // Embedding disabled — show a watch-on-YouTube overlay instead
+        iframe.src = '';
+        iframe.style.display = 'none';
+        _showYtWatchOverlay(cam);
       } else {
         const host = cam.player_host || 'g3';
         iframe.src = `https://${host}.ipcamlive.com/player/player.php?alias=${cam.ipcam_alias}&autoplay=1`;

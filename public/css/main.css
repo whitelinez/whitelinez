@@ -10215,7 +10215,7 @@ button {
    ===================================================== */
 
 /* Panel background */
-#gov-panel-agencies { background: #0a0f1a; padding: 0; overflow-y: auto; }
+#gov-panel-agencies { background: #f1f5f9; padding: 0; overflow-y: auto; }
 
 /* ── HEADER ──────────────────────────────────────── */
 .gov-agencies-hdr {

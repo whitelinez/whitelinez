@@ -819,29 +819,6 @@ function _connectUserWs(session) {
   });
 }());
 
-// ── Header PLAY CTA ──────────────────────────────────────────────────────────
-(function _initPlayCta() {
-  const btn = document.getElementById("header-play-cta");
-  if (!btn) return;
-
-  // Update button state when a round opens / closes
-  function _syncPlayBtn() {
-    const roundOpen = !!document.querySelector(".bp-panel-active, #bet-panel:not(.hidden)");
-    btn.classList.toggle("round-open", roundOpen);
-    btn.textContent = roundOpen ? "PREDICT NOW" : "PLAY";
-  }
-
-  btn.addEventListener("click", () => {
-    // Scroll sidebar to PLAY tab
-    const playTab = document.querySelector('.tab-btn[data-tab="markets"]');
-    if (playTab) playTab.click();
-    document.getElementById("sidebar")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-
-  window.addEventListener("round:opened",  _syncPlayBtn);
-  window.addEventListener("round:closed",  _syncPlayBtn);
-  window.addEventListener("bet:placed",    _syncPlayBtn);
-}());
 
 
 // ── Government Mode Overlay (Analytics) ─────────────────────────────────────
@@ -1402,6 +1379,7 @@ function _connectUserWs(session) {
 
   // ── Open / Close ─────────────────────────────────────────────────────────
   openBtn?.addEventListener("click", openGovAnalytics);
+  document.getElementById("header-analytics-cta")?.addEventListener("click", openGovAnalytics);
   closeBtn?.addEventListener("click", closeGov);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _open) closeGov(); });
 

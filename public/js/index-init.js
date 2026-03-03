@@ -1379,7 +1379,12 @@ function _connectUserWs(session) {
   // Pre-fetches analytics data into _analyticsData before the overlay opens
   async function _prefetchAnalytics() {
     if (_analyticsData) return; // already loaded
-    const url = `/api/analytics/traffic?hours=${_govHours}&granularity=${_govGranularity}${_camId ? `&camera_id=${_camId}` : ""}`;
+    let url;
+    if (_govFrom || _govTo) {
+      url = `/api/analytics/traffic?granularity=${_govGranularity}${_govFrom?`&from=${_govFrom}`:""}${_govTo?`&to=${_govTo}`:""}${_camId?`&camera_id=${_camId}`:""}`;
+    } else {
+      url = `/api/analytics/traffic?hours=${_govHours}&granularity=${_govGranularity}${_camId ? `&camera_id=${_camId}` : ""}`;
+    }
     try {
       const res  = await fetch(url);
       const json = res.ok ? await res.json() : null;
@@ -1392,6 +1397,19 @@ function _connectUserWs(session) {
   document.getElementById("header-analytics-cta")?.addEventListener("click", openGovAnalytics);
   closeBtn?.addEventListener("click", closeGov);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _open) closeGov(); });
+
+  // ── Restore overlay state after page refresh ──────────────────────────────
+  try {
+    const savedTab = localStorage.getItem("wl_gov_open");
+    if (savedTab) {
+      if (savedTab === "analytics") {
+        setTimeout(() => openGovAnalytics(), 250);
+      } else {
+        _activeTab = savedTab;
+        setTimeout(() => openGov(), 250);
+      }
+    }
+  } catch {}
 
   function _setKpiLoading(on) {
     document.querySelector(".gov-kpi-strip")?.classList.toggle("is-loading", on);
@@ -1430,6 +1448,7 @@ function _connectUserWs(session) {
   async function openGov() {
     if (_open) return;
     _open = true;
+    try { localStorage.setItem("wl_gov_open", _activeTab || "live"); } catch {}
     overlay.classList.remove("hidden");
     document.body.style.overflow = "hidden";
     _restoreIntros();
@@ -1507,6 +1526,7 @@ function _connectUserWs(session) {
   function closeGov() {
     if (!_open) return;
     _open = false;
+    try { localStorage.removeItem("wl_gov_open"); } catch {}
     overlay.classList.add("hidden");
     document.body.style.overflow = "";
     clearInterval(_crossingsInterval);
@@ -2393,6 +2413,36 @@ function _connectUserWs(session) {
 
   el("gov-modal-close")?.addEventListener("click", _closeModal);
   el("gov-modal-backdrop")?.addEventListener("click", _closeModal);
+
+  // ── Turning movements info modal ──────────────────────────────────────────
+  el("gov-turnings-head")?.addEventListener("click", async () => {
+    let earliest = "—", daysSince = null;
+    try {
+      if (window.sb) {
+        const { data } = await window.sb.from("traffic_daily")
+          .select("date").order("date", { ascending: true }).limit(1).single();
+        if (data?.date) {
+          earliest = new Date(data.date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+          daysSince = Math.floor((Date.now() - new Date(data.date + "T00:00:00").getTime()) / 86400000);
+        }
+      }
+    } catch {}
+    const zones = _govAnalyticsZones.filter(z => z.zone_type === "entry" || z.zone_type === "exit");
+    _showModal("TURNING MOVEMENTS — HOW IT WORKS", `
+      <p class="gov-modal-pitch">Turning movements track how vehicles flow between entry and exit zones — revealing directional patterns, route preferences, and peak-hour flows at this junction.</p>
+      <div class="gov-modal-kpi-grid">
+        <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${earliest}</div><div class="gov-modal-kpi-lbl">Recording Since</div></div>
+        ${daysSince !== null ? `<div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${daysSince}</div><div class="gov-modal-kpi-lbl">Days of Data</div></div>` : ""}
+        <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${zones.length}</div><div class="gov-modal-kpi-lbl">Active Zones</div></div>
+      </div>
+      <div class="gov-modal-data-rows">
+        <div class="gov-modal-data-row"><span class="gov-modal-data-key">Day 1</span><span class="gov-modal-data-val">Baseline traffic patterns established</span></div>
+        <div class="gov-modal-data-row"><span class="gov-modal-data-key">Day 7</span><span class="gov-modal-data-val">Weekly peak hours &amp; turning preferences emerge</span></div>
+        <div class="gov-modal-data-row"><span class="gov-modal-data-key">30 Days</span><span class="gov-modal-data-val">Monthly trends + directional flow projections available</span></div>
+      </div>
+      <p class="gov-modal-note">This system is in early collection${daysSince !== null ? ` (${daysSince} day${daysSince !== 1 ? "s" : ""} in)` : ""}. Turning movement insights deepen as more days of crossing data accumulate.</p>
+    `);
+  });
 
   // ── KPI card clicks ───────────────────────────────────────────────────────
   el("gov-panel-live")?.addEventListener("click", (e) => {

@@ -9566,7 +9566,7 @@ button {
 /* ── Header ─────────────────────────────────────────────────── */
 .gov-hdr {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   padding: 0 20px; height: 60px;
   background: #ffffff; border-bottom: 1px solid #e2e8f0;
@@ -9733,6 +9733,7 @@ button {
   font-size: 10px; color: #64748b; letter-spacing: 0.02em;
 }
 .gov-close-btn {
+  position: absolute; top: 14px; right: 16px; z-index: 10;
   display: flex; align-items: center; gap: 7px;
   background: #0f1c2e; border: none;
   color: #ffffff; border-radius: 6px; padding: 8px 16px;
@@ -9867,6 +9868,7 @@ button {
   align-items: center; gap: 7px;
   padding: 5px 7px; border-radius: 5px;
   cursor: pointer; transition: background 0.12s;
+  color: var(--text);
 }
 .gov-cls-row:hover  { background: var(--bg3); }
 .gov-cls-icon       { display: flex; align-items: center; justify-content: center; width: 28px; height: 20px; flex-shrink: 0; }
@@ -10239,6 +10241,10 @@ button {
 .gov-head-muted {
   font-weight: 400; color: var(--dim); letter-spacing: 0.02em; text-transform: none;
 }
+.gov-head-info {
+  color: #0284c7; opacity: 0.75; transition: opacity 0.15s; cursor: pointer;
+}
+#gov-turnings-head:hover .gov-head-info { opacity: 1; }
 .gov-chart-body { position: relative; height: 180px; }
 .gov-chart-body canvas { width: 100% !important; height: 100% !important; }
 .gov-crossings-wrap { overflow-x: auto; max-height: 280px; overflow-y: auto; }
@@ -10877,7 +10883,11 @@ button {
   .gov-agencies-pitch { font-size: 24px; }
   .gov-hiw-strip { padding: 20px; }
   .gov-hiw-step + .gov-hiw-step { padding-left: 18px; margin-left: 18px; }
-  .gov-ag-live-bar { padding: 10px 20px; flex-wrap: wrap; }
+  .gov-ag-live-bar {
+    padding: 10px 16px; flex-wrap: wrap; gap: 5px 10px;
+    justify-content: center; font-size: 11px;
+  }
+  .gov-ag-live-bar > span[style] { display: none; }
   .gov-agency-featured { flex-direction: column; margin: 16px 20px 8px; }
   .gov-agency-featured-right {
     width: auto; background: #0f1c2e;
@@ -11975,31 +11985,27 @@ button {
 
   /* ── Header ─────────────────────────────────────── */
   .gov-hdr {
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto;
-    height: auto; padding: 10px 14px; gap: 6px 0;
+    grid-template-columns: auto 1fr;
+    height: auto; padding: 10px 14px 8px; gap: 0;
   }
-  /* Left: logo + title on row 1, span 1 col */
+  /* Left: logo + title */
   .gov-hdr-left  { gap: 10px; padding-right: 0; }
-  /* Metric: full-width row 2, hide on very small screens */
+  /* Metric: full-width second row */
   .gov-hdr-metric {
     grid-column: 1 / -1;
     justify-content: flex-start; gap: 6px;
-    padding: 4px 0 0;
+    padding: 6px 0 0;
     border-top: 1px solid #f1f5f9;
   }
   .gov-hdr-metric-val { font-size: 22px; }
-  /* Right: close btn, row 1 aligned right */
-  .gov-hdr-right { padding-left: 0; }
+  /* Close button — keep absolute positioning, adjust for mobile */
+  .gov-close-btn { top: 10px; right: 12px; padding: 6px 12px; font-size: 11px; }
   .gov-hdr-rule  { display: none; }
   .gov-hdr-logo-wrap,
   .gov-hdr-logo,
   .gov-hdr-aiframe { width: 28px; height: 28px; }
   .gov-title    { font-size: 12px !important; }
   .gov-subtitle { font-size: 9px; }
-  .gov-close-btn {
-    padding: 7px 12px; font-size: 11px;
-  }
 
   /* ── Tab bar — horizontal scroll ────────────────── */
   .gov-tabbar {
@@ -12056,13 +12062,15 @@ button {
     flex: 1; min-width: 0; font-size: 12px;
     padding: 8px 8px;
   }
-  .gov-period-pills { flex-wrap: wrap; gap: 4px; }
+  .gov-period-pills { flex: 1 1 100%; gap: 4px; }
   .gov-pill {
-    padding: 6px 10px; font-size: 11px;
+    flex: 1; text-align: center;
+    padding: 6px 8px; font-size: 11px;
   }
-  .gov-gran-pills { gap: 4px; }
+  .gov-gran-pills { flex: 1 1 100%; gap: 4px; }
   .gov-gran-pill {
-    padding: 6px 10px; font-size: 11px;
+    flex: 1; text-align: center;
+    padding: 6px 8px; font-size: 11px;
   }
   .gov-export-btn {
     margin-left: 0; width: 100%; text-align: center;

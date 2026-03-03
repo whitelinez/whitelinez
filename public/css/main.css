@@ -9567,61 +9567,55 @@ button {
 .gov-hdr {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 20px; height: 52px;
-  background: var(--bg2); border-bottom: 1px solid var(--border);
+  background: #ffffff; border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0; gap: 12px;
 }
 .gov-hdr-left  { display: flex; align-items: center; gap: 12px; }
 .gov-hdr-right { display: flex; align-items: center; gap: 14px; }
-.gov-live-badge {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
-  color: var(--green); background: rgba(0,255,136,0.08);
-  border: 1px solid rgba(0,255,136,0.25);
-  padding: 3px 8px; border-radius: 3px; flex-shrink: 0;
-}
+.gov-hdr-logo  { height: 34px; width: auto; display: block; flex-shrink: 0; }
 .gov-title {
-  font-family: "Rajdhani", "Archivo", sans-serif;
-  font-size: 16px; font-weight: 700; letter-spacing: 0.08em;
-  color: var(--cyan); line-height: 1.1;
+  font-family: "Inter", "Archivo", sans-serif;
+  font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+  color: #0f1c2e; line-height: 1.1;
 }
 .gov-subtitle {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 9px; color: var(--muted); letter-spacing: 0.04em;
+  font-family: "Inter", sans-serif;
+  font-size: 10px; color: #64748b; letter-spacing: 0.02em;
 }
 .gov-hdr-stats {
   display: flex; align-items: center; gap: 8px;
   font-family: "JetBrains Mono", monospace;
 }
 .gov-hdr-stat  { display: flex; align-items: baseline; gap: 4px; }
-.gov-hdr-num   { font-size: 13px; font-weight: 700; color: var(--text); }
-.gov-hdr-lbl   { font-size: 9px; color: var(--muted); letter-spacing: 0.05em; }
-.gov-hdr-sep   { color: var(--border); font-size: 10px; }
+.gov-hdr-num   { font-size: 13px; font-weight: 700; color: #0f1c2e; }
+.gov-hdr-lbl   { font-size: 9px; color: #64748b; letter-spacing: 0.05em; }
+.gov-hdr-sep   { color: #e2e8f0; font-size: 10px; }
 .gov-close-btn {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(255,61,107,0.08); border: 1px solid rgba(255,61,107,0.3);
-  color: var(--red); border-radius: 4px; padding: 6px 14px;
+  background: rgba(255,61,107,0.06); border: 1px solid rgba(255,61,107,0.25);
+  color: #e11d48; border-radius: 4px; padding: 6px 14px;
   font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
   letter-spacing: 0.08em; cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
-.gov-close-btn:hover { background: rgba(255,61,107,0.18); border-color: rgba(255,61,107,0.5); }
+.gov-close-btn:hover { background: rgba(255,61,107,0.12); border-color: rgba(255,61,107,0.45); }
 
 /* ── Tab Bar ────────────────────────────────────────────────── */
 .gov-tabbar {
-  display: flex; border-bottom: 1px solid var(--border);
-  background: var(--bg2); flex-shrink: 0; padding: 0 20px;
+  display: flex; border-bottom: 1px solid #e2e8f0;
+  background: #ffffff; flex-shrink: 0; padding: 0 20px;
 }
 .gov-tab {
   background: transparent; border: none;
   border-bottom: 2px solid transparent;
-  color: var(--muted); padding: 12px 18px;
+  color: #64748b; padding: 12px 18px;
   font-family: "JetBrains Mono", monospace;
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
   cursor: pointer; white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
 }
-.gov-tab:hover  { color: var(--text); }
-.gov-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+.gov-tab:hover  { color: #0f1c2e; }
+.gov-tab.active { color: #0284c7; border-bottom-color: #0284c7; }
 
 /* ── Panels ─────────────────────────────────────────────────── */
 .gov-panel        { display: none; flex: 1; overflow-y: auto; }

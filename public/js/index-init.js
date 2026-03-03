@@ -1110,18 +1110,14 @@ function _connectUserWs(session) {
     _setTab(name);
   });
 
-  // ── Move video + canvases as a group into the target slot ────────────────
+  // ── Move only the video element into a slot (canvases never leave stream-wrapper) ──
   function _moveVideoGroup(slotId) {
-    const slot   = el(slotId);
-    if (!slot) return;
-    const video  = el("live-video");
-    const detCvs = el("detection-canvas");
-    const zonCvs = el("zone-canvas");
-    if (video   && !slot.contains(video))   slot.appendChild(video);
-    if (detCvs  && !slot.contains(detCvs))  slot.appendChild(detCvs);
-    if (zonCvs  && !slot.contains(zonCvs))  slot.appendChild(zonCvs);
-    // Trigger canvas resize sync after the DOM move
-    window.dispatchEvent(new Event("resize"));
+    const slot  = el(slotId);
+    const video = el("live-video");
+    if (slot && video && !slot.contains(video)) {
+      slot.appendChild(video);
+      window.dispatchEvent(new Event("resize"));
+    }
   }
 
   // Update only DOM classes (no video/canvas movement)
@@ -1137,7 +1133,7 @@ function _connectUserWs(session) {
     _setTabDom(name);
     if (!_open) return;
     if (name === "analytics") {
-      _moveVideoOnly("gov-an-video-slot");
+      _moveVideoGroup("gov-an-video-slot");
       _startZoneCanvas();
       if (window.Chart && !_trendChart) _initAllCharts(_govHours);
       if (_govHours) _loadGovCrossings();
@@ -1253,15 +1249,6 @@ function _connectUserWs(session) {
     if (canvas && _govAnZoneCtx) _govAnZoneCtx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  // ── Move only video (no detection/counting canvases) into analytics slot ─
-  function _moveVideoOnly(slotId) {
-    const slot  = el(slotId);
-    const video = el("live-video");
-    if (slot && video && !slot.contains(video)) {
-      slot.appendChild(video);
-      window.dispatchEvent(new Event("resize"));
-    }
-  }
 
   // ── Preloader helpers ─────────────────────────────────────────────────────
   const _pl = {
@@ -1371,7 +1358,7 @@ function _connectUserWs(session) {
     // Activate correct tab in DOM and route video/canvases
     _setTabDom(_activeTab);
     if (_activeTab === "analytics") {
-      _moveVideoOnly("gov-an-video-slot");
+      _moveVideoGroup("gov-an-video-slot");
       _startZoneCanvas();
       // Charts already loaded by preloader — just start crossings + zone analytics
       if (window.Chart && _analyticsData) {
@@ -1423,15 +1410,11 @@ function _connectUserWs(session) {
     _crossingsInterval = null;
     _stopZoneCanvas();
 
-    // Return all elements to stream-wrapper
+    // Return video to stream-wrapper (canvases never leave stream-wrapper)
     const wrapper = document.querySelector(".stream-wrapper");
     const video   = el("live-video");
-    const detCvs  = el("detection-canvas");
-    const zonCvs  = el("zone-canvas");
-    if (wrapper) {
-      if (video  && !wrapper.contains(video))  wrapper.insertBefore(video, wrapper.firstChild);
-      if (detCvs && !wrapper.contains(detCvs)) wrapper.appendChild(detCvs);
-      if (zonCvs && !wrapper.contains(zonCvs)) wrapper.appendChild(zonCvs);
+    if (wrapper && video && !wrapper.contains(video)) {
+      wrapper.insertBefore(video, wrapper.firstChild);
       window.dispatchEvent(new Event("resize"));
     }
   }

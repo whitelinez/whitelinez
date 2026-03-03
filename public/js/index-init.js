@@ -1,5 +1,22 @@
 const GUEST_TS_KEY = "wlz.guest.session_ts";
 
+// ── Vision HUD collapse toggle ────────────────────────────────────────────
+(function () {
+  const hud = document.getElementById("ml-hud");
+  if (!hud) return;
+
+  // Restore persisted state
+  if (localStorage.getItem("wlz.hud.collapsed") === "1") {
+    hud.classList.add("is-collapsed");
+  }
+
+  // Click anywhere on the hub to toggle collapse/expand
+  hud.addEventListener("click", () => {
+    const collapsed = hud.classList.toggle("is-collapsed");
+    localStorage.setItem("wlz.hud.collapsed", collapsed ? "1" : "0");
+  });
+}());
+
 (async () => {
   const PUBLIC_DAY_PRESET = {
     brightness: 102,
@@ -19,7 +36,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   async function resolveActiveCamera() {
     const { data, error } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, feed_appearance")
+      .select("id, name, ipcam_alias, created_at, feed_appearance")
       .eq("is_active", true);
     if (error) throw error;
     const cams = Array.isArray(data) ? data : [];
@@ -98,6 +115,15 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
   }
 
+  // Clean up OAuth redirect params from URL (Google OAuth lands with ?code= or #access_token)
+  if (
+    window.location.search.includes("code=") ||
+    window.location.search.includes("error=") ||
+    window.location.hash.includes("access_token")
+  ) {
+    history.replaceState(null, "", window.location.pathname);
+  }
+
   const session = await Auth.getSession();
   const currentUserId = session?.user?.id || "";
 
@@ -120,40 +146,14 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
   }
 
-  function defaultAvatar(seed) {
-    const src = String(seed || "whitelinez-user");
-    let hash = 0;
-    for (let i = 0; i < src.length; i += 1) hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
-    const h = Math.abs(hash) % 360;
-    const h2 = (h + 32) % 360;
-    // Skin tone palette (light → dark)
-    const skins = [
-      "hsl(28,72%,72%)", "hsl(26,62%,64%)", "hsl(24,56%,56%)",
-      "hsl(21,50%,46%)", "hsl(18,44%,36%)",
-    ];
-    // Hair color palette
-    const hairs = ["#17100a", "#3b2008", "#6b3510", "#c48a10", "#7a1515"];
-    const skin  = skins[Math.abs(hash >> 4) % skins.length];
-    const hair  = hairs[Math.abs(hash >> 8) % hairs.length];
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
-      <defs>
-        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='hsl(${h},60%,28%)'/>
-          <stop offset='100%' stop-color='hsl(${h2},68%,16%)'/>
-        </linearGradient>
-        <clipPath id='c'><circle cx='48' cy='48' r='48'/></clipPath>
-      </defs>
-      <circle cx='48' cy='48' r='48' fill='url(#g)'/>
-      <ellipse cx='48' cy='92' rx='40' ry='26' fill='rgba(0,0,0,0.30)' clip-path='url(#c)'/>
-      <rect x='43' y='63' width='10' height='15' rx='5' fill='${skin}' clip-path='url(#c)'/>
-      <circle cx='48' cy='44' r='23' fill='${skin}'/>
-      <path d='M25 44 Q26 18 48 16 Q70 18 71 44 Q66 28 48 27 Q30 28 25 44Z' fill='${hair}' clip-path='url(#c)'/>
-      <ellipse cx='40' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
-      <ellipse cx='56' cy='43' rx='4.8' ry='5.2' fill='rgba(12,8,4,0.88)'/>
-      <ellipse cx='41.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
-      <ellipse cx='57.6' cy='41.2' rx='2' ry='2.2' fill='rgba(255,255,255,0.62)'/>
-      <path d='M40 52 Q48 59 56 52' stroke='rgba(8,4,2,0.28)' stroke-width='2.8' fill='none' stroke-linecap='round'/>
-      <circle cx='48' cy='48' r='46' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='1.5'/>
+  function defaultAvatar(_seed) {
+    const accent = '#FFD600';
+    // Plain SVG silhouette: circle head + body fill, flat monochrome
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <rect width='64' height='64' rx='8' fill='#0c1320'/>
+      <circle cx='32' cy='23' r='12' fill='${accent}' opacity='0.88'/>
+      <path d='M8 62 Q8 44 32 40 Q56 44 56 62Z' fill='${accent}' opacity='0.7'/>
+      <rect width='64' height='64' rx='8' fill='none' stroke='${accent}' stroke-width='1' opacity='0.22'/>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
@@ -203,6 +203,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
     if (user.app_metadata?.role === "admin") {
       document.getElementById("nav-admin-link")?.classList.remove("hidden");
+      document.getElementById("btn-layout-editor")?.classList.remove("hidden");
     }
   }
 
@@ -225,6 +226,13 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   // Logout
   document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
 
+  // ── Widget Layout Editor (admin only) ────────────────────────
+  document.getElementById("btn-layout-editor")?.addEventListener("click", () => {
+    if (window.WidgetLayout) window.WidgetLayout.enter();
+  });
+  // Load saved layout for all visitors
+  if (window.WidgetLayout) window.WidgetLayout.loadLayout();
+
   // Load all active cameras for failover
   let _streamCameras = [];
   let _streamCamIdx = 0;
@@ -232,7 +240,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   try {
     const { data: camData } = await window.sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at")
+      .select("id, name, ipcam_alias, created_at")
       .eq("is_active", true);
     if (Array.isArray(camData)) {
       _streamCameras = camData
@@ -243,6 +251,61 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
         .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
     }
   } catch { /* silent — stream works without failover list */ }
+
+  // Stream switching overlay — shown when user picks a new AI camera
+  let _switchTimer1 = null, _switchTimer2 = null;
+  function _showSwitchOverlay() {
+    const ov = document.getElementById("stream-switching-overlay");
+    if (!ov) return;
+    ["sso-step-1","sso-step-2","sso-step-3"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove("active","done"); }
+    });
+    document.getElementById("sso-step-1")?.classList.add("active");
+    ov.classList.remove("hidden");
+    clearTimeout(_switchTimer1); clearTimeout(_switchTimer2);
+    _switchTimer1 = setTimeout(() => {
+      document.getElementById("sso-step-1")?.classList.replace("active","done");
+      document.getElementById("sso-step-2")?.classList.add("active");
+    }, 800);
+    _switchTimer2 = setTimeout(() => {
+      document.getElementById("sso-step-2")?.classList.replace("active","done");
+      document.getElementById("sso-step-3")?.classList.add("active");
+    }, 1800);
+  }
+  function _hideSwitchOverlay() {
+    clearTimeout(_switchTimer1); clearTimeout(_switchTimer2);
+    const ov = document.getElementById("stream-switching-overlay");
+    ov?.classList.add("hidden");
+  }
+
+  window.addEventListener("stream:switching", () => { _showSwitchOverlay(); });
+
+  window.addEventListener("camera:switched", (e) => {
+    const { isAI, alias } = e.detail || {};
+    if (!isAI) { _hideSwitchOverlay(); return; }
+    // Clear stale detection boxes immediately
+    DetectionOverlay.clearDetections?.();
+    // Reset FPS samples so we get clean readings for the new stream
+    FpsOverlay.reset();
+    // Reset Vision HUD counters + re-seed from new camera's telemetry
+    MlOverlay.resetForNewScene();
+    // Immediately reload detection zones + landmarks for the switched-to camera
+    ZoneOverlay.reloadZones(alias || null);
+    // Update header cam chip label
+    const chipNameEl = document.getElementById("header-cam-name");
+    if (chipNameEl && alias) chipNameEl.textContent = alias;
+    // Update scene chip location
+    const chipLocEl = document.getElementById("chip-location");
+    if (chipLocEl && alias) {
+      chipLocEl.textContent = "📍 " + alias;
+      chipLocEl.classList.remove("hidden");
+    }
+    // Update active pill
+    document.querySelectorAll(".cam-pill").forEach(p => {
+      p.classList.toggle("active", (p.dataset.alias || "") === (alias || ""));
+    });
+  });
 
   // Stream offline overlay + camera failover
   window.addEventListener("stream:status", (e) => {
@@ -268,12 +331,14 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     } else if (e.detail?.status === "ok") {
       overlay?.classList.add("hidden");
       _failoverPending = false;
+      _hideSwitchOverlay();
     }
   });
 
-  // Stream
+  // Stream — initialise with the AI-active camera alias so the correct feed
+  // loads immediately without waiting for CameraSwitcher.init() to resolve.
   const video = document.getElementById("live-video");
-  await Stream.init(video);
+  await Stream.init(video, { alias: _streamCameras[0]?.ipcam_alias || "" });
   await applyPublicFeedAppearance(video);
   setInterval(() => applyPublicFeedAppearance(video), 15000);
   FpsOverlay.init(video, document.getElementById("fps-overlay"));
@@ -387,6 +452,57 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     LiveBet.onBetResolved(e.detail);
     refreshNavBalance();
   });
+
+  // ── Header cam chip — initial set from loaded camera list ──────────────────
+  {
+    const firstCam = _streamCameras[0];
+    if (firstCam) {
+      const chipNameEl = document.getElementById("header-cam-name");
+      if (chipNameEl) chipNameEl.textContent = firstCam.name || firstCam.ipcam_alias || "Live Camera";
+      const chipLocEl = document.getElementById("chip-location");
+      if (chipLocEl) {
+        chipLocEl.textContent = "📍 " + (firstCam.name || firstCam.ipcam_alias || "Jamaica");
+        chipLocEl.classList.remove("hidden");
+      }
+    }
+  }
+
+  // ── Camera pill strip render ────────────────────────────────────────────────
+  {
+    const pillStrip = document.getElementById("cam-pill-strip");
+    if (pillStrip && _streamCameras.length > 0) {
+      const firstAlias = _streamCameras[0]?.ipcam_alias || "";
+      pillStrip.innerHTML = _streamCameras.map(c => {
+        const alias = c.ipcam_alias || "";
+        const label = c.name || alias || "Camera";
+        return `<button class="cam-pill${alias === firstAlias ? ' active' : ''}" data-alias="${alias}">
+          <span class="cam-pill-dot"></span>${label}
+        </button>`;
+      }).join("");
+      if (_streamCameras.length < 2) pillStrip.style.display = "none";
+      pillStrip.addEventListener("click", (e) => {
+        const pill = e.target.closest(".cam-pill");
+        if (!pill || pill.classList.contains("active")) return;
+        const alias = pill.dataset.alias || "";
+        if (alias) CameraSwitcher.switchTo(alias);
+      });
+    }
+  }
+
+  // ── Health fetch — watching count ─────────────────────────────────────────
+  try {
+    const hRes = await fetch("/api/health");
+    if (hRes.ok) {
+      const hData = await hRes.json();
+      const watchers = Number(hData.total_ws_connections || 0);
+      const watchEl = document.getElementById("header-watching");
+      const watchValEl = document.getElementById("header-watching-val");
+      if (watchEl && watchers > 0) {
+        if (watchValEl) watchValEl.textContent = watchers;
+        watchEl.classList.remove("hidden");
+      }
+    }
+  } catch { /* non-critical */ }
 })();
 
 
@@ -448,10 +564,11 @@ function _connectUserWs(session) {
   async function connect() {
     const jwt = await Auth.getJwt();
     if (!jwt) return;
-    const wssUrl = window._wssUrl;
+    const wssUrl = (typeof Stream !== "undefined" && Stream.getWssUrl)
+      ? Stream.getWssUrl()
+      : null;
     if (!wssUrl) {
-      // Derive from public WS URL by replacing /ws/live → /ws/account
-      // Try again once ws token is available
+      // WS URL not ready yet — retry after stream.js has fetched the token.
       setTimeout(connect, 3000);
       return;
     }
@@ -499,9 +616,10 @@ function _connectUserWs(session) {
     };
   }
 
-  // Wait for ws token to be available (set by Counter.init/stream.js)
+  // Wait for WS URL to be ready (populated by stream.js after /api/token fetch)
   waitForToken = setInterval(() => {
-    if (window._wssUrl) {
+    const ready = typeof Stream !== "undefined" && Stream.getWssUrl && Stream.getWssUrl();
+    if (ready) {
       clearInterval(waitForToken);
       connect();
     }
@@ -573,6 +691,22 @@ function _connectUserWs(session) {
     document.getElementById("modal-reg-email")?.focus();
   });
 
+  // Google login
+  document.getElementById("modal-google-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("modal-google-btn");
+    const errEl = document.getElementById("modal-auth-error");
+    if (errEl) errEl.textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Redirecting to Google...";
+    try {
+      await Auth.signInWithGoogle();
+    } catch (err) {
+      if (errEl) errEl.textContent = err.message || "Google login failed.";
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google`;
+    }
+  });
+
   // Guest login
   document.getElementById("modal-guest-btn")?.addEventListener("click", async () => {
     const btn = document.getElementById("modal-guest-btn");
@@ -625,6 +759,21 @@ function _connectUserWs(session) {
   closeBtn?.addEventListener("click", close);
   backdrop?.addEventListener("click", close);
 
+  // Google login (register modal)
+  document.getElementById("reg-google-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("reg-google-btn");
+    if (errorEl) errorEl.textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Redirecting to Google...";
+    try {
+      await Auth.signInWithGoogle();
+    } catch (err) {
+      if (errorEl) errorEl.textContent = err.message || "Google login failed.";
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google`;
+    }
+  });
+
   // Switch back to login
   document.getElementById("switch-to-login")?.addEventListener("click", (e) => {
     e.preventDefault();
@@ -670,7 +819,227 @@ function _connectUserWs(session) {
   });
 }());
 
+// ── Header PLAY CTA ──────────────────────────────────────────────────────────
+(function _initPlayCta() {
+  const btn = document.getElementById("header-play-cta");
+  if (!btn) return;
 
+  // Update button state when a round opens / closes
+  function _syncPlayBtn() {
+    const roundOpen = !!document.querySelector(".bp-panel-active, #bet-panel:not(.hidden)");
+    btn.classList.toggle("round-open", roundOpen);
+    btn.textContent = roundOpen ? "PREDICT NOW" : "PLAY";
+  }
+
+  btn.addEventListener("click", () => {
+    // Scroll sidebar to PLAY tab
+    const playTab = document.querySelector('.tab-btn[data-tab="markets"]');
+    if (playTab) playTab.click();
+    document.getElementById("sidebar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  window.addEventListener("round:opened",  _syncPlayBtn);
+  window.addEventListener("round:closed",  _syncPlayBtn);
+  window.addEventListener("bet:placed",    _syncPlayBtn);
+}());
+
+
+// ── Government Mode Overlay (Analytics) ─────────────────────────────────────
+
+
+// ── ML HUD expand / collapse toggle (new AI Pulse design) ───────────────────
+(function _initAiPulseToggle() {
+  const hud = document.getElementById("ml-hud");
+  if (!hud) return;
+
+  // Replace old is-collapsed toggle with new is-expanded toggle
+  // (old code still runs for is-collapsed; this adds is-expanded)
+  hud.addEventListener("click", () => {
+    hud.classList.toggle("is-expanded");
+  });
+}());
+
+
+// ── Onboarding Overlay ───────────────────────────────────────────────────────
+(function _initOnboarding() {
+  const OB_KEY    = "wlz.onboarding.done";
+  const overlay   = document.getElementById("onboarding-overlay");
+  const skipBtn   = document.getElementById("ob-skip");
+  const nextBtn   = document.getElementById("ob-next");
+  const steps     = Array.from(document.querySelectorAll(".ob-step"));
+  const dots      = Array.from(document.querySelectorAll(".ob-dot"));
+
+  if (!overlay || !steps.length) return;
+  if (localStorage.getItem(OB_KEY)) return; // already seen
+
+  let _step = 0;
+
+  function _setStep(n) {
+    _step = n;
+    steps.forEach((s, i) => s.classList.toggle("active", i === n));
+    dots.forEach((d,  i) => d.classList.toggle("active", i === n));
+    if (nextBtn) nextBtn.textContent = n < steps.length - 1 ? "NEXT →" : "LET'S GO →";
+  }
+
+  function _done() {
+    localStorage.setItem(OB_KEY, "1");
+    overlay.classList.add("hidden");
+  }
+
+  _setStep(0);
+  overlay.classList.remove("hidden");
+
+  nextBtn?.addEventListener("click", () => {
+    if (_step < steps.length - 1) _setStep(_step + 1);
+    else _done();
+  });
+  skipBtn?.addEventListener("click", _done);
+
+  document.addEventListener("keydown", (e) => {
+    if (!overlay.classList.contains("hidden")) {
+      if (e.key === "ArrowRight" || e.key === "Enter") nextBtn?.click();
+      if (e.key === "Escape") _done();
+    }
+  });
+}());
+
+
+// ── Mobile Nav — bottom sheet + swipe gestures ───────────────────────────────
+(function _initMobileNav() {
+  const sidebar      = document.querySelector(".sidebar");
+  const streamPanel  = document.querySelector(".stream-panel");
+  const tabBtns      = document.querySelectorAll(".tab-btn");
+  if (!sidebar || !tabBtns.length) return;
+
+  const isMobile = () => window.innerWidth < 768;
+
+  // ── Bottom sheet toggle ──────────────────────────────────────────────────
+  function expandTo(tabBtn) {
+    sidebar.classList.add("expanded");
+    tabBtns.forEach(b => b.classList.remove("active"));
+    if (tabBtn) tabBtn.classList.add("active");
+    // Show the right tab content
+    const target = tabBtn?.dataset?.tab;
+    if (target) {
+      document.querySelectorAll(".tab-content").forEach(el => {
+        el.classList.toggle("active", el.id === `tab-${target}`);
+      });
+    }
+  }
+
+  function collapse() {
+    sidebar.classList.remove("expanded");
+  }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!isMobile()) return; // desktop handles tabs via existing logic
+
+      const alreadyActive = btn.classList.contains("active") && sidebar.classList.contains("expanded");
+      if (alreadyActive) {
+        collapse();
+        tabBtns.forEach(b => b.classList.remove("active"));
+      } else {
+        expandTo(btn);
+        // Trigger lazy-load for leaderboard
+        if (btn.dataset.tab === "leaderboard" && window.Activity) {
+          const lbWin = parseInt(document.querySelector(".lb-wtab.active")?.dataset?.win || 60);
+          Activity.loadLeaderboard(lbWin);
+        }
+      }
+    });
+  });
+
+  // Auto-expand PLAY tab on mobile — always show game content by default
+  function _autoExpand() {
+    if (!isMobile()) return;
+    const playBtn = document.querySelector('.tab-btn[data-tab="markets"]');
+    if (playBtn) expandTo(playBtn);
+  }
+  setTimeout(_autoExpand, 300); // after DOM settles
+
+  // ── Swipe up on stream → expand PLAY tab ───────────────────────────────
+  let _touchStartY = 0;
+  let _touchStartX = 0;
+
+  streamPanel?.addEventListener("touchstart", e => {
+    _touchStartY = e.touches[0].clientY;
+    _touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  streamPanel?.addEventListener("touchend", e => {
+    if (!isMobile()) return;
+    const deltaY = _touchStartY - e.changedTouches[0].clientY;
+    const deltaX = Math.abs(_touchStartX - e.changedTouches[0].clientX);
+    if (deltaY > 55 && deltaX < 40) {
+      const playBtn = document.querySelector('.tab-btn[data-tab="markets"]');
+      expandTo(playBtn);
+    }
+  }, { passive: true });
+
+  // ── Swipe down on sidebar → collapse ───────────────────────────────────
+  let _sidebarTouchStartY = 0;
+  sidebar.addEventListener("touchstart", e => {
+    _sidebarTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  sidebar.addEventListener("touchend", e => {
+    if (!isMobile()) return;
+    const delta = e.changedTouches[0].clientY - _sidebarTouchStartY;
+    if (delta > 55 && sidebar.classList.contains("expanded")) {
+      collapse();
+      tabBtns.forEach(b => b.classList.remove("active"));
+    }
+  }, { passive: true });
+
+  // ── Visual viewport — keyboard detection for chat ────────────────────────
+  if ("visualViewport" in window) {
+    window.visualViewport.addEventListener("resize", () => {
+      const keyboardOpen = window.visualViewport.height < window.innerHeight * 0.75;
+      document.querySelector("#tab-chat")?.classList.toggle("keyboard-open", keyboardOpen);
+      // Scroll chat to bottom when keyboard opens
+      if (keyboardOpen) {
+        const msgs = document.getElementById("chat-messages");
+        if (msgs) msgs.scrollTop = msgs.scrollHeight;
+      }
+    });
+  }
+
+  // ── Resize: on desktop restore normal layout ────────────────────────────
+  window.addEventListener("resize", () => {
+    if (!isMobile()) {
+      sidebar.classList.remove("expanded");
+      // Re-activate first active tab on desktop
+      const activeContent = document.querySelector(".tab-content.active");
+      if (activeContent) {
+        const tabId = activeContent.id.replace("tab-", "");
+        tabBtns.forEach(b => {
+          b.classList.toggle("active", b.dataset.tab === tabId);
+        });
+      }
+    }
+  });
+
+  // ── Nav user dropdown ───────────────────────────────────────────────────
+  (function _initNavDropdown() {
+    const trigger  = document.getElementById("nav-avatar-trigger");
+    const dropdown = document.getElementById("nav-dropdown");
+    if (!trigger || !dropdown) return;
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !dropdown.hidden;
+      dropdown.hidden = open;
+      trigger.setAttribute("aria-expanded", String(!open));
+    });
+    document.addEventListener("click", () => {
+      dropdown.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    });
+    // Clicks inside dropdown don't close it
+    dropdown.addEventListener("click", (e) => e.stopPropagation());
+  }());
+
+}());
 // ── Gov Analytics Overlay ──────────────────────────────────────────────────────
 (function initGovOverlay() {
   const overlay    = document.getElementById("gov-overlay");

@@ -1110,12 +1110,28 @@ function _connectUserWs(session) {
     _setTab(name);
   });
 
+  // ── Move video + canvases as a group into the target slot ────────────────
+  function _moveVideoGroup(slotId) {
+    const slot   = el(slotId);
+    if (!slot) return;
+    const video  = el("live-video");
+    const detCvs = el("detection-canvas");
+    const zonCvs = el("zone-canvas");
+    if (video   && !slot.contains(video))   slot.appendChild(video);
+    if (detCvs  && !slot.contains(detCvs))  slot.appendChild(detCvs);
+    if (zonCvs  && !slot.contains(zonCvs))  slot.appendChild(zonCvs);
+    // Trigger canvas resize sync after the DOM move
+    window.dispatchEvent(new Event("resize"));
+  }
+
   function _setTab(name) {
     _activeTab = name;
     document.querySelectorAll(".gov-tab").forEach(t =>
       t.classList.toggle("active", t.dataset.tab === name));
     document.querySelectorAll(".gov-panel").forEach(p =>
       p.classList.toggle("active", p.id === `gov-panel-${name}`));
+    // Route video group to the correct slot for the active tab
+    if (_open) _moveVideoGroup(name === "analytics" ? "gov-an-video-slot" : "gov-video-slot");
     if (name === "analytics" && window.Chart && !_trendChart) _initAllCharts(_govHours);
     if (name === "analytics" && window.Chart && _govHours) _loadGovCrossings();
     if (name === "agencies" && _analyticsData) _populateAgencyMetrics(_analyticsData.summary);
@@ -1152,10 +1168,8 @@ function _connectUserWs(session) {
       } catch {}
     }
 
-    // Move live video into slot
-    const slot  = el("gov-video-slot");
-    const video = el("live-video");
-    if (slot && video && !slot.contains(video)) slot.appendChild(video);
+    // Move live video + overlay canvases into the correct slot
+    _moveVideoGroup(_activeTab === "analytics" ? "gov-an-video-slot" : "gov-video-slot");
 
     // Populate live stats from last known payload
     if (_lastPayload) _populateLive(_lastPayload);
@@ -1188,12 +1202,16 @@ function _connectUserWs(session) {
     clearInterval(_crossingsInterval);
     _crossingsInterval = null;
 
-    // Return video to stream-wrapper
+    // Return video + canvases to stream-wrapper
     const wrapper = document.querySelector(".stream-wrapper");
     const video   = el("live-video");
-    const canvas  = el("detection-canvas");
-    if (wrapper && video && !wrapper.contains(video)) {
-      wrapper.insertBefore(video, canvas || wrapper.firstChild);
+    const detCvs  = el("detection-canvas");
+    const zonCvs  = el("zone-canvas");
+    if (wrapper) {
+      if (video  && !wrapper.contains(video))  wrapper.insertBefore(video, wrapper.firstChild);
+      if (detCvs && !wrapper.contains(detCvs)) wrapper.appendChild(detCvs);
+      if (zonCvs && !wrapper.contains(zonCvs)) wrapper.appendChild(zonCvs);
+      window.dispatchEvent(new Event("resize"));
     }
   }
 

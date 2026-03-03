@@ -1124,21 +1124,221 @@ function _connectUserWs(session) {
     window.dispatchEvent(new Event("resize"));
   }
 
-  function _setTab(name) {
-    _activeTab = name;
+  // Update only DOM classes (no video/canvas movement)
+  function _setTabDom(name) {
     document.querySelectorAll(".gov-tab").forEach(t =>
       t.classList.toggle("active", t.dataset.tab === name));
     document.querySelectorAll(".gov-panel").forEach(p =>
       p.classList.toggle("active", p.id === `gov-panel-${name}`));
-    // Route video group to the correct slot for the active tab
-    if (_open) _moveVideoGroup(name === "analytics" ? "gov-an-video-slot" : "gov-video-slot");
-    if (name === "analytics" && window.Chart && !_trendChart) _initAllCharts(_govHours);
-    if (name === "analytics" && window.Chart && _govHours) _loadGovCrossings();
+  }
+
+  function _setTab(name) {
+    _activeTab = name;
+    _setTabDom(name);
+    if (!_open) return;
+    if (name === "analytics") {
+      _moveVideoOnly("gov-an-video-slot");
+      _startZoneCanvas();
+      if (window.Chart && !_trendChart) _initAllCharts(_govHours);
+      if (_govHours) _loadGovCrossings();
+    } else {
+      _stopZoneCanvas();
+      _moveVideoGroup("gov-video-slot");
+    }
     if (name === "agencies" && _analyticsData) _populateAgencyMetrics(_analyticsData.summary);
   }
 
+  // ── Analytics zone canvas (draws admin zones on video in analytics slot) ──
+  let _govAnZoneRaf = null;
+  let _govAnZoneCtx = null;
+
+  function _hexToRgba(hex, a) {
+    const r = String(hex || "").replace("#", "").padEnd(6, "0").slice(0, 6);
+    const n = parseInt(r, 16);
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${Math.max(0,Math.min(1,a))})`;
+  }
+
+  const _ZONE_COLORS = {
+    entry:"#4CAF50", exit:"#F44336", queue:"#FF9800",
+    roi:"#AB47BC", speed_a:"#00BCD4", speed_b:"#009688",
+  };
+
+  function _syncZoneCanvas(canvas, video) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = video.clientWidth, h = video.clientHeight;
+    const nw = Math.round(w * dpr), nh = Math.round(h * dpr);
+    if (canvas.width !== nw || canvas.height !== nh) {
+      canvas.width = nw; canvas.height = nh;
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+      _govAnZoneCtx = canvas.getContext("2d");
+    }
+    if (!_govAnZoneCtx) _govAnZoneCtx = canvas.getContext("2d");
+    _govAnZoneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function _drawGovZones() {
+    const canvas = el("gov-an-zone-canvas");
+    const video  = el("live-video");
+    if (!canvas || !video || !window.getContentBounds) return;
+    _syncZoneCanvas(canvas, video);
+    const ctx    = _govAnZoneCtx;
+    const bounds = window.getContentBounds(video);
+    ctx.clearRect(0, 0, video.clientWidth, video.clientHeight);
+
+    const zones = window.DetectionOverlay?.getZones?.() || [];
+    if (!zones.length) return;
+
+    ctx.save();
+    const now = Date.now();
+    for (const zone of zones) {
+      const pts = zone.points || [];
+      if (pts.length < 3) continue;
+      const px  = pts.map(p => window.contentToPixel(p.x, p.y, bounds));
+      const col = zone.color || _ZONE_COLORS[zone.zone_type] || "#64748b";
+
+      // Dashed polygon fill
+      ctx.beginPath();
+      ctx.moveTo(px[0].x, px[0].y);
+      for (let i = 1; i < px.length; i++) ctx.lineTo(px[i].x, px[i].y);
+      ctx.closePath();
+      ctx.fillStyle   = _hexToRgba(col, 0.10);
+      ctx.fill();
+
+      // Animated dash offset for a "scanning" effect
+      const dashOffset = ((now / 40) % 18);
+      ctx.strokeStyle = _hexToRgba(col, 0.85);
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.lineDashOffset = -dashOffset;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+
+      // Corner dots on each vertex
+      ctx.fillStyle = _hexToRgba(col, 0.90);
+      for (const p of px) {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Centroid label badge
+      const cx = px.reduce((s, p) => s + p.x, 0) / px.length;
+      const cy = px.reduce((s, p) => s + p.y, 0) / px.length;
+      const label = (zone.name || zone.zone_type || "zone").toUpperCase();
+      ctx.font = "700 9px 'JetBrains Mono',monospace";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = "rgba(0,0,0,0.72)";
+      ctx.beginPath();
+      ctx.roundRect?.(cx - tw/2 - 5, cy - 8, tw + 10, 16, 3) || ctx.rect(cx - tw/2 - 5, cy - 8, tw + 10, 16);
+      ctx.fill();
+      ctx.fillStyle = col;
+      ctx.fillText(label, cx, cy);
+    }
+    ctx.restore();
+  }
+
+  function _zoneRafLoop() {
+    _drawGovZones();
+    _govAnZoneRaf = requestAnimationFrame(_zoneRafLoop);
+  }
+
+  function _startZoneCanvas() {
+    if (_govAnZoneRaf) return; // already running
+    _govAnZoneRaf = requestAnimationFrame(_zoneRafLoop);
+  }
+
+  function _stopZoneCanvas() {
+    if (_govAnZoneRaf) { cancelAnimationFrame(_govAnZoneRaf); _govAnZoneRaf = null; }
+    const canvas = el("gov-an-zone-canvas");
+    if (canvas && _govAnZoneCtx) _govAnZoneCtx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // ── Move only video (no detection/counting canvases) into analytics slot ─
+  function _moveVideoOnly(slotId) {
+    const slot  = el(slotId);
+    const video = el("live-video");
+    if (slot && video && !slot.contains(video)) {
+      slot.appendChild(video);
+      window.dispatchEvent(new Event("resize"));
+    }
+  }
+
+  // ── Preloader helpers ─────────────────────────────────────────────────────
+  const _pl = {
+    el:    () => document.getElementById("gov-preloader"),
+    pct:   () => document.getElementById("gov-pl-pct"),
+    bar:   () => document.getElementById("gov-pl-bar"),
+    label: () => document.getElementById("gov-pl-label"),
+    show() {
+      const e = this.el(); if (!e) return;
+      e.classList.remove("hidden", "fading");
+      document.body.style.overflow = "hidden";
+    },
+    set(pct, label) {
+      const p = pct + "%";
+      const pe = this.pct(); if (pe) pe.textContent = p;
+      const be = this.bar(); if (be) be.style.width  = p;
+      const le = this.label(); if (le && label) le.textContent = label;
+    },
+    hide() {
+      const e = this.el(); if (!e) return;
+      e.classList.add("fading");
+      setTimeout(() => e.classList.add("hidden"), 380);
+    },
+  };
+
+  // ── Analytics preload + open ──────────────────────────────────────────────
+  async function openGovAnalytics() {
+    if (_open) { _setTab("analytics"); return; }
+
+    _pl.show();
+    _pl.set(0, "Initialising…");
+
+    // Step 1 — force-reload zones (user drew them in admin)
+    _pl.set(10, "Loading zone data…");
+    try { await window.DetectionOverlay.forceReloadZones(); } catch {}
+    _pl.set(35, "Zone data ready");
+
+    // Step 2 — load Chart.js
+    _pl.set(40, "Loading chart engine…");
+    await new Promise(resolve => _loadChartJs(resolve));
+    _pl.set(65, "Chart engine ready");
+
+    // Step 3 — pre-fetch analytics data + camera id
+    _pl.set(70, "Fetching analytics data…");
+    if (!_camId && window.sb) {
+      try {
+        const { data } = await window.sb.from("cameras")
+          .select("id,ipcam_alias,name").eq("is_active", true).limit(1).single();
+        _camId   = data?.id;
+        _camName = data?.name || data?.ipcam_alias || "Camera 1";
+      } catch {}
+    }
+    try { await _prefetchAnalytics(); } catch {}
+    _pl.set(95, "Almost ready…");
+
+    await new Promise(r => setTimeout(r, 250)); // let final bar animation play
+    _pl.set(100, "Opening analytics…");
+    await new Promise(r => setTimeout(r, 180));
+
+    _pl.hide();
+    _activeTab = "analytics"; // open directly on analytics tab
+    openGov();
+  }
+
+  // Pre-fetches analytics data into _analyticsData before the overlay opens
+  async function _prefetchAnalytics() {
+    if (_analyticsData) return; // already loaded
+    const url = `/api/analytics/traffic?hours=${_govHours}&granularity=${_govGranularity}${_camId ? `&camera_id=${_camId}` : ""}`;
+    try {
+      const res  = await fetch(url);
+      const json = res.ok ? await res.json() : null;
+      if (json) _analyticsData = json;
+    } catch {}
+  }
+
   // ── Open / Close ─────────────────────────────────────────────────────────
-  openBtn?.addEventListener("click", openGov);
+  openBtn?.addEventListener("click", openGovAnalytics);
   closeBtn?.addEventListener("click", closeGov);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _open) closeGov(); });
 
@@ -1155,32 +1355,52 @@ function _connectUserWs(session) {
     // Show loading bar until first live data arrives
     if (!_lastPayload) _setKpiLoading(true);
 
-    // Resolve camera
+    // Resolve camera (may already be resolved by preloader)
     if (!_camId && window.sb) {
       try {
         const { data } = await window.sb.from("cameras")
           .select("id, ipcam_alias, name").eq("is_active", true).limit(1).single();
         _camId   = data?.id;
         _camName = data?.name || data?.ipcam_alias || "Camera 1";
-        txt("gov-cam-subtitle", `Live Feed · ${_camName}`);
-        txt("gov-cam-name", _camName);
-        txt("gov-vid-cam", _camName);
       } catch {}
     }
+    txt("gov-cam-subtitle", `Live Feed · ${_camName}`);
+    txt("gov-cam-name", _camName);
+    txt("gov-vid-cam", _camName);
 
-    // Move live video + overlay canvases into the correct slot
-    _moveVideoGroup(_activeTab === "analytics" ? "gov-an-video-slot" : "gov-video-slot");
-
-    // Populate live stats from last known payload
-    if (_lastPayload) _populateLive(_lastPayload);
-
-    // Init charts (lazy-load Chart.js first)
-    // Always fetch analytics data so KPI cards reflect DB totals regardless of tab
-    if (_activeTab === "analytics") _setProgress(10, "Loading Chart.js…");
-    _loadChartJs(() => {
-      _initDonut();
-      _initAllCharts(_govHours); // always run; updates DB-backed KPI cards + builds charts if on analytics tab
-    });
+    // Activate correct tab in DOM and route video/canvases
+    _setTabDom(_activeTab);
+    if (_activeTab === "analytics") {
+      _moveVideoOnly("gov-an-video-slot");
+      _startZoneCanvas();
+      // Charts already loaded by preloader — just start crossings + zone analytics
+      if (window.Chart && _analyticsData) {
+        _initDonut();
+        _buildTrendChart(_analyticsData.rows || []);
+        _buildClsChart(_analyticsData.summary || {});
+        _populateAgencyMetrics(_analyticsData.summary || {});
+        _dbKpisLoaded = true;
+        const rows = _analyticsData.rows || [];
+        const summary = _analyticsData.summary || {};
+        const totalPeriod = summary.period_total ?? rows.reduce((a, r) => a + (r.total || 0), 0);
+        const totalIn  = rows.reduce((a, r) => a + (r.in  || 0), 0);
+        const totalOut = rows.reduce((a, r) => a + (r.out || 0), 0);
+        txt("gov-kpi-total", Number(totalPeriod).toLocaleString());
+        if (totalIn  > 0) txt("gov-kpi-in",    totalIn.toLocaleString());
+        if (totalOut > 0) txt("gov-kpi-out",   totalOut.toLocaleString());
+        if (totalIn  > 0) txt("gov-inbound",   totalIn.toLocaleString());
+        if (totalOut > 0) txt("gov-outbound",  totalOut.toLocaleString());
+        _loadZoneAnalytics();
+      } else {
+        // Fallback: run full chart init
+        _loadChartJs(() => { _initDonut(); _initAllCharts(_govHours); });
+      }
+    } else {
+      _moveVideoGroup("gov-video-slot");
+      // Populate live stats from last known payload
+      if (_lastPayload) _populateLive(_lastPayload);
+      _loadChartJs(() => { _initDonut(); _initAllCharts(_govHours); });
+    }
 
     // Start crossings refresh
     _loadGovCrossings();
@@ -1201,8 +1421,9 @@ function _connectUserWs(session) {
     document.body.style.overflow = "";
     clearInterval(_crossingsInterval);
     _crossingsInterval = null;
+    _stopZoneCanvas();
 
-    // Return video + canvases to stream-wrapper
+    // Return all elements to stream-wrapper
     const wrapper = document.querySelector(".stream-wrapper");
     const video   = el("live-video");
     const detCvs  = el("detection-canvas");

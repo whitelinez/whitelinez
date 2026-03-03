@@ -792,6 +792,21 @@
     </div>
   </div>
 
+  <!-- ── Analytics Preloader ───────────────────────────────────────────────── -->
+  <div id="gov-preloader" class="gov-preloader hidden" aria-live="polite" role="status">
+    <div class="gov-pl-inner">
+      <div class="gov-pl-logo">
+        <img src="images/iconinframes.png" alt="" class="gov-pl-logoimg" aria-hidden="true">
+      </div>
+      <div class="gov-pl-title">TRAFFIC INTELLIGENCE</div>
+      <div class="gov-pl-sub" id="gov-pl-label">Initialising…</div>
+      <div class="gov-pl-pct" id="gov-pl-pct">0%</div>
+      <div class="gov-pl-bar-wrap">
+        <div class="gov-pl-bar" id="gov-pl-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Government / Analytics Mode Overlay ──────────────────────────────── -->
   <div id="gov-overlay" class="gov-overlay hidden" role="dialog" aria-modal="true" aria-label="Traffic Analytics">
 
@@ -1002,7 +1017,9 @@
             <span class="gov-an-ftag gov-an-ftag--zone">● ZONE OVERLAYS</span>
           </span>
         </div>
-        <div id="gov-an-video-slot" class="gov-an-video-slot"></div>
+        <div id="gov-an-video-slot" class="gov-an-video-slot">
+          <canvas id="gov-an-zone-canvas" class="gov-an-zone-canvas"></canvas>
+        </div>
       </div>
 
       <!-- Active zones status bar -->

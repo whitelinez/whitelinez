@@ -953,10 +953,6 @@ const DetectionOverlay = (() => {
       else drawGroundOverlayCanvas(bounds, detections);
     }
 
-    // Draw analytics zone polygons (always, even with no detections)
-    if (pixiEnabled) _drawZonesPixi(bounds);
-    else _drawZonesCanvas(bounds);
-
     if (!detections.length) {
       if (pixiEnabled) endPixiFrame();
       return;
@@ -1059,7 +1055,19 @@ const DetectionOverlay = (() => {
     return true;
   }
 
-  return { init, clearDetections, setDetectZone, reloadZones: _loadZones };
+  async function _forceLoadZones() {
+    _zonesLoadedAt = 0;
+    await _loadZones();
+  }
+
+  return {
+    init,
+    clearDetections,
+    setDetectZone,
+    reloadZones:      _loadZones,
+    forceReloadZones: _forceLoadZones,
+    getZones:         () => _analyticsZones,
+  };
 })();
 
 window.DetectionOverlay = DetectionOverlay;

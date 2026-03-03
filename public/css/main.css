@@ -9852,6 +9852,51 @@ button {
   text-transform: uppercase; color: var(--muted);
 }
 
+/* ── Analytics preloader ──────────────────────────────── */
+.gov-preloader {
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(4,8,16,0.97);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.35s ease;
+}
+.gov-preloader.hidden { display: none; }
+.gov-preloader.fading { opacity: 0; pointer-events: none; }
+.gov-pl-inner {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; width: 280px; text-align: center;
+}
+.gov-pl-logoimg {
+  width: 52px; height: 52px; object-fit: contain;
+  filter: brightness(0.9) drop-shadow(0 0 12px rgba(0,212,255,0.45));
+  animation: gov-pl-pulse 2s ease-in-out infinite;
+}
+@keyframes gov-pl-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%       { opacity: 1;    transform: scale(1.04); }
+}
+.gov-pl-title {
+  font-family: "Rajdhani", sans-serif; font-size: 16px; font-weight: 700;
+  letter-spacing: 0.22em; color: #fff; text-transform: uppercase; margin-top: 4px;
+}
+.gov-pl-sub {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  color: var(--muted); letter-spacing: 0.06em; min-height: 16px;
+}
+.gov-pl-pct {
+  font-family: "JetBrains Mono", monospace; font-size: 2.2rem; font-weight: 700;
+  color: var(--accent); line-height: 1; margin: 4px 0;
+}
+.gov-pl-bar-wrap {
+  width: 100%; height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
+}
+.gov-pl-bar {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--accent), #00d4ff);
+  transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 2px;
+}
+
 /* Analytics live feed strip */
 .gov-an-feedstrip { padding: 12px 20px 0; }
 .gov-an-feedstrip-hdr {
@@ -9873,6 +9918,10 @@ button {
   background: #000; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
 }
 .gov-an-video-slot video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gov-an-zone-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 3;
+}
 
 /* Active zones status bar */
 .gov-zones-bar {

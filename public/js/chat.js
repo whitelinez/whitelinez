@@ -71,6 +71,11 @@ const Chat = (() => {
     }
   }
 
+  // Wire the static login link in HTML (replaced by init() once session resolves)
+  document.getElementById("chat-login-link")?.addEventListener("click", () => {
+    document.getElementById("btn-open-login")?.click();
+  });
+
   function init(session) {
     _userSession = session;
     const hint = document.getElementById("chat-login-hint");

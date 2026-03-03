@@ -741,6 +741,8 @@ const DetectionOverlay = (() => {
   }
 
   // ── Zone overlay helpers ──────────────────────────────────────
+  const _ZONE_LS_KEY = "wlz.zones.cache";
+
   async function _loadZones() {
     if (Date.now() - _zonesLoadedAt < _ZONE_CACHE_MS) return;
     if (!window.sb) return;
@@ -753,6 +755,7 @@ const DetectionOverlay = (() => {
         _analyticsZones = data;
         _zonesLoadedAt  = Date.now();
         forceRender = true;
+        try { localStorage.setItem(_ZONE_LS_KEY, JSON.stringify(data)); } catch {}
       }
     } catch { /* silent — telemetry overlay is non-critical */ }
   }
@@ -835,6 +838,14 @@ const DetectionOverlay = (() => {
     loadSettings();
 
     syncSize();
+    // Seed from localStorage so zones are available immediately (survives network outages)
+    try {
+      const cached = localStorage.getItem(_ZONE_LS_KEY);
+      if (cached) {
+        _analyticsZones = JSON.parse(cached);
+        forceRender = true;
+      }
+    } catch {}
     // Kick off zone load immediately; cache refreshes every 2 min
     _loadZones();
     setInterval(_loadZones, _ZONE_CACHE_MS);

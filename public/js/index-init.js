@@ -1055,6 +1055,8 @@ function _connectUserWs(session) {
   let _analyticsData      = null;  // most recent analytics API response
   let _govAnalyticsZones  = [];    // camera_zones for current camera (entry/exit/speed/etc)
   let _govExitTotal       = null;  // total exit completions from turnings matrix (Traffic Intelligence)
+  let _fpFrom             = null;  // Flatpickr instance for from-date
+  let _fpTo               = null;  // Flatpickr instance for to-date
   let _govHours     = 24;
   let _govFrom      = null;   // ISO date string or null
   let _govTo        = null;   // ISO date string or null
@@ -2111,32 +2113,73 @@ function _connectUserWs(session) {
   }
 
   // ── Date range controls ───────────────────────────────────────────────────
+  function _initDatePickers() {
+    const MIN_DATE = "2026-03-03"; // earliest count_snapshots.captured_at
+    const today    = new Date().toISOString().slice(0, 10);
+
+    const commonOpts = {
+      dateFormat: "Y-m-d",
+      disableMobile: false,
+      minDate: MIN_DATE,
+      maxDate: today,
+    };
+
+    if (!_fpFrom) {
+      _fpFrom = flatpickr("#gov-date-from", {
+        ...commonOpts,
+        defaultDate: today,
+        onChange([d]) {
+          if (!d) return;
+          _govFrom = d.toISOString().slice(0, 10);
+          // keep "to" >= "from"
+          if (_fpTo) _fpTo.set("minDate", _govFrom);
+          _loadChartJs(() => _initAllCharts(_govHours).then(() => _updatePeakKpiFromChart()));
+        },
+      });
+    }
+
+    if (!_fpTo) {
+      _fpTo = flatpickr("#gov-date-to", {
+        ...commonOpts,
+        defaultDate: today,
+        onChange([d]) {
+          _govTo = d ? d.toISOString().slice(0, 10) + "T23:59:59Z" : null;
+          _loadChartJs(() => _initAllCharts(_govHours).then(() => _updatePeakKpiFromChart()));
+        },
+      });
+    }
+  }
+
   function _setPreset(preset) {
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
-    const fromEl   = el("gov-date-from");
-    const toEl     = el("gov-date-to");
     _govTo = null;
-    if (toEl) toEl.value = todayStr;
+    if (_fpTo) _fpTo.setDate(todayStr, false);
+    else { const el2 = el("gov-date-to"); if (el2) el2.value = todayStr; }
     if (preset === "1d") {
       _govFrom = todayStr;
-      if (fromEl) fromEl.value = todayStr;
+      if (_fpFrom) _fpFrom.setDate(todayStr, false);
+      else { const el2 = el("gov-date-from"); if (el2) el2.value = todayStr; }
       _govGranularity = "hour";
     } else if (preset === "7d") {
       const d = new Date(today - 7 * 86400000);
       _govFrom = d.toISOString().slice(0, 10);
-      if (fromEl) fromEl.value = _govFrom;
+      if (_fpFrom) _fpFrom.setDate(_govFrom, false);
+      else { const el2 = el("gov-date-from"); if (el2) el2.value = _govFrom; }
       _govGranularity = "day";
     } else if (preset === "30d") {
       const d = new Date(today - 30 * 86400000);
       _govFrom = d.toISOString().slice(0, 10);
-      if (fromEl) fromEl.value = _govFrom;
+      if (_fpFrom) _fpFrom.setDate(_govFrom, false);
+      else { const el2 = el("gov-date-from"); if (el2) el2.value = _govFrom; }
       _govGranularity = "day";
     } else if (preset === "all") {
       _govFrom = null;
       _govTo   = null;
-      if (fromEl) fromEl.value = "";
-      if (toEl)   toEl.value   = "";
+      if (_fpFrom) _fpFrom.clear(false);
+      else { const el2 = el("gov-date-from"); if (el2) el2.value = ""; }
+      if (_fpTo) _fpTo.clear(false);
+      else { const el2 = el("gov-date-to"); if (el2) el2.value = ""; }
       _govGranularity = "day";
     }
     // Sync granularity pills
@@ -2166,15 +2209,8 @@ function _connectUserWs(session) {
     }
   });
 
-  // Date input changes
-  el("gov-date-from")?.addEventListener("change", (e) => {
-    _govFrom = e.target.value || null;
-    _loadChartJs(() => _initAllCharts(_govHours).then(() => _updatePeakKpiFromChart()));
-  });
-  el("gov-date-to")?.addEventListener("change", (e) => {
-    _govTo = e.target.value ? e.target.value + "T23:59:59Z" : null;
-    _loadChartJs(() => _initAllCharts(_govHours).then(() => _updatePeakKpiFromChart()));
-  });
+  // Date pickers — initialised here so Flatpickr attaches before first use
+  _initDatePickers();
 
   // ── Export (analytics toolbar quick-export) ───────────────────────────────
   el("gov-export-btn")?.addEventListener("click", _triggerExport);

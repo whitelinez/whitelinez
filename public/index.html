@@ -80,7 +80,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" />
   <meta name="theme-color" content="#080C14" />
-  <link rel="stylesheet" href="/css/main.css?v=14" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="/css/main.css?v=15" />
   <script src="/js/vercel-analytics-init.js"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -1008,9 +1009,9 @@
       <!-- Toolbar row 1: Date range + granularity -->
       <div class="gov-an-toolbar gov-an-toolbar-top">
         <div class="gov-date-range">
-          <input type="date" id="gov-date-from" class="gov-date-input" />
+          <input type="text" id="gov-date-from" class="gov-date-input" readonly placeholder="From" />
           <span class="gov-date-sep">→</span>
-          <input type="date" id="gov-date-to" class="gov-date-input" />
+          <input type="text" id="gov-date-to" class="gov-date-input" readonly placeholder="To" />
         </div>
         <div class="gov-period-pills">
           <span class="gov-pill active" data-preset="1d">Today</span>
@@ -1396,6 +1397,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.3/dist/pixi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
   <script src="/js/config.js"></script>
   <script src="/js/supabase-init.js"></script>

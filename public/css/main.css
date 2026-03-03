@@ -9904,51 +9904,52 @@ button {
 
 /* ── ANALYTICS — toolbar ────────────────────────────────────── */
 .gov-an-toolbar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
   flex-shrink: 0; background: var(--bg2); flex-wrap: wrap;
 }
-.gov-an-toolbar-top { border-bottom: none; padding-bottom: 4px; }
+.gov-an-toolbar-top { border-bottom: none; padding-bottom: 6px; }
 .gov-an-toolbar-strip {
-  padding-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
-  font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--muted);
+  padding-top: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted);
 }
 
 /* Date inputs */
-.gov-date-range { display: flex; align-items: center; gap: 6px; }
+.gov-date-range { display: flex; align-items: center; gap: 8px; }
 .gov-date-input {
   background: var(--bg3); border: 1px solid var(--border); color: var(--text);
-  border-radius: 4px; padding: 4px 7px; font-size: 10px;
-  font-family: "JetBrains Mono", monospace;
+  border-radius: 6px; padding: 7px 11px; font-size: 13px;
+  font-family: "JetBrains Mono", monospace; cursor: pointer;
+  min-width: 108px; text-align: center;
 }
-.gov-date-input::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
-.gov-date-sep { color: var(--muted); font-size: 10px; }
+.gov-date-input:focus { outline: none; border-color: var(--cyan); }
+.gov-date-sep { color: var(--muted); font-size: 13px; font-weight: 700; }
 
 /* Period preset pills */
-.gov-period-pills { display: flex; gap: 4px; }
+.gov-period-pills { display: flex; gap: 5px; }
 .gov-pill {
   background: transparent; border: 1px solid var(--border);
-  color: var(--muted); padding: 4px 10px; border-radius: 4px;
-  font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700;
-  letter-spacing: 0.1em; cursor: pointer; transition: all 0.15s;
+  color: var(--muted); padding: 7px 14px; border-radius: 6px;
+  font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s;
 }
 .gov-pill.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.06); }
 
 /* Granularity pills */
-.gov-gran-pills { display: flex; gap: 3px; }
+.gov-gran-pills { display: flex; gap: 4px; }
 .gov-gran-pill {
   background: transparent; border: 1px solid var(--border);
-  color: var(--muted); padding: 4px 8px; border-radius: 4px;
-  font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700;
-  letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s;
+  color: var(--muted); padding: 7px 12px; border-radius: 6px;
+  font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer; transition: all 0.15s;
 }
 .gov-gran-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(255,184,0,0.07); }
 
 /* Summary strip items */
-.gov-an-sum-item         { font-size: 10px; color: var(--muted); }
+.gov-an-sum-item         { font-size: 12px; color: var(--muted); }
 .gov-an-sum-item span    { color: var(--text); font-weight: 700; }
 .gov-an-sum-sep          { color: var(--border); }
-.gov-an-sum-global       { margin-left: auto; font-size: 10px; color: var(--accent); opacity: 0.7; white-space: nowrap; }
+.gov-an-sum-global       { margin-left: auto; font-size: 12px; color: var(--accent); opacity: 0.7; white-space: nowrap; }
 
 /* Analytics loading progress overlay */
 .gov-an-progress {
@@ -10284,8 +10285,8 @@ button {
 #gov-panel-analytics .gov-an-progress-bar-wrap { background: rgba(0,0,0,0.08); }
 /* Zones bar */
 #gov-panel-analytics .gov-zones-bar { background: #ffffff; }
-/* Date picker icon — remove invert on white bg */
-#gov-panel-analytics .gov-date-input::-webkit-calendar-picker-indicator { filter: none; opacity: 0.5; }
+/* Flatpickr input on white bg — no native date icon */
+#gov-panel-analytics .gov-date-input { cursor: pointer; }
 /* Period-pill active state */
 #gov-panel-analytics .gov-pill.active { background: rgba(2,132,199,0.08); }
 /* Feed strip tags */
@@ -11938,5 +11939,76 @@ button {
   background-size: 400px 100%; animation: gov-shimmer 1.4s infinite linear;
   height: 9px;
 }
+
+/* =====================================================
+   FLATPICKR — WHITE THEME for gov overlay
+   ===================================================== */
+.flatpickr-calendar {
+  font-family: "Inter", sans-serif !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+  color: #0f1c2e !important;
+}
+.flatpickr-months {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+.flatpickr-month { color: #0f1c2e !important; }
+.flatpickr-current-month input.cur-year { color: #0f1c2e !important; }
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  color: #0f1c2e !important;
+  background: transparent !important;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months option { background: #ffffff; }
+.flatpickr-prev-month svg, .flatpickr-next-month svg { fill: #64748b !important; }
+.flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: #0f1c2e !important; }
+.flatpickr-weekdays { background: #f8fafc !important; }
+span.flatpickr-weekday {
+  color: #94a3b8 !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+.flatpickr-day {
+  color: #0f1c2e !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+}
+.flatpickr-day:hover, .flatpickr-day.prevMonthDay:hover, .flatpickr-day.nextMonthDay:hover {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #0f1c2e !important;
+}
+.flatpickr-day.today {
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+.flatpickr-day.today:hover {
+  background: #dbeafe !important;
+  border-color: #0284c7 !important;
+  color: #1d4ed8 !important;
+}
+.flatpickr-day.selected, .flatpickr-day.selected:hover {
+  background: #0f1c2e !important;
+  border-color: #0f1c2e !important;
+  color: #ffffff !important;
+}
+.flatpickr-day.disabled, .flatpickr-day.disabled:hover {
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  cursor: not-allowed;
+}
+.flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+  color: #cbd5e1 !important;
+}
+.numInputWrapper span.arrowUp:after  { border-bottom-color: #64748b !important; }
+.numInputWrapper span.arrowDown:after { border-top-color: #64748b !important; }
+/* Date input inside analytics panel */
+#gov-panel-analytics .gov-date-input,
+.gov-an-toolbar .gov-date-input { color-scheme: light; }
 
 

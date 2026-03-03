@@ -1147,7 +1147,6 @@ function _connectUserWs(session) {
 
   // ── Analytics zone canvas (draws admin zones on video in analytics slot) ──
   let _govAnZoneRaf = null;
-  let _govAnZoneCtx = null;
 
   function _hexToRgba(hex, a) {
     const r = String(hex || "").replace("#", "").padEnd(6, "0").slice(0, 6);
@@ -1160,17 +1159,20 @@ function _connectUserWs(session) {
     roi:"#AB47BC", speed_a:"#00BCD4", speed_b:"#009688",
   };
 
+  // Returns a correctly-sized 2d context for canvas — always tied to the
+  // passed canvas element, never a stale reference from another canvas.
   function _syncZoneCanvas(canvas, video) {
     const dpr = window.devicePixelRatio || 1;
     const w = video.clientWidth, h = video.clientHeight;
+    if (!w || !h) return null;
     const nw = Math.round(w * dpr), nh = Math.round(h * dpr);
     if (canvas.width !== nw || canvas.height !== nh) {
-      canvas.width = nw; canvas.height = nh;
+      canvas.width  = nw;  canvas.height  = nh;
       canvas.style.width = w + "px"; canvas.style.height = h + "px";
-      _govAnZoneCtx = canvas.getContext("2d");
     }
-    if (!_govAnZoneCtx) _govAnZoneCtx = canvas.getContext("2d");
-    _govAnZoneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return ctx;
   }
 
   function _drawGovZones() {
@@ -1178,8 +1180,8 @@ function _connectUserWs(session) {
     const canvas = el(canvasId);
     const video  = el("live-video");
     if (!canvas || !video || !window.getContentBounds) return;
-    _syncZoneCanvas(canvas, video);
-    const ctx    = _govAnZoneCtx;
+    const ctx = _syncZoneCanvas(canvas, video);
+    if (!ctx) return;
     const bounds = window.getContentBounds(video);
     ctx.clearRect(0, 0, video.clientWidth, video.clientHeight);
 
@@ -1247,12 +1249,10 @@ function _connectUserWs(session) {
 
   function _stopZoneCanvas() {
     if (_govAnZoneRaf) { cancelAnimationFrame(_govAnZoneRaf); _govAnZoneRaf = null; }
-    if (_govAnZoneCtx) {
-      ["gov-an-zone-canvas", "gov-live-zone-canvas"].forEach(id => {
-        const c = el(id); if (c) _govAnZoneCtx.clearRect(0, 0, c.width, c.height);
-      });
-    }
-    _govAnZoneCtx = null;
+    ["gov-an-zone-canvas", "gov-live-zone-canvas"].forEach(id => {
+      const c = el(id);
+      if (c) { const ctx = c.getContext("2d"); ctx?.clearRect(0, 0, c.width, c.height); }
+    });
   }
 
 

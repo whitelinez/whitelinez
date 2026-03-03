@@ -1097,10 +1097,20 @@ function _connectUserWs(session) {
   const txt = (id, val) => { const e = el(id); if (e) e.textContent = String(val ?? "—"); };
 
   // ── Listen for live count updates ────────────────────────────────────────
+  let _lastDetTime = null;
   window.addEventListener("count:update", (e) => {
     _lastPayload = e.detail || {};
+    _lastDetTime = Date.now();
     if (_open) _populateLive(_lastPayload);
   });
+
+  // Tick the "Last detection: Xs ago" in the agencies live bar
+  setInterval(() => {
+    if (!_lastDetTime) return;
+    const s = Math.round((Date.now() - _lastDetTime) / 1000);
+    const label = s < 5 ? "just now" : `${s}s ago`;
+    txt("gov-ag-last-det", label);
+  }, 2000);
 
   // ── Tab switching ────────────────────────────────────────────────────────
   document.getElementById("gov-tabbar")?.addEventListener("click", (e) => {
@@ -1501,16 +1511,28 @@ function _connectUserWs(session) {
   }
 
   function _populateAgencyMetricsLive(bd, total) {
-    const heavy   = (Number(bd.truck || 0) + Number(bd.bus || 0));
+    const heavy    = (Number(bd.truck || 0) + Number(bd.bus || 0));
     const busCount = Number(bd.bus || 0);
+    const heavyPct = total > 0 ? Math.round((heavy / total) * 100) : 0;
+    const truckN   = Number(bd.truck || 0);
+    const busN     = Number(bd.bus   || 0);
+
     txt("gov-nwa-metric",     heavy.toLocaleString());
+    txt("gov-nwa-sub",        total > 0 ? `${heavyPct}% of today's traffic` : "—");
     txt("gov-taj-metric",     heavy.toLocaleString());
+    txt("gov-taj-sub",        `${truckN.toLocaleString()} trucks · ${busN.toLocaleString()} buses`);
     txt("gov-jutc-metric",    busCount.toLocaleString());
+    txt("gov-jutc-sub",       "detected at monitored junction");
     txt("gov-tourism-metric", total.toLocaleString());
+    txt("gov-tourism-sub",    "verified passes today");
+    txt("gov-ins-metric",     heavy.toLocaleString());
+    txt("gov-ins-sub",        total > 0 ? `${heavyPct}% high-load vehicles on road` : "monitoring active");
     txt("gov-ooh-metric",     total.toLocaleString());
-    // Insurance risk: rough density score (heavy vehicles weighted)
-    const risk = total > 0 ? Math.min(100, Math.round((heavy / total) * 60 + (total / 500) * 40)) : 0;
-    txt("gov-ins-metric", risk);
+    txt("gov-ooh-sub",        `= ${total.toLocaleString()} guaranteed impressions`);
+
+    // Live pulse bar + trust badge total
+    txt("gov-ag-total",       total.toLocaleString());
+    txt("gov-ag-live-total",  total.toLocaleString());
   }
 
   // ── Chart.js lazy load ────────────────────────────────────────────────────
@@ -1932,18 +1954,26 @@ function _connectUserWs(session) {
   // ── Agency metrics from analytics data ────────────────────────────────────
   function _populateAgencyMetrics(summary) {
     if (!summary) return;
-    const ct    = summary.class_totals || {};
-    const total = summary.today_total  || 0;
-    const heavy = (ct.truck||0) + (ct.bus||0);
-    const peakV = summary.peak_value   || 0;
-    const risk  = total > 0 ? Math.min(100, Math.round((heavy/total)*60 + (peakV/50)*40)) : 0;
+    const ct       = summary.class_totals || {};
+    const total    = summary.period_total || summary.today_total || 0;
+    const heavy    = (ct.truck||0) + (ct.bus||0);
+    const heavyPct = total > 0 ? Math.round((heavy / total) * 100) : 0;
 
     txt("gov-nwa-metric",     heavy.toLocaleString());
+    txt("gov-nwa-sub",        total > 0 ? `${heavyPct}% of period traffic` : "—");
     txt("gov-taj-metric",     heavy.toLocaleString());
+    txt("gov-taj-sub",        `${(ct.truck||0).toLocaleString()} trucks · ${(ct.bus||0).toLocaleString()} buses`);
     txt("gov-jutc-metric",    (ct.bus||0).toLocaleString());
+    txt("gov-jutc-sub",       "detected at monitored junction");
     txt("gov-tourism-metric", Number(total).toLocaleString());
+    txt("gov-tourism-sub",    "verified passes in period");
+    txt("gov-ins-metric",     heavy.toLocaleString());
+    txt("gov-ins-sub",        total > 0 ? `${heavyPct}% high-load vehicles` : "monitoring active");
     txt("gov-ooh-metric",     Number(total).toLocaleString());
-    txt("gov-ins-metric",     risk);
+    txt("gov-ooh-sub",        `= ${Number(total).toLocaleString()} guaranteed impressions`);
+
+    txt("gov-ag-total",       Number(total).toLocaleString());
+    txt("gov-ag-live-total",  Number(total).toLocaleString());
   }
 
   // ── Crossings table ───────────────────────────────────────────────────────
@@ -2234,107 +2264,158 @@ function _connectUserWs(session) {
 
   const AGENCY_DATA = {
     nwa: {
-      abbr:"NWA", name:"National Works Agency", color:"#29B6F6",
-      pitch:"Heavy vehicle volume directly determines road wear rates and maintenance budgeting cycles. Our AI-classified vehicle data provides a real-time heavy vehicle index (trucks + buses) per corridor, enabling evidence-based road maintenance scheduling and budget allocation.",
-      metrics: [
-        { key:"Data collected", val:"Truck + bus classification per crossing" },
-        { key:"Update frequency", val:"Real-time (≤2s latency)" },
-        { key:"Potential use", val:"Road wear index · maintenance trigger · infrastructure budget" },
-        { key:"Data format", val:"CSV / REST API / scheduled feed" },
+      abbr:"NWA", name:"National Works Agency", color:"#29B6F6", avail:"Available Now",
+      problem:"Which roads are taking the heaviest commercial load?",
+      sampleHeaders:["Time","Vehicle Class","Corridor","Direction","Confidence"],
+      sampleRows:[
+        ["08:14:22","Truck","New Kingston–Half Way Tree","Inbound","96%"],
+        ["08:15:07","Bus","New Kingston–Half Way Tree","Inbound","91%"],
+        ["08:16:41","Truck","New Kingston–Half Way Tree","Outbound","88%"],
+        ["08:17:03","Car","New Kingston–Half Way Tree","Inbound","94%"],
+        ["08:18:55","Truck","New Kingston–Half Way Tree","Inbound","97%"],
       ],
+      fields:["timestamp","vehicle_class","direction","confidence","scene_lighting","scene_weather","dwell_frames"],
+      formats:"CSV · REST API · Hourly feed",
     },
     taj: {
-      abbr:"TAJ", name:"Tax Administration Jamaica", color:"#FF7043",
-      pitch:"Commercial vehicle frequency data enables cross-referencing against declared freight manifests and import records. Anomalies between observed corridor volume and declared shipments can flag compliance risks for audit prioritisation.",
-      metrics: [
-        { key:"Data collected", val:"Commercial vehicle (truck/bus) count by time-of-day" },
-        { key:"Update frequency", val:"Hourly aggregates + real-time stream" },
-        { key:"Potential use", val:"Freight audit · toll compliance · logistics pattern analysis" },
-        { key:"Data format", val:"CSV export · API endpoint · scheduled reports" },
+      abbr:"TAJ", name:"Tax Administration Jamaica", color:"#FF7043", avail:"Available Now",
+      problem:"Are the trucks on the road matching what's declared at customs?",
+      sampleHeaders:["Date","Hour","Trucks","Buses","Cars","Total","Commercial %"],
+      sampleRows:[
+        ["2026-03-03","07:00","42","18","312","372","16.1%"],
+        ["2026-03-03","08:00","68","24","487","579","15.9%"],
+        ["2026-03-03","09:00","57","19","438","514","14.8%"],
+        ["2026-03-03","10:00","81","31","324","436","25.7%"],
+        ["2026-03-03","11:00","49","22","405","476","14.9%"],
       ],
+      fields:["date","hour","truck_count","bus_count","car_count","total","commercial_pct"],
+      formats:"CSV · Hourly aggregates · API",
     },
     jutc: {
-      abbr:"JUTC", name:"Jamaica Urban Transit Co.", color:"#AB47BC",
-      pitch:"Bus detection frequency at key junctions provides independent headway measurement — tracking actual bus arrival intervals vs scheduled service. Peak commuter windows (AM/PM) are automatically identified from vehicle classification data.",
-      metrics: [
-        { key:"Data collected", val:"Bus classification count · time of day · direction" },
-        { key:"Update frequency", val:"Real-time per crossing" },
-        { key:"Potential use", val:"Headway analysis · route optimisation · schedule compliance" },
-        { key:"Data format", val:"CSV / API / live WebSocket feed" },
+      abbr:"JUTC", name:"Jamaica Urban Transit Co.", color:"#AB47BC", avail:"Available Now",
+      problem:"Is bus frequency actually matching commuter demand?",
+      sampleHeaders:["Time","Bus Count","Cars","Ratio","Period"],
+      sampleRows:[
+        ["06:00–07:00","8","124","1:15","AM Peak"],
+        ["07:00–08:00","14","387","1:28","AM Peak"],
+        ["08:00–09:00","11","312","1:28","AM Peak"],
+        ["12:00–13:00","5","198","1:40","Midday"],
+        ["17:00–18:00","13","356","1:27","PM Peak"],
       ],
+      fields:["period","bus_count","car_count","bus_to_car_ratio","peak_label"],
+      formats:"CSV · REST API · WebSocket feed",
     },
     tourism: {
-      abbr:"JTB", name:"Jamaica Tourism Board", color:"#FFD600",
-      pitch:"Total vehicle impressions along monitored corridors represent actual visitor mobility flow. Combined with time-of-day data, this enables identification of peak tourist movement windows and congestion hotspots affecting key tourism routes.",
-      metrics: [
-        { key:"Data collected", val:"Total crossings · time of day · vehicle class" },
-        { key:"Update frequency", val:"Real-time + daily summary" },
-        { key:"Potential use", val:"Visitor mobility mapping · congestion alerts · route planning" },
-        { key:"Data format", val:"Dashboard API · CSV · periodic briefings" },
+      abbr:"JTB", name:"Jamaica Tourism Board", color:"#FFD600", avail:"Available Now",
+      problem:"Which tourist corridors are congested, and when?",
+      sampleHeaders:["Time","Total","Buses","Peak?","Lighting"],
+      sampleRows:[
+        ["09:00","312","14","Yes","Day"],
+        ["10:00","436","19","Yes","Day"],
+        ["11:00","381","12","No","Day"],
+        ["14:00","278","9","No","Day"],
+        ["16:00","449","22","Yes","Day"],
       ],
+      fields:["timestamp","total_vehicles","bus_count","is_peak","scene_lighting","scene_weather"],
+      formats:"Dashboard API · CSV · Periodic briefing",
     },
     insurance: {
-      abbr:"INS", name:"Insurance Industry", color:"#00FF88",
-      pitch:"Traffic density combined with vehicle mix data produces a corridor-level risk density score. Peak-hour intensity and heavy vehicle percentage can inform actuarial models for accident probability, enabling more granular premium pricing by corridor and time window.",
-      metrics: [
-        { key:"Data collected", val:"Traffic density · vehicle mix · peak hours · dwell time" },
-        { key:"Update frequency", val:"Hourly risk score · real-time feed available" },
-        { key:"Potential use", val:"Actuarial risk modelling · premium pricing · claims geo-analysis" },
-        { key:"Data format", val:"Risk score API · raw CSV · corridor reports" },
+      abbr:"INS", name:"Insurance Industry", color:"#66BB6A", avail:"In Development",
+      problem:"Where and when do high-risk traffic conditions occur?",
+      sampleHeaders:["Hour","Total","Heavy","Heavy %","Risk Level"],
+      sampleRows:[
+        ["07:00","372","60","16.1%","Moderate"],
+        ["08:00","579","92","15.9%","High"],
+        ["10:00","436","112","25.7%","Very High"],
+        ["13:00","298","44","14.8%","Moderate"],
+        ["17:00","521","88","16.9%","High"],
       ],
+      fields:["hour","total_vehicles","heavy_count","heavy_pct","risk_level","peak_intensity"],
+      formats:"Risk score API · CSV · Corridor reports",
     },
     ooh: {
-      abbr:"OOH", name:"Out-of-Home Advertising", color:"#00D4FF",
-      pitch:"Every vehicle detected passing a camera-monitored location represents a guaranteed, AI-verified advertising impression. Unlike self-reported traffic counts, our data provides actual vehicle-level impressions with dwell time, enabling CPM pricing backed by ground truth.",
-      metrics: [
-        { key:"Data collected", val:"Vehicle crossings (= impressions) · dwell time · time of day" },
-        { key:"Update frequency", val:"Real-time + daily total" },
-        { key:"Potential use", val:"CPM pricing · campaign reach verification · inventory valuation" },
-        { key:"Data format", val:"Daily impression reports · API · monthly audit export" },
+      abbr:"OOH", name:"Out-of-Home Advertising", color:"#00D4FF", avail:"Available Now",
+      problem:"How many vehicles actually passed your billboard today?",
+      sampleHeaders:["Date","Hour","Impressions","Cars","Trucks","Buses","CPM Est."],
+      sampleRows:[
+        ["2026-03-03","07:00","372","266","42","18","$3.72"],
+        ["2026-03-03","08:00","579","414","68","24","$5.79"],
+        ["2026-03-03","09:00","514","372","57","19","$5.14"],
+        ["2026-03-03","10:00","436","312","81","31","$4.36"],
+        ["2026-03-03","11:00","476","342","49","22","$4.76"],
       ],
+      fields:["timestamp","impressions","car_count","truck_count","bus_count","dwell_time_avg","cpm_estimate"],
+      formats:"Daily impression report · API · Monthly audit CSV",
     },
   };
 
+  // ── Agency modal backdrop (separate from KPI modal) ─────────────────────
+  const agBackdrop = el("gov-agency-modal-backdrop");
+  const agModal    = el("gov-agency-modal");
+  const agContent  = el("gov-agency-modal-content");
+  const agClose    = el("gov-agency-modal-close");
+
   function _openAgencyModal(agency) {
     const d = AGENCY_DATA[agency];
-    if (!d) return;
-    const summary  = _analyticsData?.summary || {};
-    const ct       = summary.class_totals || {};
-    const total    = summary.today_total  || 0;
-    const heavy    = (ct.truck||0) + (ct.bus||0);
-    const heavyPct = total > 0 ? `${Math.round((heavy/total)*100)}%` : "—";
+    if (!d || !agBackdrop || !agContent) return;
 
-    // Dynamic live metric per agency
-    const liveMetrics = {
-      nwa:      [{ key:"Heavy vehicles (today)", val: heavy.toLocaleString() }, { key:"Heavy vehicle share", val: heavyPct }],
-      taj:      [{ key:"Commercial vehicles (today)", val: heavy.toLocaleString() }, { key:"Commercial share", val: heavyPct }],
-      jutc:     [{ key:"Buses detected (today)", val: (ct.bus||0).toLocaleString() }, { key:"Bus share", val: total > 0 ? `${Math.round(((ct.bus||0)/total)*100)}%` : "—" }],
-      tourism:  [{ key:"Vehicle impressions (today)", val: Number(total).toLocaleString() }, { key:"Peak hour", val: summary.peak_hour ? `${String(new Date(summary.peak_hour).getHours()).padStart(2,"0")}:00` : "—" }],
-      insurance:[{ key:"Risk density score", val: total > 0 ? Math.min(100,Math.round((heavy/total)*60+(( summary.peak_value||0)/50)*40)) : "0" }, { key:"Peak hour intensity", val: summary.peak_value||"—" }],
-      ooh:      [{ key:"AI-verified impressions (today)", val: Number(total).toLocaleString() }, { key:"Peak window", val: summary.peak_hour ? `${String(new Date(summary.peak_hour).getHours()).padStart(2,"0")}:00` : "—" }],
-    };
-    const lm = liveMetrics[agency] || [];
+    const isLive = d.avail === "Available Now";
+    const badgeCls  = isLive ? "gov-modal-badge--live" : "gov-modal-badge--dev";
+    const badgeText = isLive ? "● Available Now" : "⊙ In Development";
 
-    _showModal(`${d.abbr} — DATA PACKAGE`, `
-      <div class="gov-modal-section">
-        <div class="gov-modal-section-head" style="color:${d.color}">${d.name}</div>
-        <p class="gov-modal-pitch">${d.pitch}</p>
-      </div>
-      <div class="gov-modal-section">
-        <div class="gov-modal-section-head">LIVE DATA SNAPSHOT</div>
-        <div class="gov-modal-data-rows">
-          ${lm.map(r => `<div class="gov-modal-data-row"><span class="gov-modal-data-key">${r.key}</span><span class="gov-modal-data-val">${r.val}</span></div>`).join("")}
+    const tableRows = d.sampleRows.map(r =>
+      `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`
+    ).join("");
+
+    const fields = d.fields.map(f => `<span class="gov-modal-field">${f}</span>`).join("");
+
+    agContent.innerHTML = `
+      <div class="gov-modal-badge ${badgeCls}">${badgeText}</div>
+      <div class="gov-modal-title">${d.abbr} — Data Package</div>
+      <div class="gov-modal-sub" style="color:${d.color};font-style:italic;margin-bottom:14px">"${d.problem}"</div>
+
+      <div class="gov-modal-section-head">SAMPLE DATA</div>
+      <table class="gov-modal-table">
+        <thead><tr>${d.sampleHeaders.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+
+      <div class="gov-modal-section-head">DATA FIELDS INCLUDED</div>
+      <div class="gov-modal-fields">${fields}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--muted);margin-top:6px">Formats: ${d.formats}</div>
+
+      <div class="gov-modal-section-head">REQUEST THIS DATA PACKAGE</div>
+      <form class="gov-modal-form" onsubmit="return false">
+        <input class="gov-modal-input" placeholder="Your name" id="ag-form-name">
+        <input class="gov-modal-input" placeholder="Agency / Organisation" id="ag-form-org">
+        <input class="gov-modal-input" type="email" placeholder="Work email" id="ag-form-email">
+        <textarea class="gov-modal-input gov-modal-textarea" placeholder="What are you trying to solve?" id="ag-form-use"></textarea>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="gov-modal-send" onclick="window._agSendRequest('${agency}','${d.color}')">Send Request →</button>
+          <span class="gov-modal-success" id="ag-form-success">✓ Request sent — we'll be in touch shortly.</span>
         </div>
-      </div>
-      <div class="gov-modal-section">
-        <div class="gov-modal-section-head">DATA SPECIFICATION</div>
-        <div class="gov-modal-data-rows">
-          ${d.metrics.map(m => `<div class="gov-modal-data-row"><span class="gov-modal-data-key">${m.key}</span><span class="gov-modal-data-val">${m.val}</span></div>`).join("")}
-        </div>
-      </div>
-      <p class="gov-modal-note">Contact us at data@whitelinez.com to request a sample dataset, API credentials, or pricing for a data partnership.</p>
-      <button class="gov-modal-cta" onclick="window.location.href='mailto:data@whitelinez.com?subject=Data Partnership — ${d.abbr}'">Request Data Package</button>
-    `);
+      </form>
+    `;
+    agBackdrop.classList.remove("hidden");
   }
+
+  window._agSendRequest = function(agency, color) {
+    const name  = el("ag-form-name")?.value.trim();
+    const org   = el("ag-form-org")?.value.trim();
+    const email = el("ag-form-email")?.value.trim();
+    const use   = el("ag-form-use")?.value.trim();
+    if (!name || !email) { el("ag-form-name")?.focus(); return; }
+    // Open mailto as the action (no server endpoint needed)
+    const subject = encodeURIComponent(`Data Package Request — ${agency.toUpperCase()}`);
+    const body    = encodeURIComponent(`Name: ${name}\nOrganisation: ${org}\nEmail: ${email}\n\nUse case:\n${use}`);
+    window.open(`mailto:data@whitelinez.com?subject=${subject}&body=${body}`, "_blank");
+    const s = el("ag-form-success");
+    if (s) { s.style.display = "block"; }
+  };
+
+  if (agClose) agClose.addEventListener("click", () => agBackdrop.classList.add("hidden"));
+  if (agBackdrop) agBackdrop.addEventListener("click", (e) => {
+    if (e.target === agBackdrop) agBackdrop.classList.add("hidden");
+  });
 
 }());

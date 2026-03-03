@@ -1040,292 +1040,678 @@ function _connectUserWs(session) {
   }());
 
 }());
-// ── Gov Analytics Overlay ──────────────────────────────────────────────────────
+// ── Gov Analytics Overlay ──────────────────────────────────────────────────
 (function initGovOverlay() {
-  const overlay    = document.getElementById("gov-overlay");
-  const openBtn    = document.getElementById("btn-gov-mode");
-  const closeBtn   = document.getElementById("btn-close-gov");
-  const exportBtn  = document.getElementById("gov-export-btn");
+  const overlay  = document.getElementById("gov-overlay");
+  const openBtn  = document.getElementById("btn-gov-mode");
+  const closeBtn = document.getElementById("btn-close-gov");
   if (!overlay) return;
 
-  let _govCamId    = null;
-  let _govCamName  = null;
-  let _trendChart  = null;
-  let _donutChart  = null;
-  let _crossingsInterval = null;
-  let _govHours    = 24;
-  let _govOpen     = false;
+  // ── State ────────────────────────────────────────────────────────────────
+  let _open         = false;
+  let _camId        = null;
+  let _camName      = null;
+  let _lastPayload  = null;   // most recent count:update payload
+  let _analyticsData = null;  // most recent analytics API response
+  let _govHours     = 24;
   let _chartJsReady = false;
+  let _trendChart   = null;
+  let _donutChart   = null;
+  let _clsChart     = null;
+  let _peakChart    = null;
+  let _crossingsInterval = null;
+  let _activeTab    = "live";
 
-  // ── Stats population from count:update ──────────────────────────────────
-  let _lastPayload = null;
+  // Chart color map
+  const CLS_COLOR = { car:"#29B6F6", truck:"#FF7043", bus:"#AB47BC", motorcycle:"#FFD600" };
+  const CLS_CSS   = { car:"gov-td-car", truck:"gov-td-truck", bus:"gov-td-bus", motorcycle:"gov-td-moto" };
+  const CLS_ICON  = { car:"🚗", truck:"🚛", bus:"🚌", motorcycle:"🏍" };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const el  = (id) => document.getElementById(id);
+  const txt = (id, val) => { const e = el(id); if (e) e.textContent = String(val ?? "—"); };
+
+  // ── Listen for live count updates ────────────────────────────────────────
   window.addEventListener("count:update", (e) => {
     _lastPayload = e.detail || {};
-    if (_govOpen) _populateGovStats(_lastPayload);
+    if (_open) _populateLive(_lastPayload);
   });
 
-  function _populateGovStats(payload) {
-    if (!payload) return;
-    const breakdown = payload.per_class_total || payload.vehicle_breakdown || {};
-    const total = payload.total ?? payload.confirmed_crossings_total ?? 0;
-    const el = (id) => document.getElementById(id);
+  // ── Tab switching ────────────────────────────────────────────────────────
+  document.getElementById("gov-tabbar")?.addEventListener("click", (e) => {
+    const tab = e.target.closest(".gov-tab");
+    if (!tab) return;
+    const name = tab.dataset.tab;
+    _setTab(name);
+  });
 
-    _setText(el("gov-total"), total.toLocaleString());
-    _setText(el("gov-inbound"),  payload.count_in  != null ? payload.count_in.toLocaleString()  : "—");
-    _setText(el("gov-outbound"), payload.count_out != null ? payload.count_out.toLocaleString() : "—");
-    _setText(el("gov-rate"),   payload.fps != null ? `${Number(payload.fps).toFixed(1)} fps` : "—");
-    _setText(el("gov-load"),   payload.traffic_load || payload.scene_weather || "—");
-    const lighting = payload.scene_lighting || "—";
-    const weather  = payload.scene_weather  || "—";
-    _setText(el("gov-scene"), `${lighting} / ${weather}`);
-    _setText(el("gov-cars"),   (breakdown.car   ?? "—").toLocaleString());
-    _setText(el("gov-trucks"), (breakdown.truck ?? "—").toLocaleString());
-    _setText(el("gov-buses"),  (breakdown.bus   ?? "—").toLocaleString());
-    _setText(el("gov-motos"),  (breakdown.motorcycle ?? "—").toLocaleString());
-    _setText(el("gov-model"),  payload.fps ? `YOLOv8 · ${Number(payload.fps).toFixed(1)} fps` : "YOLOv8");
-    // Update donut live
-    if (_donutChart && breakdown) {
-      const vals = [
-        breakdown.car || 0, breakdown.truck || 0,
-        breakdown.bus || 0, breakdown.motorcycle || 0,
-      ];
-      _donutChart.data.datasets[0].data = vals;
-      _donutChart.update("none");
-    }
-  }
-
-  function _setText(el, val) {
-    if (!el) return;
-    el.textContent = String(val ?? "—");
+  function _setTab(name) {
+    _activeTab = name;
+    document.querySelectorAll(".gov-tab").forEach(t =>
+      t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".gov-panel").forEach(p =>
+      p.classList.toggle("active", p.id === `gov-panel-${name}`));
+    if (name === "analytics" && window.Chart && !_trendChart) _initAllCharts(_govHours);
+    if (name === "analytics" && window.Chart && _govHours) _loadGovCrossings();
+    if (name === "agencies" && _analyticsData) _populateAgencyMetrics(_analyticsData.summary);
   }
 
   // ── Open / Close ─────────────────────────────────────────────────────────
+  openBtn?.addEventListener("click", openGov);
+  closeBtn?.addEventListener("click", closeGov);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _open) closeGov(); });
+
   async function openGov() {
-    _govOpen = true;
+    if (_open) return;
+    _open = true;
     overlay.classList.remove("hidden");
     document.body.style.overflow = "hidden";
 
-    // Resolve camera info
-    if (!_govCamId) {
+    // Resolve camera
+    if (!_camId && window.sb) {
       try {
-        const { data } = await window.sb.from("cameras").select("id, ipcam_alias").eq("is_active", true).limit(1).single();
-        _govCamId   = data?.id;
-        _govCamName = data?.ipcam_alias || "Camera 1";
-        const subEl = document.getElementById("gov-cam-subtitle");
-        if (subEl) subEl.textContent = `Live Feed · ${_govCamName}`;
-        const nameEl = document.getElementById("gov-cam-name");
-        if (nameEl) nameEl.textContent = _govCamName;
+        const { data } = await window.sb.from("cameras")
+          .select("id, ipcam_alias, name").eq("is_active", true).limit(1).single();
+        _camId   = data?.id;
+        _camName = data?.name || data?.ipcam_alias || "Camera 1";
+        txt("gov-cam-subtitle", `Live Feed · ${_camName}`);
+        txt("gov-cam-name", _camName);
+        txt("gov-vid-cam", _camName);
       } catch {}
     }
 
-    // Move live-video into gov-video-slot
-    const slot  = document.getElementById("gov-video-slot");
-    const video = document.getElementById("live-video");
+    // Move live video into slot
+    const slot  = el("gov-video-slot");
+    const video = el("live-video");
     if (slot && video && !slot.contains(video)) slot.appendChild(video);
 
-    // Populate current stats
-    if (_lastPayload) _populateGovStats(_lastPayload);
+    // Populate live stats from last known payload
+    if (_lastPayload) _populateLive(_lastPayload);
 
-    // Lazy-load Chart.js
+    // Init charts (lazy-load Chart.js first)
     _loadChartJs(() => {
-      _initGovCharts(_govHours);
-      _loadGovCrossings();
+      _initDonut();
+      if (_activeTab === "analytics") _initAllCharts(_govHours);
     });
 
     // Start crossings refresh
-    if (!_crossingsInterval) {
-      _crossingsInterval = setInterval(_loadGovCrossings, 10000);
-    }
+    _loadGovCrossings();
+    _crossingsInterval = setInterval(_loadGovCrossings, 10000);
+
+    // Set today's date defaults in export form
+    const today = new Date().toISOString().slice(0, 10);
+    const fromEl = el("gov-exp-from");
+    const toEl   = el("gov-exp-to");
+    if (fromEl && !fromEl.value) fromEl.value = today;
+    if (toEl   && !toEl.value)   toEl.value   = today;
   }
 
   function closeGov() {
-    _govOpen = false;
+    if (!_open) return;
+    _open = false;
     overlay.classList.add("hidden");
     document.body.style.overflow = "";
+    clearInterval(_crossingsInterval);
+    _crossingsInterval = null;
 
     // Return video to stream-wrapper
     const wrapper = document.querySelector(".stream-wrapper");
-    const video   = document.getElementById("live-video");
-    const refEl   = document.getElementById("play-overlay");
+    const video   = el("live-video");
+    const canvas  = el("detection-canvas");
     if (wrapper && video && !wrapper.contains(video)) {
-      wrapper.insertBefore(video, refEl || wrapper.firstChild);
+      wrapper.insertBefore(video, canvas || wrapper.firstChild);
     }
-
-    clearInterval(_crossingsInterval);
-    _crossingsInterval = null;
   }
 
-  openBtn?.addEventListener("click", openGov);
-  closeBtn?.addEventListener("click", closeGov);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _govOpen) closeGov(); });
+  // ── Live stats population ─────────────────────────────────────────────────
+  function _populateLive(p) {
+    const bd    = p.per_class_total || p.vehicle_breakdown || {};
+    const total = p.total ?? p.confirmed_crossings_total ?? 0;
+    const fps   = p.fps != null ? Number(p.fps).toFixed(1) : null;
 
-  // ── Chart.js lazy loader ─────────────────────────────────────────────────
+    // Header strip
+    txt("gov-hdr-total", total.toLocaleString());
+    txt("gov-hdr-fps",   fps ?? "—");
+    txt("gov-hdr-load",  p.traffic_load || "—");
+
+    // KPI cards
+    txt("gov-kpi-total", total.toLocaleString());
+    txt("gov-kpi-in",  p.count_in  != null ? Number(p.count_in).toLocaleString()  : "—");
+    txt("gov-kpi-out", p.count_out != null ? Number(p.count_out).toLocaleString() : "—");
+    // gov-kpi-peak is filled from analytics data
+
+    // Flow sidebar
+    txt("gov-inbound",  p.count_in  != null ? Number(p.count_in).toLocaleString()  : "—");
+    txt("gov-outbound", p.count_out != null ? Number(p.count_out).toLocaleString() : "—");
+
+    // Scene
+    const scene = [p.scene_lighting, p.scene_weather].filter(Boolean).join(" / ") || p.scene_lighting || "—";
+    txt("gov-scene", scene.toUpperCase());
+
+    // Class breakdown with progress bars
+    const classes  = ["car","truck","bus","motorcycle"];
+    const barIds   = { car:"gov-bar-car", truck:"gov-bar-truck", bus:"gov-bar-bus", motorcycle:"gov-bar-moto" };
+    const valIds   = { car:"gov-cars", truck:"gov-trucks", bus:"gov-buses", motorcycle:"gov-motos" };
+    const pctIds   = { car:"gov-pct-car", truck:"gov-pct-truck", bus:"gov-pct-bus", motorcycle:"gov-pct-moto" };
+    const counts   = classes.map(c => Number(bd[c] || 0));
+    const maxCount = Math.max(...counts, 1);
+
+    classes.forEach((cls, i) => {
+      const cnt = counts[i];
+      const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+      txt(valIds[cls], cnt.toLocaleString());
+      txt(pctIds[cls], `${pct}%`);
+      const bar = el(barIds[cls]);
+      if (bar) bar.style.width = `${Math.round((cnt / maxCount) * 100)}%`;
+    });
+
+    // System info
+    txt("gov-model", fps ? `YOLOv8 · ${fps} fps` : "YOLOv8");
+    txt("gov-last",  p.snapshot_at ? new Date(p.snapshot_at).toLocaleTimeString() : "—");
+
+    // Live donut update
+    if (_donutChart) {
+      _donutChart.data.datasets[0].data = counts;
+      _donutChart.update("none");
+    }
+
+    // Agency metrics (computed from live data)
+    _populateAgencyMetricsLive(bd, total);
+  }
+
+  function _populateAgencyMetricsLive(bd, total) {
+    const heavy   = (Number(bd.truck || 0) + Number(bd.bus || 0));
+    const busCount = Number(bd.bus || 0);
+    txt("gov-nwa-metric",     heavy.toLocaleString());
+    txt("gov-taj-metric",     heavy.toLocaleString());
+    txt("gov-jutc-metric",    busCount.toLocaleString());
+    txt("gov-tourism-metric", total.toLocaleString());
+    txt("gov-ooh-metric",     total.toLocaleString());
+    // Insurance risk: rough density score (heavy vehicles weighted)
+    const risk = total > 0 ? Math.min(100, Math.round((heavy / total) * 60 + (total / 500) * 40)) : 0;
+    txt("gov-ins-metric", risk);
+  }
+
+  // ── Chart.js lazy load ────────────────────────────────────────────────────
   function _loadChartJs(cb) {
-    if (window.Chart || _chartJsReady) { cb(); return; }
+    if (window.Chart) { cb(); return; }
+    if (_chartJsReady) { cb(); return; }
     const s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js";
     s.onload = () => { _chartJsReady = true; cb(); };
     document.head.appendChild(s);
   }
 
-  // ── Charts ───────────────────────────────────────────────────────────────
-  async function _initGovCharts(hours) {
+  const CHART_DARK = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false }, tooltip: { mode: "index", intersect: false } },
+    scales: {
+      x: { grid: { color: "rgba(26,45,66,0.8)" }, ticks: { color: "#7A9BB5", font: { size: 9, family: "JetBrains Mono" } } },
+      y: { grid: { color: "rgba(26,45,66,0.8)" }, ticks: { color: "#7A9BB5", font: { size: 9, family: "JetBrains Mono" } }, beginAtZero: true },
+    },
+  };
+
+  // ── Mini donut (LIVE sidebar) ─────────────────────────────────────────────
+  function _initDonut() {
+    const canvas = el("gov-donut-canvas");
+    if (!canvas || !window.Chart) return;
+    if (_donutChart) { _donutChart.destroy(); _donutChart = null; }
+    _donutChart = new window.Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: ["Cars","Trucks","Buses","Motorcycles"],
+        datasets: [{ data: [1,1,1,1], backgroundColor: ["#29B6F6","#FF7043","#AB47BC","#FFD600"], borderColor: "#080C14", borderWidth: 2 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: "68%", animation: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed}` } } },
+      },
+    });
+  }
+
+  // ── Analytics charts (ANALYTICS panel) ───────────────────────────────────
+  async function _initAllCharts(hours) {
     if (!window.Chart) return;
     try {
-      const url = `/api/analytics/traffic?hours=${hours}${_govCamId ? `&camera_id=${_govCamId}` : ""}`;
+      const url = `/api/analytics/traffic?hours=${hours}${_camId ? `&camera_id=${_camId}` : ""}`;
       const res  = await fetch(url);
       const json = res.ok ? await res.json() : null;
-      const rows = json?.hourly || [];
-      const summary = json?.summary || {};
+      if (!json) return;
+      _analyticsData = json;
+      const rows    = json.hourly   || [];
+      const summary = json.summary  || {};
 
-      const labels = rows.map(r => {
-        const d = new Date(r.hour);
-        return `${String(d.getHours()).padStart(2,"0")}:00`;
-      });
-      const mk = (field) => rows.map(r => r[field] || 0);
+      // Update analytics summary strip
+      const totalPeriod = summary.today_total ?? rows.reduce((a,r) => a + (r.total||0), 0);
+      const peakVal     = summary.peak_value  ?? 0;
+      const peakHour    = summary.peak_hour   != null
+        ? `${String(new Date(summary.peak_hour).getHours()).padStart(2,"0")}:00` : "—";
+      const heavyPct    = summary.class_pct
+        ? Math.round(((summary.class_pct.truck||0) + (summary.class_pct.bus||0)) * 100) + "%"
+        : "—";
 
-      const CHART_OPTS = {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { display: false }, tooltip: { mode: "index", intersect: false } },
-        scales: {
-          x: { grid: { color: "rgba(26,45,66,0.8)" }, ticks: { color: "#7A9BB5", font: { size: 10, family: "JetBrains Mono" } } },
-          y: { grid: { color: "rgba(26,45,66,0.8)" }, ticks: { color: "#7A9BB5", font: { size: 10, family: "JetBrains Mono" } }, beginAtZero: true },
-        },
-      };
+      txt("gov-sum-total", Number(totalPeriod).toLocaleString());
+      txt("gov-sum-peak",  `${peakHour} (${peakVal})`);
+      txt("gov-sum-heavy", heavyPct);
+      txt("gov-kpi-peak",  peakHour);
+      txt("gov-trend-label", `— ${hours === 168 ? "7-day" : "24-hour"} rolling`);
 
-      // Line chart
-      const trendCanvas = document.getElementById("gov-trend-canvas");
-      if (trendCanvas) {
-        if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
-        _trendChart = new window.Chart(trendCanvas, {
-          type: "line",
-          data: {
-            labels,
-            datasets: [
-              { label: "Cars",        data: mk("car"),        borderColor: "#29B6F6", backgroundColor: "rgba(41,182,246,0.06)", tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
-              { label: "Trucks",      data: mk("truck"),      borderColor: "#FF7043", backgroundColor: "rgba(255,112,67,0.06)",  tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
-              { label: "Buses",       data: mk("bus"),        borderColor: "#AB47BC", backgroundColor: "rgba(171,71,188,0.06)",  tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
-              { label: "Motorcycles", data: mk("motorcycle"), borderColor: "#FFD600", backgroundColor: "rgba(255,214,0,0.06)",   tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
-            ],
-          },
-          options: CHART_OPTS,
-        });
-      }
+      // Populate agency metrics from analytics summary
+      _populateAgencyMetrics(summary);
 
-      // Donut chart
-      const donutCanvas = document.getElementById("gov-donut-canvas");
-      if (donutCanvas) {
-        if (_donutChart) { _donutChart.destroy(); _donutChart = null; }
-        const ct = summary.class_totals || {};
-        const vals = [ct.car || 0, ct.truck || 0, ct.bus || 0, ct.motorcycle || 0];
-        const grandTotal = vals.reduce((a,b) => a+b, 0) || 1;
-        _donutChart = new window.Chart(donutCanvas, {
-          type: "doughnut",
-          data: {
-            labels: ["Cars", "Trucks", "Buses", "Motorcycles"],
-            datasets: [{
-              data: vals,
-              backgroundColor: ["#29B6F6", "#FF7043", "#AB47BC", "#FFD600"],
-              borderColor: "#080C14",
-              borderWidth: 2,
-            }],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: "65%",
-            animation: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => {
-                    const pct = Math.round((ctx.parsed / grandTotal) * 100);
-                    return ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${pct}%)`;
-                  },
-                },
-              },
-            },
-          },
-        });
-      }
-
-      // Update summary stats
-      if (summary.today_total) _setText(document.getElementById("gov-total"), Number(summary.today_total).toLocaleString());
+      // 1. Trend line
+      _buildTrendChart(rows);
+      // 2. Class distribution bar
+      _buildClsChart(summary);
+      // 3. Peak hours bar
+      _buildPeakChart(rows);
 
     } catch (err) {
       console.warn("[GovAnalytics] Chart load failed:", err);
     }
   }
 
-  // ── Crossings table ──────────────────────────────────────────────────────
-  const CLS_ICONS = { car: "🚗", truck: "🚛", bus: "🚌", motorcycle: "🏍" };
-  const CLS_CSS   = { car: "gov-td-car", truck: "gov-td-truck", bus: "gov-td-bus", motorcycle: "gov-td-moto" };
+  function _buildTrendChart(rows) {
+    const canvas = el("gov-trend-canvas");
+    if (!canvas) return;
+    if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
+    const labels = rows.map(r => {
+      const d = new Date(r.hour);
+      return `${String(d.getHours()).padStart(2,"0")}:00`;
+    });
+    const mk = (f) => rows.map(r => r[f] || 0);
+    _trendChart = new window.Chart(canvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label:"Cars",        data: mk("car"),        borderColor:"#29B6F6", backgroundColor:"rgba(41,182,246,0.05)",  tension:0.4, pointRadius:0, borderWidth:1.5 },
+          { label:"Trucks",      data: mk("truck"),      borderColor:"#FF7043", backgroundColor:"rgba(255,112,67,0.05)",  tension:0.4, pointRadius:0, borderWidth:1.5 },
+          { label:"Buses",       data: mk("bus"),        borderColor:"#AB47BC", backgroundColor:"rgba(171,71,188,0.05)",  tension:0.4, pointRadius:0, borderWidth:1.5 },
+          { label:"Motorcycles", data: mk("motorcycle"), borderColor:"#FFD600", backgroundColor:"rgba(255,214,0,0.05)",   tension:0.4, pointRadius:0, borderWidth:1.5 },
+        ],
+      },
+      options: { ...CHART_DARK, plugins: { ...CHART_DARK.plugins, legend: { display: true, labels: { color:"#7A9BB5", font:{ size:9, family:"JetBrains Mono" }, boxWidth:10, padding:12 } } } },
+    });
+  }
 
+  function _buildClsChart(summary) {
+    const canvas = el("gov-cls-canvas");
+    if (!canvas) return;
+    if (_clsChart) { _clsChart.destroy(); _clsChart = null; }
+    const ct = summary.class_totals || {};
+    _clsChart = new window.Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: ["Cars","Trucks","Buses","Motorcycles"],
+        datasets: [{ data: [ct.car||0, ct.truck||0, ct.bus||0, ct.motorcycle||0], backgroundColor: ["#29B6F6","#FF7043","#AB47BC","#FFD600"], borderRadius: 3, borderWidth: 0 }],
+      },
+      options: { ...CHART_DARK, plugins: { legend: { display:false }, tooltip: { mode:"index", intersect:false } } },
+    });
+  }
+
+  function _buildPeakChart(rows) {
+    const canvas = el("gov-peak-canvas");
+    if (!canvas) return;
+    if (_peakChart) { _peakChart.destroy(); _peakChart = null; }
+    const labels = rows.map(r => `${String(new Date(r.hour).getHours()).padStart(2,"0")}:00`);
+    const totals = rows.map(r => r.total || 0);
+    const maxVal = Math.max(...totals, 1);
+    const colors = totals.map(v => v >= maxVal * 0.8 ? "#FF7043" : v >= maxVal * 0.5 ? "#FFD600" : "#29B6F6");
+    _peakChart = new window.Chart(canvas, {
+      type: "bar",
+      data: { labels, datasets: [{ data: totals, backgroundColor: colors, borderRadius: 2, borderWidth: 0 }] },
+      options: { ...CHART_DARK, plugins: { legend: { display:false }, tooltip: { mode:"index", intersect:false } } },
+    });
+  }
+
+  // ── Agency metrics from analytics data ────────────────────────────────────
+  function _populateAgencyMetrics(summary) {
+    if (!summary) return;
+    const ct    = summary.class_totals || {};
+    const total = summary.today_total  || 0;
+    const heavy = (ct.truck||0) + (ct.bus||0);
+    const peakV = summary.peak_value   || 0;
+    const risk  = total > 0 ? Math.min(100, Math.round((heavy/total)*60 + (peakV/50)*40)) : 0;
+
+    txt("gov-nwa-metric",     heavy.toLocaleString());
+    txt("gov-taj-metric",     heavy.toLocaleString());
+    txt("gov-jutc-metric",    (ct.bus||0).toLocaleString());
+    txt("gov-tourism-metric", Number(total).toLocaleString());
+    txt("gov-ooh-metric",     Number(total).toLocaleString());
+    txt("gov-ins-metric",     risk);
+  }
+
+  // ── Crossings table ───────────────────────────────────────────────────────
   async function _loadGovCrossings() {
-    if (!_govOpen || !window.sb) return;
+    if (!window.sb) return;
     try {
-      let q = window.sb.from("vehicle_crossings").select("captured_at,vehicle_class,direction,confidence,scene_lighting,scene_weather").order("captured_at", { ascending: false }).limit(20);
-      if (_govCamId) q = q.eq("camera_id", _govCamId);
+      let q = window.sb.from("vehicle_crossings")
+        .select("captured_at,vehicle_class,direction,confidence,scene_lighting,scene_weather,dwell_frames")
+        .order("captured_at", { ascending: false }).limit(20);
+      if (_camId) q = q.eq("camera_id", _camId);
       const { data } = await q;
-      const tbody = document.getElementById("gov-crossings-body");
-      if (!tbody || !data) return;
+      const tbody = el("gov-crossings-body");
+      if (!tbody || !data?.length) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No crossings recorded yet</td></tr>`;
+        return;
+      }
       tbody.innerHTML = data.map(r => {
         const cls  = String(r.vehicle_class || "car").toLowerCase();
-        const icon = CLS_ICONS[cls] || "🚗";
-        const css  = CLS_CSS[cls]   || "gov-td-car";
-        const dir  = r.direction === "in" ? "gov-td-in" : "gov-td-out";
-        const conf = r.confidence != null ? `${(Number(r.confidence) * 100).toFixed(0)}%` : "—";
+        const css  = CLS_CSS[cls]  || "gov-td-car";
+        const icon = CLS_ICON[cls] || "🚗";
+        const dirCss = r.direction === "in" ? "gov-td-in" : "gov-td-out";
+        const conf = r.confidence != null ? `${(Number(r.confidence)*100).toFixed(0)}%` : "—";
         const scene = [r.scene_lighting, r.scene_weather].filter(Boolean).join(" / ") || "—";
-        const time = r.captured_at ? new Date(r.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—";
-        return `<tr>
+        const time  = r.captured_at ? new Date(r.captured_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "—";
+        const dwell = r.dwell_frames != null ? `${r.dwell_frames}f` : "—";
+        return `<tr data-crossing='${JSON.stringify({time,cls,dir:r.direction,conf,scene,dwell}).replace(/'/g,"&apos;")}'>
           <td>${time}</td>
           <td class="${css}">${icon} ${cls.toUpperCase()}</td>
-          <td class="${dir}">${r.direction || "—"}</td>
+          <td class="${dirCss}">${r.direction || "—"}</td>
           <td>${conf}</td>
-          <td style="color:var(--muted);font-size:11px">${scene}</td>
+          <td style="color:var(--muted);font-size:10px">${scene}</td>
+          <td style="color:var(--dim);font-size:10px">${dwell}</td>
         </tr>`;
       }).join("");
     } catch (err) {
-      console.warn("[GovAnalytics] Crossings load failed:", err);
+      console.warn("[GovAnalytics] Crossings failed:", err);
     }
   }
 
-  // ── Period toggle ────────────────────────────────────────────────────────
-  document.getElementById("gov-overlay")?.addEventListener("click", (e) => {
-    const pill = e.target.closest(".gov-period-pills .pill");
+  // ── Period toggle ─────────────────────────────────────────────────────────
+  overlay.addEventListener("click", (e) => {
+    const pill = e.target.closest(".gov-period-pills .gov-pill");
     if (!pill) return;
-    document.querySelectorAll(".gov-period-pills .pill").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".gov-period-pills .gov-pill").forEach(p => p.classList.remove("active"));
     pill.classList.add("active");
     _govHours = parseInt(pill.dataset.val, 10) || 24;
-    _initGovCharts(_govHours);
+    _loadChartJs(() => _initAllCharts(_govHours));
   });
 
-  // ── Export ───────────────────────────────────────────────────────────────
-  exportBtn?.addEventListener("click", async () => {
-    const from = new Date(); from.setHours(0, 0, 0, 0);
-    const to   = new Date();
-    const jwt  = await (window.Auth?.getJwt?.() || Promise.resolve(null));
-    if (!jwt) { alert("Please log in to export data."); return; }
-    const url = `/api/analytics/export?from=${from.toISOString()}&to=${to.toISOString()}${_govCamId ? `&camera_id=${_govCamId}` : ""}`;
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `traffic-${from.toISOString().slice(0,10)}.csv`);
-    // Fetch with auth header and create blob URL
+  // ── Export (analytics toolbar quick-export) ───────────────────────────────
+  el("gov-export-btn")?.addEventListener("click", _triggerExport);
+
+  // ── Export panel download ─────────────────────────────────────────────────
+  el("gov-export-dl-btn")?.addEventListener("click", _triggerExport);
+
+  async function _triggerExport() {
+    const fromEl = el("gov-exp-from");
+    const toEl   = el("gov-exp-to");
+    const today  = new Date().toISOString().slice(0,10);
+    const from   = new Date((fromEl?.value || today) + "T00:00:00");
+    const to     = new Date((toEl?.value   || today) + "T23:59:59");
+    const jwt    = await (window.Auth?.getJwt?.() || Promise.resolve(null));
+    if (!jwt) { _showModal("EXPORT", `<p class="gov-modal-pitch">Please log in to export traffic data.</p>`); return; }
+    const url = `/api/analytics/export?from=${from.toISOString()}&to=${to.toISOString()}${_camId ? `&camera_id=${_camId}` : ""}`;
     try {
       const res = await fetch(url, { headers: { Authorization: `Bearer ${jwt}` } });
-      if (!res.ok) { alert("Export failed — no data available yet."); return; }
-      const blob = await res.blob();
+      if (!res.ok) { _showModal("EXPORT", `<p class="gov-modal-pitch">No data available for the selected date range.</p>`); return; }
+      const blob    = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
-      link.href = blobUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = Object.assign(document.createElement("a"), { href: blobUrl, download: `traffic-${from.toISOString().slice(0,10)}.csv` });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-    } catch (err) {
-      alert("Export failed.");
-    }
+    } catch { _showModal("EXPORT", `<p class="gov-modal-pitch">Export failed — please try again.</p>`); }
+  }
+
+  // ── Modal system ──────────────────────────────────────────────────────────
+  const modal       = el("gov-modal");
+  const modalTitle  = el("gov-modal-title");
+  const modalBody   = el("gov-modal-body");
+  let   _modalChart = null;
+
+  function _showModal(title, bodyHtml) {
+    if (!modal) return;
+    if (modalTitle) modalTitle.textContent = title;
+    if (modalBody)  modalBody.innerHTML = bodyHtml;
+    modal.classList.remove("hidden");
+    // Render chart if canvas#gov-modal-chart exists in bodyHtml
+    requestAnimationFrame(() => {
+      const c = el("gov-modal-chart");
+      if (c && c.dataset.chartConfig && window.Chart) {
+        try {
+          if (_modalChart) { _modalChart.destroy(); _modalChart = null; }
+          _modalChart = new window.Chart(c, JSON.parse(c.dataset.chartConfig));
+        } catch {}
+      }
+    });
+  }
+
+  function _closeModal() {
+    if (!modal) return;
+    modal.classList.add("hidden");
+    if (_modalChart) { _modalChart.destroy(); _modalChart = null; }
+  }
+
+  el("gov-modal-close")?.addEventListener("click", _closeModal);
+  el("gov-modal-backdrop")?.addEventListener("click", _closeModal);
+
+  // ── KPI card clicks ───────────────────────────────────────────────────────
+  el("gov-panel-live")?.addEventListener("click", (e) => {
+    const card = e.target.closest(".gov-kpi-card");
+    if (!card) return;
+    const type = card.dataset.modal;
+    _openKpiModal(type);
   });
+
+  function _openKpiModal(type) {
+    _loadChartJs(() => {
+      const rows    = _analyticsData?.hourly   || [];
+      const summary = _analyticsData?.summary  || {};
+      const ct      = summary.class_totals     || {};
+
+      if (type === "total") {
+        const labels = rows.map(r => `${String(new Date(r.hour).getHours()).padStart(2,"0")}:00`);
+        const data   = rows.map(r => r.total || 0);
+        const cfg    = { type:"bar", data:{ labels, datasets:[{ data, backgroundColor:"#29B6F6", borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
+        _showModal("VEHICLES TODAY — HOURLY BREAKDOWN", `
+          <div class="gov-modal-kpi-grid">
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${Number(summary.today_total||0).toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Today</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${summary.peak_value||"—"}</div><div class="gov-modal-kpi-lbl">Peak Hour Count</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${rows.length}</div><div class="gov-modal-kpi-lbl">Hours Recorded</div></div>
+          </div>
+          <div class="gov-modal-chart-wrap"><canvas id="gov-modal-chart" data-chart-config='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'></canvas></div>`);
+
+      } else if (type === "peak") {
+        const labels = rows.map(r => `${String(new Date(r.hour).getHours()).padStart(2,"0")}:00`);
+        const totals = rows.map(r => r.total || 0);
+        const maxV   = Math.max(...totals, 1);
+        const colors = totals.map(v => v >= maxV * 0.8 ? "#FF7043" : v >= maxV * 0.5 ? "#FFD600" : "rgba(26,45,66,0.8)");
+        const cfg    = { type:"bar", data:{ labels, datasets:[{ data:totals, backgroundColor:colors, borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
+        const peakHour = summary.peak_hour ? `${String(new Date(summary.peak_hour).getHours()).padStart(2,"0")}:00` : "—";
+        _showModal("PEAK HOUR ANALYSIS", `
+          <div class="gov-modal-kpi-grid">
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${peakHour}</div><div class="gov-modal-kpi-lbl">Peak Hour</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${summary.peak_value||"—"}</div><div class="gov-modal-kpi-lbl">Vehicles at Peak</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${totals.filter(v => v >= maxV*0.8).length}</div><div class="gov-modal-kpi-lbl">High-Load Hours</div></div>
+          </div>
+          <div class="gov-modal-chart-wrap"><canvas id="gov-modal-chart" data-chart-config='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'></canvas></div>
+          <p class="gov-modal-note">Red bars = high load (&ge;80% of peak). Yellow bars = moderate load (&ge;50%).</p>`);
+
+      } else if (type === "flow") {
+        const labels  = rows.map(r => `${String(new Date(r.hour).getHours()).padStart(2,"0")}:00`);
+        const inData  = rows.map(r => r.in  || 0);
+        const outData = rows.map(r => r.out || 0);
+        const cfg     = { type:"line", data:{ labels, datasets:[
+          { label:"Inbound",  data:inData,  borderColor:"#00FF88", backgroundColor:"rgba(0,255,136,0.05)", tension:0.4, pointRadius:0, borderWidth:1.5 },
+          { label:"Outbound", data:outData, borderColor:"#7A9BB5", backgroundColor:"rgba(122,155,181,0.05)", tension:0.4, pointRadius:0, borderWidth:1.5 },
+        ]}, options:{...CHART_DARK, plugins:{...CHART_DARK.plugins, legend:{display:true, labels:{color:"#7A9BB5",font:{size:9,family:"JetBrains Mono"},boxWidth:10}}}} };
+        const totalIn  = inData.reduce((a,b)=>a+b,0);
+        const totalOut = outData.reduce((a,b)=>a+b,0);
+        _showModal("TRAFFIC FLOW ANALYSIS", `
+          <div class="gov-modal-kpi-grid">
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:var(--green)">${totalIn.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Inbound</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:var(--muted)">${totalOut.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Outbound</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${totalIn+totalOut > 0 ? Math.round(totalIn/(totalIn+totalOut)*100) : "—"}%</div><div class="gov-modal-kpi-lbl">Inbound Ratio</div></div>
+          </div>
+          <div class="gov-modal-chart-wrap"><canvas id="gov-modal-chart" data-chart-config='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'></canvas></div>`);
+      }
+    });
+  }
+
+  // ── Class row clicks ──────────────────────────────────────────────────────
+  el("gov-cls-rows") || document.querySelector(".gov-cls-rows");
+  overlay.addEventListener("click", (e) => {
+    const row = e.target.closest(".gov-cls-row");
+    if (!row) return;
+    const cls = row.dataset.modal?.replace("class-","");
+    if (!cls) return;
+    _loadChartJs(() => _openClassModal(cls));
+  });
+
+  function _openClassModal(cls) {
+    const rows   = _analyticsData?.hourly  || [];
+    const summary = _analyticsData?.summary || {};
+    const ct     = summary.class_totals     || {};
+    const color  = CLS_COLOR[cls] || "#29B6F6";
+    const icon   = CLS_ICON[cls]  || "🚗";
+    const labels = rows.map(r => `${String(new Date(r.hour).getHours()).padStart(2,"0")}:00`);
+    const data   = rows.map(r => r[cls] || 0);
+    const total  = ct[cls] || data.reduce((a,b)=>a+b,0);
+    const grandT = summary.today_total || 1;
+    const pct    = Math.round((total / grandT) * 100);
+    const cfg    = { type:"line", data:{ labels, datasets:[{ label:cls, data, borderColor:color, backgroundColor:`${color}0D`, tension:0.4, pointRadius:0, borderWidth:2 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
+    _showModal(`${icon} ${cls.toUpperCase()} — TREND DETAIL`, `
+      <div class="gov-modal-kpi-grid">
+        <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:${color}">${total.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total (period)</div></div>
+        <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${pct}%</div><div class="gov-modal-kpi-lbl">Share of Traffic</div></div>
+        <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${data.length > 0 ? Math.round(total/Math.max(data.length,1)) : "—"}</div><div class="gov-modal-kpi-lbl">Avg / Hour</div></div>
+      </div>
+      <div class="gov-modal-chart-wrap"><canvas id="gov-modal-chart" data-chart-config='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'></canvas></div>`);
+  }
+
+  // ── Crossing row clicks ───────────────────────────────────────────────────
+  el("gov-crossings-body")?.addEventListener("click", (e) => {
+    const row = e.target.closest("tr[data-crossing]");
+    if (!row) return;
+    try {
+      const d = JSON.parse(row.dataset.crossing.replace(/&apos;/g,"'"));
+      const cls = d.cls || "car";
+      const color = CLS_COLOR[cls] || "#29B6F6";
+      const icon  = CLS_ICON[cls]  || "🚗";
+      _showModal(`${icon} CROSSING DETAIL`, `
+        <div class="gov-modal-data-rows">
+          <div class="gov-modal-data-row"><span class="gov-modal-data-key">Time</span><span class="gov-modal-data-val">${d.time}</span></div>
+          <div class="gov-modal-data-row"><span class="gov-modal-data-key">Class</span><span class="gov-modal-data-val" style="color:${color}">${icon} ${cls.toUpperCase()}</span></div>
+          <div class="gov-modal-data-row"><span class="gov-modal-data-key">Direction</span><span class="gov-modal-data-val">${d.dir}</span></div>
+          <div class="gov-modal-data-row"><span class="gov-modal-data-key">Confidence</span><span class="gov-modal-data-val">${d.conf}</span></div>
+          <div class="gov-modal-data-row"><span class="gov-modal-data-key">Scene</span><span class="gov-modal-data-val">${d.scene}</span></div>
+          <div class="gov-modal-data-row"><span class="gov-modal-data-key">Dwell Frames</span><span class="gov-modal-data-val">${d.dwell}</span></div>
+        </div>`);
+    } catch {}
+  });
+
+  // ── Agency modal ──────────────────────────────────────────────────────────
+  overlay.addEventListener("click", (e) => {
+    const btn = e.target.closest(".gov-agency-btn[data-modal]");
+    if (!btn) return;
+    _openAgencyModal(btn.dataset.modal.replace("agency-",""));
+  });
+
+  const AGENCY_DATA = {
+    nwa: {
+      abbr:"NWA", name:"National Works Agency", color:"#29B6F6",
+      pitch:"Heavy vehicle volume directly determines road wear rates and maintenance budgeting cycles. Our AI-classified vehicle data provides a real-time heavy vehicle index (trucks + buses) per corridor, enabling evidence-based road maintenance scheduling and budget allocation.",
+      metrics: [
+        { key:"Data collected", val:"Truck + bus classification per crossing" },
+        { key:"Update frequency", val:"Real-time (≤2s latency)" },
+        { key:"Potential use", val:"Road wear index · maintenance trigger · infrastructure budget" },
+        { key:"Data format", val:"CSV / REST API / scheduled feed" },
+      ],
+    },
+    taj: {
+      abbr:"TAJ", name:"Tax Administration Jamaica", color:"#FF7043",
+      pitch:"Commercial vehicle frequency data enables cross-referencing against declared freight manifests and import records. Anomalies between observed corridor volume and declared shipments can flag compliance risks for audit prioritisation.",
+      metrics: [
+        { key:"Data collected", val:"Commercial vehicle (truck/bus) count by time-of-day" },
+        { key:"Update frequency", val:"Hourly aggregates + real-time stream" },
+        { key:"Potential use", val:"Freight audit · toll compliance · logistics pattern analysis" },
+        { key:"Data format", val:"CSV export · API endpoint · scheduled reports" },
+      ],
+    },
+    jutc: {
+      abbr:"JUTC", name:"Jamaica Urban Transit Co.", color:"#AB47BC",
+      pitch:"Bus detection frequency at key junctions provides independent headway measurement — tracking actual bus arrival intervals vs scheduled service. Peak commuter windows (AM/PM) are automatically identified from vehicle classification data.",
+      metrics: [
+        { key:"Data collected", val:"Bus classification count · time of day · direction" },
+        { key:"Update frequency", val:"Real-time per crossing" },
+        { key:"Potential use", val:"Headway analysis · route optimisation · schedule compliance" },
+        { key:"Data format", val:"CSV / API / live WebSocket feed" },
+      ],
+    },
+    tourism: {
+      abbr:"JTB", name:"Jamaica Tourism Board", color:"#FFD600",
+      pitch:"Total vehicle impressions along monitored corridors represent actual visitor mobility flow. Combined with time-of-day data, this enables identification of peak tourist movement windows and congestion hotspots affecting key tourism routes.",
+      metrics: [
+        { key:"Data collected", val:"Total crossings · time of day · vehicle class" },
+        { key:"Update frequency", val:"Real-time + daily summary" },
+        { key:"Potential use", val:"Visitor mobility mapping · congestion alerts · route planning" },
+        { key:"Data format", val:"Dashboard API · CSV · periodic briefings" },
+      ],
+    },
+    insurance: {
+      abbr:"INS", name:"Insurance Industry", color:"#00FF88",
+      pitch:"Traffic density combined with vehicle mix data produces a corridor-level risk density score. Peak-hour intensity and heavy vehicle percentage can inform actuarial models for accident probability, enabling more granular premium pricing by corridor and time window.",
+      metrics: [
+        { key:"Data collected", val:"Traffic density · vehicle mix · peak hours · dwell time" },
+        { key:"Update frequency", val:"Hourly risk score · real-time feed available" },
+        { key:"Potential use", val:"Actuarial risk modelling · premium pricing · claims geo-analysis" },
+        { key:"Data format", val:"Risk score API · raw CSV · corridor reports" },
+      ],
+    },
+    ooh: {
+      abbr:"OOH", name:"Out-of-Home Advertising", color:"#00D4FF",
+      pitch:"Every vehicle detected passing a camera-monitored location represents a guaranteed, AI-verified advertising impression. Unlike self-reported traffic counts, our data provides actual vehicle-level impressions with dwell time, enabling CPM pricing backed by ground truth.",
+      metrics: [
+        { key:"Data collected", val:"Vehicle crossings (= impressions) · dwell time · time of day" },
+        { key:"Update frequency", val:"Real-time + daily total" },
+        { key:"Potential use", val:"CPM pricing · campaign reach verification · inventory valuation" },
+        { key:"Data format", val:"Daily impression reports · API · monthly audit export" },
+      ],
+    },
+  };
+
+  function _openAgencyModal(agency) {
+    const d = AGENCY_DATA[agency];
+    if (!d) return;
+    const summary  = _analyticsData?.summary || {};
+    const ct       = summary.class_totals || {};
+    const total    = summary.today_total  || 0;
+    const heavy    = (ct.truck||0) + (ct.bus||0);
+    const heavyPct = total > 0 ? `${Math.round((heavy/total)*100)}%` : "—";
+
+    // Dynamic live metric per agency
+    const liveMetrics = {
+      nwa:      [{ key:"Heavy vehicles (today)", val: heavy.toLocaleString() }, { key:"Heavy vehicle share", val: heavyPct }],
+      taj:      [{ key:"Commercial vehicles (today)", val: heavy.toLocaleString() }, { key:"Commercial share", val: heavyPct }],
+      jutc:     [{ key:"Buses detected (today)", val: (ct.bus||0).toLocaleString() }, { key:"Bus share", val: total > 0 ? `${Math.round(((ct.bus||0)/total)*100)}%` : "—" }],
+      tourism:  [{ key:"Vehicle impressions (today)", val: Number(total).toLocaleString() }, { key:"Peak hour", val: summary.peak_hour ? `${String(new Date(summary.peak_hour).getHours()).padStart(2,"0")}:00` : "—" }],
+      insurance:[{ key:"Risk density score", val: total > 0 ? Math.min(100,Math.round((heavy/total)*60+(( summary.peak_value||0)/50)*40)) : "0" }, { key:"Peak hour intensity", val: summary.peak_value||"—" }],
+      ooh:      [{ key:"AI-verified impressions (today)", val: Number(total).toLocaleString() }, { key:"Peak window", val: summary.peak_hour ? `${String(new Date(summary.peak_hour).getHours()).padStart(2,"0")}:00` : "—" }],
+    };
+    const lm = liveMetrics[agency] || [];
+
+    _showModal(`${d.abbr} — DATA PACKAGE`, `
+      <div class="gov-modal-section">
+        <div class="gov-modal-section-head" style="color:${d.color}">${d.name}</div>
+        <p class="gov-modal-pitch">${d.pitch}</p>
+      </div>
+      <div class="gov-modal-section">
+        <div class="gov-modal-section-head">LIVE DATA SNAPSHOT</div>
+        <div class="gov-modal-data-rows">
+          ${lm.map(r => `<div class="gov-modal-data-row"><span class="gov-modal-data-key">${r.key}</span><span class="gov-modal-data-val">${r.val}</span></div>`).join("")}
+        </div>
+      </div>
+      <div class="gov-modal-section">
+        <div class="gov-modal-section-head">DATA SPECIFICATION</div>
+        <div class="gov-modal-data-rows">
+          ${d.metrics.map(m => `<div class="gov-modal-data-row"><span class="gov-modal-data-key">${m.key}</span><span class="gov-modal-data-val">${m.val}</span></div>`).join("")}
+        </div>
+      </div>
+      <p class="gov-modal-note">Contact us at data@whitelinez.com to request a sample dataset, API credentials, or pricing for a data partnership.</p>
+      <button class="gov-modal-cta" onclick="window.location.href='mailto:data@whitelinez.com?subject=Data Partnership — ${d.abbr}'">Request Data Package</button>
+    `);
+  }
+
 }());

@@ -794,96 +794,359 @@
 
   <!-- ── Government / Analytics Mode Overlay ──────────────────────────────── -->
   <div id="gov-overlay" class="gov-overlay hidden" role="dialog" aria-modal="true" aria-label="Traffic Analytics">
-    <div class="gov-header">
-      <div>
-        <div class="gov-title">TRAFFIC INTELLIGENCE — LIVE</div>
-        <div class="gov-subtitle" id="gov-cam-subtitle">Loading feed…</div>
-      </div>
-      <button id="btn-close-gov" class="gov-close-btn">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4L4 12M4 4l8 8"/></svg>
-        EXIT ANALYTICS
-      </button>
-    </div>
-    <div class="gov-body">
-      <div class="gov-video-col">
-        <div id="gov-video-slot" class="gov-video-slot" aria-label="Live feed"></div>
-        <div class="gov-stat-grid">
-          <div class="gov-stat-card">
-            <div id="gov-total" class="gov-stat-val">—</div>
-            <div class="gov-stat-label">Vehicles Today</div>
-          </div>
-          <div class="gov-stat-card">
-            <div id="gov-rate" class="gov-stat-val">—</div>
-            <div class="gov-stat-label">Detection Rate</div>
-          </div>
-          <div class="gov-stat-card">
-            <div id="gov-load" class="gov-stat-val">—</div>
-            <div class="gov-stat-label">Traffic Load</div>
-          </div>
-          <div class="gov-stat-card">
-            <div id="gov-scene" class="gov-stat-val">—</div>
-            <div class="gov-stat-label">Scene</div>
-          </div>
+
+    <!-- Header -->
+    <div class="gov-hdr">
+      <div class="gov-hdr-left">
+        <div class="gov-live-badge">● LIVE</div>
+        <div>
+          <div class="gov-title">TRAFFIC INTELLIGENCE</div>
+          <div class="gov-subtitle" id="gov-cam-subtitle">Initialising…</div>
         </div>
       </div>
-      <div class="gov-data-col">
-        <div class="gov-section-head">VEHICLE BREAKDOWN</div>
-        <div class="gov-breakdown">
-          <div class="gov-bd-row">🚗 Cars <span id="gov-cars">—</span></div>
-          <div class="gov-bd-row">🚛 Trucks <span id="gov-trucks">—</span></div>
-          <div class="gov-bd-row">🚌 Buses <span id="gov-buses">—</span></div>
-          <div class="gov-bd-row">🏍 Motos <span id="gov-motos">—</span></div>
+      <div class="gov-hdr-right">
+        <div class="gov-hdr-stats">
+          <span class="gov-hdr-stat"><span id="gov-hdr-total" class="gov-hdr-num">—</span><span class="gov-hdr-lbl">today</span></span>
+          <span class="gov-hdr-sep">|</span>
+          <span class="gov-hdr-stat"><span id="gov-hdr-fps" class="gov-hdr-num">—</span><span class="gov-hdr-lbl">fps</span></span>
+          <span class="gov-hdr-sep">|</span>
+          <span class="gov-hdr-stat"><span id="gov-hdr-load" class="gov-hdr-num">—</span><span class="gov-hdr-lbl">load</span></span>
         </div>
-        <div class="gov-section-head">AI SYSTEM</div>
-        <div class="gov-sysinfo">
-          <div class="gov-sys-row"><span>Model</span><span id="gov-model">—</span></div>
-          <div class="gov-sys-row"><span>Last update</span><span id="gov-last">—</span></div>
-          <div class="gov-sys-row"><span>Camera</span><span id="gov-cam-name">—</span></div>
-        </div>
-        <div class="gov-attr">Powered by YOLO computer vision · Real-time edge inference</div>
-
-        <!-- Direction split -->
-        <div class="gov-section-head">TRAFFIC FLOW</div>
-        <div class="gov-flow-row">
-          <div class="gov-flow-item">
-            <div id="gov-inbound" class="gov-stat-val">—</div>
-            <div class="gov-stat-label">Inbound</div>
-          </div>
-          <div class="gov-flow-item">
-            <div id="gov-outbound" class="gov-stat-val">—</div>
-            <div class="gov-stat-label">Outbound</div>
-          </div>
-        </div>
-
-        <!-- Class donut chart -->
-        <div class="gov-section-head">CLASS DISTRIBUTION</div>
-        <div class="gov-donut-wrap">
-          <canvas id="gov-donut-canvas"></canvas>
-        </div>
+        <button id="btn-close-gov" class="gov-close-btn">
+          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 4L4 12M4 4l8 8"/></svg>
+          EXIT
+        </button>
       </div>
     </div>
 
-    <!-- 24h trend chart -->
-    <div class="gov-charts-row">
-      <div class="gov-section-head">
-        24-HOUR TRAFFIC TREND
+    <!-- Tab Bar -->
+    <div class="gov-tabbar" id="gov-tabbar">
+      <button class="gov-tab active" data-tab="live">LIVE</button>
+      <button class="gov-tab" data-tab="analytics">ANALYTICS</button>
+      <button class="gov-tab" data-tab="agencies">AGENCIES</button>
+      <button class="gov-tab" data-tab="export">EXPORT</button>
+    </div>
+
+    <!-- ── PANEL: LIVE ───────────────────────────────────────── -->
+    <div class="gov-panel active" id="gov-panel-live">
+      <!-- KPI strip -->
+      <div class="gov-kpi-strip">
+        <div class="gov-kpi-card" data-modal="total">
+          <div class="gov-kpi-val" id="gov-kpi-total">—</div>
+          <div class="gov-kpi-lbl">Vehicles Today</div>
+          <div class="gov-kpi-hint">tap for hourly trend</div>
+        </div>
+        <div class="gov-kpi-card" data-modal="peak">
+          <div class="gov-kpi-val" id="gov-kpi-peak">—</div>
+          <div class="gov-kpi-lbl">Peak Hour</div>
+          <div class="gov-kpi-hint">tap for peak breakdown</div>
+        </div>
+        <div class="gov-kpi-card" data-modal="flow">
+          <div class="gov-kpi-val" id="gov-kpi-in">—</div>
+          <div class="gov-kpi-lbl">Inbound</div>
+          <div class="gov-kpi-hint">tap for flow detail</div>
+        </div>
+        <div class="gov-kpi-card" data-modal="flow">
+          <div class="gov-kpi-val gov-kpi-out" id="gov-kpi-out">—</div>
+          <div class="gov-kpi-lbl">Outbound</div>
+          <div class="gov-kpi-hint">tap for flow detail</div>
+        </div>
+      </div>
+
+      <!-- Main: video + sidebar -->
+      <div class="gov-live-body">
+        <!-- Video column -->
+        <div class="gov-live-video">
+          <div id="gov-video-slot" class="gov-video-slot" aria-label="Live feed"></div>
+          <div class="gov-vid-meta">
+            <span class="gov-scene-badge" id="gov-scene">—</span>
+            <span class="gov-vid-cam" id="gov-vid-cam">—</span>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="gov-live-side">
+          <!-- Vehicle class breakdown -->
+          <div class="gov-side-section">
+            <div class="gov-side-head">VEHICLE CLASS</div>
+            <div class="gov-cls-rows">
+              <div class="gov-cls-row" data-modal="class-car">
+                <span class="gov-cls-icon">🚗</span>
+                <div class="gov-cls-info">
+                  <div class="gov-cls-name">Cars</div>
+                  <div class="gov-cls-bar-wrap"><div class="gov-cls-bar" id="gov-bar-car" style="width:0%;background:#29B6F6"></div></div>
+                </div>
+                <span class="gov-cls-val" id="gov-cars">—</span>
+                <span class="gov-cls-pct" id="gov-pct-car">—%</span>
+              </div>
+              <div class="gov-cls-row" data-modal="class-truck">
+                <span class="gov-cls-icon">🚛</span>
+                <div class="gov-cls-info">
+                  <div class="gov-cls-name">Trucks</div>
+                  <div class="gov-cls-bar-wrap"><div class="gov-cls-bar" id="gov-bar-truck" style="width:0%;background:#FF7043"></div></div>
+                </div>
+                <span class="gov-cls-val" id="gov-trucks">—</span>
+                <span class="gov-cls-pct" id="gov-pct-truck">—%</span>
+              </div>
+              <div class="gov-cls-row" data-modal="class-bus">
+                <span class="gov-cls-icon">🚌</span>
+                <div class="gov-cls-info">
+                  <div class="gov-cls-name">Buses</div>
+                  <div class="gov-cls-bar-wrap"><div class="gov-cls-bar" id="gov-bar-bus" style="width:0%;background:#AB47BC"></div></div>
+                </div>
+                <span class="gov-cls-val" id="gov-buses">—</span>
+                <span class="gov-cls-pct" id="gov-pct-bus">—%</span>
+              </div>
+              <div class="gov-cls-row" data-modal="class-moto">
+                <span class="gov-cls-icon">🏍</span>
+                <div class="gov-cls-info">
+                  <div class="gov-cls-name">Motorcycles</div>
+                  <div class="gov-cls-bar-wrap"><div class="gov-cls-bar" id="gov-bar-moto" style="width:0%;background:#FFD600"></div></div>
+                </div>
+                <span class="gov-cls-val" id="gov-motos">—</span>
+                <span class="gov-cls-pct" id="gov-pct-moto">—%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Traffic flow + mini donut -->
+          <div class="gov-side-section">
+            <div class="gov-side-head">TRAFFIC FLOW</div>
+            <div class="gov-flow-donut">
+              <div class="gov-flow-stats">
+                <div class="gov-flow-stat">
+                  <div class="gov-flow-val" id="gov-inbound">—</div>
+                  <div class="gov-flow-lbl">↑ Inbound</div>
+                </div>
+                <div class="gov-flow-divider"></div>
+                <div class="gov-flow-stat">
+                  <div class="gov-flow-val gov-flow-out" id="gov-outbound">—</div>
+                  <div class="gov-flow-lbl">↓ Outbound</div>
+                </div>
+              </div>
+              <div class="gov-donut-mini">
+                <canvas id="gov-donut-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI system info -->
+          <div class="gov-side-section">
+            <div class="gov-side-head">AI SYSTEM</div>
+            <div class="gov-sys-rows">
+              <div class="gov-sys-row"><span>Model</span><span id="gov-model">YOLOv8</span></div>
+              <div class="gov-sys-row"><span>Last update</span><span id="gov-last">—</span></div>
+              <div class="gov-sys-row"><span>Camera</span><span id="gov-cam-name">—</span></div>
+            </div>
+            <div class="gov-attr">YOLOv8 · Real-time edge inference · 24/7 monitoring</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: ANALYTICS ──────────────────────────────────── -->
+    <div class="gov-panel" id="gov-panel-analytics">
+      <div class="gov-an-toolbar">
         <div class="gov-period-pills">
-          <span class="pill active" data-val="24">24H</span>
-          <span class="pill" data-val="168">7D</span>
+          <span class="gov-pill active" data-val="24">24H</span>
+          <span class="gov-pill" data-val="168">7D</span>
+        </div>
+        <div class="gov-an-summary-strip">
+          <span class="gov-an-sum-item">Total: <span id="gov-sum-total">—</span></span>
+          <span class="gov-an-sum-sep">·</span>
+          <span class="gov-an-sum-item">Peak: <span id="gov-sum-peak">—</span></span>
+          <span class="gov-an-sum-sep">·</span>
+          <span class="gov-an-sum-item">Heavy: <span id="gov-sum-heavy">—</span></span>
         </div>
         <button id="gov-export-btn" class="gov-export-btn">↓ Export CSV</button>
       </div>
-      <div class="gov-chart-wrap"><canvas id="gov-trend-canvas"></canvas></div>
+
+      <div class="gov-an-charts">
+        <!-- Trend line: full width -->
+        <div class="gov-chart-card gov-chart-full">
+          <div class="gov-chart-head">TRAFFIC TREND <span class="gov-head-muted" id="gov-trend-label">— 24-hour rolling</span></div>
+          <div class="gov-chart-body"><canvas id="gov-trend-canvas"></canvas></div>
+        </div>
+
+        <!-- Class distribution bar -->
+        <div class="gov-chart-card">
+          <div class="gov-chart-head">CLASS DISTRIBUTION</div>
+          <div class="gov-chart-body"><canvas id="gov-cls-canvas"></canvas></div>
+        </div>
+
+        <!-- Peak hours bar -->
+        <div class="gov-chart-card">
+          <div class="gov-chart-head">PEAK HOURS</div>
+          <div class="gov-chart-body"><canvas id="gov-peak-canvas"></canvas></div>
+        </div>
+
+        <!-- Crossings table: full width -->
+        <div class="gov-chart-card gov-chart-full">
+          <div class="gov-chart-head">RECENT CROSSINGS <span class="gov-head-muted">— refreshes every 10s · click row for detail</span></div>
+          <div class="gov-crossings-wrap">
+            <table class="gov-crossings-table">
+              <thead><tr><th>Time</th><th>Class</th><th>Dir</th><th>Conf</th><th>Scene</th><th>Dwell</th></tr></thead>
+              <tbody id="gov-crossings-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Recent crossings table -->
-    <div class="gov-table-row">
-      <div class="gov-section-head">RECENT CROSSINGS</div>
-      <table class="gov-crossings-table">
-        <thead><tr><th>Time</th><th>Class</th><th>Direction</th><th>Confidence</th><th>Scene</th></tr></thead>
-        <tbody id="gov-crossings-body"></tbody>
-      </table>
+    <!-- ── PANEL: AGENCIES ───────────────────────────────────── -->
+    <div class="gov-panel" id="gov-panel-agencies">
+      <div class="gov-agencies-hdr">
+        <div class="gov-agencies-title">DATA PARTNERSHIP OPPORTUNITIES</div>
+        <div class="gov-agencies-sub">Live traffic intelligence collected 24/7 across monitored corridors. Available for licensing, API access, or custom data packages.</div>
+      </div>
+      <div class="gov-agencies-grid">
+
+        <div class="gov-agency-card" data-agency="nwa">
+          <div class="gov-agency-top">
+            <div class="gov-agency-abbr" style="color:#29B6F6">NWA</div>
+            <div class="gov-agency-name">National Works Agency</div>
+          </div>
+          <div class="gov-agency-metric">
+            <span class="gov-agency-val" id="gov-nwa-metric">—</span>
+            <span class="gov-agency-unit">heavy vehicles today</span>
+          </div>
+          <div class="gov-agency-bullets">
+            <div class="gov-agency-bullet">Heavy vehicle % by corridor for road wear budgeting</div>
+            <div class="gov-agency-bullet">Peak congestion hours per junction</div>
+            <div class="gov-agency-bullet">Axle load proxy — trucks vs buses vs cars</div>
+          </div>
+          <button class="gov-agency-btn" data-modal="agency-nwa">View Data Package →</button>
+        </div>
+
+        <div class="gov-agency-card" data-agency="taj">
+          <div class="gov-agency-top">
+            <div class="gov-agency-abbr" style="color:#FF7043">TAJ</div>
+            <div class="gov-agency-name">Tax Administration Jamaica</div>
+          </div>
+          <div class="gov-agency-metric">
+            <span class="gov-agency-val" id="gov-taj-metric">—</span>
+            <span class="gov-agency-unit">commercial vehicles today</span>
+          </div>
+          <div class="gov-agency-bullets">
+            <div class="gov-agency-bullet">Commercial volume vs declared freight manifests</div>
+            <div class="gov-agency-bullet">Time-of-day truck patterns for logistics auditing</div>
+            <div class="gov-agency-bullet">Corridor-level data for toll compliance cross-check</div>
+          </div>
+          <button class="gov-agency-btn" data-modal="agency-taj">View Data Package →</button>
+        </div>
+
+        <div class="gov-agency-card" data-agency="jutc">
+          <div class="gov-agency-top">
+            <div class="gov-agency-abbr" style="color:#AB47BC">JUTC</div>
+            <div class="gov-agency-name">Jamaica Urban Transit Co.</div>
+          </div>
+          <div class="gov-agency-metric">
+            <span class="gov-agency-val" id="gov-jutc-metric">—</span>
+            <span class="gov-agency-unit">buses detected today</span>
+          </div>
+          <div class="gov-agency-bullets">
+            <div class="gov-agency-bullet">Bus frequency at monitored junctions (headway analysis)</div>
+            <div class="gov-agency-bullet">AM/PM peak commuter flow windows</div>
+            <div class="gov-agency-bullet">Route optimisation data — actual vs scheduled frequency</div>
+          </div>
+          <button class="gov-agency-btn" data-modal="agency-jutc">View Data Package →</button>
+        </div>
+
+        <div class="gov-agency-card" data-agency="tourism">
+          <div class="gov-agency-top">
+            <div class="gov-agency-abbr" style="color:#FFD600">JTB</div>
+            <div class="gov-agency-name">Jamaica Tourism Board</div>
+          </div>
+          <div class="gov-agency-metric">
+            <span class="gov-agency-val" id="gov-tourism-metric">—</span>
+            <span class="gov-agency-unit">verified daily impressions</span>
+          </div>
+          <div class="gov-agency-bullets">
+            <div class="gov-agency-bullet">Airport corridor volume + tour bus frequency</div>
+            <div class="gov-agency-bullet">Visitor mobility patterns by time of day</div>
+            <div class="gov-agency-bullet">Congestion hotspots affecting tourist routes</div>
+          </div>
+          <button class="gov-agency-btn" data-modal="agency-tourism">View Data Package →</button>
+        </div>
+
+        <div class="gov-agency-card" data-agency="insurance">
+          <div class="gov-agency-top">
+            <div class="gov-agency-abbr" style="color:#00FF88">INS</div>
+            <div class="gov-agency-name">Insurance Industry</div>
+          </div>
+          <div class="gov-agency-metric">
+            <span class="gov-agency-val" id="gov-ins-metric">—</span>
+            <span class="gov-agency-unit">risk density score</span>
+          </div>
+          <div class="gov-agency-bullets">
+            <div class="gov-agency-bullet">Traffic density × time → accident risk scoring</div>
+            <div class="gov-agency-bullet">High-load period identification per corridor</div>
+            <div class="gov-agency-bullet">Vehicle mix weighting for premium pricing models</div>
+          </div>
+          <button class="gov-agency-btn" data-modal="agency-insurance">View Data Package →</button>
+        </div>
+
+        <div class="gov-agency-card" data-agency="ooh">
+          <div class="gov-agency-top">
+            <div class="gov-agency-abbr" style="color:#00D4FF">OOH</div>
+            <div class="gov-agency-name">Out-of-Home Advertising</div>
+          </div>
+          <div class="gov-agency-metric">
+            <span class="gov-agency-val" id="gov-ooh-metric">—</span>
+            <span class="gov-agency-unit">AI-verified impressions today</span>
+          </div>
+          <div class="gov-agency-bullets">
+            <div class="gov-agency-bullet">AI-counted vehicle passes = guaranteed impressions</div>
+            <div class="gov-agency-bullet">Dwell time data for attention window scoring</div>
+            <div class="gov-agency-bullet">CPM pricing backed by actual traffic count</div>
+          </div>
+          <button class="gov-agency-btn" data-modal="agency-ooh">View Data Package →</button>
+        </div>
+
+      </div>
     </div>
+
+    <!-- ── PANEL: EXPORT ─────────────────────────────────────── -->
+    <div class="gov-panel" id="gov-panel-export">
+      <div class="gov-export-panel">
+        <div class="gov-export-title">EXPORT TRAFFIC DATA</div>
+        <div class="gov-export-form">
+          <div class="gov-export-row">
+            <label class="gov-export-label">DATE RANGE</label>
+            <div class="gov-date-pair">
+              <input type="date" id="gov-exp-from" class="gov-date-input" aria-label="From date">
+              <span class="gov-date-sep">→</span>
+              <input type="date" id="gov-exp-to" class="gov-date-input" aria-label="To date">
+            </div>
+          </div>
+          <div class="gov-export-row">
+            <label class="gov-export-label">INCLUDE FIELDS</label>
+            <div class="gov-export-checks">
+              <label><input type="checkbox" checked name="f-class"> Vehicle Class</label>
+              <label><input type="checkbox" checked name="f-dir"> Direction</label>
+              <label><input type="checkbox" checked name="f-conf"> Confidence</label>
+              <label><input type="checkbox" checked name="f-scene"> Scene Conditions</label>
+              <label><input type="checkbox" checked name="f-dwell"> Dwell Frames</label>
+            </div>
+          </div>
+          <button id="gov-export-dl-btn" class="gov-export-dl-btn">↓ Download CSV</button>
+          <div class="gov-export-note">Login required. Data retained 90 days. Contact us for automated API access or scheduled data feeds.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Detail Modal ──────────────────────────────────────── -->
+    <div id="gov-modal" class="gov-modal hidden" role="dialog" aria-modal="true">
+      <div class="gov-modal-backdrop" id="gov-modal-backdrop"></div>
+      <div class="gov-modal-box">
+        <div class="gov-modal-hdr">
+          <span id="gov-modal-title" class="gov-modal-title"></span>
+          <button id="gov-modal-close" class="gov-modal-close" aria-label="Close">✕</button>
+        </div>
+        <div id="gov-modal-body" class="gov-modal-body"></div>
+      </div>
+    </div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>

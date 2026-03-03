@@ -53,7 +53,8 @@ const AdminMapping = (() => {
   function start(camId) {
     _camId = camId;
 
-    _video  = document.getElementById('mapping-video');
+    // Use admin-video as the live preview source (always available, no extra HLS needed)
+    _video  = document.getElementById('admin-video');
     _canvas = document.getElementById('mapping-canvas');
     if (!_canvas) return;
     _ctx = _canvas.getContext('2d');
@@ -61,7 +62,7 @@ const AdminMapping = (() => {
     _syncSize();
 
     _resizeObs = new ResizeObserver(() => { _syncSize(); _scheduleRender(); });
-    _resizeObs.observe(_video);
+    _resizeObs.observe(_canvas.parentElement || document.body);
 
     _canvas.addEventListener('click',     _onClick);
     _canvas.addEventListener('dblclick',  _onDblClick);
@@ -74,8 +75,13 @@ const AdminMapping = (() => {
 
     _buildToolUI();
     loadMap();
-    _scheduleRender();
-    _startStream();
+
+    // Continuous RAF loop for live video background
+    const _liveLoop = () => {
+      _render();
+      if (_rafId !== null) _rafId = requestAnimationFrame(_liveLoop);
+    };
+    _rafId = requestAnimationFrame(_liveLoop);
   }
 
   function stop() {
@@ -90,8 +96,7 @@ const AdminMapping = (() => {
     _resizeObs = null;
     _hls?.destroy();
     _hls = null;
-    if (_video) { _video.pause(); _video.removeAttribute('src'); _video.load(); }
-    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+    if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
     _wip = null;
     _activeTool = null;
   }
@@ -124,13 +129,33 @@ const AdminMapping = (() => {
 
   // ── Canvas sizing ────────────────────────────────────────────────
   function _syncSize() {
-    if (!_video || !_canvas) return;
-    const w = _video.clientWidth  || _video.getBoundingClientRect().width  || 0;
-    const h = _video.clientHeight || _video.getBoundingClientRect().height || 0;
+    if (!_canvas) return;
+    const wrap = _canvas.parentElement;
+    const w = wrap ? wrap.clientWidth : (_canvas.clientWidth || 640);
+    const adminVid = document.getElementById('admin-video');
+    const ar = (adminVid?.videoWidth && adminVid?.videoHeight)
+      ? adminVid.videoHeight / adminVid.videoWidth
+      : 9 / 16;
+    const h = Math.round(w * ar) || Math.round(w * 9 / 16);
     if (w > 0 && h > 0 && (_canvas.width !== w || _canvas.height !== h)) {
       _canvas.width  = w;
       _canvas.height = h;
+      if (wrap) wrap.style.minHeight = h + 'px';
     }
+  }
+
+  // ── Coordinate bounds (contain-scaled within canvas) ─────────────
+  function _getDrawBounds() {
+    const W = _canvas?.width  || 640;
+    const H = _canvas?.height || 360;
+    const adminVid = document.getElementById('admin-video');
+    if (adminVid?.videoWidth && adminVid?.videoHeight) {
+      const vw = adminVid.videoWidth, vh = adminVid.videoHeight;
+      const scale = Math.min(W / vw, H / vh);
+      const dw = vw * scale, dh = vh * scale;
+      return { x: (W - dw) / 2, y: (H - dh) / 2, w: dw, h: dh };
+    }
+    return { x: 0, y: 0, w: W, h: H };
   }
 
   // ── Load / Save ──────────────────────────────────────────────────
@@ -259,7 +284,7 @@ const AdminMapping = (() => {
       return;
     }
     const info = _typeInfo(_activeTool);
-    const bounds = getContentBounds(_video);
+    const bounds = _getDrawBounds();
     const { cx, cy } = _canvasCoords(e);
     const rel = pixelToContent(cx, cy, bounds);
 
@@ -331,7 +356,7 @@ const AdminMapping = (() => {
 
   function _onMouseMove(e) {
     if (!_video) return;
-    const bounds = getContentBounds(_video);
+    const bounds = _getDrawBounds();
     const { cx, cy } = _canvasCoords(e);
     _mouseContent = pixelToContent(cx, cy, bounds);
 
@@ -362,7 +387,7 @@ const AdminMapping = (() => {
 
   function _hitTestFeature(e) {
     if (!_video) return null;
-    const bounds = getContentBounds(_video);
+    const bounds = _getDrawBounds();
     const { cx, cy } = _canvasCoords(e);
     // Check in reverse order (top feature first)
     for (let i = _features.length - 1; i >= 0; i--) {
@@ -451,17 +476,26 @@ const AdminMapping = (() => {
 
   // ── Render ───────────────────────────────────────────────────────
   function _scheduleRender() {
-    if (_rafId) cancelAnimationFrame(_rafId);
-    _rafId = requestAnimationFrame(_render);
+    // Live loop is already running; render is called every frame.
+    // This is kept for compatibility with event handlers that call it.
   }
 
   function _render() {
     _rafId = null;
-    if (!_ctx || !_canvas || !_video) return;
+    if (!_ctx || !_canvas) return;
     _syncSize();
-    _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
+    const W = _canvas.width, H = _canvas.height;
 
-    const bounds = getContentBounds(_video);
+    // Draw live video background
+    _ctx.fillStyle = '#080C14';
+    _ctx.fillRect(0, 0, W, H);
+    const adminVid = document.getElementById('admin-video');
+    if (adminVid && adminVid.readyState >= 2 && adminVid.videoWidth) {
+      const b = _getDrawBounds();
+      _ctx.drawImage(adminVid, b.x, b.y, b.w, b.h);
+    }
+
+    const bounds = _getDrawBounds();
 
     // Draw saved features
     _features.forEach(f => {

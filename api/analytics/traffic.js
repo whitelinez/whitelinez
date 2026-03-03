@@ -205,20 +205,17 @@ async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO,
 
 async function _globalTotals(SUPABASE_URL, headers, camera_id) {
   try {
-    // Use traffic_daily for fast global sum
-    let url = `${SUPABASE_URL}/rest/v1/traffic_daily?select=total_crossings,car_count,truck_count,bus_count,motorcycle_count&limit=10000`;
+    // vehicle_crossings COUNT(*) — live all-time total, no date restriction.
+    // Supabase returns the count in Content-Range: 0-0/<total>
+    let url = `${SUPABASE_URL}/rest/v1/vehicle_crossings?select=id&limit=1`;
     if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
-    const r = await fetch(url, { headers });
+    const r = await fetch(url, {
+      headers: { ...headers, Prefer: "count=exact" },
+    });
     if (!r.ok) return null;
-    const rows = await r.json();
-    if (!rows || rows.length === 0) return null;
-    return {
-      total:      rows.reduce((s, r) => s + (r.total_crossings || 0), 0),
-      car:        rows.reduce((s, r) => s + (r.car_count || 0), 0),
-      truck:      rows.reduce((s, r) => s + (r.truck_count || 0), 0),
-      bus:        rows.reduce((s, r) => s + (r.bus_count || 0), 0),
-      motorcycle: rows.reduce((s, r) => s + (r.motorcycle_count || 0), 0),
-    };
+    const range = r.headers.get("Content-Range"); // "0-0/12345" or "*"
+    const total = range ? (parseInt(range.split("/")[1]) || 0) : 0;
+    return { total };
   } catch { return null; }
 }
 

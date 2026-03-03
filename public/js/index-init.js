@@ -1753,7 +1753,7 @@ function _connectUserWs(session) {
       }
 
       // ── Summary strip ─────────────────────────────────────────────────────
-      const peakLabel   = _formatPeriodLabel(summary.peak_period, _govGranularity);
+      const peakLabel   = _formatPeriodLabel(summary.peak_period, summary.granularity || _govGranularity);
       const peakVal     = summary.peak_value || 0;
       const heavyPct    = summary.class_pct
         ? Math.round(((summary.class_pct.truck||0) + (summary.class_pct.bus||0))) + "%"
@@ -2428,7 +2428,7 @@ function _connectUserWs(session) {
         const maxV   = Math.max(...totals, 1);
         const colors = totals.map(v => v >= maxV * 0.8 ? "#FF7043" : v >= maxV * 0.5 ? "#FFD600" : "rgba(26,45,66,0.8)");
         const cfg    = { type:"bar", data:{ labels, datasets:[{ data:totals, backgroundColor:colors, borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
-        const peakLabel = _formatPeriodLabel(summary.peak_period, _govGranularity);
+        const peakLabel = _formatPeriodLabel(summary.peak_period, summary.granularity || _govGranularity);
         _showModal("PEAK PERIOD ANALYSIS", `
           <div class="gov-modal-kpi-grid">
             <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${peakLabel}</div><div class="gov-modal-kpi-lbl">Peak Period</div></div>

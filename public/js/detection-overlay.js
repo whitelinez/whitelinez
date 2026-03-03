@@ -9,18 +9,8 @@ const DetectionOverlay = (() => {
   let canvas, ctx, video;
   let _dpr = 1;
   let latestDetections = [];
-  let _detectZone = null;   // {points:[{x,y}]} or null — set by ZoneOverlay on load
   let rafId = null;
-
-  // ── Time-sync queue ───────────────────────────────────────────
-  // Detections arrive ~175ms after captured_at (real-time), but the HLS video
-  // is buffered 2-10s behind. We queue detections with their server timestamp
-  // and hold them until the video catches up to that moment in time.
-  const detectionQueue = [];         // [{ capturedAtMs, detections }], oldest first
-  const QUEUE_MAX_AGE_MS  = 15_000;  // drop entries older than 15s
-  const QUEUE_MATCH_TOL_MS = 800;    // ±800ms — tighter now that lag is stable at ~4s
-  const QUEUE_POLL_MS = 200;         // continuous poll interval (ms) independent of WS
-  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v6";
+  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v4";
   let pixiApp = null;
   let pixiEnabled = false;
   let isMobileClient = false;
@@ -33,18 +23,24 @@ const DetectionOverlay = (() => {
   let ghostSeq = 0;
   const laneSmoothing = new Map();
 
+  const _trailBuffer = new Map(); // track_id → [{cx, cy, x1, y1, x2, y2}] max 8
+  let _flashUntil = 0; // timestamp ms — crossing flash active until this time
+  let _lastNewCrossings = 0;
+
+  const CLS_ICON_MAP = { car: "🚗", truck: "🚛", bus: "🚌", motorcycle: "🏍" };
+
   let settings = {
-    box_style: "corner",
-    line_width: 1.5,
-    fill_alpha: 0.0,
-    max_boxes: 20,
+    box_style: "solid",
+    line_width: 2,
+    fill_alpha: 0.10,
+    max_boxes: 10,
     show_labels: true,
     detect_zone_only: true,
     outside_scan_enabled: true,
-    outside_scan_min_conf: 0.50,
-    outside_scan_max_boxes: 8,
+    outside_scan_min_conf: 0.45,
+    outside_scan_max_boxes: 25,
     outside_scan_hold_ms: 220,
-    outside_scan_show_labels: false,
+    outside_scan_show_labels: true,
     ground_overlay_enabled: true,
     show_ground_plane_public: false,
     ground_overlay_alpha: 0.16,
@@ -263,10 +259,9 @@ const DetectionOverlay = (() => {
   }
 
   function drawCornerBox(x, y, w, h, color, lineWidth) {
-    const c = Math.max(6, Math.min(20, Math.floor(Math.min(w, h) * 0.22)));
+    const c = Math.max(6, Math.min(20, Math.floor(Math.min(w, h) * 0.2)));
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
-    ctx.lineCap = 'round';
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(x, y + c); ctx.lineTo(x, y); ctx.lineTo(x + c, y);
@@ -274,83 +269,15 @@ const DetectionOverlay = (() => {
     ctx.moveTo(x + w, y + h - c); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - c, y + h);
     ctx.moveTo(x + c, y + h); ctx.lineTo(x, y + h); ctx.lineTo(x, y + h - c);
     ctx.stroke();
-    ctx.lineCap = 'butt';
   }
 
   function drawCornerBoxPixi(g, x, y, w, h, colorNum, lineWidth) {
-    const c = Math.max(6, Math.min(20, Math.floor(Math.min(w, h) * 0.22)));
-    g.lineStyle(lineWidth, colorNum, 1, 0.5, true);
+    const c = Math.max(6, Math.min(20, Math.floor(Math.min(w, h) * 0.2)));
+    g.lineStyle(lineWidth, colorNum, 1);
     g.moveTo(x, y + c); g.lineTo(x, y); g.lineTo(x + c, y);
     g.moveTo(x + w - c, y); g.lineTo(x + w, y); g.lineTo(x + w, y + c);
     g.moveTo(x + w, y + h - c); g.lineTo(x + w, y + h); g.lineTo(x + w - c, y + h);
     g.moveTo(x + c, y + h); g.lineTo(x, y + h); g.lineTo(x, y + h - c);
-  }
-
-  // ── Outside-scan reticle (unvalidated vehicles) ───────────────
-  // Thin pulsing cyan crosshair corners — "I see you but not counting yet"
-  function _drawScanReticle(det, bounds) {
-    const p1 = contentToPixel(det.x1, det.y1, bounds);
-    const p2 = contentToPixel(det.x2, det.y2, bounds);
-    const bw = p2.x - p1.x, bh = p2.y - p1.y;
-    if (bw < 4 || bh < 4) return;
-    const t = Date.now() / 1000;
-    const pulse = 0.3 + 0.25 * Math.sin(t * Math.PI * 2.2);
-    const tc = Math.max(5, Math.min(16, Math.floor(Math.min(bw, bh) * 0.20)));
-    ctx.save();
-    ctx.strokeStyle = `rgba(0,212,255,${pulse})`;
-    ctx.lineWidth = 1;
-    ctx.lineCap = 'round';
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    // TL
-    ctx.moveTo(p1.x, p1.y + tc); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p1.x + tc, p1.y);
-    // TR
-    ctx.moveTo(p2.x - tc, p1.y); ctx.lineTo(p2.x, p1.y); ctx.lineTo(p2.x, p1.y + tc);
-    // BR
-    ctx.moveTo(p2.x, p2.y - tc); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p2.x - tc, p2.y);
-    // BL
-    ctx.moveTo(p1.x + tc, p2.y); ctx.lineTo(p1.x, p2.y); ctx.lineTo(p1.x, p2.y - tc);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // ── Inside-zone validation box (being confirmed/counted) ──────
-  // Glowing corner brackets with label — "this one counts"
-  function _drawValidationBox(det, bounds) {
-    const p1 = contentToPixel(det.x1, det.y1, bounds);
-    const p2 = contentToPixel(det.x2, det.y2, bounds);
-    const bw = p2.x - p1.x, bh = p2.y - p1.y;
-    if (bw < 4 || bh < 4) return;
-    const color = settings.colors?.[det.cls] || '#66BB6A';
-    const lw = Math.max(1.5, Number(settings.line_width || 2));
-    ctx.save();
-    // Glow halo
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.lineCap = 'round';
-    ctx.setLineDash([]);
-    drawCornerBox(p1.x, p1.y, bw, bh, color, lw);
-    ctx.shadowBlur = 0;
-    // Label: "Car 73%"
-    const CLS_NAME = { car: 'Car', truck: 'Truck', bus: 'Bus', motorcycle: 'Moto' };
-    const clsStr = CLS_NAME[String(det?.cls || '').toLowerCase()] || 'Vehicle';
-    const confStr = det.conf != null ? ` ${Math.round(Number(det.conf) * 100)}%` : '';
-    const label = clsStr + confStr;
-    const fs = isMobileClient ? 9 : 10;
-    ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
-    const tw = ctx.measureText(label).width;
-    const px = 4, py = 2;
-    const tx = p1.x, ty = p1.y - (fs + py * 2);
-    const ty2 = ty >= 0 ? ty : p1.y;
-    ctx.fillStyle = color;
-    ctx.fillRect(tx, ty2, tw + px * 2, fs + py * 2);
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(label, tx + px, ty2 + py);
-    ctx.restore();
   }
 
   function canUseUnsafeEval() {
@@ -546,7 +473,7 @@ const DetectionOverlay = (() => {
         out.push(det);
         continue;
       }
-      const alpha = 0.28;  // lower = smoother box coasting between frames
+      const alpha = 0.42;
       const sm = {
         ...det,
         x1: prev.x1 + (det.x1 - prev.x1) * alpha,
@@ -597,25 +524,20 @@ const DetectionOverlay = (() => {
     else ctx.strokeRect(p1.x, p1.y, bw, bh);
 
     if (showLabels) {
-      const CLS_NAME = { car: 'Car', truck: 'Truck', bus: 'Bus', motorcycle: 'Moto' };
-      const clsStr = labelText || CLS_NAME[String(det?.cls || '').toLowerCase()] || String(det?.cls || 'Vehicle');
-      const confStr = (det.conf != null && !labelText) ? ` ${Math.round(Number(det.conf) * 100)}%` : '';
-      const txt = clsStr + confStr;
+      const defaultConf = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
+      const label = labelText || `${String(det?.cls || "vehicle").toUpperCase()}${defaultConf}`;
       ctx.setLineDash([]);
-      const fs = isMobileClient ? 9 : 10;
-      ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      const tw = ctx.measureText(txt).width;
-      const px = 4, py = 2;
-      const tagW = tw + px * 2;
-      const tagH = fs + py * 2;
-      const tx = p1.x;
-      const ty = (p1.y - tagH >= 0) ? p1.y - tagH : p1.y;
-      ctx.fillStyle = hexToRgba(color, 0.88);
-      ctx.fillRect(tx, ty, tagW, tagH);
-      ctx.fillStyle = '#000000';
-      ctx.fillText(txt, tx + px, ty + py);
+      ctx.font = "11px Inter, sans-serif";
+      const padX = 6;
+      const padY = 4;
+      const tw = Math.max(30, Math.ceil(ctx.measureText(label).width + padX * 2));
+      const th = 18;
+      const lx = p1.x;
+      const ly = Math.max(2, p1.y - th - 2);
+      ctx.fillStyle = hexToRgba(color, opts.labelBgAlpha ?? 0.85);
+      ctx.fillRect(lx, ly, tw, th);
+      ctx.fillStyle = opts.labelColor || "#0d1118";
+      ctx.fillText(label, lx + padX, ly + th - padY);
     }
   }
 
@@ -655,76 +577,26 @@ const DetectionOverlay = (() => {
 
     if (!showLabels) return;
 
-    const CLS_NAME = { car: 'Car', truck: 'Truck', bus: 'Bus', motorcycle: 'Moto' };
-    const clsStr = labelText || CLS_NAME[String(det?.cls || '').toLowerCase()] || String(det?.cls || 'Vehicle');
-    const confStr = (det.conf != null && !labelText) ? ` ${Math.round(Number(det.conf) * 100)}%` : '';
-    const labelStr = clsStr + confStr;
-
-    // background pill via Graphics
-    const bg = getPixiGraphic();
-    if (bg) {
-      const fs = 10;
-      const px = 4, py = 2;
-      const approxCharW = fs * 0.62;
-      const tagW = labelStr.length * approxCharW + px * 2;
-      const tagH = fs + py * 2;
-      const ty = (p1.y - tagH >= 0) ? p1.y - tagH : p1.y;
-      bg.beginFill(colorNum, 0.88);
-      bg.drawRect(p1.x, ty, tagW, tagH);
-      bg.endFill();
-    }
-
+    const defaultConf = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
+    const label = labelText || `${String(det?.cls || "vehicle").toUpperCase()}${defaultConf}`;
     const txt = getPixiText();
     if (!txt) return;
-    const fs = 10;
-    const py = 2;
-    const ty = (p1.y - (fs + py * 2) >= 0) ? p1.y - (fs + py * 2) : p1.y;
-    txt.text = labelStr;
-    txt.style.fill = 0x000000;
-    txt.style.fontWeight = '700';
-    txt.x = p1.x + 4;
-    txt.y = ty + py;
-  }
 
-  /**
-   * Returns how many ms the video display lags behind the live edge.
-   * Used to compute which detection frame to render for the currently shown frame.
-   */
-  function estimateVideoLagMs() {
-    if (!video) return 0;
-    try {
-      if (!video.buffered.length) return 0;
-      const liveEdge = video.buffered.end(video.buffered.length - 1);
-      return Math.max(0, (liveEdge - video.currentTime) * 1000);
-    } catch { return 0; }
-  }
+    txt.text = label;
+    txt.style.fill = hexToPixi(opts.labelColor || "#0d1118");
 
-  /**
-   * Picks the best matching entry from the detectionQueue for the video's
-   * current playback position. Prunes entries too old to be relevant.
-   * Falls back to latestDetections if the queue is empty or no match found.
-   */
-  function _pickFromQueue() {
-    if (!detectionQueue.length) return latestDetections;
+    const padX = 6;
+    const th = 18;
+    const tw = Math.max(30, Math.ceil(txt.width + padX * 2));
+    const lx = p1.x;
+    const ly = Math.max(2, p1.y - th - 2);
 
-    const lagMs    = estimateVideoLagMs();
-    const targetMs = Date.now() - lagMs;
+    g.beginFill(colorNum, Math.max(0, Math.min(1, Number(opts.labelBgAlpha ?? 0.85))));
+    g.drawRect(lx, ly, tw, th);
+    g.endFill();
 
-    // Prune entries older than the target window
-    const cutoff = targetMs - QUEUE_MAX_AGE_MS;
-    while (detectionQueue.length > 1 && detectionQueue[0].capturedAtMs < cutoff) {
-      detectionQueue.shift();
-    }
-
-    // Find entry whose captured_at is closest to the video's current moment
-    let best = detectionQueue[0];
-    let bestDelta = Math.abs(best.capturedAtMs - targetMs);
-    for (let i = 1; i < detectionQueue.length; i++) {
-      const d = Math.abs(detectionQueue[i].capturedAtMs - targetMs);
-      if (d < bestDelta) { bestDelta = d; best = detectionQueue[i]; }
-    }
-
-    return bestDelta <= QUEUE_MATCH_TOL_MS ? best.detections : latestDetections;
+    txt.x = lx + padX;
+    txt.y = ly + 2;
   }
 
   function init(videoEl, canvasEl) {
@@ -756,60 +628,32 @@ const DetectionOverlay = (() => {
 
     window.addEventListener("resize", syncSize);
     video.addEventListener("loadedmetadata", syncSize);
-    if (window.ResizeObserver) {
-      new ResizeObserver(syncSize).observe(video);
-    }
 
     window.addEventListener("count:update", (e) => {
       latestDetections = e.detail?.detections ?? [];
-
-      // Push into time-sync queue so the poll loop can delay rendering to match video
-      const capturedAtMs = e.detail?.captured_at ? Date.parse(e.detail.captured_at) : NaN;
-      if (Number.isFinite(capturedAtMs)) {
-        detectionQueue.push({ capturedAtMs, detections: latestDetections });
-      }
-
-      // Debounce: only mark dirty when the detection set actually changed.
-      // The continuous poll loop drives rendering; WS events just feed the queue.
+      const nc = Number(e.detail?.new_crossings || 0);
+      if (nc > 0) _flashUntil = Date.now() + 500;
+      _lastNewCrossings = nc;
       const nextKey = buildFrameKey(latestDetections);
       if (nextKey !== lastFrameKey) {
-        lastFrameKey = nextKey;
         forceRender = true;
+        lastFrameKey = nextKey;
+      }
+      if (!rafId) {
+        rafId = requestAnimationFrame(renderFrame);
       }
     });
 
     window.addEventListener("detection:settings-update", (e) => {
       applySettings(e.detail);
-      forceRender = true;
+      if (!rafId) rafId = requestAnimationFrame(renderFrame);
     });
-
-    // ── Continuous queue poll ────────────────────────────────────
-    // Runs every QUEUE_POLL_MS regardless of WS cadence so the canvas
-    // re-evaluates _pickFromQueue() as video playback advances.
-    _startQueuePoll();
-  }
-
-  let _pollTimer = null;
-  function _startQueuePoll() {
-    if (_pollTimer) return;
-    _pollTimer = setInterval(() => {
-      const picked = _pickFromQueue();
-      const key    = buildFrameKey(picked);
-      if (key !== lastFrameKey) {
-        lastFrameKey = key;
-        forceRender  = true;
-      }
-      if (forceRender && !rafId) {
-        rafId = requestAnimationFrame(renderFrame);
-      }
-    }, QUEUE_POLL_MS);
   }
 
   function renderFrame() {
     rafId = null;
     if (!forceRender) return;
-    draw(_pickFromQueue());
-    // forceRender cleared inside draw()
+    draw(latestDetections);
   }
 
   function syncSize() {
@@ -861,21 +705,118 @@ const DetectionOverlay = (() => {
       else laneDetections.push(det);
     }
 
-    const smoothed  = smoothLaneDetections(laneDetections, Date.now());
-    const liveLane  = smoothed.slice(0, laneMaxBoxes);
-    if (!pixiEnabled && ctx) {
-      for (const det of liveLane) {
-        _drawValidationBox(det, bounds);
+    const liveLane = laneDetections.slice(0, laneMaxBoxes);
+    const now = Date.now();
+    const flashActive = now < _flashUntil;
+
+    // Update trail buffer for in-zone detections with tracker_id
+    for (const det of liveLane) {
+      const tid = Number(det?.tracker_id);
+      if (!Number.isFinite(tid) || tid < 0) continue;
+      const cx = (Number(det.x1 || 0) + Number(det.x2 || 0)) * 0.5;
+      const cy = (Number(det.y1 || 0) + Number(det.y2 || 0)) * 0.5;
+      if (!_trailBuffer.has(tid)) _trailBuffer.set(tid, []);
+      const trail = _trailBuffer.get(tid);
+      trail.push({ cx, cy, x1: det.x1, y1: det.y1, x2: det.x2, y2: det.y2 });
+      if (trail.length > 8) trail.shift();
+    }
+    // Evict stale trails (tracks not seen this frame)
+    const activeThisFrame = new Set(liveLane.map(d => Number(d?.tracker_id)));
+    for (const tid of [..._trailBuffer.keys()]) {
+      if (!activeThisFrame.has(tid)) {
+        const trail = _trailBuffer.get(tid);
+        trail.shift();
+        if (trail.length === 0) _trailBuffer.delete(tid);
       }
-    } else {
+    }
+
+    // Draw trails (ghost boxes) before current boxes
+    if (!isMobileClient && ctx) {
       for (const det of liveLane) {
-        drawDetectionBox(det, bounds, {
-          style: settings.box_style,
-          lineWidth: Math.max(1, Number(settings.line_width || 2)),
-          alpha: 0,
-          fill: false,
-          showLabels: settings.show_labels !== false,
-        });
+        const tid = Number(det?.tracker_id);
+        if (!Number.isFinite(tid) || tid < 0) continue;
+        const trail = _trailBuffer.get(tid);
+        if (!trail || trail.length < 2) continue;
+        const color = settings.colors?.[det.cls] || "#66BB6A";
+        for (let gi = 0; gi < trail.length - 1; gi++) {
+          const alpha = 0.03 + (gi / (trail.length - 1)) * 0.12;
+          const ghostDet = { ...det, x1: trail[gi].x1, y1: trail[gi].y1, x2: trail[gi].x2, y2: trail[gi].y2 };
+          drawDetectionBox(ghostDet, bounds, {
+            style: "solid",
+            lineWidth: 0.5,
+            alpha: 0,
+            fill: false,
+            showLabels: false,
+            color,
+            labelBgAlpha: 0,
+          });
+        }
+      }
+    }
+
+    for (const det of liveLane) {
+      const icon = CLS_ICON_MAP[String(det?.cls || "").toLowerCase()] || "";
+      const confStr = Number(det?.conf || 0) > 0 ? ` ${(Number(det.conf) * 100).toFixed(0)}%` : "";
+      const label = `${String(det?.cls || "vehicle").toUpperCase()}${confStr}`;
+      const color = settings.colors?.[det.cls] || "#66BB6A";
+
+      // Crossing flash: bright outer glow
+      if (flashActive && ctx) {
+        const p1 = contentToPixel(det.x1, det.y1, bounds);
+        const p2 = contentToPixel(det.x2, det.y2, bounds);
+        const bw = p2.x - p1.x;
+        const bh = p2.y - p1.y;
+        if (bw >= 4 && bh >= 4 && ctx) {
+          ctx.save();
+          ctx.strokeStyle = "rgba(255,255,255,0.25)";
+          ctx.lineWidth = 6;
+          ctx.setLineDash([]);
+          ctx.strokeRect(p1.x - 3, p1.y - 3, bw + 6, bh + 6);
+          ctx.restore();
+        }
+      }
+
+      drawDetectionBox(det, bounds, {
+        style: settings.box_style,
+        lineWidth: Math.max(1, Number(settings.line_width || 2)),
+        alpha: 0,
+        fill: false,
+        showLabels: settings.show_labels !== false,
+        labelText: label,
+        labelBgAlpha: 0.72,
+        labelColor: "#0d1118",
+      });
+
+      // Draw direction arrow from trail
+      const tid = Number(det?.tracker_id);
+      if (!isMobileClient && Number.isFinite(tid) && tid >= 0 && ctx) {
+        const trail = _trailBuffer.get(tid);
+        if (trail && trail.length >= 2) {
+          const oldest = trail[0];
+          const newest = trail[trail.length - 1];
+          const dx = newest.cx - oldest.cx;
+          const dy = newest.cy - oldest.cy;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 0.005) {
+            const nx = dx / len;
+            const ny = dy / len;
+            const arrowLen = 14;
+            const tip = contentToPixel(newest.cx, newest.cy, bounds);
+            const tail = { x: tip.x - nx * arrowLen, y: tip.y - ny * arrowLen };
+            const aw = 5;
+            const px = -ny * aw;
+            const py = nx * aw;
+            ctx.save();
+            ctx.fillStyle = hexToRgba(color, 0.85);
+            ctx.beginPath();
+            ctx.moveTo(tip.x, tip.y);
+            ctx.lineTo(tail.x + px, tail.y + py);
+            ctx.lineTo(tail.x - px, tail.y - py);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+        }
       }
     }
 
@@ -884,7 +825,7 @@ const DetectionOverlay = (() => {
       return;
     }
 
-    const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.20));
+    const minConf = Math.max(0, Math.min(1, Number(settings.outside_scan_min_conf) || 0.45));
     const outsideHardCap = isMobileClient ? 24 : 35;
     const outsideMax = Math.max(1, Math.min(outsideHardCap, Number(settings.outside_scan_max_boxes) || 25));
     const fresh = outsideDetections
@@ -892,64 +833,23 @@ const DetectionOverlay = (() => {
       .sort((a, b) => Number(b?.conf || 0) - Number(a?.conf || 0))
       .slice(0, outsideMax);
 
-    if (fresh.length && !pixiEnabled && ctx) {
-      for (const det of fresh) {
-        _drawScanReticle(det, bounds);
-      }
-    } else if (fresh.length && pixiEnabled) {
-      for (const det of fresh) {
-        drawDetectionBox(det, bounds, {
-          style: "dashed",
-          lineWidth: 1.0,
-          alpha: 0,
-          fill: false,
-          showLabels: false,
-        });
-      }
+    for (const det of fresh) {
+      drawDetectionBox(det, bounds, {
+        style: "dashed",
+        lineWidth: 1.0,
+        alpha: 0,
+        fill: false,
+        showLabels: settings.outside_scan_show_labels === true,
+        labelText: "SCAN",
+        labelBgAlpha: 0.10,
+        labelColor: "#D7E6F5",
+      });
     }
     if (pixiEnabled) endPixiFrame();
     forceRender = false;
   }
 
-  function clearDetections() {
-    latestDetections = [];
-    detectionQueue.length = 0;  // flush time-sync queue for old camera
-    lastFrameKey = "";
-    forceRender = true;
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(renderFrame);
-  }
-
-  // Called by ZoneOverlay when it loads a new camera's detect_zone
-  function setDetectZone(zone) {
-    _detectZone = zone || null;
-  }
-
-  // Build a canvas clip path from the detect zone polygon and apply it.
-  // Returns true if clipping was applied (caller must ctx.restore() after drawing).
-  function _buildDetectZonePath(bounds) {
-    if (!ctx || !_detectZone) return false;
-    let pts = null;
-    if (Array.isArray(_detectZone.points) && _detectZone.points.length >= 3) {
-      pts = _detectZone.points.map(p => contentToPixel(p.x, p.y, bounds));
-    } else if (_detectZone.x3 !== undefined) {
-      pts = [
-        contentToPixel(_detectZone.x1, _detectZone.y1, bounds),
-        contentToPixel(_detectZone.x2, _detectZone.y2, bounds),
-        contentToPixel(_detectZone.x3, _detectZone.y3, bounds),
-        contentToPixel(_detectZone.x4, _detectZone.y4, bounds),
-      ];
-    }
-    if (!pts || pts.length < 3) return false;
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-    ctx.closePath();
-    ctx.clip();
-    return true;
-  }
-
-  return { init, clearDetections, setDetectZone };
+  return { init };
 })();
 
 window.DetectionOverlay = DetectionOverlay;

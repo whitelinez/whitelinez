@@ -9572,7 +9572,43 @@ button {
 }
 .gov-hdr-left  { display: flex; align-items: center; gap: 12px; }
 .gov-hdr-right { display: flex; align-items: center; gap: 14px; }
-.gov-hdr-logo  { height: 34px; width: auto; display: block; flex-shrink: 0; }
+
+/* Logo stack in header */
+.gov-hdr-logo-wrap {
+  position: relative; width: 38px; height: 38px; flex-shrink: 0;
+}
+.gov-hdr-logo {
+  position: relative; z-index: 1;
+  width: 38px; height: 38px; object-fit: contain; display: block;
+}
+.gov-hdr-aiframe {
+  position: absolute; inset: 0; z-index: 2;
+  width: 100%; height: 100%; object-fit: contain;
+  animation: gov-hdr-aiframe-scan 4s ease-in-out infinite;
+  transform-origin: center center;
+}
+@keyframes gov-hdr-aiframe-scan {
+  0%   { opacity: 0.45; transform: scale(1.0)  rotate(0deg);  filter: brightness(1.0) drop-shadow(0 0 3px rgba(0,212,255,0.3)); }
+  18%  { opacity: 0.95; transform: scale(1.10) rotate(6deg);  filter: brightness(1.6) drop-shadow(0 0 9px rgba(0,212,255,0.8)); }
+  32%  { opacity: 0.55; transform: scale(1.0)  rotate(0deg);  filter: brightness(1.0) drop-shadow(0 0 3px rgba(0,212,255,0.3)); }
+  47%  { opacity: 1.0;  transform: scale(1.06) rotate(-4deg); filter: brightness(2.0) drop-shadow(0 0 13px rgba(0,212,255,1)); }
+  58%  { opacity: 0.65; transform: scale(1.0)  rotate(0deg);  filter: brightness(1.1) drop-shadow(0 0 4px rgba(0,212,255,0.4)); }
+  74%  { opacity: 0.90; transform: scale(1.08) rotate(3deg);  filter: brightness(1.4) drop-shadow(0 0 7px rgba(0,212,255,0.65)); }
+  88%  { opacity: 1.0;  transform: scale(1.0)  rotate(0deg);  filter: brightness(1.7) drop-shadow(0 0 10px rgba(0,212,255,0.85)); }
+  100% { opacity: 0.45; transform: scale(1.0)  rotate(0deg);  filter: brightness(1.0) drop-shadow(0 0 3px rgba(0,212,255,0.3)); }
+}
+
+/* Date display */
+.gov-hdr-dates {
+  display: flex; flex-direction: column; gap: 2px;
+  padding-right: 14px; border-right: 1px solid #e2e8f0;
+}
+.gov-hdr-date-row {
+  display: flex; align-items: center; gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+}
+.gov-hdr-date-lbl { font-size: 8px; color: #94a3b8; letter-spacing: 0.12em; }
+.gov-hdr-date-val { font-size: 9px; font-weight: 700; color: #0f1c2e; letter-spacing: 0.04em; }
 .gov-title {
   font-family: "Inter", "Archivo", sans-serif;
   font-size: 15px; font-weight: 800; letter-spacing: 0.02em;

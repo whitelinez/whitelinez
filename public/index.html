@@ -80,7 +80,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" />
   <meta name="theme-color" content="#080C14" />
-  <link rel="stylesheet" href="/css/main.css?v=11" />
+  <link rel="stylesheet" href="/css/main.css?v=12" />
   <script src="/js/vercel-analytics-init.js"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -814,13 +814,20 @@
     <!-- Header -->
     <div class="gov-hdr">
       <div class="gov-hdr-left">
-        <img src="/img/iconinframes.png" alt="AI Traffic Jamaica" class="gov-hdr-logo" />
+        <div class="gov-hdr-logo-wrap">
+          <img src="/img/iconinframes.png" alt="AI Traffic Jamaica" class="gov-hdr-logo" aria-hidden="true">
+          <img src="/img/aiframes.png" alt="" class="gov-hdr-aiframe" aria-hidden="true">
+        </div>
         <div>
           <div class="gov-title">TRAFFIC INTELLIGENCE</div>
           <div class="gov-subtitle" id="gov-cam-subtitle">Initialising…</div>
         </div>
       </div>
       <div class="gov-hdr-right">
+        <div class="gov-hdr-dates">
+          <div class="gov-hdr-date-row"><span class="gov-hdr-date-lbl">SINCE</span><span class="gov-hdr-date-val">3 MAR 2026</span></div>
+          <div class="gov-hdr-date-row"><span class="gov-hdr-date-lbl">TODAY</span><span class="gov-hdr-date-val" id="gov-hdr-today">—</span></div>
+        </div>
         <div class="gov-hdr-stats">
           <span class="gov-hdr-stat"><span id="gov-hdr-total" class="gov-hdr-num">—</span><span class="gov-hdr-lbl">today</span></span>
           <span class="gov-hdr-sep">|</span>

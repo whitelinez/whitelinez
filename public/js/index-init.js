@@ -1424,6 +1424,8 @@ function _connectUserWs(session) {
       } catch {}
     }
     txt("gov-cam-subtitle", `Live Feed · ${_camName}`);
+    const _todayFmt = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase();
+    txt("gov-hdr-today", _todayFmt);
     txt("gov-cam-name", _camName);
     txt("gov-vid-cam", _camName);
 

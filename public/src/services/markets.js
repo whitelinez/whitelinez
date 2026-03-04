@@ -40,12 +40,16 @@ export const Markets = (() => {
     // Cache node lists once; reuse on every click (avoids 3× querySelectorAll per click)
     const tabs   = document.querySelectorAll(".tab-btn");
     const panels = document.querySelectorAll(".tab-content");
+    // Init aria-hidden on inactive panels so accessibility trees skip hidden content
+    panels.forEach((c) => { if (!c.classList.contains("active")) c.setAttribute("aria-hidden", "true"); });
     tabs.forEach((btn) => {
       btn.addEventListener("click", () => {
         tabs.forEach((b) => b.classList.remove("active"));
-        panels.forEach((c) => c.classList.remove("active"));
+        panels.forEach((c) => { c.classList.remove("active"); c.setAttribute("aria-hidden", "true"); });
         btn.classList.add("active");
-        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add("active");
+        const activePanel = document.getElementById(`tab-${btn.dataset.tab}`);
+        activePanel?.classList.add("active");
+        activePanel?.removeAttribute("aria-hidden");
       });
     });
   }

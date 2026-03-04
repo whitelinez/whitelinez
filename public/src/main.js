@@ -221,7 +221,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   // Auto-open auth modal when redirected from /login
   if (window.location.search.includes("login=1")) {
     history.replaceState(null, "", window.location.pathname);
-    document.getElementById("btn-login")?.click();
+    document.getElementById("btn-open-login")?.click();
   }
 
   const session = await Auth.getSession();

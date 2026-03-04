@@ -285,7 +285,7 @@
           <!-- Right side: total + status -->
           <div class="cw-total-wrap">
             <span class="cw-total-label">TOTAL</span>
-            <span id="cw-total" class="cw-total-val">-</span>
+            <span id="cw-total" class="cw-total-val">0</span>
             <div id="cw-ws-dot" class="cw-ws-dot cw-ws-err"></div>
           </div>
 
@@ -350,15 +350,15 @@
 
     <aside class="sidebar">
       <div class="sidebar-tabs">
-        <button class="tab-btn active" data-tab="markets">
+        <button class="tab-btn active" data-tab="markets" role="tab" aria-label="Play">
           <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           PLAY
         </button>
-        <button class="tab-btn" data-tab="leaderboard" aria-label="Leaderboard">
+        <button class="tab-btn" data-tab="leaderboard" role="tab" aria-label="Leaderboard">
           <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
           RANKINGS
         </button>
-        <button class="tab-btn" data-tab="chat" aria-label="Chat">
+        <button class="tab-btn" data-tab="chat" role="tab" aria-label="Chat">
           <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           LIVE <span id="chat-tab-indicator" class="tab-indicator hidden" aria-label="new chat messages">0</span>
         </button>

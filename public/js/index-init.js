@@ -1537,26 +1537,23 @@ function _connectUserWs(session) {
     const fps   = p.fps != null ? Number(p.fps).toFixed(1) : null;
     const profile = p.runtime_profile || p.traffic_load || null;
 
-    // Header strip
-    txt("gov-hdr-total", total.toLocaleString());
+    // Header strip — only use WS total until analytics loads
     txt("gov-hdr-fps",   fps ?? "—");
     txt("gov-hdr-load",  profile ? profile.replace(/_/g, " ").toUpperCase() : "—");
+    if (!_dbKpisLoaded) txt("gov-hdr-total", total.toLocaleString());
 
-    // KPI cards — total + in only from WS before DB analytics load
-    // count_out always comes from WS (vehicle_crossings table is often empty so DB returns 0)
+    // KPI cards + flow sidebar — WS only before DB analytics loads
     if (!_dbKpisLoaded) {
       txt("gov-kpi-total", total.toLocaleString());
-      txt("gov-kpi-in",  p.count_in  != null ? Number(p.count_in).toLocaleString()  : "—");
+      txt("gov-kpi-in",    p.count_in  != null ? Number(p.count_in).toLocaleString()  : "—");
+      txt("gov-inbound",   p.count_in  != null ? Number(p.count_in).toLocaleString()  : "—");
     }
     // Outbound: use Traffic Intelligence turnings total once loaded; fall back to WS count_line value
     if (_govExitTotal === null) {
-      txt("gov-kpi-out", p.count_out != null ? Number(p.count_out).toLocaleString() : "—");
+      txt("gov-kpi-out",  p.count_out != null ? Number(p.count_out).toLocaleString() : "—");
       txt("gov-outbound", p.count_out != null ? Number(p.count_out).toLocaleString() : "—");
     }
     // gov-kpi-peak is filled from analytics data
-
-    // Flow sidebar
-    txt("gov-inbound",  p.count_in  != null ? Number(p.count_in).toLocaleString()  : "—");
 
     // Scene
     const scene = [p.scene_lighting, p.scene_weather].filter(Boolean).join(" / ") || p.scene_lighting || "—";
@@ -1733,13 +1730,11 @@ function _connectUserWs(session) {
       const totalPeriod = summary.period_total ?? rows.reduce((a, r) => a + (r.total || 0), 0);
       const totalIn  = rows.reduce((a, r) => a + (r.in  || 0), 0);
       const totalOut = rows.reduce((a, r) => a + (r.out || 0), 0);
-      txt("gov-kpi-total", Number(totalPeriod).toLocaleString());
-      if (totalIn  > 0) txt("gov-kpi-in",  totalIn.toLocaleString());
-      // gov-kpi-out is always from WS (vehicle_crossings often empty → totalOut=0)
-      // Only update it from DB if DB actually has direction data
+      txt("gov-kpi-total",  Number(totalPeriod).toLocaleString());
+      txt("gov-hdr-total",  Number(totalPeriod).toLocaleString());
+      if (totalIn  > 0) { txt("gov-kpi-in",  totalIn.toLocaleString()); txt("gov-inbound",  totalIn.toLocaleString()); }
       if (totalOut > 0) { txt("gov-kpi-out", totalOut.toLocaleString()); txt("gov-outbound", totalOut.toLocaleString()); }
-      if (totalIn  > 0) txt("gov-inbound",  totalIn.toLocaleString());
-      _dbKpisLoaded = true;  // stop WS from overwriting total/in with session counter
+      _dbKpisLoaded = true;  // stop WS from overwriting total/in/hdr with session counter
 
       // ── Update class breakdown bars from DB class totals ──────────────────
       const ct = summary.class_totals || {};
@@ -1914,8 +1909,9 @@ function _connectUserWs(session) {
 
       // Period total = zone-tracked movements (more accurate than count_line)
       if (tm.period?.total_movements > 0) {
-        txt("gov-sum-total", Number(tm.period.total_movements).toLocaleString());
-        txt("gov-kpi-total", Number(tm.period.total_movements).toLocaleString());
+        txt("gov-sum-total",  Number(tm.period.total_movements).toLocaleString());
+        txt("gov-kpi-total",  Number(tm.period.total_movements).toLocaleString());
+        txt("gov-hdr-total",  Number(tm.period.total_movements).toLocaleString());
       }
 
       // Queue depth

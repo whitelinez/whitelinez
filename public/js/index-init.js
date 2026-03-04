@@ -1626,6 +1626,46 @@ function _connectUserWs(session) {
       y: { grid: { color: "#e2e8f0" }, ticks: { color: "#64748b", font: { size: 9, family: "JetBrains Mono" } }, beginAtZero: true },
     },
   };
+  // Gov overlay analytics theme — white panels, clean grid, dark tooltip
+  const CHART_GOV = {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 500, easing: "easeOutQuart" },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: "index", intersect: false,
+        backgroundColor: "#0f1c2e",
+        titleColor: "#94a3b8", bodyColor: "#e2e8f0",
+        borderColor: "rgba(2,132,199,0.3)", borderWidth: 1,
+        padding: 10, cornerRadius: 6,
+        titleFont: { family: "JetBrains Mono", size: 8 },
+        bodyFont:  { family: "JetBrains Mono", size: 10 },
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "rgba(226,232,240,0.8)" },
+        border: { display: false },
+        ticks: { color: "#94a3b8", font: { size: 9, family: "JetBrains Mono" }, maxRotation: 0, maxTicksLimit: 8 },
+      },
+      y: {
+        grid: { color: "rgba(226,232,240,0.8)" },
+        border: { display: false },
+        ticks: { color: "#94a3b8", font: { size: 9, family: "JetBrains Mono" } },
+        beginAtZero: true,
+      },
+    },
+  };
+  // Helper: gradient fill using Chart.js 4 chartArea (correct across all DPR/resize)
+  function _govGrad(ctx, colors) {
+    return function(context) {
+      const { chartArea } = context.chart;
+      if (!chartArea) return colors[0];
+      const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+      colors.forEach(([stop, color]) => g.addColorStop(stop, color));
+      return g;
+    };
+  }
 
   // ── Mini donut (LIVE sidebar) ─────────────────────────────────────────────
   function _initDonut() {
@@ -1792,52 +1832,86 @@ function _connectUserWs(session) {
 
   function _buildTrendChart(rows) {
     const canvas = el("gov-trend-canvas");
-    if (!canvas) return;
+    if (!canvas || !window.Chart) return;
     if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
     const labels = rows.map(r => _formatPeriodLabel(r.period || r.hour, _govGranularity));
     const mk = (f) => rows.map(r => r[f] || 0);
+    const ctx = canvas.getContext("2d");
     _trendChart = new window.Chart(canvas, {
       type: "line",
       data: {
         labels,
         datasets: [
-          { label:"Cars",        data: mk("car"),        borderColor:"#29B6F6", backgroundColor:"rgba(41,182,246,0.05)",  tension:0.4, pointRadius:0, borderWidth:1.5 },
-          { label:"Trucks",      data: mk("truck"),      borderColor:"#FF7043", backgroundColor:"rgba(255,112,67,0.05)",  tension:0.4, pointRadius:0, borderWidth:1.5 },
-          { label:"Buses",       data: mk("bus"),        borderColor:"#AB47BC", backgroundColor:"rgba(171,71,188,0.05)",  tension:0.4, pointRadius:0, borderWidth:1.5 },
-          { label:"Motorcycles", data: mk("motorcycle"), borderColor:"#FFD600", backgroundColor:"rgba(255,214,0,0.05)",   tension:0.4, pointRadius:0, borderWidth:1.5 },
+          {
+            label: "Total",
+            data: mk("total"),
+            borderColor: "#0284c7",
+            backgroundColor: _govGrad(ctx, [[0,"rgba(2,132,199,0.28)"],[0.7,"rgba(2,132,199,0.06)"],[1,"rgba(2,132,199,0)"]]),
+            tension: 0.42, pointRadius: 0, borderWidth: 2.5, fill: true,
+          },
+          { label:"Cars",   data:mk("car"),   borderColor:"rgba(41,182,246,0.55)",  backgroundColor:"transparent", tension:0.4, pointRadius:0, borderWidth:1.2, fill:false },
+          { label:"Trucks", data:mk("truck"), borderColor:"rgba(255,112,67,0.55)",  backgroundColor:"transparent", tension:0.4, pointRadius:0, borderWidth:1.2, fill:false },
+          { label:"Motorcycles", data:mk("motorcycle"), borderColor:"rgba(255,214,0,0.55)", backgroundColor:"transparent", tension:0.4, pointRadius:0, borderWidth:1.2, fill:false },
         ],
       },
-      options: { ...CHART_DARK, plugins: { ...CHART_DARK.plugins, legend: { display: true, labels: { color:"#7A9BB5", font:{ size:9, family:"JetBrains Mono" }, boxWidth:10, padding:12 } } } },
+      options: {
+        ...CHART_GOV,
+        plugins: {
+          ...CHART_GOV.plugins,
+          legend: { display: true, labels: { color:"#94a3b8", font:{ size:9, family:"JetBrains Mono" }, boxWidth:14, padding:14, usePointStyle:true, pointStyle:"line" } },
+        },
+      },
     });
   }
 
   function _buildClsChart(summary) {
     const canvas = el("gov-cls-canvas");
-    if (!canvas) return;
+    if (!canvas || !window.Chart) return;
     if (_clsChart) { _clsChart.destroy(); _clsChart = null; }
     const ct = summary.class_totals || {};
+    const total = Math.max((ct.car||0)+(ct.truck||0)+(ct.bus||0)+(ct.motorcycle||0), 1);
+    const entries = [
+      { label:"Cars",        val:ct.car||0,        color:"#0284c7" },
+      { label:"Motorcycles", val:ct.motorcycle||0,  color:"#f59e0b" },
+      { label:"Trucks",      val:ct.truck||0,       color:"#ef4444" },
+      { label:"Buses",       val:ct.bus||0,         color:"#8b5cf6" },
+    ].sort((a,b) => b.val - a.val);
     _clsChart = new window.Chart(canvas, {
       type: "bar",
       data: {
-        labels: ["Cars","Trucks","Buses","Motorcycles"],
-        datasets: [{ data: [ct.car||0, ct.truck||0, ct.bus||0, ct.motorcycle||0], backgroundColor: ["#29B6F6","#FF7043","#AB47BC","#FFD600"], borderRadius: 3, borderWidth: 0 }],
+        labels: entries.map(e => e.label),
+        datasets: [{
+          data: entries.map(e => e.val),
+          backgroundColor: entries.map(e => e.color + "cc"),
+          borderColor:     entries.map(e => e.color),
+          borderWidth: 1.5, borderRadius: 5, borderSkipped: false,
+        }],
       },
-      options: { ...CHART_DARK, plugins: { legend: { display:false }, tooltip: { mode:"index", intersect:false } } },
+      options: {
+        ...CHART_GOV,
+        indexAxis: "y",
+        plugins: { ...CHART_GOV.plugins, legend:{ display:false },
+          tooltip:{ callbacks:{ label:(c)=>` ${c.parsed.x.toLocaleString()} (${Math.round(c.parsed.x/total*100)}%)` } } },
+      },
     });
   }
 
   function _buildPeakChart(rows) {
     const canvas = el("gov-peak-canvas");
-    if (!canvas) return;
+    if (!canvas || !window.Chart) return;
     if (_peakChart) { _peakChart.destroy(); _peakChart = null; }
     const labels = rows.map(r => _formatPeriodLabel(r.period || r.hour, _govGranularity));
     const totals = rows.map(r => r.total || 0);
     const maxVal = Math.max(...totals, 1);
-    const colors = totals.map(v => v >= maxVal * 0.8 ? "#FF7043" : v >= maxVal * 0.5 ? "#FFD600" : "#29B6F6");
+    const colors = totals.map(v =>
+      v >= maxVal * 0.85 ? "rgba(239,68,68,0.85)"   :
+      v >= maxVal * 0.6  ? "rgba(245,158,11,0.75)"  :
+                           "rgba(2,132,199,0.55)"
+    );
     _peakChart = new window.Chart(canvas, {
       type: "bar",
-      data: { labels, datasets: [{ data: totals, backgroundColor: colors, borderRadius: 2, borderWidth: 0 }] },
-      options: { ...CHART_DARK, plugins: { legend: { display:false }, tooltip: { mode:"index", intersect:false } } },
+      data: { labels, datasets: [{ data:totals, backgroundColor:colors, borderRadius:3, borderWidth:0 }] },
+      options: { ...CHART_GOV },
     });
   }
 
@@ -2013,24 +2087,23 @@ function _connectUserWs(session) {
     if (!series.length) return;
     const labels = series.map(r => new Date(r.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }));
     const data   = series.map(r => r.depth || 0);
+    const ctx    = canvas.getContext("2d");
     _queueChart = new window.Chart(canvas, {
       type: "line",
       data: {
         labels,
         datasets: [{
-          label: "Queue Depth",
+          label: "Queue",
           data,
-          borderColor: "#FF9800",
-          backgroundColor: "rgba(255,152,0,0.08)",
-          tension: 0.3,
-          pointRadius: 0,
-          borderWidth: 1.5,
-          fill: true,
+          borderColor: "#f59e0b",
+          backgroundColor: _govGrad(ctx, [[0,"rgba(245,158,11,0.30)"],[0.65,"rgba(245,158,11,0.07)"],[1,"rgba(245,158,11,0)"]]),
+          tension: 0.42, pointRadius: 0, borderWidth: 2.2, fill: true,
         }],
       },
       options: {
-        ...CHART_LIGHT,
-        plugins: { legend: { display: false }, tooltip: { mode:"index", intersect:false, callbacks: { label: (c) => ` ${c.parsed.y} vehicles` } } },
+        ...CHART_GOV,
+        plugins: { ...CHART_GOV.plugins, legend:{ display:false },
+          tooltip:{ ...CHART_GOV.plugins.tooltip, callbacks:{ label:(c)=>` ${c.parsed.y} vehicles` } } },
       },
     });
   }
@@ -2040,25 +2113,23 @@ function _connectUserWs(session) {
     if (!canvas || !window.Chart) return;
     if (_speedChart) { _speedChart.destroy(); _speedChart = null; }
     const sp = data.speed;
-    if (!sp || !sp.samples) {
-      if (_speedChart) { _speedChart.destroy(); _speedChart = null; }
-      return;
-    }
-    // Create simple bar showing avg, p85, max
+    if (!sp || !sp.samples) return;
     _speedChart = new window.Chart(canvas, {
       type: "bar",
       data: {
         labels: ["Average", "85th Pct", "Max"],
         datasets: [{
           data: [sp.avg_kmh, sp.p85_kmh, sp.max_kmh],
-          backgroundColor: ["#29B6F6","#FFD600","#FF7043"],
-          borderRadius: 3,
-          borderWidth: 0,
+          backgroundColor: ["rgba(22,163,74,0.75)","rgba(245,158,11,0.75)","rgba(239,68,68,0.75)"],
+          borderColor:     ["#16a34a","#f59e0b","#ef4444"],
+          borderWidth: 1.5, borderRadius: 5, borderSkipped: false,
         }],
       },
       options: {
-        ...CHART_LIGHT,
-        plugins: { legend: { display:false }, tooltip: { mode:"index", intersect:false, callbacks: { label: (c) => ` ${c.parsed.y} km/h` } } },
+        ...CHART_GOV,
+        indexAxis: "y",
+        plugins: { ...CHART_GOV.plugins, legend:{ display:false },
+          tooltip:{ callbacks:{ label:(c)=>` ${c.parsed.x} km/h` } } },
       },
     });
   }

@@ -1099,39 +1099,42 @@
       </div>
 
       <div class="gov-an-charts">
-        <!-- Trend line: full width -->
-        <div class="gov-chart-card gov-chart-full">
-          <div class="gov-chart-head">TRAFFIC TREND <span class="gov-head-muted" id="gov-trend-label">— loading…</span></div>
+        <!-- Trend: full width, tall filled area wave -->
+        <div class="gov-chart-card gov-chart-full gov-chart-tall">
+          <div class="gov-chart-head">
+            <span class="gov-chart-title">TRAFFIC TREND</span>
+            <span class="gov-head-muted" id="gov-trend-label">— loading…</span>
+          </div>
           <div class="gov-chart-body"><canvas id="gov-trend-canvas"></canvas></div>
         </div>
 
-        <!-- Class distribution bar -->
+        <!-- Class distribution: 1 col, horizontal bars -->
         <div class="gov-chart-card">
-          <div class="gov-chart-head">CLASS DISTRIBUTION</div>
+          <div class="gov-chart-head"><span class="gov-chart-title">VEHICLE CLASS</span></div>
           <div class="gov-chart-body"><canvas id="gov-cls-canvas"></canvas></div>
         </div>
 
-        <!-- Peak hours bar -->
-        <div class="gov-chart-card">
-          <div class="gov-chart-head">PEAK PERIOD</div>
+        <!-- Peak period: 2 cols -->
+        <div class="gov-chart-card gov-chart-span2">
+          <div class="gov-chart-head"><span class="gov-chart-title">PEAK ACTIVITY</span><span class="gov-head-muted">— highest volume periods</span></div>
           <div class="gov-chart-body"><canvas id="gov-peak-canvas"></canvas></div>
         </div>
 
-        <!-- Queue depth chart -->
-        <div class="gov-chart-card">
-          <div class="gov-chart-head">QUEUE DEPTH <span class="gov-head-muted">— vehicles waiting at stop line</span></div>
+        <!-- Queue depth: 2 cols, filled area -->
+        <div class="gov-chart-card gov-chart-span2">
+          <div class="gov-chart-head"><span class="gov-chart-title">QUEUE DEPTH</span><span class="gov-head-muted">— vehicles at stop line</span></div>
           <div class="gov-chart-body"><canvas id="gov-queue-canvas"></canvas></div>
         </div>
 
-        <!-- Speed distribution -->
+        <!-- Speed: 1 col, horizontal bars -->
         <div class="gov-chart-card">
-          <div class="gov-chart-head">SPEED DISTRIBUTION <span class="gov-head-muted">km/h</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">SPEED</span><span class="gov-head-muted">km/h</span></div>
           <div class="gov-chart-body"><canvas id="gov-speed-canvas"></canvas></div>
         </div>
 
         <!-- Turning movements: full width -->
         <div class="gov-chart-card gov-chart-full" id="gov-turnings-card">
-          <div class="gov-chart-head">TURNING MOVEMENTS <span class="gov-head-muted">— entry→exit flows · click row for detail</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">TURNING MOVEMENTS</span><span class="gov-head-muted">— entry → exit flows</span></div>
           <div id="gov-turnings-body" class="gov-turnings-body">
             <p class="gov-turnings-empty">No turning movement zones defined yet. Use Admin → Analytics Zones to draw entry/exit zones.</p>
           </div>

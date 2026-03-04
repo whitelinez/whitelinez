@@ -10328,23 +10328,48 @@ button {
 
 /* ── ANALYTICS — charts grid ────────────────────────────────── */
 .gov-an-charts {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; padding: 16px 20px; align-content: start;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  padding: 18px 22px;
+  align-content: start;
 }
 .gov-chart-card {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 1px 4px rgba(15,28,46,0.06), 0 0 0 0 transparent;
+  transition: box-shadow 0.18s;
 }
-.gov-chart-full { grid-column: 1 / -1; }
+.gov-chart-card:hover {
+  box-shadow: 0 4px 14px rgba(15,28,46,0.1);
+}
+.gov-chart-full  { grid-column: 1 / -1; }
+.gov-chart-span2 { grid-column: span 2; }
+.gov-chart-tall .gov-chart-body { height: 240px; }
 .gov-chart-head {
-  font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700;
-  letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase;
-  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.gov-chart-title {
+  font-family: "Rajdhani", "Archivo", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #0f1c2e;
+  text-transform: uppercase;
 }
 .gov-head-muted {
-  font-weight: 400; color: var(--dim); letter-spacing: 0.02em; text-transform: none;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 400;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
 }
-.gov-chart-body { position: relative; height: 180px; }
+.gov-chart-body { position: relative; height: 200px; }
 .gov-chart-body canvas { width: 100% !important; height: 100% !important; }
 .gov-crossings-wrap { overflow-x: auto; max-height: 280px; overflow-y: auto; }
 .gov-crossings-table { width: 100%; border-collapse: collapse; font-size: 11px; }
@@ -11026,9 +11051,13 @@ button {
   .gov-hiw-arrow { display: none; }
   .gov-ag-live-bar { padding: 9px 20px; }
 }
+@media (max-width: 1100px) {
+  .gov-an-charts { grid-template-columns: 1fr 1fr; }
+  .gov-chart-span2 { grid-column: 1 / -1; }
+}
 @media (max-width: 900px) {
   .gov-an-charts { grid-template-columns: 1fr; }
-  .gov-chart-full { grid-column: auto; }
+  .gov-chart-full, .gov-chart-span2 { grid-column: auto; }
 }
 @media (max-width: 680px) {
   .gov-hdr-stats   { display: none; }
@@ -12233,7 +12262,9 @@ button {
     padding: 12px;
     gap: 10px;
   }
+  .gov-chart-full, .gov-chart-span2 { grid-column: auto; }
   .gov-chart-body { height: 150px; }
+  .gov-chart-tall .gov-chart-body { height: 170px; }
 
   /* ── Analytics feed strip ────────────────────────── */
   .gov-an-feedstrip { padding: 10px 12px 0; }

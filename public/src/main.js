@@ -9,6 +9,7 @@ import { FpsOverlay } from './overlays/fps-overlay.js';
 import { DetectionOverlay } from './overlays/detection-overlay.js';
 import { ZoneOverlay } from './overlays/zone-overlay.js';
 import { MlOverlay } from './overlays/ml-overlay.js';
+import { MlShowcase } from './overlays/ml-showcase.js';
 import { Activity } from './ui/activity.js';
 import { Chat } from './ui/chat.js';
 import { StreamChatOverlay } from './ui/chat.js';

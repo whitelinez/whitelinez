@@ -433,9 +433,15 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 
   // Stream — initialise with the AI-active camera alias so the correct feed
   // loads immediately without waiting for CameraSwitcher.init() to resolve.
+  // Wrapped in try/catch: stream token failure (e.g. Railway down) must not
+  // crash the IIFE and prevent Markets/CameraSwitcher from loading.
   const video = el("live-video");
-  await Stream.init(video, { alias: _streamCameras[0]?.ipcam_alias || "" });
-  await applyPublicFeedAppearance(video);
+  try {
+    await Stream.init(video, { alias: _streamCameras[0]?.ipcam_alias || "" });
+    await applyPublicFeedAppearance(video);
+  } catch (streamErr) {
+    console.warn("[Stream] init failed — page continues without stream:", streamErr.message);
+  }
   // Re-apply on camera switch (immediate); also poll every 60s as fallback for
   // admin-side config changes (reduced from 15s — saves ~180 requests/user/hr)
   window.addEventListener("camera:switched", () => applyPublicFeedAppearance(video));

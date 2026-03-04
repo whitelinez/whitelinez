@@ -2,6 +2,7 @@ import { sb } from '../core/supabase.js';
 import { AppCache } from '../core/cache.js';
 import { TimeUtil } from '../core/time.js';
 import { Auth } from './auth.js';
+import { Bet } from '../ui/bet.js';
 
 /**
  * markets.js - Renders active bet markets in the sidebar.

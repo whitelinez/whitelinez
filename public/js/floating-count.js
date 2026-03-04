@@ -13,8 +13,32 @@ const FloatingCount = (() => {
   let _guessTarget     = null;   // user's guessed count
   let _currentCameraId = null;   // null = show all; set when camera is switched
 
+  // ── Cached DOM refs (populated in init; avoids getElementById on every update) ──
+  let _totalEl    = null;
+  let _carsEl     = null;
+  let _trucksEl   = null;
+  let _busesEl    = null;
+  let _motosEl    = null;
+  let _fpsEl      = null;
+  let _normalEl   = null;
+  let _guessModeEl = null;
+  let _gmTargetEl = null;
+  let _gmCurrentEl = null;
+  let _gmBarEl    = null;
+
   function init(streamWrapper) {
     _wrapper = streamWrapper;
+    _totalEl    = document.getElementById("cw-total");
+    _carsEl     = document.getElementById("cw-cars");
+    _trucksEl   = document.getElementById("cw-trucks");
+    _busesEl    = document.getElementById("cw-buses");
+    _motosEl    = document.getElementById("cw-motos");
+    _fpsEl      = document.getElementById("cw-fps");
+    _normalEl   = document.getElementById("cw-normal");
+    _guessModeEl = document.getElementById("cw-guess-mode");
+    _gmTargetEl = document.getElementById("cw-gm-target");
+    _gmCurrentEl = document.getElementById("cw-gm-current");
+    _gmBarEl    = document.getElementById("cw-gm-bar");
 
     window.addEventListener("count:update", (e) => {
       const data = e.detail;
@@ -31,14 +55,12 @@ const FloatingCount = (() => {
       if (isAI) {
         // Reset count display until new stream data arrives
         _lastTotal = 0;
-        const totalEl = document.getElementById("cw-total");
-        if (totalEl) totalEl.textContent = "0";
-        ["cw-cars","cw-trucks","cw-buses","cw-motos"].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = "0";
-        });
-        const fpsEl = document.getElementById("cw-fps");
-        if (fpsEl) fpsEl.textContent = "--";
+        if (_totalEl)  _totalEl.textContent  = "0";
+        if (_carsEl)   _carsEl.textContent   = "0";
+        if (_trucksEl) _trucksEl.textContent = "0";
+        if (_busesEl)  _busesEl.textContent  = "0";
+        if (_motosEl)  _motosEl.textContent  = "0";
+        if (_fpsEl)    _fpsEl.textContent    = "--";
       } else if (cameraId) {
         _loadCameraSnapshot(cameraId);
       }
@@ -59,31 +81,25 @@ const FloatingCount = (() => {
   // ── Mode switches ─────────────────────────────────────────────
 
   function _enterGuessMode() {
-    document.getElementById("cw-normal")?.classList.add("hidden");
-    const gm = document.getElementById("cw-guess-mode");
-    if (gm) gm.classList.remove("hidden");
-
-    const targetEl = document.getElementById("cw-gm-target");
-    if (targetEl) targetEl.textContent = _guessTarget ?? "—";
-
+    _normalEl?.classList.add("hidden");
+    _guessModeEl?.classList.remove("hidden");
+    if (_gmTargetEl) _gmTargetEl.textContent = _guessTarget ?? "—";
     _setGuessProgress(0);
   }
 
   function _exitGuessMode() {
     _guessBaseline = null;
     _guessTarget   = null;
-    document.getElementById("cw-normal")?.classList.remove("hidden");
-    document.getElementById("cw-guess-mode")?.classList.add("hidden");
+    _normalEl?.classList.remove("hidden");
+    _guessModeEl?.classList.add("hidden");
   }
 
   function _setGuessProgress(sinceGuess) {
-    const currentEl = document.getElementById("cw-gm-current");
-    const barEl     = document.getElementById("cw-gm-bar");
-    if (currentEl) currentEl.textContent = sinceGuess;
-    if (barEl && _guessTarget > 0) {
+    if (_gmCurrentEl) _gmCurrentEl.textContent = sinceGuess;
+    if (_gmBarEl && _guessTarget > 0) {
       const pct = Math.min(100, (sinceGuess / _guessTarget) * 100);
-      barEl.style.width = pct + "%";
-      barEl.style.background =
+      _gmBarEl.style.width = pct + "%";
+      _gmBarEl.style.background =
         pct >= 100 ? "#ef4444" :   // red — overshot
         pct >= 80  ? "#eab308" :   // yellow — getting close
                      "#22c55e";    // green — on track
@@ -93,29 +109,22 @@ const FloatingCount = (() => {
   // ── Count update ──────────────────────────────────────────────
 
   function update(data) {
-    const total    = data.total ?? 0;
-    const bd       = data.vehicle_breakdown ?? {};
+    const total     = data.total ?? 0;
+    const bd        = data.vehicle_breakdown ?? {};
     const crossings = data.new_crossings ?? 0;
 
     _lastTotal = total;
     window._lastCountPayload = data;
 
-    const totalEl  = document.getElementById("cw-total");
-    const carsEl   = document.getElementById("cw-cars");
-    const trucksEl = document.getElementById("cw-trucks");
-    const busesEl  = document.getElementById("cw-buses");
-    const motosEl  = document.getElementById("cw-motos");
-    const fpsEl    = document.getElementById("cw-fps");
-
-    if (totalEl)  totalEl.textContent  = total.toLocaleString();
-    if (carsEl)   carsEl.textContent   = bd.car        ?? 0;
-    if (trucksEl) trucksEl.textContent = bd.truck      ?? 0;
-    if (busesEl)  busesEl.textContent  = bd.bus        ?? 0;
-    if (motosEl)  motosEl.textContent  = bd.motorcycle ?? 0;
-    if (fpsEl) {
+    if (_totalEl)  _totalEl.textContent  = total.toLocaleString();
+    if (_carsEl)   _carsEl.textContent   = bd.car        ?? 0;
+    if (_trucksEl) _trucksEl.textContent = bd.truck      ?? 0;
+    if (_busesEl)  _busesEl.textContent  = bd.bus        ?? 0;
+    if (_motosEl)  _motosEl.textContent  = bd.motorcycle ?? 0;
+    if (_fpsEl) {
       const fps = data.fps ?? data.fps_estimate ?? null;
-      fpsEl.textContent = fps != null ? `${Number(fps).toFixed(1)} fps` : "--.- fps";
-      fpsEl.className = "cw-fps" + (fps == null ? " cw-fps-na" : fps < 3 ? " cw-fps-bad" : "");
+      _fpsEl.textContent = fps != null ? `${Number(fps).toFixed(1)} fps` : "--.- fps";
+      _fpsEl.className = "cw-fps" + (fps == null ? " cw-fps-na" : fps < 3 ? " cw-fps-bad" : "");
     }
 
     // Update guess-mode progress bar if active

@@ -195,7 +195,12 @@ const ZoneOverlay = (() => {
       draw();
     });
     if (window.ResizeObserver) {
-      new ResizeObserver(() => { syncSize(); draw(); }).observe(video);
+      // Debounce redraws — ResizeObserver fires on every CSS animation tick otherwise
+      let _roTimer = null;
+      new ResizeObserver(() => {
+        clearTimeout(_roTimer);
+        _roTimer = setTimeout(() => { syncSize(); draw(); }, 150);
+      }).observe(video);
     }
     video.addEventListener("loadedmetadata", () => {
       syncSize();
@@ -269,8 +274,14 @@ const ZoneOverlay = (() => {
     return inside;
   }
 
+  let _lastHoverMs = 0;
   function _onMouseMove(e) {
     if (!countLine) return;
+    // Throttle to ~12fps — point-in-polygon is expensive at full mousemove rate
+    const now = Date.now();
+    if (now - _lastHoverMs < 80) return;
+    _lastHoverMs = now;
+
     const rect = video.getBoundingClientRect();
     const cssX = e.clientX - rect.left;
     const cssY = e.clientY - rect.top;

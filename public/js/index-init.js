@@ -413,7 +413,10 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   const video = el("live-video");
   await Stream.init(video, { alias: _streamCameras[0]?.ipcam_alias || "" });
   await applyPublicFeedAppearance(video);
-  setInterval(() => applyPublicFeedAppearance(video), 15000);
+  // Re-apply on camera switch (immediate); also poll every 60s as fallback for
+  // admin-side config changes (reduced from 15s — saves ~180 requests/user/hr)
+  window.addEventListener("camera:switched", () => applyPublicFeedAppearance(video));
+  setInterval(() => applyPublicFeedAppearance(video), 60000);
   FpsOverlay.init(video, el("fps-overlay"));
 
   // Canvas overlays
@@ -502,7 +505,8 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   // ws_account — per-user events (balance, bet resolution)
   if (session) {
     refreshNavBalance();
-    setInterval(refreshNavBalance, 20000);
+    // balance:update WS event handles real-time updates; polling removed.
+    // If WS is down the next page load will call refreshNavBalance() again.
     _connectUserWs(session);
   }
 

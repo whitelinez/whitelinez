@@ -31,13 +31,15 @@ const Markets = (() => {
   const USER_BET_POLL_MS = 5000;
 
   function initTabs() {
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
+    // Cache node lists once; reuse on every click (avoids 3× querySelectorAll per click)
+    const tabs   = document.querySelectorAll(".tab-btn");
+    const panels = document.querySelectorAll(".tab-content");
+    tabs.forEach((btn) => {
       btn.addEventListener("click", () => {
-        const tab = btn.dataset.tab;
-        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-        document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
+        tabs.forEach((b) => b.classList.remove("active"));
+        panels.forEach((c) => c.classList.remove("active"));
         btn.classList.add("active");
-        document.getElementById(`tab-${tab}`)?.classList.add("active");
+        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add("active");
       });
     });
   }

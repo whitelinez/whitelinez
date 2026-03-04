@@ -11893,3 +11893,16 @@ button {
 .gov-an-toolbar .gov-date-input { background: var(--bg3); }
 
 
+
+/* ── Accessibility: respect OS reduced-motion preference ─────────────────────
+   Uses near-zero duration instead of "none" to avoid jarring position jumps.
+   Critical transition side-effects (opacity on modals, visibility) still play
+   at imperceptible speed rather than snapping, preserving layout correctness. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+    scroll-behavior:           auto   !important;
+  }
+}

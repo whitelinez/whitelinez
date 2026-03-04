@@ -9549,6 +9549,81 @@ button {
   display: block;
 }
 
+/* ── Onboarding: analytics step (gov theme card) ─────────────── */
+.ob-gov-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #0284c7;
+  border-radius: 0 8px 8px 0;
+  padding: 7px 14px 7px 10px;
+  margin-bottom: 18px;
+}
+.ob-gov-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.ob-gov-label {
+  font-family: "Rajdhani", "Archivo", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #0f1c2e;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ob-gov-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+.ob-gov-chip {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid rgba(0, 212, 255, 0.28);
+  border-radius: 4px;
+  color: var(--cyan);
+  background: rgba(0, 212, 255, 0.06);
+}
+
+/* ── Onboarding: beta notice ─────────────────────────────────── */
+.ob-beta-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 8px 12px;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+}
+.ob-beta-tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  border: 1px solid rgba(100,116,139,0.4);
+  border-radius: 3px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+.ob-beta-text {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 /* ============================================================
    GOV OVERLAY — Traffic Intelligence Analytics
    Full-screen analytics dashboard. All gov styles namespaced.

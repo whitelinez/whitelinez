@@ -763,26 +763,51 @@
   <div id="onboarding-overlay" class="onboarding-overlay hidden" role="dialog" aria-modal="true" aria-label="Welcome">
     <div class="ob-inner">
       <button id="ob-skip" class="ob-skip" aria-label="Skip">Skip intro</button>
+
       <div id="ob-step-1" class="ob-step active">
-        <div class="ob-step-num">1 OF 3</div>
+        <div class="ob-step-num">1 OF 4</div>
         <h2 class="ob-title">Watch real traffic.</h2>
-        <p class="ob-body">AI counts every vehicle in real time on a live Jamaican road camera. The detection zone? Every vehicle that crosses it — the AI sees it.</p>
+        <p class="ob-body">AI counts every vehicle in real time on a live Jamaican road camera. The detection zone spans the lane — every car, truck, and bus that crosses it gets logged.</p>
       </div>
+
       <div id="ob-step-2" class="ob-step">
-        <div class="ob-step-num">2 OF 3</div>
-        <h2 class="ob-title">A round opens.</h2>
-        <p class="ob-body">Predict how many vehicles will cross in 1, 3, or 5 minutes. Pick your window and lock in your number before the countdown ends.</p>
+        <div class="ob-step-num">2 OF 4</div>
+        <h2 class="ob-title">Predict. <span class="ob-highlight">Score.</span></h2>
+        <p class="ob-body">When a round opens, guess how many vehicles will cross in 1, 3, or 5 minutes. Exact prediction scores the most. Within ±3 earns partial. Miss gets nothing.</p>
       </div>
-      <div id="ob-step-3" class="ob-step">
-        <div class="ob-step-num">3 OF 3</div>
-        <h2 class="ob-title">The AI counts. You score.</h2>
-        <p class="ob-body">Exact prediction scores the most. Within ±3 earns partial points. Miss and you get nothing. Climb the leaderboard across multiple rounds.</p>
+
+      <div id="ob-step-3" class="ob-step ob-step--gov">
+        <div class="ob-step-num">3 OF 4</div>
+        <div class="ob-gov-badge">
+          <img src="/img/iconinframes.png" class="ob-gov-logo" alt="">
+          <span class="ob-gov-label">Traffic Intelligence</span>
+        </div>
+        <h2 class="ob-title">Beyond the count.</h2>
+        <p class="ob-body">The same live feed powers a full analytics dashboard — vehicle class breakdown, flow direction, queue depth, and speed stats. Open it from any camera view.</p>
+        <div class="ob-gov-chips">
+          <span class="ob-gov-chip">Class Split</span>
+          <span class="ob-gov-chip">Queue Depth</span>
+          <span class="ob-gov-chip">Speed</span>
+          <span class="ob-gov-chip">Turning Flow</span>
+        </div>
       </div>
+
+      <div id="ob-step-4" class="ob-step">
+        <div class="ob-step-num">4 OF 4</div>
+        <h2 class="ob-title">Early access.</h2>
+        <p class="ob-body">This platform is actively being built. Detection works best in daylight with a stable stream — we're integrating a dedicated provider for consistent 24/7 coverage and night detection. You're in early.</p>
+        <div class="ob-beta-notice">
+          <span class="ob-beta-tag">BETA</span>
+          <span class="ob-beta-text">Features and data may change as we develop.</span>
+        </div>
+      </div>
+
       <div class="ob-nav">
         <div class="ob-dots">
           <span class="ob-dot active" data-step="1"></span>
           <span class="ob-dot" data-step="2"></span>
           <span class="ob-dot" data-step="3"></span>
+          <span class="ob-dot" data-step="4"></span>
         </div>
         <button id="ob-next" class="ob-next">NEXT →</button>
       </div>

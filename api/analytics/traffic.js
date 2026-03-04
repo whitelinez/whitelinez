@@ -131,8 +131,11 @@ export default async function handler(req, res) {
       Object.entries(classTotals).map(([k, v]) => [k, Math.round((v / grand) * 100)])
     );
 
-    // ── Global lifetime totals ──────────────────────────────────────────────
-    const globalTotals = await _globalTotals(SUPABASE_URL, headers, camera_id);
+    // ── Global lifetime totals + first date ────────────────────────────────
+    const [globalTotals, firstDate] = await Promise.all([
+      _globalTotals(SUPABASE_URL, headers, camera_id),
+      _firstDate(SUPABASE_URL, headers, camera_id),
+    ]);
 
     return res.status(200).json({
       rows,
@@ -146,6 +149,7 @@ export default async function handler(req, res) {
         peak_queue_depth: qDepths.length > 0 ? Math.max(...qDepths) : null,
         avg_speed_kmh:   speeds.length > 0   ? +(speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(1) : null,
         global:          globalTotals,
+        first_date:      firstDate,
         granularity,
         from: fromISO,
         to:   toISO,
@@ -201,6 +205,17 @@ async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO,
     if (row.direction === "out") buckets[key].out += 1;
   }
   return Object.values(buckets).sort((a, b) => a.period.localeCompare(b.period));
+}
+
+async function _firstDate(SUPABASE_URL, headers, camera_id) {
+  try {
+    let url = `${SUPABASE_URL}/rest/v1/traffic_daily?select=date&order=date.asc&limit=1`;
+    if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
+    const r = await fetch(url, { headers });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return rows[0]?.date || null;
+  } catch { return null; }
 }
 
 async function _globalTotals(SUPABASE_URL, headers, camera_id) {

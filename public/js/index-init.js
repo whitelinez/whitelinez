@@ -1635,6 +1635,14 @@ function _connectUserWs(session) {
       y: { grid: { color: "rgba(26,45,66,0.8)" }, ticks: { color: "#7A9BB5", font: { size: 9, family: "JetBrains Mono" } }, beginAtZero: true },
     },
   };
+  const CHART_LIGHT = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false }, tooltip: { mode: "index", intersect: false } },
+    scales: {
+      x: { grid: { color: "#e2e8f0" }, ticks: { color: "#64748b", font: { size: 9, family: "JetBrains Mono" } } },
+      y: { grid: { color: "#e2e8f0" }, ticks: { color: "#64748b", font: { size: 9, family: "JetBrains Mono" } }, beginAtZero: true },
+    },
+  };
 
   // ── Mini donut (LIVE sidebar) ─────────────────────────────────────────────
   function _initDonut() {
@@ -1769,6 +1777,9 @@ function _connectUserWs(session) {
       // Global lifetime total
       const g = summary.global;
       if (g) txt("gov-sum-global", Number(g.total||0).toLocaleString() + " total");
+
+      // Recording since notice
+      _renderRecordingNotice(summary.first_date);
 
       _populateAgencyMetrics(summary);
       _setProgress(60, "Rendering charts…");
@@ -2027,7 +2038,7 @@ function _connectUserWs(session) {
         }],
       },
       options: {
-        ...CHART_DARK,
+        ...CHART_LIGHT,
         plugins: { legend: { display: false }, tooltip: { mode:"index", intersect:false, callbacks: { label: (c) => ` ${c.parsed.y} vehicles` } } },
       },
     });
@@ -2055,7 +2066,7 @@ function _connectUserWs(session) {
         }],
       },
       options: {
-        ...CHART_DARK,
+        ...CHART_LIGHT,
         plugins: { legend: { display:false }, tooltip: { mode:"index", intersect:false, callbacks: { label: (c) => ` ${c.parsed.y} km/h` } } },
       },
     });
@@ -2111,6 +2122,42 @@ function _connectUserWs(session) {
           </div>`);
       });
     });
+  }
+
+  // ── Recording since notice ────────────────────────────────────────────────
+  function _renderRecordingNotice(firstDate) {
+    const el_ = el("gov-recording-notice");
+    if (!el_) return;
+    if (!firstDate) { el_.classList.add("hidden"); return; }
+
+    const start   = new Date(firstDate + "T00:00:00Z");
+    const now     = new Date();
+    const daysSince = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    const fmtDate = start.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+    // Milestones
+    const milestones = [
+      { days: 1,  label: "Day 1 — baseline established" },
+      { days: 7,  label: "7-day trend unlocked" },
+      { days: 30, label: "30-day historical view" },
+    ];
+    const milestonesHtml = milestones.map(m => {
+      const reached = daysSince >= m.days;
+      const dateStr = new Date(start.getTime() + m.days * 864e5)
+        .toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+      return `<span class="gov-rec-milestone ${reached ? "reached" : "pending"}">
+        ${reached ? "✓" : "○"} ${m.label}${!reached ? ` <span class="gov-rec-eta">(${dateStr})</span>` : ""}
+      </span>`;
+    }).join("");
+
+    el_.innerHTML = `
+      <span class="gov-rec-icon">📡</span>
+      <span class="gov-rec-text">
+        <strong>Data collection started ${fmtDate}</strong>
+        <span class="gov-rec-muted"> · ${daysSince === 0 ? "Day 1 — just getting started" : `${daysSince} day${daysSince !== 1 ? "s" : ""} of data`}</span>
+      </span>
+      <span class="gov-rec-milestones">${milestonesHtml}</span>`;
+    el_.classList.remove("hidden");
   }
 
   // ── Agency metrics from analytics data ────────────────────────────────────
@@ -2458,7 +2505,7 @@ function _connectUserWs(session) {
       if (type === "total") {
         const labels = rows.map(mkLabel);
         const data   = rows.map(r => r.total || 0);
-        const cfg    = { type:"bar", data:{ labels, datasets:[{ data, backgroundColor:"#29B6F6", borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
+        const cfg    = { type:"bar", data:{ labels, datasets:[{ data, backgroundColor:"#0284c7", borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_LIGHT, plugins:{legend:{display:false}} } };
         _showModal("VEHICLES — BREAKDOWN", `
           <div class="gov-modal-kpi-grid">
             <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${Number(summary.period_total||0).toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total (period)</div></div>
@@ -2471,8 +2518,8 @@ function _connectUserWs(session) {
         const labels = rows.map(mkLabel);
         const totals = rows.map(r => r.total || 0);
         const maxV   = Math.max(...totals, 1);
-        const colors = totals.map(v => v >= maxV * 0.8 ? "#FF7043" : v >= maxV * 0.5 ? "#FFD600" : "rgba(26,45,66,0.8)");
-        const cfg    = { type:"bar", data:{ labels, datasets:[{ data:totals, backgroundColor:colors, borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
+        const colors = totals.map(v => v >= maxV * 0.8 ? "#ef4444" : v >= maxV * 0.5 ? "#f59e0b" : "#94a3b8");
+        const cfg    = { type:"bar", data:{ labels, datasets:[{ data:totals, backgroundColor:colors, borderRadius:3, borderWidth:0 }] }, options:{ ...CHART_LIGHT, plugins:{legend:{display:false}} } };
         const peakLabel = _formatPeriodLabel(summary.peak_period, summary.granularity || _govGranularity);
         _showModal("PEAK PERIOD ANALYSIS", `
           <div class="gov-modal-kpi-grid">
@@ -2481,22 +2528,22 @@ function _connectUserWs(session) {
             <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${totals.filter(v => v >= maxV*0.8).length}</div><div class="gov-modal-kpi-lbl">High-Load Periods</div></div>
           </div>
           <div class="gov-modal-chart-wrap"><canvas id="gov-modal-chart" data-chart-config='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'></canvas></div>
-          <p class="gov-modal-note">Red bars = high load (&ge;80% of peak). Yellow bars = moderate load (&ge;50%).</p>`);
+          <p class="gov-modal-note">Red bars = high load (&ge;80% of peak). Orange bars = moderate load (&ge;50%).</p>`);
 
       } else if (type === "flow") {
         const labels  = rows.map(mkLabel);
         const inData  = rows.map(r => r.in  || 0);
         const outData = rows.map(r => r.out || 0);
         const cfg     = { type:"line", data:{ labels, datasets:[
-          { label:"Inbound",  data:inData,  borderColor:"#00FF88", backgroundColor:"rgba(0,255,136,0.05)", tension:0.4, pointRadius:0, borderWidth:1.5 },
-          { label:"Outbound", data:outData, borderColor:"#7A9BB5", backgroundColor:"rgba(122,155,181,0.05)", tension:0.4, pointRadius:0, borderWidth:1.5 },
-        ]}, options:{...CHART_DARK, plugins:{...CHART_DARK.plugins, legend:{display:true, labels:{color:"#7A9BB5",font:{size:9,family:"JetBrains Mono"},boxWidth:10}}}} };
+          { label:"Inbound",  data:inData,  borderColor:"#16a34a", backgroundColor:"rgba(22,163,74,0.08)", tension:0.4, pointRadius:0, borderWidth:2 },
+          { label:"Outbound", data:outData, borderColor:"#64748b", backgroundColor:"rgba(100,116,139,0.08)", tension:0.4, pointRadius:0, borderWidth:2 },
+        ]}, options:{...CHART_LIGHT, plugins:{...CHART_LIGHT.plugins, legend:{display:true, labels:{color:"#64748b",font:{size:9,family:"JetBrains Mono"},boxWidth:10}}}} };
         const totalIn  = inData.reduce((a,b)=>a+b,0);
         const totalOut = outData.reduce((a,b)=>a+b,0);
         _showModal("TRAFFIC FLOW ANALYSIS", `
           <div class="gov-modal-kpi-grid">
-            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:var(--green)">${totalIn.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Inbound</div></div>
-            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:var(--muted)">${totalOut.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Outbound</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:#16a34a">${totalIn.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Inbound</div></div>
+            <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:#64748b">${totalOut.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total Outbound</div></div>
             <div class="gov-modal-kpi"><div class="gov-modal-kpi-val">${totalIn+totalOut > 0 ? Math.round(totalIn/(totalIn+totalOut)*100) : "—"}%</div><div class="gov-modal-kpi-lbl">Inbound Ratio</div></div>
           </div>
           <div class="gov-modal-chart-wrap"><canvas id="gov-modal-chart" data-chart-config='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'></canvas></div>`);
@@ -2525,7 +2572,7 @@ function _connectUserWs(session) {
     const total  = ct[cls] || data.reduce((a,b)=>a+b,0);
     const grandT = summary.period_total || 1;
     const pct    = Math.round((total / grandT) * 100);
-    const cfg    = { type:"line", data:{ labels, datasets:[{ label:cls, data, borderColor:color, backgroundColor:`${color}0D`, tension:0.4, pointRadius:0, borderWidth:2 }] }, options:{ ...CHART_DARK, plugins:{legend:{display:false}} } };
+    const cfg    = { type:"line", data:{ labels, datasets:[{ label:cls, data, borderColor:color, backgroundColor:`${color}22`, tension:0.4, pointRadius:0, borderWidth:2 }] }, options:{ ...CHART_LIGHT, plugins:{legend:{display:false}} } };
     _showModal(`${icon} ${cls.toUpperCase()} — TREND DETAIL`, `
       <div class="gov-modal-kpi-grid">
         <div class="gov-modal-kpi"><div class="gov-modal-kpi-val" style="color:${color}">${total.toLocaleString()}</div><div class="gov-modal-kpi-lbl">Total (period)</div></div>

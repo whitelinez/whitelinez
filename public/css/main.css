@@ -9980,6 +9980,24 @@ button {
 }
 .gov-an-sumcard--accent .gov-an-sumcard-val { color: var(--accent); }
 
+/* Recording since notice */
+.gov-recording-notice {
+  display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
+  margin: 0 16px 4px; padding: 10px 14px;
+  background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;
+  font-size: 12px; color: #92400e;
+}
+.gov-recording-notice.hidden { display: none; }
+.gov-rec-icon { font-size: 16px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+.gov-rec-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px; }
+.gov-rec-text strong { font-weight: 700; color: #78350f; }
+.gov-rec-muted { color: #b45309; }
+.gov-rec-milestones { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 4px; }
+.gov-rec-milestone { font-size: 11px; font-family: "JetBrains Mono", monospace; }
+.gov-rec-milestone.reached { color: #16a34a; font-weight: 600; }
+.gov-rec-milestone.pending { color: #b45309; }
+.gov-rec-eta { font-size: 10px; opacity: 0.8; }
+
 /* Analytics loading progress overlay */
 .gov-an-progress {
   position: sticky; top: 0; z-index: 20;
@@ -10872,6 +10890,33 @@ button {
   font-family: "Inter", sans-serif; font-size: 11px; color: var(--muted);
   margin-top: 10px; line-height: 1.6; font-style: italic;
 }
+
+/* ── Modal white theme ───────────────────────────────────────── */
+.gov-modal-box {
+  --bg2:    #ffffff;
+  --bg3:    #f1f5f9;
+  --border: #e2e8f0;
+  --text:   #0f1c2e;
+  --muted:  #64748b;
+  --dim:    #94a3b8;
+  --cyan:   #0284c7;
+  --accent: #f59e0b;
+  background: #ffffff;
+  color: #0f1c2e;
+  border-color: #e2e8f0;
+}
+.gov-modal-hdr      { background: #ffffff; border-bottom-color: #e2e8f0; }
+.gov-modal-title    { color: #0284c7; }
+.gov-modal-close    { color: #64748b; }
+.gov-modal-close:hover { color: #dc2626; }
+.gov-modal-kpi      { background: #f8fafc; border-color: #e2e8f0; }
+.gov-modal-kpi-val  { color: #f59e0b; }
+.gov-modal-data-row { background: #f8fafc; }
+.gov-modal-data-key { color: #64748b; }
+.gov-modal-data-val { color: #0f1c2e; }
+.gov-modal-section-head { color: #64748b; border-bottom-color: #e2e8f0; }
+.gov-modal-pitch    { color: #0f1c2e; }
+.gov-modal-note     { color: #64748b; }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 680px) {

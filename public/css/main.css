@@ -10346,6 +10346,7 @@ button {
 }
 /* Hardcoded dark values inside live panel */
 #gov-panel-live .gov-cls-bar-wrap   { background: #e2e8f0; }
+#gov-panel-live .gov-veh-svg        { stroke: #1e293b !important; }
 #gov-panel-live .gov-sys-row        { border-bottom-color: #e2e8f0; }
 #gov-panel-live .gov-scene-badge    { background: rgba(2,132,199,0.08); border-color: rgba(2,132,199,0.2); color: #0284c7; }
 #gov-panel-live .gov-video-slot     { background: #000; }

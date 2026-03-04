@@ -134,10 +134,10 @@ export const AdminZones = (() => {
       try {
         const { data } = await sb
           .from("cameras")
-          .select("name,alias")
+          .select("name,ipcam_alias")
           .eq("id", camId)
           .maybeSingle();
-        lbl.textContent = data?.name || data?.alias || camId;
+        lbl.textContent = data?.name || data?.ipcam_alias || camId;
       } catch (_) {
         lbl.textContent = camId;
       }

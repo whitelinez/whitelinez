@@ -1952,6 +1952,15 @@ function _connectUserWs(session) {
         ) : {};
         _buildClsChart({ class_totals: tm.class_totals, class_pct: clsPct });
       }
+
+      // Trend + Peak charts — use zone hourly series if available
+      if (tm.hourly_series?.length && window.Chart) {
+        _buildTrendChart(tm.hourly_series);
+        _buildPeakChart(tm.hourly_series);
+        _updatePeakKpiFromChart();
+        const granLabel = _govGranularity === "week" ? "weekly" : _govGranularity === "day" ? "daily" : "hourly";
+        txt("gov-trend-label", `— zone entries by hour · ${granLabel} view`);
+      }
     } catch (err) {
       console.warn("[GovAnalytics] Zone analytics failed:", err);
       if (tBody) tBody.innerHTML = `<p class="gov-turnings-empty">Failed to load zone analytics.</p>`;

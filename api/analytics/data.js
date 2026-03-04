@@ -100,7 +100,7 @@ async function handleTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
   try {
     // ── Turning movements ──────────────────────────────────────────────────
     let tmUrl = `${SUPABASE_URL}/rest/v1/turning_movements`
-      + `?select=entry_zone,exit_zone,vehicle_class,dwell_ms`
+      + `?select=entry_zone,exit_zone,vehicle_class,dwell_ms,captured_at`
       + `&captured_at=gte.${encodeURIComponent(fromISO)}`
       + `&captured_at=lte.${encodeURIComponent(toISO)}`
       + `&limit=5000`;
@@ -110,6 +110,7 @@ async function handleTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
 
     const matrix = {};
     const clsTotals = { car: 0, truck: 0, bus: 0, motorcycle: 0 };
+    const hourly = {};
     for (const r of tmRows) {
       const key = `${r.entry_zone}→${r.exit_zone}`;
       if (!matrix[key]) matrix[key] = { from: r.entry_zone, to: r.exit_zone, total: 0, car: 0, truck: 0, bus: 0, motorcycle: 0, avg_dwell_ms: 0, _dwell_sum: 0 };
@@ -118,6 +119,13 @@ async function handleTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
       if (cls in matrix[key]) matrix[key][cls] += 1;
       if (cls in clsTotals)   clsTotals[cls] += 1;
       if (r.dwell_ms) matrix[key]._dwell_sum += r.dwell_ms;
+      // Hourly bucket
+      if (r.captured_at) {
+        const hour = new Date(r.captured_at).toISOString().slice(0, 13) + ":00:00Z";
+        if (!hourly[hour]) hourly[hour] = { period: hour, total: 0, car: 0, truck: 0, bus: 0, motorcycle: 0 };
+        hourly[hour].total += 1;
+        if (cls in hourly[hour]) hourly[hour][cls] += 1;
+      }
     }
     for (const k of Object.keys(matrix)) {
       const m = matrix[k];
@@ -125,6 +133,7 @@ async function handleTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
       delete m._dwell_sum;
     }
     const topMovements = Object.values(matrix).sort((a, b) => b.total - a.total).slice(0, 10);
+    const hourlySeries = Object.values(hourly).sort((a, b) => a.period.localeCompare(b.period));
 
     // ── Queue series ───────────────────────────────────────────────────────
     let qUrl = `${SUPABASE_URL}/rest/v1/traffic_snapshots`
@@ -158,6 +167,7 @@ async function handleTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
     return res.status(200).json({
       matrix, top_movements: topMovements, queue_series: queueSeries,
       queue_summary: queueSummary, speed: speedStats, class_totals: clsTotals,
+      hourly_series: hourlySeries,
       period: { from: fromISO, to: toISO, total_movements: tmRows.length },
     });
   } catch (err) {

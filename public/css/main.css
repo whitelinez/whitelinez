@@ -9565,8 +9565,7 @@ button {
 
 /* ── Header ─────────────────────────────────────────────────── */
 .gov-hdr {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
   padding: 0 20px; height: 60px;
   background: #ffffff; border-bottom: 1px solid #e2e8f0;
@@ -9579,6 +9578,7 @@ button {
 .gov-hdr-right {
   display: flex; align-items: center; gap: 12px;
   padding-left: 20px;
+  margin-left: auto;
 }
 
 /* Vertical rule between logo and title */

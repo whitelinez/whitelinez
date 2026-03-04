@@ -159,13 +159,13 @@ async function loadBaseline() {
   if (baselineLoaded || baselineLoading) return;
   baselineLoading = true;
   try {
-    const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const since = new Date(Date.now() - 24 * 3600_000).toISOString();
     const { data } = await sb
       .from("ml_detection_events")
       .select("captured_at, detections_count, class_counts, avg_confidence")
       .gte("captured_at", since)
       .order("captured_at", { ascending: true })
-      .limit(20000);
+      .limit(2000);
 
     if (!data) return;
 

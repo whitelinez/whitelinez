@@ -374,19 +374,21 @@
       </div>
 
       <div id="tab-leaderboard" class="tab-content">
+        <h2 class="sr-only">Leaderboard</h2>
         <div class="lb-header yolo-label yolo-label-cyan">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
           <span>STANDINGS</span>
-          <button id="lb-refresh" class="btn-sm lb-refresh-btn">↻</button>
+          <button id="lb-refresh" class="btn-sm lb-refresh-btn">↻ Refresh</button>
         </div>
         <div class="lb-window-tabs">
-          <button class="lb-wtab active" data-win="60">1 MIN</button>
-          <button class="lb-wtab" data-win="180">3 MIN</button>
-          <button class="lb-wtab" data-win="300">5 MIN</button>
+          <button class="lb-wtab active" data-win="60" aria-label="1 minute window">1MIN</button>
+          <button class="lb-wtab" data-win="180" aria-label="3 minute window">3MIN</button>
+          <button class="lb-wtab" data-win="300" aria-label="5 minute window">5MIN</button>
         </div>
-        <div id="leaderboard-list" class="lb-list">
-          <p class="muted lb-empty-hint">Open tab to load rankings.</p>
-        </div>
+        <div class="lb-col-header"><span>Player</span><span>Points</span></div>
+        <ol id="ranked-list" class="lb-list">
+          <li class="muted lb-empty-hint">Open tab to load rankings.</li>
+        </ol>
       </div>
 
       <div id="tab-chat" class="tab-content">

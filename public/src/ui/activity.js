@@ -54,7 +54,7 @@ export const Activity = (() => {
   }
 
   async function loadLeaderboard(windowSec = 60) {
-    const container = document.getElementById("leaderboard-list");
+    const container = document.getElementById("ranked-list");
     if (!container) return;
 
     // 30-second cache per window duration — leaderboard data changes infrequently.

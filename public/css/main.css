@@ -499,22 +499,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   z-index: 2;
 }
 
-.stream-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.78rem;
-  padding: 4px 10px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 5;
-}
-
-
 .fps-overlay {
   position: absolute;
   left: 10px;
@@ -931,17 +915,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   flex-shrink: 0;
 }
 
-.tab-btn {
-  flex: 1;
-  position: relative;
-  background: transparent;
-  color: var(--muted);
-  padding: 12px 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-}
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
@@ -1740,17 +1713,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 }
 .btn-bet:hover { opacity: 0.88; }
 
-/* Live bet button (in market card) */
-.btn-live-bet {
-  background: transparent;
-  color: var(--cyan);
-  border: 1px solid var(--cyan);
-  font-weight: 700;
-  padding: 6px;
-  border-radius: var(--radius);
-  font-size: 0.82rem;
-  transition: background .15s;
-}
 .btn-live-bet:hover { background: rgba(0,188,212,0.1); }
 
 /* â”€â”€ Bet panel (slides over sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -2007,15 +1969,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .chat-online-user:hover {
   background: rgba(0, 188, 212, 0.18);
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .chat-msg {
@@ -3035,13 +2988,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .admin-col { display: flex; flex-direction: column; gap: 20px; }
 
-.admin-section {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 22px;
-}
-
 .admin-section h2 {
   font-size: 0.9rem;
   color: var(--muted);
@@ -3153,30 +3099,11 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   margin-bottom: 14px;
 }
 
-.stat-card {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
-  text-align: center;
-}
 .stat-card .stat-val  { font-size: 1.8rem; font-weight: 800; color: var(--accent); line-height: 1; }
 .stat-card .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
 
 /* Recent rounds table */
 .rounds-list { display: flex; flex-direction: column; gap: 8px; }
-.round-row {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.82rem;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 .round-row-info { display: flex; flex-direction: column; gap: 2px; }
 .round-row-id   { font-size: 0.72rem; color: var(--muted); font-family: monospace; }
 .round-row-meta { color: var(--text); }
@@ -4278,13 +4205,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   gap: 16px;
 }
 
-.admin-section {
-  padding: 16px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%), var(--bg2);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
-}
-
 .admin-section h2 {
   font-size: 0.82rem;
   margin-bottom: 10px;
@@ -4314,11 +4234,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
   margin-bottom: 10px;
 }
 
-.stat-card {
-  padding: 10px;
-  text-align: left;
-}
-
 .stat-card .stat-val {
   font-size: 1.35rem;
 }
@@ -4330,12 +4245,6 @@ button { cursor: pointer; border: none; font-family: inherit; font-size: 0.9rem;
 
 .rounds-list {
   gap: 6px;
-}
-
-.round-row {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.02);
 }
 
 .round-row-id {
@@ -4753,13 +4662,6 @@ button {
   pointer-events: none;
 }
 
-.tab-btn {
-  color: rgba(130,155,185,0.7);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  position: relative;
-  transition: color .18s, background .18s;
-}
 .tab-btn:hover {
   color: rgba(190,220,240,0.9);
   background: rgba(0,212,255,0.04);
@@ -4899,6 +4801,8 @@ button {
   font-weight: 700;
   letter-spacing: 0.02em;
   transition: all .18s;
+  padding: 6px;
+  font-size: 0.82rem;
 }
 .btn-live-bet:hover {
   background: rgba(0,212,255,0.13);
@@ -5039,10 +4943,6 @@ button {
 }
 
 /* ── Stream overlays — unified border language ───────────────────── */
-.stream-badge {
-  border: 1px solid rgba(0,212,255,0.2);
-  background: rgba(5,8,16,0.88);
-}
 .fps-overlay {
   border: 1px solid rgba(0,212,255,0.16);
   background: rgba(5,8,16,0.85);
@@ -5056,6 +4956,9 @@ button {
 .admin-section {
   border: 1px solid rgba(0,212,255,0.1);
   background: linear-gradient(180deg, rgba(0,212,255,0.018) 0%, transparent 40%), var(--bg2);
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
 }
 .admin-section h2 {
   color: rgba(0,212,255,0.5);
@@ -5066,6 +4969,9 @@ button {
 .stat-card {
   background: linear-gradient(135deg, rgba(0,212,255,0.04) 0%, transparent 65%), var(--bg3);
   border: 1px solid rgba(0,212,255,0.1);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: left;
 }
 .stat-card .stat-val {
   color: #00d4ff;
@@ -5076,6 +4982,15 @@ button {
 .round-row {
   border: 1px solid rgba(255,255,255,0.05);
   transition: border-color .15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
 }
 .round-row:hover {
   border-color: rgba(0,212,255,0.2);
@@ -5398,18 +5313,6 @@ button {
   color: #00d4ff;
 }
 
-/* Messages area — faint horizontal scanline */
-.chat-messages {
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 46px,
-    rgba(0,212,255,0.02) 46px,
-    rgba(0,212,255,0.02) 47px
-  );
-  gap: 6px;
-}
-
 /* Avatars — cyber rounded square */
 .chat-avatar {
   width: 28px;
@@ -5557,6 +5460,17 @@ button {
 .chat-messages {
   gap: 1px !important;
   padding: 8px 0 !important;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 46px,
+    rgba(0,212,255,0.02) 46px,
+    rgba(0,212,255,0.02) 47px
+  );
 }
 
 /* Regular message row */
@@ -6159,6 +6073,16 @@ button {
   border-radius: 3px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+  border: 1px solid rgba(0,212,255,0.2);
+  background: rgba(5,8,16,0.88);
 }
 .stream-badge-active   { background: rgba(34,197,94,0.15);  color: #22c55e; }
 .stream-badge-inactive { background: rgba(100,116,139,0.15); color: rgba(100,116,139,0.8); }
@@ -7021,11 +6945,6 @@ button {
    TAB ACTIVE — AI detection box selector
    ============================================= */
 
-/* Remove bottom border from base CSS */
-.tab-btn {
-  border-bottom: none !important;
-}
-
 /* Detection box corners via inline SVG background */
 .tab-btn.active::after {
   /* Reset all underline properties */
@@ -7070,6 +6989,16 @@ button {
 }
 .tab-btn {
   overflow: visible !important;
+  flex: 1;
+  position: relative;
+  background: transparent;
+  color: rgba(130,155,185,0.7);
+  padding: 12px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: none !important;
+  letter-spacing: 0.04em;
+  transition: color .18s, background .18s;
 }
 
 /* Clean override — no conflicting inset + individual property collision */

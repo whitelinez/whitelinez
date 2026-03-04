@@ -1942,28 +1942,21 @@ function _connectUserWs(session) {
         if (clsTotal > 0) txt("gov-sum-heavy", Math.round((heavy / clsTotal) * 100) + "%");
       }
 
-      // Traffic Flow (Inbound / Outbound) — derived from zone types
-      // Build name→type map from loaded zones
-      const zoneTypeMap = {};
-      for (const z of zones) {
-        if (z.name) zoneTypeMap[z.name] = z.zone_type;
-        if (z.id)   zoneTypeMap[String(z.id)] = z.zone_type;
-      }
-      let zoneIn = 0, zoneOut = 0;
-      for (const m of (tm.top_movements || [])) {
-        if (zoneTypeMap[m.from] === "entry") zoneIn  += (m.total || 0);
-        if (zoneTypeMap[m.to]   === "exit")  zoneOut += (m.total || 0);
-      }
-      // Fall back to total_movements when zone types not configured
+      // Traffic Flow — total zone crossings + dominant turning movement
       const zoneTotal = tm.period?.total_movements || 0;
-      if (zoneIn === 0 && zoneOut === 0 && zoneTotal > 0) {
-        zoneIn = zoneOut = zoneTotal;
+      if (zoneTotal > 0) {
+        txt("gov-inbound", zoneTotal.toLocaleString());
+        _govExitTotal = zoneTotal; // prevent WS from overwriting
       }
-      if (zoneIn  > 0) txt("gov-inbound",  zoneIn.toLocaleString());
-      if (zoneOut > 0) {
-        _govExitTotal = zoneOut;
-        txt("gov-kpi-out",  zoneOut.toLocaleString());
-        txt("gov-outbound", zoneOut.toLocaleString());
+      // Top movement (most common entry→exit pair)
+      const topMov = (tm.top_movements || [])[0];
+      if (topMov) {
+        // Shorten zone names: "South Entry" → "S.Entry", "North Exit" → "N.Exit"
+        const shorten = s => s.replace(/North/i,"N.").replace(/South/i,"S.").replace(/East/i,"E.").replace(/West/i,"W.").replace(/\s+/g,"");
+        txt("gov-top-movement",     topMov.total.toLocaleString());
+        txt("gov-top-movement-lbl", `${shorten(topMov.from)}→${shorten(topMov.to)}`);
+        txt("gov-kpi-out",  topMov.total.toLocaleString());
+        txt("gov-outbound", topMov.total.toLocaleString());
       }
 
       // Class distribution chart — rebuild with zone class_totals

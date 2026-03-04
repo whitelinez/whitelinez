@@ -11191,8 +11191,10 @@ button {
   html, body.dark {
     height: 100%;
     overflow: hidden;
+    overflow-x: hidden;
     overscroll-behavior: none;        /* stop pull-to-refresh */
     -webkit-overflow-scrolling: auto; /* disable momentum scroll on root */
+    max-width: 100vw;
   }
 
   /* ── Main grid → flex column, full viewport height ── */
@@ -11202,7 +11204,9 @@ button {
     height: 100dvh;
     height: 100vh; /* fallback */
     overflow: hidden;
+    overflow-x: hidden;
     grid-template-columns: none;
+    max-width: 100vw;
   }
 
   /* ── Stream panel fills remaining height above sidebar ── */
@@ -11267,11 +11271,13 @@ button {
     border-top: 1px solid var(--border);
     border-left: none;
     overflow: hidden;
+    overflow-x: hidden;
     transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     background: var(--bg2);
     padding-bottom: 0;
+    max-width: 100vw;
   }
 
   .sidebar.expanded {
@@ -11550,8 +11556,10 @@ button {
   /* ─────────────────────────────────────────────
      CHAT — flex column layout
      ───────────────────────────────────────────── */
-  #tab-chat {
-    padding: 0;
+  /* Use .tab-content#tab-chat to beat the desktop padding-top:28px rule */
+  .tab-content#tab-chat {
+    padding: 0 !important;
+    position: static;
     /* no display:flex here — .tab-content.active handles visibility;
        setting display:flex on the ID would override display:none
        from the class rule, keeping chat visible on all tabs */
@@ -11579,15 +11587,22 @@ button {
     background: var(--bg2);
     border-top: 1px solid var(--border);
     flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .chat-input-row input {
     height: 44px;
     border-radius: 22px;
     font-size: 16px; /* 16px prevents iOS Safari auto-zoom on focus */
+    min-width: 0;    /* prevent grid cell overflow */
+    width: 100%;
   }
   .chat-input-row .btn-primary {
     width: 44px;
     height: 44px;
+    min-width: 44px;
     border-radius: 22px;
     padding: 0;
     font-size: 18px;
@@ -11596,7 +11611,7 @@ button {
     justify-content: center;
   }
   /* Shrink message area when keyboard opens */
-  #tab-chat.keyboard-open #chat-messages { max-height: 100px; }
+  #tab-chat.keyboard-open #chat-messages { max-height: 120px; }
 
   /* ─────────────────────────────────────────────
      INTEL TAB — 2-col stat cards

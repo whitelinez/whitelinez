@@ -90,8 +90,9 @@ async function connect() {
     return;
   }
   setStatus(false);
+  let _opened = false;
   ws = new WebSocket(`${wssUrl}?token=${encodeURIComponent(token)}`);
-  ws.onopen = () => { setStatus(true); backoff = 2000; };
+  ws.onopen = () => { _opened = true; setStatus(true); backoff = 2000; };
   ws.onmessage = (e) => {
     try {
       const data = JSON.parse(e.data);
@@ -108,7 +109,11 @@ async function connect() {
   ws.onerror = () => setStatus(false);
   ws.onclose = (e) => {
     setStatus(false);
-    if (e.code === 4001 || e.code === 4003) AppCache.invalidate('ws:token');
+    // 4001/4003 = explicit auth rejection from server
+    // 1006 without ever opening = handshake rejected (e.g. HMAC replay) — must fetch fresh token
+    if (e.code === 4001 || e.code === 4003 || (e.code === 1006 && !_opened)) {
+      AppCache.invalidate('ws:token');
+    }
     reconnectTimer = setTimeout(() => { backoff = Math.min(backoff * 2, MAX_BACKOFF); connect(); }, backoff);
   };
 }

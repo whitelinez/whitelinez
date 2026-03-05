@@ -413,7 +413,32 @@
 }
 
 .tab-content#tab-ml-showcase {
-  padding-top: 14px;
+  position: relative;
+  padding-top: 28px;
+}
+
+/* Intel panel label — override gov.css base styles when yolo-label is applied */
+.intel-header.yolo-label {
+  padding: 4px 10px;
+  border-bottom: none;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.intel-header.yolo-label .intel-status-row {
+  margin-left: auto;
+  gap: 4px;
+}
+.intel-header.yolo-label .intel-online-dot {
+  background: #005522;     /* dark green visible on cyan */
+  box-shadow: none;
+  animation: none;
+}
+.intel-header.yolo-label .intel-online-label {
+  font-size: 0.52rem;
+  color: #000c14;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 /* ── AI Tab — Banner ───────────────────────────────────────────────────── */

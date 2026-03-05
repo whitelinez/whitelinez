@@ -238,3 +238,42 @@
 .badge-lost      { background: rgba(239,68,68,0.2);   color: var(--red); }
 .badge-cancelled { background: rgba(100,116,139,0.2); color: var(--muted); }
 
+/* ── Dev banner ──────────────────────────────────────────────────────────── */
+.dev-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,184,0,0.07) 0px,
+    rgba(255,184,0,0.07) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+  border-bottom: 1px solid rgba(255,184,0,0.22);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "JetBrains Mono", monospace;
+}
+.dev-banner-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+  animation: dev-blink 2.4s ease-in-out infinite;
+}
+@keyframes dev-blink {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 0.35; }
+}
+.dev-banner-text { opacity: 0.9; }
+@media (max-width: 480px) {
+  .dev-banner { font-size: 10px; gap: 6px; padding: 5px 12px; }
+}
+

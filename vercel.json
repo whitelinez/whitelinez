@@ -1,6 +1,6 @@
 {
     "version":  2,
-    "buildCommand": "mkdir -p dist && cp public/maintenance.html dist/index.html && cp -r public/img dist/img && cp public/favicon.svg dist/favicon.svg",
+    "buildCommand": "npm run build",
     "outputDirectory": "dist",
     "cleanUrls": true,
     "rewrites":  [

@@ -160,60 +160,6 @@
       max-width: 400px;
     }
 
-    /* ── Card ── */
-    .card {
-      width: 100%;
-      background: rgba(13,21,32,0.88);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .card-head {
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      font-family: "Archivo", sans-serif;
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--dim);
-    }
-    .need-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-    .need-row:last-child { border-bottom: none; }
-    .need-icon {
-      flex-shrink: 0;
-      width: 30px; height: 30px;
-      border-radius: 7px;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent);
-      margin-top: 2px;
-    }
-    .need-text strong {
-      display: block;
-      font-size: 0.81rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 2px;
-      letter-spacing: -0.01em;
-    }
-    .need-text span {
-      font-size: 0.76rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
     /* ── Stream label ── */
     .stream-label {
       display: flex;
@@ -269,70 +215,6 @@
         needed to run real-time AI vehicle detection properly —
         without lag, data limits, or degraded accuracy.
       </p>
-    </div>
-
-    <div class="card">
-      <div class="card-head">What we're upgrading</div>
-
-      <div class="need-row">
-        <div class="need-icon">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 10a4.5 4.5 0 0 0 0-4"/><path d="M13.5 11.5a7.5 7.5 0 0 0 0-7"/>
-            <path d="M5 10a4.5 4.5 0 0 1 0-4"/><path d="M2.5 11.5a7.5 7.5 0 0 1 0-7"/>
-            <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
-          </svg>
-        </div>
-        <div class="need-text">
-          <strong>Low-Latency Live Stream</strong>
-          <span>Current stream introduces detection delay — upgrading to a direct, low-latency feed for frame-accurate YOLO inference.</span>
-        </div>
-      </div>
-
-      <div class="need-row">
-        <div class="need-icon">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="10" height="10" rx="2"/>
-            <rect x="5.5" y="5.5" width="5" height="5" rx="1"/>
-            <line x1="5.5" y1="1.5" x2="5.5" y2="3"/><line x1="8" y1="1.5" x2="8" y2="3"/><line x1="10.5" y1="1.5" x2="10.5" y2="3"/>
-            <line x1="5.5" y1="13" x2="5.5" y2="14.5"/><line x1="8" y1="13" x2="8" y2="14.5"/><line x1="10.5" y1="13" x2="10.5" y2="14.5"/>
-            <line x1="1.5" y1="5.5" x2="3" y2="5.5"/><line x1="1.5" y1="8" x2="3" y2="8"/><line x1="1.5" y1="10.5" x2="3" y2="10.5"/>
-            <line x1="13" y1="5.5" x2="14.5" y2="5.5"/><line x1="13" y1="8" x2="14.5" y2="8"/><line x1="13" y1="10.5" x2="14.5" y2="10.5"/>
-          </svg>
-        </div>
-        <div class="need-text">
-          <strong>Dedicated GPU</strong>
-          <span>YOLOv8 inference needs consistent GPU compute — provisioning a dedicated card for real-time detection at full accuracy.</span>
-        </div>
-      </div>
-
-      <div class="need-row">
-        <div class="need-icon">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="8" cy="4.5" rx="5.5" ry="2"/>
-            <path d="M2.5 4.5v3c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2v-3"/>
-            <path d="M2.5 7.5v3c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2v-3"/>
-          </svg>
-        </div>
-        <div class="need-text">
-          <strong>Database Capacity</strong>
-          <span>High-frequency detection events and snapshots require substantially more storage than the current free tier allows.</span>
-        </div>
-      </div>
-
-      <div class="need-row">
-        <div class="need-icon">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3.5 10.5A3 3 0 0 1 4 4.5h.3A4.5 4.5 0 0 1 13 7a2.5 2.5 0 0 1-.5 5H3.5z"/>
-            <line x1="6" y1="10.5" x2="6" y2="13.5"/><line x1="10" y1="10.5" x2="10" y2="13.5"/>
-            <line x1="4" y1="13.5" x2="12" y2="13.5"/>
-          </svg>
-        </div>
-        <div class="need-text">
-          <strong>Serverless Functions</strong>
-          <span>API proxies hit cold-start and duration limits under real traffic — moving to a proper compute tier to handle load.</span>
-        </div>
-      </div>
-
     </div>
 
     <div class="stream-label">

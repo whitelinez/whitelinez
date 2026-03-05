@@ -172,9 +172,13 @@
   padding: 10px 16px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .chat-input-row input {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;       /* allow flex shrink below content width */
   background: var(--bg3);
   border: 1px solid var(--border);
   color: var(--text);
@@ -182,9 +186,15 @@
   border-radius: var(--radius);
   font-size: 0.88rem;
   font-family: inherit;
+  width: 0;           /* combined with flex:1 forces true fill */
 }
 .chat-input-row input:focus { outline: none; border-color: var(--accent); }
-.chat-input-row .btn-primary { padding: 8px 14px; font-size: 0.85rem; }
+.chat-input-row .btn-primary { padding: 8px 14px; font-size: 0.85rem; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .chat-input-row { padding: 8px 10px; gap: 6px; }
+  .chat-input-row .btn-primary { padding: 8px 10px; font-size: 0.8rem; }
+}
 
 .chat-login-hint {
   padding: 10px 16px;

@@ -64,9 +64,12 @@
 
 /* ── Sidebar tabs bar ───────────────────────────────────────────── */
 .sidebar-tabs {
+  display: flex;
+  flex-shrink: 0;
+  position: relative;
   background: rgba(5, 7, 13, 0.88);
   border-bottom: 1px solid rgba(0,212,255,0.12);
-  position: relative;
+  overflow: visible;
 }
 .sidebar-tabs::before {
   content: "";
@@ -364,10 +367,7 @@
   border: 1px solid rgba(0,212,255,0.16);
   background: rgba(5,8,16,0.85);
 }
-.count-widget {
-  border: 1px solid rgba(255,214,0,0.45);
-  background: rgba(4,7,14,0.48);
-}
+/* .count-widget border/bg — in banners-v2.css canonical */
 
 /* ── Admin sections ─────────────────────────────────────────────── */
 .admin-section {
@@ -434,6 +434,10 @@
 
 /* ── Sidebar tab content area ───────────────────────────────────── */
 .tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
   background: linear-gradient(180deg, rgba(0,212,255,0.01) 0%, transparent 20%);
 }
 

@@ -384,15 +384,7 @@
    Compact, transparent, bigger icons
    ============================================= */
 
-/* ── Count Widget ─────────────────────────────── */
-.count-widget {
-  min-width: 0;
-  max-width: 120px;
-  padding: 6px 8px 7px;
-  background: transparent !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
+/* ── Count Widget — background/shadow canonical in banners-v2.css ─ */
 
 .count-widget::before {
   font-size: 0.44rem;

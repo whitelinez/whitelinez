@@ -1107,22 +1107,20 @@
    COUNT WIDGET — HUD REDESIGN
    ============================================= */
 
-/* Override base count-widget layout */
+/* Count widget — canonical HUD overlay definition */
 .count-widget {
   position: absolute;
   top: var(--cw-top);
   left: var(--cw-left);
-  min-width: 148px;
+  width: max-content;
   padding: 8px 10px 9px 10px;
   z-index: 6;
-  clip-path: none;
-  background: rgba(4,7,14,0.72);
   border: 1px solid rgba(255,214,0,0.42);
   border-radius: 0;
-  /* HUD corner cuts via clip-path */
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-  backdrop-filter: blur(3px);
-  box-shadow: 0 0 18px rgba(255,214,0,0.06), inset 0 0 0 1px rgba(255,214,0,0.06);
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 /* HUD top-left label */
@@ -1452,7 +1450,8 @@
     box-shadow 0.22s ease,
     background 0.22s ease,
     backdrop-filter 0.22s ease;
-  cursor: default;
+  cursor: pointer;
+  pointer-events: auto !important;
 }
 
 .count-widget:hover,
@@ -1529,10 +1528,7 @@
    TAB DETECTION BOX — fix collapsed pseudo-element
    ============================================= */
 
-/* Ensure brackets aren't clipped */
-.sidebar-tabs {
-  overflow: visible !important;
-}
+/* .sidebar-tabs overflow: visible — merged into canonical in theme-v2.css */
 .tab-btn {
   overflow: visible !important;
   flex: 1;
@@ -1746,12 +1742,6 @@
    COUNT WIDGET — hover fix (stronger effect)
    ============================================= */
 
-/* Ensure count widget captures pointer events */
-.count-widget {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
 /* Stronger, clearly visible hover state */
 .count-widget:hover,
 .count-widget.cw-active {
@@ -1797,13 +1787,6 @@
 /* =============================================
    COUNT WIDGET — transparent bg + mobile tweak
    ============================================= */
-
-/* Remove background — show text/border only */
-.count-widget {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
-}
 
 /* Hover/tap: subtle bg appears only on interaction */
 .count-widget:hover,

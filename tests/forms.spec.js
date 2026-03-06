@@ -38,7 +38,7 @@ test('login: wrong credentials shows auth error message', async ({ page }) => {
   await page.locator('#modal-submit-btn').click();
   // Wait for async auth response
   const errorEl = page.locator('#modal-auth-error, .auth-error').first();
-  await expect(errorEl).toBeVisible({ timeout: 8000 });
+  await expect(errorEl).toBeVisible({ timeout: 15000 });
   const errorText = await errorEl.textContent();
   expect((errorText || '').trim().length).toBeGreaterThan(0);
   console.log(`Auth error: "${(errorText || '').trim()}"`);

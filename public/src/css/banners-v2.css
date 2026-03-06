@@ -1581,8 +1581,9 @@
     left: var(--cw-left) !important;
     /* Replace old skewed polygon with correct HUD corner-cut */
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+    width: max-content !important;
     min-width: 0 !important;
-    max-width: 160px !important;
+    max-width: none !important;
     padding: 6px 8px 7px 8px !important;
     background: rgba(4,7,14,0.8) !important;
   }
@@ -1819,7 +1820,8 @@
   .count-widget {
     top: 44px !important;
     left: 8px !important;
-    max-width: 130px !important;
+    width: max-content !important;
+    max-width: none !important;
     padding: 5px 7px 6px 7px !important;
     background: transparent !important;
     backdrop-filter: none !important;
@@ -1857,7 +1859,8 @@
   .count-widget {
     top: 40px !important;
     left: 6px !important;
-    max-width: 118px !important;
+    width: max-content !important;
+    max-width: none !important;
     padding: 4px 6px 5px 6px !important;
   }
   .count-widget-total span:first-child {

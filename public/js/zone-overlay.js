@@ -514,51 +514,90 @@ const ZoneOverlay = (() => {
 
   function _drawCountLineCanvas(zone, pt) {
     if (!zone || zone.x1 === undefined) return;
-    const p1 = pt(zone.x1, zone.y1);
-    const p2 = pt(zone.x2, zone.y2);
     const flash = isFlashing;
     const lineColor = flash ? '#00FF88' : '#FFB800';
+    const isPoly = zone.x3 !== undefined;
+    const poly = isPoly ? _toPoints(zone, pt) : null;
+    const p1 = pt(zone.x1, zone.y1);
+    const p2 = pt(zone.x2, zone.y2);
 
-    // Glow halo pass
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = flash ? 8 : 5;
-    ctx.globalAlpha = 0.20;
-    ctx.shadowColor = lineColor;
-    ctx.shadowBlur = flash ? 20 : 12;
-    ctx.stroke();
-    ctx.restore();
-
-    // Main line
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = flash ? 3 : 2;
-    ctx.shadowColor = lineColor;
-    ctx.shadowBlur = flash ? 12 : 6;
-    ctx.stroke();
-    ctx.restore();
-
-    // Rounded end caps
-    [p1, p2].forEach(p => {
+    if (isPoly && poly && poly.length >= 3) {
+      // ── Polygon count zone ──────────────────────────────────────────────
+      // Glow halo
       ctx.save();
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = lineColor;
+      ctx.moveTo(poly[0].x, poly[0].y);
+      poly.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = flash ? 8 : 5;
+      ctx.globalAlpha = 0.20;
       ctx.shadowColor = lineColor;
-      ctx.shadowBlur = 8;
-      ctx.fill();
+      ctx.shadowBlur = flash ? 20 : 12;
+      ctx.stroke();
       ctx.restore();
-    });
+      // Fill
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(poly[0].x, poly[0].y);
+      poly.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.fillStyle = flash ? 'rgba(0,255,136,0.10)' : 'rgba(255,184,0,0.08)';
+      ctx.fill();
+      // Border
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = flash ? 3 : 2;
+      ctx.shadowColor = lineColor;
+      ctx.shadowBlur = flash ? 12 : 6;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      // ── 2-point line count zone ─────────────────────────────────────────
+      // Glow halo pass
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = flash ? 8 : 5;
+      ctx.globalAlpha = 0.20;
+      ctx.shadowColor = lineColor;
+      ctx.shadowBlur = flash ? 20 : 12;
+      ctx.stroke();
+      ctx.restore();
 
-    // Count badge above midpoint
-    const mx = (p1.x + p2.x) / 2;
-    const my = (p1.y + p2.y) / 2;
+      // Main line
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = flash ? 3 : 2;
+      ctx.shadowColor = lineColor;
+      ctx.shadowBlur = flash ? 12 : 6;
+      ctx.stroke();
+      ctx.restore();
+
+      // Rounded end caps
+      [p1, p2].forEach(p => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = lineColor;
+        ctx.shadowColor = lineColor;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
+      });
+    } // end else (2-point line)
+
+    // Count badge — centroid of polygon or midpoint of line
+    const mx = (isPoly && poly && poly.length >= 3)
+      ? poly.reduce((s, p) => s + p.x, 0) / poly.length
+      : (p1.x + p2.x) / 2;
+    const my = (isPoly && poly && poly.length >= 3)
+      ? poly.reduce((s, p) => s + p.y, 0) / poly.length
+      : (p1.y + p2.y) / 2;
     const label = String(confirmedTotal);
     ctx.save();
     ctx.font = '700 15px Rajdhani, sans-serif';
@@ -606,32 +645,51 @@ const ZoneOverlay = (() => {
 
   function _drawCountLinePixi(zone, pt) {
     if (!zone || zone.x1 === undefined) return;
-    const p1 = pt(zone.x1, zone.y1);
-    const p2 = pt(zone.x2, zone.y2);
     const flash = isFlashing;
     const col = flash ? 0x00FF88 : 0xFFB800;
+    const isPoly = zone.x3 !== undefined;
+    const poly = isPoly ? _toPoints(zone, pt) : null;
+    const p1 = pt(zone.x1, zone.y1);
+    const p2 = pt(zone.x2, zone.y2);
 
-    // Glow pass
-    pixiGraphics.lineStyle(flash ? 8 : 5, col, 0.20);
-    pixiGraphics.moveTo(p1.x, p1.y);
-    pixiGraphics.lineTo(p2.x, p2.y);
-
-    // Main line
-    pixiGraphics.lineStyle(flash ? 3 : 2, col, 1);
-    pixiGraphics.moveTo(p1.x, p1.y);
-    pixiGraphics.lineTo(p2.x, p2.y);
-
-    // End caps
-    [p1, p2].forEach(p => {
-      pixiGraphics.beginFill(col, 1);
-      pixiGraphics.lineStyle(0);
-      pixiGraphics.drawCircle(p.x, p.y, 4);
+    if (isPoly && poly && poly.length >= 3) {
+      // Glow pass
+      pixiGraphics.lineStyle(flash ? 8 : 5, col, 0.20);
+      pixiGraphics.moveTo(poly[0].x, poly[0].y);
+      poly.forEach(p => pixiGraphics.lineTo(p.x, p.y));
+      pixiGraphics.lineTo(poly[0].x, poly[0].y);
+      // Fill
+      pixiGraphics.beginFill(col, flash ? 0.10 : 0.08);
+      pixiGraphics.lineStyle(flash ? 3 : 2, col, 1);
+      pixiGraphics.moveTo(poly[0].x, poly[0].y);
+      poly.forEach(p => pixiGraphics.lineTo(p.x, p.y));
+      pixiGraphics.lineTo(poly[0].x, poly[0].y);
       pixiGraphics.endFill();
-    });
+    } else {
+      // Glow pass
+      pixiGraphics.lineStyle(flash ? 8 : 5, col, 0.20);
+      pixiGraphics.moveTo(p1.x, p1.y);
+      pixiGraphics.lineTo(p2.x, p2.y);
+      // Main line
+      pixiGraphics.lineStyle(flash ? 3 : 2, col, 1);
+      pixiGraphics.moveTo(p1.x, p1.y);
+      pixiGraphics.lineTo(p2.x, p2.y);
+      // End caps
+      [p1, p2].forEach(p => {
+        pixiGraphics.beginFill(col, 1);
+        pixiGraphics.lineStyle(0);
+        pixiGraphics.drawCircle(p.x, p.y, 4);
+        pixiGraphics.endFill();
+      });
+    }
 
-    // Count badge label
-    const mx = (p1.x + p2.x) / 2;
-    const my = (p1.y + p2.y) / 2 - 20;
+    // Count badge — centroid of polygon or midpoint of line
+    const mx = (isPoly && poly && poly.length >= 3)
+      ? poly.reduce((s, p) => s + p.x, 0) / poly.length
+      : (p1.x + p2.x) / 2;
+    const my = (isPoly && poly && poly.length >= 3)
+      ? poly.reduce((s, p) => s + p.y, 0) / poly.length - 20
+      : (p1.y + p2.y) / 2 - 20;
     addPixiLabel(String(confirmedTotal), mx, my, col);
   }
 

@@ -229,36 +229,9 @@
   padding-right: 12px;
   border-right: 1px solid var(--border);
 }
-.cw-strip-dot { display: none; }
-.cw-normal-wrap {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-  min-width: 0;
-}
-.cw-vehicle-item {
-  display: flex; align-items: center; gap: 5px;
-  flex-shrink: 0;
-}
-.cw-vehicle-icon {
-  width: 22px; height: 12px; flex-shrink: 0;
-  color: var(--muted);
-}
-.cw-vehicle-num {
-  font-family: "Rajdhani", "Archivo", sans-serif;
-  font-size: 17px; font-weight: 700;
-  color: var(--text); line-height: 1;
-  min-width: 20px;
-}
 .cw-total-wrap {
   margin-left: auto;
   display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-.cw-total-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted);
-  font-family: "Inter", sans-serif;
 }
 .cw-total-val {
   font-family: "Rajdhani", "Archivo", sans-serif;

@@ -2148,7 +2148,4 @@
   .hiw-got-it { width: 100%; text-align: center; }
 }
 
-/* ── Count widget — normal / guess mode wrappers ─────────────── */
-.cw-normal-wrap { display: flex; flex-direction: column; gap: 0; }
-.cw-normal-wrap.hidden { display: none; }
 

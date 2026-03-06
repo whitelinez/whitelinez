@@ -2725,7 +2725,6 @@
     right:  auto !important;
     bottom: auto !important;
   }
-  .cw-vehicle-num { font-size: 15px; }
   .cw-total-val   { font-size: 42px; }
 
   /* ── Vision HUD — small transparent overlay, bottom-RIGHT ── */
@@ -3027,7 +3026,6 @@
   .header-cam-chip    { max-width: 140px; }
   .logo-part-main     { font-size: 12px; }
   .header-play-btn    { padding: 5px 10px; font-size: 11px; }
-  .cw-vehicle-num     { font-size: 13px; }
   .cw-total-val       { font-size: 42px; }
   .cam-pill           { height: 24px; padding: 0 9px; font-size: 10px; }
   .aip-stats-row      { max-width: 55vw; }
@@ -3099,7 +3097,6 @@
 
   /* Compact count strip in landscape */
   .count-widget { height: 34px; gap: 10px; }
-  .cw-vehicle-num { font-size: 13px; }
   .cw-total-val   { font-size: 38px; }
 
   /* AI pulse strip stays at top */

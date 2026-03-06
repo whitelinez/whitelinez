@@ -15,7 +15,7 @@
   flex-shrink: 0;
 }
 .nav-icon-btn:hover {
-  color: #00d4ff;
+  color: var(--cyan);
   border-color: rgba(0,212,255,0.44);
   background: rgba(0,212,255,0.06);
   box-shadow: 0 0 0 3px rgba(0,212,255,0.07);
@@ -24,7 +24,7 @@
 
 /* Admin — AI scan box: always accented cyan, matches logo */
 .nav-icon-admin {
-  color: #00d4ff;
+  color: var(--cyan);
   border-color: rgba(0,212,255,0.28);
   background: rgba(0,212,255,0.05);
 }
@@ -37,7 +37,7 @@
 
 /* Register — cyan tint CTA */
 .nav-icon-register {
-  color: #00d4ff;
+  color: var(--cyan);
   border-color: rgba(0,212,255,0.24);
 }
 .nav-icon-register:hover {
@@ -65,7 +65,7 @@
   position: absolute;
   width: 5px;
   height: 5px;
-  border-color: #00d4ff;
+  border-color: var(--cyan);
   border-style: solid;
   opacity: 0.42;
   pointer-events: none;

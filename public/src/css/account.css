@@ -509,7 +509,7 @@
 .ml-progress-fill {
   width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #00BCD4 0%, #22c55e 100%);
+  background: linear-gradient(90deg, #00BCD4 0%, var(--ag) 100%);
   transition: width .25s ease;
 }
 
@@ -1557,7 +1557,7 @@ button {
 
 .btn-primary,
 .btn-bet {
-  background: linear-gradient(135deg, #FFD600 0%, #FFC107 100%);
+  background: linear-gradient(135deg, var(--cls-moto) 0%, #FFC107 100%);
   border: 1px solid rgba(255, 214, 0, 0.35);
   box-shadow: 0 8px 20px rgba(255, 193, 7, 0.25);
   transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
@@ -1616,10 +1616,10 @@ button {
   flex-shrink: 0;
 }
 
-.vehicle-icon.car { color: #29B6F6; }
-.vehicle-icon.truck { color: #FF7043; }
-.vehicle-icon.bus { color: #AB47BC; }
-.vehicle-icon.moto { color: #FFD600; }
+.vehicle-icon.car { color: var(--cls-car); }
+.vehicle-icon.truck { color: var(--cls-truck); }
+.vehicle-icon.bus { color: var(--cls-bus); }
+.vehicle-icon.moto { color: var(--cls-moto); }
 
 .count-widget-breakdown .cw-item strong {
   color: #fff4c2;
@@ -1839,6 +1839,6 @@ button {
 /* ═══════════════════════════════════════════════════════════════════
    WHITELINEZ — UI THEME v2 : Cyber Terminal Aesthetic
    Unified design language: header ↔ overlays ↔ sidebar
-   Primary theme color: #00d4ff  │  Accent: #FFD600  │  Live: #22c55e
+   Primary theme color: var(--cyan)  │  Accent: var(--cls-moto)  │  Live: var(--ag)
    ═══════════════════════════════════════════════════════════════════ */
 

@@ -14,7 +14,7 @@
 #lb-refresh:hover {
   background: rgba(0,212,255,0.1);
   border-color: rgba(0,212,255,0.5);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 
 #tab-leaderboard {
@@ -570,7 +570,7 @@
 }
 
 .ai-con-val.primary {
-  color: #22c55e;
+  color: var(--ag);
   font-weight: 700;
   font-size: 0.82rem;
   text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
@@ -624,12 +624,12 @@
 
 .ai-console .mls-item-main::before {
   content: "> ";
-  color: #22c55e;
+  color: var(--ag);
   font-weight: 700;
 }
 
 .ai-console .mls-item-meta {
-  color: #22c55e;
+  color: var(--ag);
   opacity: 0.65;
 }
 

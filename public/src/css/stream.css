@@ -25,7 +25,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #22c55e;
+  background: var(--ag);
   flex-shrink: 0;
   animation: scoDotPulse 2.4s ease-in-out infinite;
   filter: drop-shadow(0 0 3px rgba(34,197,94,0.8));
@@ -70,7 +70,7 @@
 }
 .sco-msg-user {
   font-weight: 700;
-  color: #00d4ff;
+  color: var(--cyan);
   margin-right: 3px;
   text-shadow: 0 0 8px rgba(0,212,255,0.55), 0 1px 3px rgba(0,0,0,0.8);
 }

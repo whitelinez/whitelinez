@@ -31,7 +31,7 @@
 .wl-dragging {
   cursor: grabbing !important;
   z-index: 200 !important;
-  outline-color: #FFD600 !important;
+  outline-color: var(--cls-moto) !important;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) !important;
 }
 
@@ -111,7 +111,7 @@
 .wl-btn-reset:hover {
   background: rgba(255, 214, 0, 0.07);
   border-color: rgba(255, 214, 0, 0.5);
-  color: #FFD600;
+  color: var(--cls-moto);
 }
 .wl-btn-push {
   border-color: rgba(0, 212, 255, 0.35);
@@ -120,7 +120,7 @@
 .wl-btn-push:hover {
   background: rgba(0, 212, 255, 0.09);
   border-color: rgba(0, 212, 255, 0.6);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 .wl-btn-exit {
   border-color: rgba(255, 80, 80, 0.25);
@@ -152,7 +152,7 @@
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .nav-layout-btn:hover {
-  color: #ffd600;
+  color: var(--cls-moto);
   border-color: rgba(255,214,0,0.55);
   background: rgba(255,214,0,0.12);
 }
@@ -1526,7 +1526,7 @@
   font-size: 8px; padding: 2px 8px; border-radius: 3px;
   font-family: "JetBrains Mono", monospace; letter-spacing: 0.05em; font-weight: 700;
 }
-.gov-an-ftag--detect { background: rgba(41,182,246,0.1); color: #29B6F6; border: 1px solid rgba(41,182,246,0.25); }
+.gov-an-ftag--detect { background: rgba(41,182,246,0.1); color: var(--cls-car); border: 1px solid rgba(41,182,246,0.25); }
 .gov-an-ftag--zone   { background: rgba(76,175,80,0.1);  color: #4CAF50; border: 1px solid rgba(76,175,80,0.25); }
 .gov-an-video-slot {
   position: relative; width: 100%; height: 260px;
@@ -1633,10 +1633,10 @@
 }
 .gov-crossings-table tbody tr { cursor: pointer; transition: background 0.1s; }
 .gov-crossings-table tbody tr:hover { background: var(--bg3); }
-.gov-td-car   { color: #29B6F6; font-weight: 700; }
-.gov-td-truck { color: #FF7043; font-weight: 700; }
-.gov-td-bus   { color: #AB47BC; font-weight: 700; }
-.gov-td-moto  { color: #FFD600; font-weight: 700; }
+.gov-td-car   { color: var(--cls-car); font-weight: 700; }
+.gov-td-truck { color: var(--cls-truck); font-weight: 700; }
+.gov-td-bus   { color: var(--cls-bus); font-weight: 700; }
+.gov-td-moto  { color: var(--cls-moto); font-weight: 700; }
 .gov-td-in    { color: var(--green); font-weight: 600; }
 .gov-td-out   { color: var(--muted); }
 
@@ -1679,7 +1679,7 @@
   --muted:  #64748b;
   --dim:    #94a3b8;
   --cyan:   #0284c7;
-  --accent: #FFB800;
+  --accent: var(--accent);
   --green:  #16a34a;
 }
 /* Loading progress overlay */
@@ -1717,7 +1717,7 @@
   --muted:  #64748b;
   --dim:    #94a3b8;
   --cyan:   #0284c7;
-  --accent: #FFB800;
+  --accent: var(--accent);
   --green:  #16a34a;
 }
 /* Hardcoded dark values inside live panel */
@@ -1740,7 +1740,7 @@
   --muted:  #64748b;
   --dim:    #94a3b8;
   --cyan:   #0284c7;
-  --accent: #FFB800;
+  --accent: var(--accent);
 }
 /* Fix hardcoded dark color-scheme on date inputs */
 #gov-panel-export .gov-date-input { color-scheme: light; }
@@ -1765,7 +1765,7 @@
   content: "LIVE TRAFFIC INTELLIGENCE · JAMAICA";
   display: block;
   font-family: "Inter", sans-serif; font-size: 10px; font-weight: 700;
-  letter-spacing: 2.5px; color: #22c55e;
+  letter-spacing: 2.5px; color: var(--ag);
   margin-bottom: 14px;
 }
 .gov-agencies-pitch {
@@ -1790,13 +1790,13 @@
   transition: background 0.15s;
 }
 .gov-trust-badge:hover { background: #e2e8f0; }
-.gov-trust-badge-icon { color: #22c55e; font-size: 10px; flex-shrink: 0; }
+.gov-trust-badge-icon { color: var(--ag); font-size: 10px; flex-shrink: 0; }
 /* Highlight the count badge */
 .gov-trust-badge:nth-child(2) {
   background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.30);
   color: #15803d;
 }
-.gov-trust-badge:nth-child(2) .gov-trust-badge-icon { color: #22c55e; }
+.gov-trust-badge:nth-child(2) .gov-trust-badge-icon { color: var(--ag); }
 
 /* ── HOW IT WORKS STRIP ──────────────────────────── */
 .gov-hiw-strip {
@@ -1819,7 +1819,7 @@
   width: 44px; height: 44px; border-radius: 12px;
   background: #ffffff; border: 1px solid #e2e8f0;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; color: #22c55e;
+  flex-shrink: 0; color: var(--ag);
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .gov-hiw-icon svg { width: 20px; height: 20px; }
@@ -1838,7 +1838,7 @@
   display: flex; align-items: center; gap: 10px;
   padding: 12px 32px;
   font-family: "Inter", sans-serif; font-size: 12px; font-weight: 600;
-  color: #22c55e; letter-spacing: 0.2px;
+  color: var(--ag); letter-spacing: 0.2px;
   background: #f0fdf4;
   border-bottom: 1px solid #bbf7d0;
   flex-shrink: 0;
@@ -1851,7 +1851,7 @@
 .gov-ag-live-bar > span:first-child::before {
   content: '';
   width: 7px; height: 7px; border-radius: 50%;
-  background: #22c55e;
+  background: var(--ag);
   box-shadow: 0 0 0 0 rgba(34,197,94,0.4);
   animation: ag-live-pulse 2s ease-in-out infinite;
   flex-shrink: 0;
@@ -1890,7 +1890,7 @@
   display: inline-block;
   font-family: "Inter", sans-serif; font-size: 10px; font-weight: 700;
   letter-spacing: 1.5px; text-transform: uppercase;
-  color: #22c55e; background: rgba(34,197,94,0.1);
+  color: var(--ag); background: rgba(34,197,94,0.1);
   border: 1px solid rgba(34,197,94,0.25); border-radius: 100px;
   padding: 4px 12px; width: fit-content;
 }
@@ -1905,7 +1905,7 @@
 }
 .gov-agency-featured-bullets .gov-agency-bullet::before {
   content: ''; position: absolute; left: 0; top: 7px;
-  width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ag);
 }
 .gov-agency-featured-right {
   width: 210px; flex-shrink: 0; padding: 28px 24px;
@@ -1914,7 +1914,7 @@
   align-items: flex-start; gap: 6px; border-left: none;
 }
 .gov-agency-featured-right .gov-agency-abbr {
-  font-size: 12px; font-weight: 700; letter-spacing: 2.5px; color: #22c55e;
+  font-size: 12px; font-weight: 700; letter-spacing: 2.5px; color: var(--ag);
 }
 .gov-agency-featured-right .gov-agency-val {
   font-family: "Inter", "Rajdhani", sans-serif;
@@ -1926,7 +1926,7 @@
   letter-spacing: 0.8px; font-weight: 600; line-height: 1.4; margin-top: 0;
 }
 .gov-agency-featured-right .gov-agency-sub-metric {
-  font-size: 11px; color: #22c55e; font-weight: 600; margin-top: 4px;
+  font-size: 11px; color: var(--ag); font-weight: 600; margin-top: 4px;
 }
 .gov-agency-featured .gov-agency-btn--accent {
   margin-top: 8px; padding: 12px 20px; font-size: 13px; font-weight: 700;

@@ -34,7 +34,7 @@
 /* Body column — left accent bar from CSS var injected by JS */
 .chat-body {
   border-left: 2px solid rgba(0,0,0,0);
-  border-left-color: color-mix(in srgb, var(--user-accent, #00d4ff) 30%, transparent);
+  border-left-color: color-mix(in srgb, var(--user-accent, var(--cyan)) 30%, transparent);
   padding-left: 8px;
   min-width: 0;
 }
@@ -121,13 +121,13 @@
 
 /* Live dot variants */
 .bnr-ai-dot-live {
-  background: #FFD600;
+  background: var(--cls-moto);
   animation: bnr-ai-pulse 0.85s ease-in-out infinite;
 }
 
 /* "BET NOW" label — glowing yellow */
 .bnr-standby-live {
-  color: #FFD600;
+  color: var(--cls-moto);
   font-weight: 700;
   text-shadow: 0 0 8px rgba(255,214,0,0.55);
   letter-spacing: 0.06em;
@@ -187,7 +187,7 @@
   border-radius: 20px;
   border: 1px solid rgba(0,212,255,0.35);
   background: rgba(0,212,255,0.1);
-  color: #00d4ff;
+  color: var(--cyan);
   font-family: "Archivo", sans-serif;
   font-size: 0.62rem;
   font-weight: 700;
@@ -238,7 +238,7 @@
   font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: rgba(0, 212, 255, 0.35); margin: 0; transition: color 250ms, opacity 250ms;
 }
-.sso-step.active { color: #00d4ff; }
+.sso-step.active { color: var(--cyan); }
 .sso-step.done   { color: rgba(24, 199, 122, 0.7); }
 
 .stream-offline-overlay {
@@ -394,7 +394,7 @@
   font-family: "JetBrains Mono", monospace;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #00d4ff;
+  color: var(--cyan);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -414,7 +414,7 @@
 .cam-modal-close:hover {
   background: rgba(0,212,255,0.08);
   border-color: rgba(0,212,255,0.4);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 
 .cam-modal-hint {
@@ -559,7 +559,7 @@
 .btn-cam-switch:hover:not([disabled]) {
   background: rgba(0,212,255,0.14);
   border-color: rgba(0,212,255,0.45);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 .btn-cam-switch-active {
   border-color: rgba(34,197,94,0.35);
@@ -578,7 +578,7 @@
   margin-bottom: 8px;
   display: block;
 }
-.streams-msg-ok  { color: var(--ok, #22c55e); }
+.streams-msg-ok  { color: var(--ok, var(--ag)); }
 .streams-msg-err { color: var(--err, #ef4444); }
 
 .stream-row {
@@ -630,7 +630,7 @@
   border: 1px solid rgba(0,212,255,0.2);
   background: rgba(5,8,16,0.88);
 }
-.stream-badge-active   { background: rgba(34,197,94,0.15);  color: #22c55e; }
+.stream-badge-active   { background: rgba(34,197,94,0.15);  color: var(--ag); }
 .stream-badge-inactive { background: rgba(100,116,139,0.15); color: rgba(100,116,139,0.8); }
 .stream-type-tag {
   font-family: "JetBrains Mono", monospace;
@@ -777,7 +777,7 @@
 .stream-btn-edit:hover {
   border-color: rgba(0,212,255,0.55);
   background: rgba(0,212,255,0.12);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 
 /* Activate — green */
@@ -789,7 +789,7 @@
 .stream-btn-activate:hover {
   border-color: rgba(34,197,94,0.6);
   background: rgba(34,197,94,0.15);
-  color: #22c55e;
+  color: var(--ag);
 }
 
 /* Deactivate — amber */
@@ -813,7 +813,7 @@
 .stream-btn-set-ai:hover {
   border-color: rgba(0,212,255,0.6);
   background: rgba(0,212,255,0.14);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 
 /* Delete — red */
@@ -892,7 +892,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #00d4ff;
+  color: var(--cyan);
   background: rgba(0,212,255,0.1);
   border: 1px solid rgba(0,212,255,0.3);
   border-radius: 3px;
@@ -903,7 +903,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #00d4ff;
+  background: var(--cyan);
   animation: stream-live-pulse 1.5s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -937,9 +937,9 @@
 /* pointer-events back on lb-header since it has an interactive button */
 .lb-header.yolo-label { pointer-events: auto; }
 
-.yolo-label-cyan   { background: #00d4ff; color: #000c14; }
-.yolo-label-yellow { background: #FFD600; color: #0f0c00; }
-.yolo-label-green  { background: #22c55e; color: #021207; }
+.yolo-label-cyan   { background: var(--cyan); color: #000c14; }
+.yolo-label-yellow { background: var(--cls-moto); color: #0f0c00; }
+.yolo-label-green  { background: var(--ag); color: #021207; }
 
 /* Banner tile YOLO labels sit above all tile layers */
 .bnr-tile .yolo-label { z-index: 10; pointer-events: none; }
@@ -998,7 +998,7 @@
   transition: color .16s, border-color .16s, background .16s, box-shadow .16s;
 }
 .nav-login-btn:hover {
-  color: #00d4ff;
+  color: var(--cyan);
   border-color: rgba(0,212,255,0.44);
   background: rgba(0,212,255,0.06);
   box-shadow: 0 0 0 3px rgba(0,212,255,0.07);
@@ -1146,7 +1146,7 @@
   font-size: 2rem;
   font-weight: 900;
   font-family: "JetBrains Mono", monospace;
-  color: #FFD600;
+  color: var(--cls-moto);
   line-height: 1;
   text-shadow: 0 0 14px rgba(255,214,0,0.4), 0 2px 8px rgba(0,0,0,0.6);
   letter-spacing: -0.02em;
@@ -1205,10 +1205,10 @@
   flex-shrink: 0;
   opacity: 0.9;
 }
-.vehicle-icon.car   { color: #00d4ff; }
+.vehicle-icon.car   { color: var(--cyan); }
 .vehicle-icon.truck { color: #fb923c; }
 .vehicle-icon.bus   { color: #a78bfa; }
-.vehicle-icon.moto  { color: #FFD600; }
+.vehicle-icon.moto  { color: var(--cls-moto); }
 
 /* =============================================
    BANNER GRID — 1-column stacked landscape
@@ -1260,7 +1260,7 @@
 .bnr-lbanner-icon-live {
   background: rgba(34,197,94,0.15);
   border: 1.5px solid rgba(34,197,94,0.55);
-  color: #22c55e;
+  color: var(--ag);
   box-shadow: 0 0 18px rgba(34,197,94,0.22);
 }
 
@@ -1268,7 +1268,7 @@
 .bnr-lbanner-icon-cam {
   background: rgba(0,212,255,0.09);
   border: 1.5px solid rgba(0,212,255,0.32);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 
 /* ── Body text ── */
@@ -1318,7 +1318,7 @@
   padding: 9px 18px;
   border: 1px solid rgba(34,197,94,0.45);
   background: rgba(34,197,94,0.12);
-  color: #22c55e;
+  color: var(--ag);
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -1375,7 +1375,7 @@
 .bnr-tile-camera:hover .bnr-cam-cta {
   background: rgba(0,212,255,0.14);
   border-color: rgba(0,212,255,0.55);
-  color: #00d4ff;
+  color: var(--cyan);
 }
 
 /* ── Play tile overrides — green accent, dark opacity bg ── */
@@ -1424,7 +1424,7 @@
 .bnr-tile-camera .bnr-tile-title {
   font-size: 11px;
   font-weight: 800;
-  color: #00d4ff;
+  color: var(--cyan);
   letter-spacing: 0.02em;
   margin-bottom: 2px;
   text-shadow: 0 0 10px rgba(0,212,255,0.3);
@@ -1518,7 +1518,7 @@
 
 /* Keep cyan text on active tab */
 .tab-btn.active {
-  color: #00d4ff;
+  color: var(--cyan);
   background: rgba(0,212,255,0.04);
   text-shadow: 0 0 10px rgba(0,212,255,0.2);
   border-bottom-color: transparent;
@@ -1866,7 +1866,7 @@
 
 /* Cyan dot variant for camera tile status bar */
 .bnr-ai-dot-cyan {
-  background: #00d4ff;
+  background: var(--cyan);
   box-shadow: 0 0 0 0 rgba(0,212,255,0.55);
   animation: bnr-ai-pulse-cyan 1.8s ease-in-out infinite;
 }
@@ -1981,7 +1981,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: #FFD600;
+  color: var(--cls-moto);
   text-transform: uppercase;
 }
 
@@ -2000,7 +2000,7 @@
 .hiw-modal-close:hover {
   background: rgba(255,214,0,0.08);
   border-color: rgba(255,214,0,0.45);
-  color: #FFD600;
+  color: var(--cls-moto);
 }
 
 /* ── Body ── */
@@ -2121,7 +2121,7 @@
 .hiw-got-it {
   background: rgba(255,214,0,0.1);
   border: 1px solid rgba(255,214,0,0.35);
-  color: #FFD600;
+  color: var(--cls-moto);
   font-size: 0.77rem;
   font-weight: 700;
   font-family: "JetBrains Mono", monospace;

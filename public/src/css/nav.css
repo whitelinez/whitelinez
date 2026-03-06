@@ -274,6 +274,19 @@
 }
 .dev-banner-text { opacity: 0.9; }
 .dev-banner-short { display: none; }
+.dev-banner-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  opacity: 0.6;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.dev-banner-close:hover { opacity: 1; }
 
 @media (max-width: 480px) {
   .dev-banner { font-size: 10px; gap: 6px; padding: 5px 12px; }

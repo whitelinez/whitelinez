@@ -15,12 +15,7 @@ const FloatingCount = (() => {
 
   // ── Cached DOM refs (populated in init; avoids getElementById on every update) ──
   let _totalEl    = null;
-  let _carsEl     = null;
-  let _trucksEl   = null;
-  let _busesEl    = null;
-  let _motosEl    = null;
   let _fpsEl      = null;
-  let _normalEl   = null;
   let _guessModeEl = null;
   let _gmTargetEl = null;
   let _gmCurrentEl = null;
@@ -29,12 +24,7 @@ const FloatingCount = (() => {
   function init(streamWrapper) {
     _wrapper = streamWrapper;
     _totalEl    = document.getElementById("cw-total");
-    _carsEl     = document.getElementById("cw-cars");
-    _trucksEl   = document.getElementById("cw-trucks");
-    _busesEl    = document.getElementById("cw-buses");
-    _motosEl    = document.getElementById("cw-motos");
     _fpsEl      = document.getElementById("cw-fps");
-    _normalEl   = document.getElementById("cw-normal");
     _guessModeEl = document.getElementById("cw-guess-mode");
     _gmTargetEl = document.getElementById("cw-gm-target");
     _gmCurrentEl = document.getElementById("cw-gm-current");
@@ -56,10 +46,6 @@ const FloatingCount = (() => {
         // Reset count display until new stream data arrives
         _lastTotal = 0;
         if (_totalEl)  _totalEl.textContent  = "0";
-        if (_carsEl)   _carsEl.textContent   = "0";
-        if (_trucksEl) _trucksEl.textContent = "0";
-        if (_busesEl)  _busesEl.textContent  = "0";
-        if (_motosEl)  _motosEl.textContent  = "0";
         if (_fpsEl)    _fpsEl.textContent    = "--";
       } else if (cameraId) {
         _loadCameraSnapshot(cameraId);
@@ -81,7 +67,6 @@ const FloatingCount = (() => {
   // ── Mode switches ─────────────────────────────────────────────
 
   function _enterGuessMode() {
-    _normalEl?.classList.add("hidden");
     _guessModeEl?.classList.remove("hidden");
     if (_gmTargetEl) _gmTargetEl.textContent = _guessTarget ?? "—";
     _setGuessProgress(0);
@@ -90,7 +75,6 @@ const FloatingCount = (() => {
   function _exitGuessMode() {
     _guessBaseline = null;
     _guessTarget   = null;
-    _normalEl?.classList.remove("hidden");
     _guessModeEl?.classList.add("hidden");
   }
 
@@ -110,17 +94,12 @@ const FloatingCount = (() => {
 
   function update(data) {
     const total     = data.total ?? 0;
-    const bd        = data.vehicle_breakdown ?? {};
     const crossings = data.new_crossings ?? 0;
 
     _lastTotal = total;
     window._lastCountPayload = data;
 
     if (_totalEl)  _totalEl.textContent  = total.toLocaleString();
-    if (_carsEl)   _carsEl.textContent   = bd.car        ?? 0;
-    if (_trucksEl) _trucksEl.textContent = bd.truck      ?? 0;
-    if (_busesEl)  _busesEl.textContent  = bd.bus        ?? 0;
-    if (_motosEl)  _motosEl.textContent  = bd.motorcycle ?? 0;
     if (_fpsEl) {
       const fps = data.fps ?? data.fps_estimate ?? null;
       _fpsEl.textContent = fps != null ? `${Number(fps).toFixed(1)} fps` : "--.- fps";

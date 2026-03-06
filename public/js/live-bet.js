@@ -212,6 +212,8 @@ const LiveBet = (() => {
     _showBpResult(data);
   }
 
+  let _replayChart = null;
+
   function _showBpResult(data) {
     const resultEl = document.getElementById("bp-result");
     if (!resultEl) {
@@ -261,11 +263,137 @@ const LiveBet = (() => {
 
     document.getElementById("bp-submit")?.classList.add("hidden");
     resultEl.classList.remove("hidden");
+
+    // Load replay sparkline if window info is available
+    if (data.window_start && data.window_end && data.camera_id) {
+      _loadReplayChart(data).catch(() => {});
+    } else {
+      const replayEl = document.getElementById("bpr-replay");
+      if (replayEl) replayEl.classList.add("hidden");
+    }
+  }
+
+  async function _loadReplayChart(data) {
+    const replayEl = document.getElementById("bpr-replay");
+    const canvas   = document.getElementById("bpr-replay-canvas");
+    if (!replayEl || !canvas || !window.Chart) return;
+
+    try {
+      // Fetch count_snapshots for the window period
+      const { createClient } = window.supabase || {};
+      if (!createClient && !window.sb) return;
+      const sb = window.sb;
+      if (!sb) return;
+
+      const { data: snaps } = await sb
+        .from("count_snapshots")
+        .select("captured_at,total,vehicle_breakdown")
+        .eq("camera_id", data.camera_id)
+        .gte("captured_at", data.window_start)
+        .lte("captured_at", data.window_end)
+        .order("captured_at", { ascending: true })
+        .limit(200);
+
+      if (!snaps || snaps.length < 2) {
+        replayEl.classList.add("hidden");
+        return;
+      }
+
+      // Build relative counts (subtract baseline)
+      const baseline = data.baseline || 0;
+      const vcls = data.vehicle_class;
+      const labels = snaps.map(s => {
+        const t = new Date(s.captured_at);
+        return `${t.getMinutes().toString().padStart(2,"0")}:${t.getSeconds().toString().padStart(2,"0")}`;
+      });
+      const counts = snaps.map(s => {
+        const raw = vcls ? ((s.vehicle_breakdown || {})[vcls] || 0) : (s.total || 0);
+        return Math.max(0, raw - baseline);
+      });
+
+      // Destroy previous chart instance
+      if (_replayChart) { _replayChart.destroy(); _replayChart = null; }
+
+      const isDark = document.body.classList.contains("dark");
+      const guessColor = "#facc15";
+      const lineColor  = "#29B6F6";
+      const mutedColor = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)";
+
+      _replayChart = new window.Chart(canvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Count",
+              data: counts,
+              borderColor: lineColor,
+              backgroundColor: `${lineColor}22`,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 0,
+              borderWidth: 2,
+            },
+            {
+              label: "Your guess",
+              data: new Array(counts.length).fill(data.exact),
+              borderColor: guessColor,
+              borderWidth: 1.5,
+              borderDash: [4, 3],
+              pointRadius: 0,
+              fill: false,
+              tension: 0,
+            },
+          ],
+        },
+        options: {
+          animation: false,
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              display: true,
+              ticks: { maxTicksLimit: 3, font: { size: 9 }, color: mutedColor },
+              grid: { color: mutedColor },
+              border: { display: false },
+            },
+          },
+        },
+      });
+
+      replayEl.classList.remove("hidden");
+    } catch (err) {
+      if (replayEl) replayEl.classList.add("hidden");
+    }
   }
 
   function _hideBpResult() {
     document.getElementById("bp-result")?.classList.add("hidden");
     document.getElementById("bp-submit")?.classList.remove("hidden");
+    if (_replayChart) { _replayChart.destroy(); _replayChart = null; }
+    document.getElementById("bpr-replay")?.classList.add("hidden");
+  }
+
+  function _shareResult() {
+    const badge   = document.getElementById("bpr-badge")?.textContent || "";
+    const guess   = document.getElementById("bpr-guess")?.textContent || "?";
+    const actual  = document.getElementById("bpr-actual")?.textContent || "?";
+    const ptsEl   = document.getElementById("bpr-pts");
+    const pts     = ptsEl?.textContent || "";
+    const emoji   = badge === "EXACT" ? "🎯" : badge === "CLOSE" ? "🔥" : "😅";
+    const text = `${emoji} ${badge}! I guessed ${guess} vehicles — actual was ${actual}. ${pts} — AI Traffic Jamaica aitrafficja.com`;
+    if (navigator.share) {
+      navigator.share({ text, url: "https://aitrafficja.com/" }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(text).then(() => {
+        _showToast("Result copied to clipboard!", "win");
+      }).catch(() => {});
+    }
   }
 
   function _showToast(msg, type = "info") {
@@ -308,6 +436,9 @@ const LiveBet = (() => {
     document.getElementById("bpr-again-btn")?.addEventListener("click", () => {
       _hideBpResult();
     });
+
+    // Share button
+    document.getElementById("bpr-share-btn")?.addEventListener("click", _shareResult);
 
     document.getElementById("bpr-leaderboard-btn")?.addEventListener("click", () => {
       close();

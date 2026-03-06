@@ -1641,6 +1641,22 @@
 .gov-td-out   { color: var(--muted); }
 
 /* ── Turning movements ─────────────────────────────────────────────────── */
+/* ── Per-entry-zone breakdown ─────────────────────────────────────────── */
+.gov-zones-breakdown-body { padding: 12px 4px 4px; }
+.gov-zb-grid  { display: flex; flex-direction: column; gap: 10px; }
+.gov-zb-zone  { padding: 8px 4px; border-bottom: 1px solid var(--border); }
+.gov-zb-zone:last-child { border-bottom: none; }
+.gov-zb-zone-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.gov-zb-zone-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text); }
+.gov-zb-zone-total { font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+.gov-zb-pct   { font-size: 10px; color: var(--muted); margin-left: 4px; }
+.gov-zb-bar-wrap { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+.gov-zb-bar   { height: 100%; background: #4CAF50; border-radius: 3px; transition: width 0.4s; }
+.gov-zb-cls-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.gov-zb-cls   { font-size: 10px; font-weight: 600; }
+.gov-zb-cls-none { font-size: 10px; color: var(--muted); }
+.gov-zb-footer { font-size: 9px; color: var(--muted); padding: 8px 4px 0; }
+
 .gov-turnings-body    { padding: 12px 4px 4px; }
 .gov-turnings-empty   { color: var(--muted); font-size: 11px; padding: 4px; }
 .gov-turnings-summary {

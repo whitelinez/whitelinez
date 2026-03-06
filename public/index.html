@@ -164,6 +164,18 @@
     </nav>
   </header>
 
+  <!-- ── Sponsor bar (hidden until sponsor configured via JS) ──────────────── -->
+  <div id="sponsor-bar" class="sponsor-bar hidden" role="complementary" aria-label="Sponsor">
+    <div class="sponsor-bar-inner">
+      <span class="sponsor-bar-label">PRESENTED BY</span>
+      <a id="sponsor-link" class="sponsor-bar-logo-wrap" href="#" target="_blank" rel="noopener sponsored" aria-label="Sponsor">
+        <img id="sponsor-logo" class="sponsor-bar-logo" src="" alt="Sponsor" />
+        <span id="sponsor-name" class="sponsor-bar-name"></span>
+      </a>
+      <span id="sponsor-tagline" class="sponsor-bar-tagline"></span>
+    </div>
+  </div>
+
   <main class="main-grid">
     <section class="stream-panel">
         <div class="stream-wrapper">
@@ -543,10 +555,19 @@
               <strong id="bpr-payout">—</strong>
             </div>
           </div>
+          <!-- ── Replay sparkline ──────────────────────────────── -->
+          <div class="bpr-replay" id="bpr-replay">
+            <div class="bpr-replay-label">COUNT DURING WINDOW</div>
+            <canvas id="bpr-replay-canvas" class="bpr-replay-canvas" height="60"></canvas>
+          </div>
           <div class="bpr-actions">
             <button id="bpr-leaderboard-btn" class="btn-secondary bpr-btn">View Standing</button>
             <button id="bpr-again-btn" class="btn-primary bpr-btn">Guess Again</button>
           </div>
+          <button id="bpr-share-btn" class="bpr-share-btn" aria-label="Share result">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
         </div>
 
       </div>
@@ -966,6 +987,9 @@
               <div class="gov-sys-row"><span>Model</span><span id="gov-model">YOLOv8</span></div>
               <div class="gov-sys-row"><span>Last update</span><span id="gov-last">—</span></div>
               <div class="gov-sys-row"><span>Camera</span><span id="gov-cam-name">—</span></div>
+              <div class="gov-sys-row"><span>Avg confidence</span><span id="gov-ai-conf">—</span></div>
+              <div class="gov-sys-row"><span>Detections/hr</span><span id="gov-ai-det-hr">—</span></div>
+              <div class="gov-sys-row"><span>Scene</span><span id="gov-ai-scene">—</span></div>
             </div>
             <div class="gov-attr">YOLOv8 · Real-time edge inference · 24/7 monitoring</div>
           </div>
@@ -1106,6 +1130,17 @@
         <div class="gov-chart-card">
           <div class="gov-chart-head"><span class="gov-chart-title">SPEED</span><span class="gov-head-muted">km/h</span></div>
           <div class="gov-chart-body"><canvas id="gov-speed-canvas"></canvas></div>
+        </div>
+
+        <!-- Per-zone entry breakdown: full width -->
+        <div class="gov-chart-card gov-chart-full" id="gov-zones-breakdown-card">
+          <div class="gov-chart-head">
+            <span class="gov-chart-title">ENTRY ZONE BREAKDOWN</span>
+            <span class="gov-head-muted">— vehicles entering by approach direction</span>
+          </div>
+          <div id="gov-zones-breakdown-body" class="gov-zones-breakdown-body">
+            <p class="gov-turnings-empty">Loading zone data…</p>
+          </div>
         </div>
 
         <!-- Turning movements: full width -->

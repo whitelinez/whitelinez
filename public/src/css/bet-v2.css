@@ -143,6 +143,23 @@
 }
 .bpr-pts-win  { color: #4ade80; }
 .bpr-pts-miss { color: var(--muted); }
+/* ── Replay sparkline ────────────────────────────────────────── */
+.bpr-replay {
+  margin: 10px 0 4px;
+  padding: 8px 8px 4px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.bpr-replay-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.bpr-replay-canvas { width: 100%; }
+
 .bpr-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -623,3 +640,25 @@
   }
 }
 
+
+/* ── Share button ───────────────────────────────────────────── */
+.bpr-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.bpr-share-btn:hover { color: var(--text); border-color: var(--text); }

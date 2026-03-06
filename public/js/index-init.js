@@ -171,6 +171,45 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
   }
 
+  // ── Sponsor bar ───────────────────────────────────────────────────────────
+  /**
+   * Reads `cameras.feed_appearance.sponsor` and populates #sponsor-bar.
+   * Expected shape: { name, logo_url, link_url, tagline }
+   * If absent or empty, bar stays hidden.
+   */
+  async function _loadSponsorBar() {
+    try {
+      const cam = await resolveActiveCamera();
+      const sponsor = cam?.feed_appearance?.sponsor;
+      if (!sponsor || !sponsor.name) return;  // no sponsor configured
+
+      const barEl    = document.getElementById("sponsor-bar");
+      const linkEl   = document.getElementById("sponsor-link");
+      const logoEl   = document.getElementById("sponsor-logo");
+      const nameEl   = document.getElementById("sponsor-name");
+      const tagEl    = document.getElementById("sponsor-tagline");
+      if (!barEl) return;
+
+      if (sponsor.logo_url && logoEl) {
+        logoEl.src = sponsor.logo_url;
+        logoEl.alt = sponsor.name;
+        logoEl.classList.remove("hidden");
+      } else if (logoEl) {
+        logoEl.classList.add("hidden");
+      }
+      if (nameEl) nameEl.textContent = sponsor.name;
+      if (tagEl)  tagEl.textContent  = sponsor.tagline || "";
+      if (linkEl) {
+        linkEl.href = sponsor.link_url || "#";
+        if (!sponsor.link_url) linkEl.style.pointerEvents = "none";
+      }
+      barEl.classList.remove("hidden");
+    } catch {
+      // Non-critical
+    }
+  }
+  _loadSponsorBar();
+
   // ── Guest session 48h expiry scrub ────────────────────────────────────────
   {
     const earlySession = await Auth.getSession();
@@ -1602,9 +1641,10 @@ function _connectUserWs(session) {
       _loadChartJs(() => { _initDonut(); _initAllCharts(_govHours).then(() => _updatePeakKpiFromChart()); });
     }
 
-    // Start crossings refresh
+    // Start crossings refresh + AI telemetry
     _loadGovCrossings();
     _crossingsInterval = setInterval(_loadGovCrossings, 10000);
+    _loadAiTelemetry();
 
     // Set today's date defaults in export form
     const today = new Date().toISOString().slice(0, 10);
@@ -2181,7 +2221,60 @@ function _connectUserWs(session) {
       console.warn("[GovAnalytics] Zone analytics failed:", err);
       if (tBody) tBody.innerHTML = `<p class="gov-turnings-empty">Failed to load zone analytics.</p>`;
     }
+    _setProgress(95);
+
+    // Per-entry-zone breakdown (always load alongside turnings)
+    await _loadZoneBreakdown(fromParam, toParam);
     _setProgress(100);
+  }
+
+  // ── Per-entry-zone breakdown ──────────────────────────────────────────────
+  async function _loadZoneBreakdown(fromISO, toISO) {
+    const body = el("gov-zones-breakdown-body");
+    if (!body || !_camId) return;
+
+    try {
+      const url = `/api/analytics/zones?camera_id=${_camId}&from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("zones fetch failed");
+      const { zones, period_total } = await res.json();
+
+      if (!zones || zones.length === 0) {
+        body.innerHTML = `<p class="gov-turnings-empty">No entry-zone crossings in this period. Entry zones record vehicles entering the intersection from each approach direction.</p>`;
+        return;
+      }
+
+      const CLS_COLORS = { car: "#29B6F6", truck: "#FF7043", bus: "#AB47BC", motorcycle: "#FFD600" };
+
+      body.innerHTML = `
+        <div class="gov-zb-grid">
+          ${zones.map(z => {
+            const barPct = period_total > 0 ? Math.round((z.total / period_total) * 100) : 0;
+            const clsBreakdown = ["car","truck","bus","motorcycle"].map(cls => {
+              const n = z[cls] || 0;
+              if (n === 0) return "";
+              return `<span class="gov-zb-cls" style="color:${CLS_COLORS[cls]}">${cls.charAt(0).toUpperCase()}: ${n.toLocaleString()}</span>`;
+            }).filter(Boolean).join(" ");
+
+            return `
+              <div class="gov-zb-zone">
+                <div class="gov-zb-zone-hdr">
+                  <span class="gov-zb-zone-name">${z.zone_name}</span>
+                  <span class="gov-zb-zone-total">${z.total.toLocaleString()} <span class="gov-zb-pct">${barPct}%</span></span>
+                </div>
+                <div class="gov-zb-bar-wrap">
+                  <div class="gov-zb-bar" style="width:${barPct}%"></div>
+                </div>
+                <div class="gov-zb-cls-row">${clsBreakdown || '<span class="gov-zb-cls-none">No class data</span>'}</div>
+              </div>`;
+          }).join("")}
+        </div>
+        <div class="gov-zb-footer">Based on ${period_total.toLocaleString()} entry-zone crossings in the selected period.</div>
+      `;
+    } catch (err) {
+      console.warn("[ZoneBreakdown]", err);
+      if (body) body.innerHTML = `<p class="gov-turnings-empty">Zone breakdown unavailable.</p>`;
+    }
   }
 
   const _ZONE_TYPE_META = {
@@ -2387,6 +2480,46 @@ function _connectUserWs(session) {
   }
 
   // ── Crossings data (recent vehicle events) ────────────────────────────────
+  // ── AI detection telemetry (ml_detection_events last 24h) ───────────────────
+  async function _loadAiTelemetry() {
+    if (!window.sb || !_camId) return;
+    try {
+      const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const { data } = await window.sb
+        .from("ml_detection_events")
+        .select("avg_confidence,detections_count,scene_lighting,scene_weather,model_name,captured_at")
+        .eq("camera_id", _camId)
+        .gte("captured_at", since)
+        .order("captured_at", { ascending: false })
+        .limit(500);
+
+      if (!data || data.length === 0) return;
+
+      // Avg confidence
+      const confs = data.map(r => parseFloat(r.avg_confidence || 0)).filter(v => v > 0);
+      if (confs.length > 0) {
+        const avg = confs.reduce((a, b) => a + b, 0) / confs.length;
+        txt("gov-ai-conf", `${(avg * 100).toFixed(1)}%`);
+      }
+
+      // Detections per hour (total detections / hours covered)
+      const totalDet = data.reduce((s, r) => s + (r.detections_count || 0), 0);
+      const hours = Math.max(1, data.length / 3600);   // ml_events ≈ 1/s; rough hourly rate
+      const dph = Math.round(totalDet / 24);
+      txt("gov-ai-det-hr", dph.toLocaleString());
+
+      // Scene from most recent row
+      const latest = data[0];
+      const sceneParts = [latest.scene_lighting, latest.scene_weather].filter(Boolean);
+      txt("gov-ai-scene", sceneParts.join(" / ") || "—");
+
+      // Update model if available
+      if (latest.model_name) txt("gov-model", latest.model_name);
+    } catch (err) {
+      // Non-critical — silently fail
+    }
+  }
+
   async function _loadGovCrossings() {
     if (!window.sb) return;
     const tbody = el("gov-crossings-body");

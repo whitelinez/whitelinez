@@ -180,10 +180,13 @@ async function _hourlyData(SUPABASE_URL, headers, camera_id, fromISO, toISO) {
 }
 
 async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO, targetGranularity) {
+  // zone_source=entry → true intersection throughput from named entry zones.
+  // Falls back to all rows if no entry-source rows exist yet (e.g. no zones defined).
   let url = `${SUPABASE_URL}/rest/v1/vehicle_crossings`
-    + `?select=captured_at,vehicle_class,direction`
+    + `?select=captured_at,vehicle_class,direction,zone_source`
     + `&captured_at=gte.${encodeURIComponent(fromISO)}`
     + `&captured_at=lte.${encodeURIComponent(toISO)}`
+    + `&zone_source=eq.entry`
     + `&limit=10000`;
   if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
 
@@ -191,8 +194,12 @@ async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO,
   if (!r.ok) return [];
   const rows = await r.json();
 
+  // If no entry-zone rows, fall back to all zone_sources (covers cameras without zones defined)
+  const sourceRows = rows.filter(r => r.zone_source === "entry");
+  const effectiveRows = sourceRows.length > 0 ? sourceRows : rows;
+
   const buckets = {};
-  for (const row of rows) {
+  for (const row of effectiveRows) {
     const dt   = new Date(row.captured_at);
     const key  = targetGranularity === "hour"
       ? dt.toISOString().slice(0, 13) + ":00:00Z"
@@ -220,9 +227,9 @@ async function _firstDate(SUPABASE_URL, headers, camera_id) {
 
 async function _globalTotals(SUPABASE_URL, headers, camera_id) {
   try {
-    // vehicle_crossings COUNT(*) — live all-time total, no date restriction.
-    // Supabase returns the count in Content-Range: 0-0/<total>
-    let url = `${SUPABASE_URL}/rest/v1/vehicle_crossings?select=id&limit=1`;
+    // zone_source=entry → true intersection throughput (not game line).
+    // Falls back to all rows if no entry rows yet.
+    let url = `${SUPABASE_URL}/rest/v1/vehicle_crossings?select=id&zone_source=eq.entry&limit=1`;
     if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
     const r = await fetch(url, {
       headers: { ...headers, Prefer: "count=exact" },

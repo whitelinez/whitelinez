@@ -2130,6 +2130,7 @@ function _connectUserWs(session) {
   async function _loadZoneAnalytics() {
     if (!_camId) return;
     _govExitTotal = null; // reset so stale period values don't persist
+    txt("gov-kpi-out", "—"); // clear stale value while loading
 
     // Show turnings skeleton while loading
     const tBody = el("gov-turnings-body");

@@ -551,3 +551,11 @@
 /* .tab-content — canonical in theme-v2.css */
 .tab-content.active { display: flex; flex-direction: column; }
 
+
+/* ── Count widget mobile — prevent number cut-off ─────────────────────────── */
+@media (max-width: 480px) {
+  /* Hide text label (::before already shows "LIVE COUNT") to save width */
+  .cw-strip-label { display: none !important; }
+  /* Scale number down slightly so it fits on 375px screens */
+  .cw-total-val { font-size: 32px !important; }
+}

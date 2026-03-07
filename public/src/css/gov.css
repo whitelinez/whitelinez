@@ -1695,7 +1695,7 @@
   --muted:  #64748b;
   --dim:    #94a3b8;
   --cyan:   #0284c7;
-  --accent: var(--accent);
+  --accent: #f59e0b;
   --green:  #16a34a;
 }
 /* Loading progress overlay */
@@ -1733,7 +1733,7 @@
   --muted:  #64748b;
   --dim:    #94a3b8;
   --cyan:   #0284c7;
-  --accent: var(--accent);
+  --accent: #f59e0b;
   --green:  #16a34a;
 }
 /* Hardcoded dark values inside live panel */
@@ -1761,7 +1761,7 @@
   --muted:  #64748b;
   --dim:    #94a3b8;
   --cyan:   #0284c7;
-  --accent: var(--accent);
+  --accent: #f59e0b;
 }
 /* Fix hardcoded dark color-scheme on date inputs */
 #gov-panel-export .gov-date-input { color-scheme: light; }
@@ -2295,8 +2295,10 @@
 .gov-modal-box .gov-kpi-val { color: #0f1c2e; }
 .gov-modal-box .gov-kpi-out { color: #475569; }
 .gov-modal-box .gov-kpi-lbl { color: #475569; }
-.gov-modal-box .gov-an-sumcard-val             { color: #0f1c2e; }
-.gov-modal-box .gov-an-sumcard--accent .gov-an-sumcard-val { color: #0f1c2e; }
+.gov-modal-box .gov-an-sumcard-val,
+#gov-panel-analytics .gov-an-sumcard-val             { color: #0f1c2e; }
+.gov-modal-box .gov-an-sumcard--accent .gov-an-sumcard-val,
+#gov-panel-analytics .gov-an-sumcard--accent .gov-an-sumcard-val { color: #0f1c2e; }
 
 /* Granularity pills — amber on white is unreadable; use blue accent */
 .gov-modal-box .gov-gran-pill         { color: #475569; border-color: #cbd5e1; }

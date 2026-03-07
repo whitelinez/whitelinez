@@ -1596,7 +1596,7 @@
 
   /* Total number */
   .count-widget-total span:first-child {
-    font-size: 1.5rem !important;
+    font-size: 1rem !important;
   }
   .count-widget .cw-label {
     font-size: 0.52rem !important;
@@ -1691,7 +1691,7 @@
 
   /* Scale down number so 5-digit counts (10,000+) never overflow the widget */
   .count-widget-total span:first-child {
-    font-size: clamp(1rem, 5vw, 1.3rem) !important;
+    font-size: 0.875rem !important;
     letter-spacing: -0.03em !important;
   }
 
@@ -1817,7 +1817,7 @@
     margin-bottom: 2px !important;
   }
   .count-widget-total span:first-child {
-    font-size: 1.25rem !important;
+    font-size: 1rem !important;
   }
   .count-widget .cw-label {
     font-size: 0.48rem !important;
@@ -1849,7 +1849,7 @@
     padding: 4px 6px 5px 6px !important;
   }
   .count-widget-total span:first-child {
-    font-size: 1.1rem !important;
+    font-size: 0.875rem !important;
   }
 }
 

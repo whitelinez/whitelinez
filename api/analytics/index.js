@@ -176,13 +176,12 @@ async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO,
     + `?select=captured_at,vehicle_class,direction,zone_source`
     + `&captured_at=gte.${encodeURIComponent(fromISO)}`
     + `&captured_at=lte.${encodeURIComponent(toISO)}`
-    + `&zone_source=eq.entry&limit=10000`;
+    + `&zone_source=in.(entry,game)&limit=10000`;
   if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
   const r = await fetch(url, { headers });
   if (!r.ok) return [];
   const rows = await r.json();
-  const sourceRows   = rows.filter(r => r.zone_source === "entry");
-  const effectiveRows = sourceRows.length > 0 ? sourceRows : rows;
+  const effectiveRows = rows;
   const buckets = {};
   for (const row of effectiveRows) {
     const dt  = new Date(row.captured_at);
@@ -212,7 +211,7 @@ async function _firstDate(SUPABASE_URL, headers, camera_id) {
 
 async function _globalTotals(SUPABASE_URL, headers, camera_id) {
   try {
-    let url = `${SUPABASE_URL}/rest/v1/vehicle_crossings?select=id&zone_source=eq.entry&limit=1`;
+    let url = `${SUPABASE_URL}/rest/v1/vehicle_crossings?select=id&zone_source=in.(entry,game)&limit=1`;
     if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
     const r = await fetch(url, { headers: { ...headers, Prefer: "count=exact" } });
     if (!r.ok) return null;
@@ -468,7 +467,7 @@ async function handleZones(req, res) {
 
   try {
     const url = `${SUPABASE_URL}/rest/v1/vehicle_crossings`
-      + `?select=zone_name,vehicle_class&zone_source=eq.entry`
+      + `?select=zone_name,vehicle_class&zone_source=in.(entry,game)`
       + `&camera_id=eq.${encodeURIComponent(camera_id)}`
       + `&captured_at=gte.${encodeURIComponent(fromISO)}`
       + `&captured_at=lte.${encodeURIComponent(toISO)}&limit=50000`;

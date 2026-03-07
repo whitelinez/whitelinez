@@ -1937,8 +1937,9 @@ function _connectUserWs(session) {
       const totalOut = rows.reduce((a, r) => a + (r.out || 0), 0);
       txt("gov-kpi-total",  Number(totalPeriod).toLocaleString());
       txt("gov-hdr-total",  Number(totalPeriod).toLocaleString());
-      // gov-inbound / gov-outbound are sourced exclusively from zone analytics (_loadZoneAnalytics)
-      // vehicle_crossings direction field is unreliable — do not set them here
+      txt("gov-kpi-in",    Number(totalPeriod).toLocaleString()); // inbound = all entry-zone crossings
+      txt("gov-inbound",   Number(totalPeriod).toLocaleString()); // sidebar zone crossings
+      // gov-kpi-out (outbound) is sourced from turning_movements total in _loadZoneAnalytics
       _dbKpisLoaded = true;  // stop WS from overwriting total/hdr with session counter
 
       // ── Update class breakdown bars from DB class totals ──────────────────
@@ -2182,21 +2183,19 @@ function _connectUserWs(session) {
         if (clsTotal > 0) txt("gov-sum-heavy", Math.round((heavy / clsTotal) * 100) + "%");
       }
 
-      // Traffic Flow — total zone crossings + dominant turning movement
+      // Outbound = all completed exit transits (turning_movements total)
       const zoneTotal = tm.period?.total_movements || 0;
       if (zoneTotal > 0) {
-        txt("gov-inbound", zoneTotal.toLocaleString());
+        txt("gov-kpi-out", zoneTotal.toLocaleString()); // outbound KPI = all exits
         _govExitTotal = zoneTotal; // prevent WS from overwriting
       }
-      // Top movement (most common entry→exit pair)
+      // Top movement (most common entry→exit pair) — sidebar label only
       const topMov = (tm.top_movements || [])[0];
       if (topMov) {
         // Shorten zone names: "South Entry" → "S.Entry", "North Exit" → "N.Exit"
         const shorten = s => s.replace(/North/i,"N.").replace(/South/i,"S.").replace(/East/i,"E.").replace(/West/i,"W.").replace(/\s+/g,"");
         txt("gov-top-movement",     topMov.total.toLocaleString());
         txt("gov-top-movement-lbl", `${shorten(topMov.from)}→${shorten(topMov.to)}`);
-        txt("gov-kpi-out",  topMov.total.toLocaleString());
-        txt("gov-outbound", topMov.total.toLocaleString());
       }
 
       // Class distribution chart — rebuild with zone class_totals

@@ -225,7 +225,7 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   }
 
   const session = await Auth.getSession();
-  const currentUserId = session?.user?.id || "";
+  let currentUserId = session?.user?.id || "";
 
   async function refreshNavBalance() {
     if (!currentUserId) return;
@@ -314,6 +314,14 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   window.addEventListener("session:guest", async () => {
     const newSession = await Auth.getSession();
     _applyNavSession(newSession);
+    refreshNavBalance();
+  });
+
+  // Re-apply nav after OAuth redirect (PKCE code exchange fires SIGNED_IN async,
+  // which may arrive after the initial getSession() call above returns null)
+  window.addEventListener("auth:signed_in", (e) => {
+    if (!currentUserId) currentUserId = e.detail?.user?.id || "";
+    _applyNavSession(e.detail);
     refreshNavBalance();
   });
 

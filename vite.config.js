@@ -6,6 +6,17 @@ const root = path.resolve(process.cwd(), 'public')
 export default defineConfig({
   root,
   publicDir: false,   // no nested public/ inside public/
+  server: {
+    port: 3000,
+    proxy: {
+      // Forward all /api calls to production — keeps local dev working with real data
+      '/api': {
+        target: 'https://aitrafficja.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   build: {
     outDir: path.resolve(process.cwd(), 'dist'),
     emptyOutDir: true,

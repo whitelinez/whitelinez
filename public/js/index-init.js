@@ -1703,9 +1703,10 @@ function _connectUserWs(session) {
     if (!_dbKpisLoaded) txt("gov-hdr-total", total.toLocaleString());
 
     // KPI total — WS placeholder until DB analytics loads
+    // gov-kpi-in (Inbound) is NOT set from WS — count_in is the game line direction,
+    // not entry-zone data. It stays "—" until _initAllCharts sets it from vehicle_crossings.
     if (!_dbKpisLoaded) {
       txt("gov-kpi-total", total.toLocaleString());
-      txt("gov-kpi-in",    p.count_in != null ? Number(p.count_in).toLocaleString() : "—");
     }
     // Traffic Flow in/out — sourced exclusively from zone analytics; WS never writes these
     // gov-kpi-peak is filled from analytics data

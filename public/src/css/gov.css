@@ -2286,6 +2286,11 @@
 .gov-modal-box .gov-kpi-lbl { color: #475569; }
 .gov-modal-box .gov-an-sumcard--accent .gov-an-sumcard-val { color: #0f1c2e; }
 
+/* Granularity pills — amber on white is unreadable; use blue accent */
+.gov-modal-box .gov-gran-pill         { color: #475569; border-color: #cbd5e1; }
+.gov-modal-box .gov-gran-pill.active  { color: #0284c7; border-color: #0284c7; background: rgba(2,132,199,0.08); }
+.gov-modal-box .gov-gran-pill:hover:not(.active) { color: #0f1c2e; border-color: #94a3b8; background: #f1f5f9; }
+
 /* Bump --dim to same as --muted so var(--dim) text is legible on white */
 .gov-modal-box,
 #gov-panel-analytics,

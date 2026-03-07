@@ -209,13 +209,26 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     }
   }
 
-  // Clean up OAuth redirect params from URL (Google OAuth lands with ?code= or #access_token)
-  if (
-    window.location.search.includes("code=") ||
-    window.location.search.includes("error=") ||
-    window.location.hash.includes("access_token")
-  ) {
-    history.replaceState(null, "", window.location.pathname);
+  // Handle OAuth redirect params — show error if present, then clean URL
+  {
+    const _oauthParams = new URLSearchParams(window.location.search);
+    const _oauthError = _oauthParams.get("error_description") || _oauthParams.get("error");
+    if (_oauthError) {
+      // Show the raw OAuth error so we can diagnose what Google/Supabase returned
+      console.error("[Auth] OAuth callback error:", _oauthError);
+      const _errBanner = document.createElement("div");
+      _errBanner.style.cssText = "position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:10px 18px;border-radius:6px;z-index:9999;font-size:13px;max-width:90vw;text-align:center";
+      _errBanner.textContent = `Google login failed: ${_oauthError}`;
+      document.body.appendChild(_errBanner);
+      setTimeout(() => _errBanner.remove(), 8000);
+    }
+    if (
+      window.location.search.includes("code=") ||
+      window.location.search.includes("error=") ||
+      window.location.hash.includes("access_token")
+    ) {
+      history.replaceState(null, "", window.location.pathname);
+    }
   }
 
   // Auto-open auth modal when redirected from a protected page

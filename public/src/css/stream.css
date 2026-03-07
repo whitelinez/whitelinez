@@ -559,3 +559,13 @@
   /* Scale number down slightly so it fits on 375px screens */
   .cw-total-val { font-size: 32px !important; }
 }
+
+/* ── Mobile: hide count widget while a guess window is active ──── */
+@media (max-width: 768px) {
+  body.bet-active #count-widget {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.85);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+}

@@ -11,6 +11,8 @@ export const LiveBet = (() => {
   let _windowSec = 60;
   let _countdownTimer = null;
   let _wsAccountRef = null;  // set by index-init
+  let _baselineCount = null; // count at bet placement time (for window delta)
+  let _guessCount = 0;       // user's exact-count guess (for progress bar)
 
   function _ensureSpinnerStyle() {
     if (document.getElementById("live-bet-spinner-style")) return;
@@ -145,7 +147,7 @@ export const LiveBet = (() => {
       }
 
       // Show countdown + receipt
-      _showBpActiveBet(data.window_end, exact);
+      _showBpActiveBet(data.window_end, exact, data.baseline_count);
       window.dispatchEvent(new CustomEvent("bet:placed", {
         detail: {
           ...data,
@@ -165,12 +167,16 @@ export const LiveBet = (() => {
     }
   }
 
-  function _showBpActiveBet(windowEndIso, guessCount) {
+  function _showBpActiveBet(windowEndIso, guessCount, baseline) {
     const activeEl  = document.getElementById("bp-active-bet");
     const cdEl      = document.getElementById("bp-countdown");
     const hintEl    = document.getElementById("bp-active-hint");
     const submitBtn = document.getElementById("bp-submit");
     if (!activeEl || !cdEl) return;
+
+    // Store for progress tracking
+    _guessCount    = Number(guessCount) || 0;
+    _baselineCount = (baseline != null) ? Number(baseline) : null;
 
     // Receipt fields
     const receiptGuessEl = document.getElementById("bpa-receipt-guess");
@@ -182,8 +188,13 @@ export const LiveBet = (() => {
       winTagEl.textContent = labels[_windowSec] || `${Math.round(_windowSec / 60)} MIN`;
     }
 
+    // Reset progress bar
+    const fill = document.getElementById("bpa-progress-fill");
+    if (fill) { fill.style.width = "0%"; fill.className = "bpa-prog-fill"; }
+
     activeEl.classList.remove("hidden");
     submitBtn.classList.add("hidden");
+    document.body.classList.add("bet-active"); // hide count widget on mobile
 
     // Hide form fields — user is just watching the count
     document.querySelector("#bp-window-pills")?.closest(".bp-field")?.classList.add("hidden");
@@ -212,14 +223,30 @@ export const LiveBet = (() => {
   }
 
   function _onBpCountUpdate(e) {
+    if (e.detail?.total == null) return;
+    const total = Number(e.detail.total);
+    const delta = (_baselineCount != null) ? Math.max(0, total - _baselineCount) : total;
+
     const el = document.getElementById("bpa-live-count");
-    if (el && e.detail?.total != null) el.textContent = Number(e.detail.total).toLocaleString();
+    if (el) {
+      el.textContent = (_guessCount > 0)
+        ? `${delta.toLocaleString()} / ${_guessCount.toLocaleString()}`
+        : delta.toLocaleString();
+    }
+
+    const fill = document.getElementById("bpa-progress-fill");
+    if (fill && _guessCount > 0) {
+      const pct = Math.min(100, Math.round((delta / _guessCount) * 100));
+      fill.style.width = `${pct}%`;
+      fill.className = pct >= 100 ? "bpa-prog-fill bpa-prog-fill--hit" : "bpa-prog-fill";
+    }
   }
 
   function _hideBpActiveBet(showSubmit = true) {
     clearInterval(_countdownTimer);
     window.removeEventListener("count:update", _onBpCountUpdate);
     document.getElementById("bp-active-bet")?.classList.add("hidden");
+    document.body.classList.remove("bet-active"); // restore count widget on mobile
     // Restore hidden form fields
     document.querySelector("#bp-window-pills")?.closest(".bp-field")?.classList.remove("hidden");
     document.querySelector("#bp-count")?.closest(".bp-field")?.classList.remove("hidden");
@@ -307,6 +334,14 @@ export const LiveBet = (() => {
     document.getElementById("bp-submit")?.classList.remove("hidden");
     const tolRow = document.getElementById("bpr-tolerance-row");
     if (tolRow) tolRow.style.display = "none";
+    // Reset form so the panel feels fresh for the next guess
+    const countEl = document.getElementById("bp-count");
+    if (countEl) countEl.value = "5";
+    const errEl = document.getElementById("bp-error");
+    if (errEl) errEl.textContent = "";
+    _setPill("bp-window-pills", "60");
+    _windowSec = 60;
+    document.getElementById("bet-panel")?.scrollTo?.(0, 0);
   }
 
   function _showToast(msg, type = "info") {

@@ -96,13 +96,18 @@
 /* Live count while guess is active */
 .bpa-live-count-wrap {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 6px;
   background: rgba(255,184,0,0.06);
   border: 1px solid rgba(255,184,0,0.2);
   border-radius: 7px;
   padding: 8px 12px;
   margin-bottom: 8px;
+}
+.bpa-live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .bpa-live-label {
   font-family: "JetBrains Mono", monospace;
@@ -114,12 +119,27 @@
 }
 .bpa-live-val {
   font-family: "Rajdhani", "Archivo", sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--accent);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
+/* Progress bar */
+.bpa-prog-track {
+  height: 4px;
+  background: rgba(255,184,0,0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bpa-prog-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s ease, background 0.3s;
+}
+.bpa-prog-fill--hit { background: #4ade80; }
 .bpa-receipt {
   background: var(--bg3);
   border: 1px solid var(--border);

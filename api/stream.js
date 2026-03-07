@@ -95,10 +95,12 @@ export default async function handler(req) {
       );
     }
 
-    // Railway already generates segment URLs pointing to /api/stream?p=...
-    // Keep them as-is so segments always flow through the Vercel proxy.
-    // This ensures CORS works from any origin (including localhost dev).
-    const text = await upstream.text();
+    // Rewrite absolute segment URLs to relative paths so HLS.js resolves them
+    // against the current origin. Works in both production and local dev:
+    //   production: https://aitrafficja.com/api/stream?p=... → /api/stream?p=...
+    //   local dev:  localhost:3000/api/stream?p=... → Vite proxy → aitrafficja.com
+    let text = (await upstream.text())
+      .replace(/https?:\/\/[^/\s"']+\/api\/stream\?p=/g, '/api/stream?p=');
 
     return new Response(text, {
       status: 200,

@@ -200,12 +200,21 @@ async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO,
 
 async function _firstDate(SUPABASE_URL, headers, camera_id) {
   try {
+    // Try traffic_daily first (fast, aggregated)
     let url = `${SUPABASE_URL}/rest/v1/traffic_daily?select=date&order=date.asc&limit=1`;
     if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
     const r = await fetch(url, { headers });
-    if (!r.ok) return null;
-    const rows = await r.json();
-    return rows[0]?.date || null;
+    if (r.ok) {
+      const rows = await r.json();
+      if (rows[0]?.date) return rows[0].date;
+    }
+    // Fallback: oldest vehicle_crossings row (table may be new, traffic_daily not yet populated)
+    let vcUrl = `${SUPABASE_URL}/rest/v1/vehicle_crossings?select=captured_at&zone_source=in.(entry,game)&order=captured_at.asc&limit=1`;
+    if (camera_id) vcUrl += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
+    const vcr = await fetch(vcUrl, { headers });
+    if (!vcr.ok) return null;
+    const vcRows = await vcr.json();
+    return vcRows[0]?.captured_at?.slice(0, 10) || null;
   } catch { return null; }
 }
 

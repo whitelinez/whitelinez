@@ -323,13 +323,19 @@ async function _handleDataTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
   const h = sbHeaders(SERVICE_KEY);
 
   try {
-    let tmUrl = `${SUPABASE_URL}/rest/v1/turning_movements`
-      + `?select=entry_zone,exit_zone,vehicle_class,dwell_ms,captured_at`
-      + `&captured_at=gte.${encodeURIComponent(fromISO)}`
-      + `&captured_at=lte.${encodeURIComponent(toISO)}&limit=5000`;
-    if (camera_id) tmUrl += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
+    const tmBase = `${SUPABASE_URL}/rest/v1/turning_movements`
+      + `?captured_at=gte.${encodeURIComponent(fromISO)}`
+      + `&captured_at=lte.${encodeURIComponent(toISO)}`
+      + (camera_id ? `&camera_id=eq.${encodeURIComponent(camera_id)}` : "");
 
-    const tmRows = await fetch(tmUrl, { headers: h }).then(r => r.ok ? r.json() : []);
+    // Fetch rows for matrix/charts + exact count in parallel
+    const [tmRes, tmCountRes] = await Promise.all([
+      fetch(tmBase + `&select=entry_zone,exit_zone,vehicle_class,dwell_ms,captured_at&limit=5000`, { headers: h }),
+      fetch(tmBase + `&select=id&limit=1`, { headers: { ...h, Prefer: "count=exact" } }),
+    ]);
+    const tmRows = tmRes.ok ? await tmRes.json() : [];
+    const tmCountRange = tmCountRes.headers?.get("Content-Range") || "";
+    const totalMovements = parseInt(tmCountRange.split("/")[1] || "") || tmRows.length;
 
     const matrix = {};
     const clsTotals = { car: 0, truck: 0, bus: 0, motorcycle: 0 };
@@ -386,7 +392,7 @@ async function _handleDataTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
       queue_series: queueSeries, queue_summary: queueSummary,
       speed: speedStats, class_totals: clsTotals,
       time_series: Object.values(timeBuckets).sort((a, b) => a.period.localeCompare(b.period)),
-      period: { from: fromISO, to: toISO, total_movements: tmRows.length },
+      period: { from: fromISO, to: toISO, total_movements: totalMovements },
     });
   } catch (err) {
     console.error("[/api/analytics/data?type=turnings]", err);

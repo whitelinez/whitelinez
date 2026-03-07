@@ -95,14 +95,10 @@ export default async function handler(req) {
       );
     }
 
-    let text = await upstream.text();
-
-    // Rewrite segment URLs so the browser fetches .ts chunks DIRECTLY from
-    // Railway, bypassing Vercel entirely.  Only the small manifest (~1 KB)
-    // passes through Vercel; none of the video data does.
-    text = text
-      .replace(/https?:\/\/[^/\s"']+\/api\/stream\?p=/g, `${backendBase}/stream/ts?p=`)
-      .replace(/\/api\/stream\?p=/g,                      `${backendBase}/stream/ts?p=`);
+    // Railway already generates segment URLs pointing to /api/stream?p=...
+    // Keep them as-is so segments always flow through the Vercel proxy.
+    // This ensures CORS works from any origin (including localhost dev).
+    const text = await upstream.text();
 
     return new Response(text, {
       status: 200,

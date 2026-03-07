@@ -15,6 +15,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      // Vercel Analytics script — not served locally, return empty to suppress 404
+      '/_vercel/insights': {
+        target: 'https://aitrafficja.com',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
   build: {

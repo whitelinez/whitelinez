@@ -1276,7 +1276,7 @@
   font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
   letter-spacing: 0.06em; cursor: pointer; transition: all 0.15s;
 }
-.gov-gran-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(255,184,0,0.07); }
+.gov-gran-pill.active { border-color: var(--accent); color: #fff; background: rgba(255,184,0,0.18); }
 
 /* Summary stat cards bar */
 .gov-an-sumbar {

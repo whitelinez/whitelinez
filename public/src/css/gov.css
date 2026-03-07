@@ -1742,6 +1742,11 @@
 #gov-panel-live .gov-sys-row        { border-bottom-color: #e2e8f0; }
 #gov-panel-live .gov-scene-badge    { background: rgba(2,132,199,0.08); border-color: rgba(2,132,199,0.2); color: #0284c7; }
 #gov-panel-live .gov-video-slot     { background: #000; }
+/* KPI strip — amber accent on white background is unreadable */
+#gov-panel-live .gov-kpi-val        { color: #0f1c2e; }
+#gov-panel-live .gov-kpi-out        { color: #475569; }
+#gov-panel-live .gov-kpi-lbl        { color: #475569; }
+#gov-panel-live .gov-kpi-hint       { color: #64748b; }
 
 /* =====================================================
    EXPORT PANEL — WHITE THEME

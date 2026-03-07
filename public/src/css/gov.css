@@ -2279,6 +2279,10 @@
   color: #0f1c2e;
   border-color: #e2e8f0;
 }
+.gov-modal-box .gov-kpi-val { color: #0f1c2e; }
+.gov-modal-box .gov-kpi-out { color: #475569; }
+.gov-modal-box .gov-kpi-lbl { color: #475569; }
+.gov-modal-box .gov-an-sumcard--accent .gov-an-sumcard-val { color: #0f1c2e; }
 .gov-modal-hdr      { background: #ffffff; border-bottom-color: #e2e8f0; }
 .gov-modal-title    { color: #0284c7; }
 .gov-modal-close    { color: #64748b; }

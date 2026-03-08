@@ -30,7 +30,7 @@ export default async function handler(req) {
       status: upstream.status,
       headers: {
         "Content-Type":  "application/json",
-        "Cache-Control": "public, s-maxage=10, stale-while-revalidate=20",
+        "Cache-Control": "public, s-maxage=3, stale-while-revalidate=5",
       },
     });
   } catch {

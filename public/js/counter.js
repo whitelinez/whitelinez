@@ -166,6 +166,11 @@ const Counter = (() => {
     };
   }
 
+  // Clear cached WS token when user signs out so next connect fetches a fresh one
+  window.addEventListener("auth:signed_out", () => {
+    window.AppCache?.invalidate("ws:token");
+  });
+
   function init() {
     if (started) return;
     started = true;

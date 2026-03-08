@@ -137,7 +137,7 @@ const Activity = (() => {
 
     } catch (e) {
       console.error("[Activity] Leaderboard load failed:", e);
-      container.innerHTML = `<div class="empty-state">Could not load leaderboard.<br><span>${_esc(e?.message || "")}</span></div>`;
+      container.innerHTML = `<div class="empty-state">Could not load leaderboard.<br><span>Please try again shortly.</span></div>`;
     }
   }
 

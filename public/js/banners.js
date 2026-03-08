@@ -223,6 +223,16 @@ const Banners = (() => {
     }, 12000);
   }
 
+  // Pause polling when tab is hidden; resume when visible again
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(_sessionPollTimer);
+      _sessionPollTimer = null;
+    } else if (_visible && !_sessionPollTimer) {
+      _startSessionPoll();
+    }
+  });
+
   // ── Camera switcher tile — HUD style matching default tile ────
   function _cameraTile() {
     return `

@@ -95,7 +95,7 @@ const Markets = (() => {
       .limit(1)
       .maybeSingle();
     if (!openErr && openRound) {
-      window.AppCache?.set("round:preferred", { v: openRound }, 30_000);
+      window.AppCache?.set("round:preferred", { v: openRound }, 10_000);
       return openRound;
     }
 
@@ -109,7 +109,7 @@ const Markets = (() => {
       .limit(1)
       .maybeSingle();
     if (!lockedErr && lockedRound) {
-      window.AppCache?.set("round:preferred", { v: lockedRound }, 30_000);
+      window.AppCache?.set("round:preferred", { v: lockedRound }, 10_000);
       return lockedRound;
     }
 
@@ -122,7 +122,7 @@ const Markets = (() => {
       .limit(1)
       .maybeSingle();
     if (!upcomingErr && upcomingRound) {
-      window.AppCache?.set("round:preferred", { v: upcomingRound }, 30_000);
+      window.AppCache?.set("round:preferred", { v: upcomingRound }, 10_000);
       return upcomingRound;
     }
 

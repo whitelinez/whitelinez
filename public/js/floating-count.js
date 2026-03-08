@@ -30,24 +30,37 @@ const FloatingCount = (() => {
     _gmCurrentEl = document.getElementById("cw-gm-current");
     _gmBarEl    = document.getElementById("cw-gm-bar");
 
+    // RAF throttle — coalesce rapid count:update bursts to one DOM write per frame
+    let _rafPending = false;
+    let _pendingPayload = null;
+    function _scheduleUpdate(data) {
+      _pendingPayload = data;
+      if (_rafPending) return;
+      _rafPending = true;
+      requestAnimationFrame(() => {
+        _rafPending = false;
+        if (_pendingPayload) { update(_pendingPayload); _pendingPayload = null; }
+      });
+    }
+
     window.addEventListener("count:update", (e) => {
       const data = e.detail;
       // Only update if no camera filter set, or payload matches current camera
       if (_currentCameraId && data.camera_id && data.camera_id !== _currentCameraId) return;
-      update(data);
+      _scheduleUpdate(data);
     });
 
-    // Camera switched — show that camera's count
+    // Camera switched — show loading state until next count:update arrives
     window.addEventListener("camera:switched", (e) => {
       const { cameraId, name, isAI } = e.detail || {};
       _currentCameraId = cameraId || null;
       _setCamLabel(name || null, isAI);
       if (isAI) {
-        // Reset count display until new stream data arrives
         _lastTotal = 0;
-        if (_totalEl)  _totalEl.textContent  = "0";
+        if (_totalEl)  _totalEl.textContent  = "…";
         if (_fpsEl)    _fpsEl.textContent    = "--";
       } else if (cameraId) {
+        if (_totalEl) _totalEl.textContent = "…";
         _loadCameraSnapshot(cameraId);
       }
     });

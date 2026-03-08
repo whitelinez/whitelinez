@@ -16,6 +16,8 @@ export default async function handler(req, res) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Missing Bearer token" });
   }
+  if (authHeader.slice(7).trim().split(".").length !== 3)
+    return res.status(401).json({ error: "Malformed token" });
 
   try {
     let upstream;

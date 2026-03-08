@@ -18,6 +18,12 @@ export default async function handler(req, res) {
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
+function _parseDate(s, fallback) {
+  if (!s) return fallback;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function getEnv(res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -51,8 +57,12 @@ async function handleTraffic(req, res) {
 
   let fromISO, toISO;
   if (from || to) {
-    fromISO = from ? new Date(from).toISOString() : new Date(0).toISOString();
-    toISO   = to   ? new Date(to).toISOString()   : new Date().toISOString();
+    const fd = _parseDate(from, new Date(0));
+    const td = _parseDate(to,   new Date());
+    if (!fd || !td)
+      return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD or ISO 8601." });
+    fromISO = fd.toISOString();
+    toISO   = td.toISOString();
   } else {
     const hoursInt = Math.max(1, parseInt(hours, 10) || 24);
     toISO   = new Date().toISOString();
@@ -308,8 +318,10 @@ async function _handleDataTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
     return res.status(405).json({ error: "Method not allowed" });
 
   const { camera_id, from, to, granularity = "hour" } = req.query;
-  const toDate   = to   ? new Date(to)   : new Date();
-  const fromDate = from ? new Date(from) : new Date(toDate - 24 * 3600 * 1000);
+  const toDate   = _parseDate(to,   new Date());
+  const fromDate = _parseDate(from, new Date(toDate - 24 * 3600 * 1000));
+  if (!fromDate || !toDate)
+    return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD or ISO 8601." });
   const fromISO  = fromDate.toISOString();
   const toISO    = toDate.toISOString();
 
@@ -461,13 +473,17 @@ async function handleExport(req, res) {
   }
 
   const { camera_id, from, to } = req.query;
-  const fromDate = from || new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const toDate   = to   || new Date().toISOString();
+  const _fd = _parseDate(from, new Date(Date.now() - 24 * 3600 * 1000));
+  const _td = _parseDate(to,   new Date());
+  if (!_fd || !_td)
+    return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD or ISO 8601." });
+  const fromDate = _fd.toISOString();
+  const toDate   = _td.toISOString();
   const dateStr  = fromDate.slice(0, 10);
   const headers  = sbHeaders(SERVICE_KEY);
 
   // ── 90-day range guard ──────────────────────────────────────────────────────
-  const diffDays = (new Date(toDate) - new Date(fromDate)) / 86400000;
+  const diffDays = (_td - _fd) / 86400000;
   if (diffDays > 90)
     return res.status(400).json({ error: "Date range exceeds 90 days. Narrow your selection and try again." });
 

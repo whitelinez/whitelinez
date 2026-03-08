@@ -138,7 +138,12 @@ const LiveBet = (() => {
 
       const data = await res.json();
       if (!res.ok) {
-        errorEl.textContent = data.detail || "Submission failed";
+        errorEl.textContent =
+          res.status === 400 ? (data?.detail || data?.error || "Invalid guess — check your input") :
+          res.status === 401 ? "Session expired — please sign in again" :
+          res.status === 403 ? "Round is no longer accepting guesses" :
+          res.status === 409 ? "You already have an active guess for this round" :
+          (data?.detail || data?.error || "Something went wrong — try again");
         return;
       }
 

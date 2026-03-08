@@ -125,6 +125,8 @@ export default async function handler(req, res) {
 
   const auth = req.headers["authorization"] || "";
   if (!auth.startsWith("Bearer ")) return res.status(401).json({ error: "Missing Bearer token" });
+  if (auth.slice(7).trim().split(".").length !== 3)
+    return res.status(401).json({ error: "Malformed token" });
 
   try {
     switch (route) {

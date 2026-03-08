@@ -103,7 +103,7 @@
     <span class="dev-banner-text dev-banner-short">Under heavy development</span>
     <button class="dev-banner-close" aria-label="Dismiss" onclick="document.getElementById('dev-banner').style.display='none';localStorage.setItem('wlz.dev-banner.dismissed','1')">&#x2715;</button>
   </div>
-  <script>if(localStorage.getItem('wlz.dev-banner.dismissed')==='1')document.getElementById('dev-banner').style.display='none';</script>
+  <script>(function(){var b=document.getElementById('dev-banner');if(localStorage.getItem('wlz.dev-banner.dismissed')==='1'){b.style.display='none';}else{setTimeout(function(){b.style.display='none';localStorage.setItem('wlz.dev-banner.dismissed','1');},30000);}})();</script>
 
   <header class="site-header">
     <!-- Left: Logo -->

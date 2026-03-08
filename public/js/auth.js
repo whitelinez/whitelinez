@@ -23,9 +23,15 @@ const Auth = (() => {
     window.location.href = "/";
   }
 
+  // Dedup concurrent getSession() calls — all callers within the same async
+  // tick share one promise, preventing simultaneous localStorage lock contention.
+  let _sessionPending = null;
   async function getSession() {
-    const { data } = await window.sb.auth.getSession();
-    return data?.session ?? null;
+    if (_sessionPending) return _sessionPending;
+    _sessionPending = window.sb.auth.getSession()
+      .then(({ data }) => data?.session ?? null)
+      .finally(() => { _sessionPending = null; });
+    return _sessionPending;
   }
 
   async function getJwt() {

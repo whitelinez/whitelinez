@@ -2083,7 +2083,8 @@ function _connectUserWs(session) {
       txt("gov-sum-peak",   `${peakLabel} (${peakVal})`);
       txt("gov-sum-heavy",  heavyPct);
       txt("gov-sum-queue",  summary.avg_queue_depth != null ? summary.avg_queue_depth.toFixed(1) : "—");
-      txt("gov-sum-speed",  summary.avg_speed_kmh   != null ? `${summary.avg_speed_kmh} km/h` : "—");
+      // Speed card visibility controlled by zone analytics (_buildSpeedChart / _loadZoneAnalytics)
+      // _initAllCharts only sets the value if the traffic API happens to include speed
       txt("gov-kpi-peak",   peakLabel);
       txt("gov-trend-label", `— ${granLabel} view`);
 
@@ -2288,9 +2289,13 @@ function _connectUserWs(session) {
         txt("gov-sum-queue", Number(tm.queue_summary.avg).toFixed(1));
       }
 
-      // Speed
+      // Speed — only show summary card when speed data is available
+      const speedCard = el("gov-sum-speed-card");
       if (tm.speed?.avg_kmh != null) {
         txt("gov-sum-speed", `${Number(tm.speed.avg_kmh).toFixed(1)} km/h`);
+        if (speedCard) speedCard.style.display = "";
+      } else {
+        if (speedCard) speedCard.style.display = "none";
       }
 
       // Heavy % from zone class_totals

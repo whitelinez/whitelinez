@@ -2381,11 +2381,33 @@ function _connectUserWs(session) {
       </span>`;
   }
 
+  /** Show a text placeholder inside a chart body when there's no data to render. */
+  function _chartEmpty(canvasId, msg) {
+    const canvas = el(canvasId);
+    if (!canvas) return;
+    canvas.style.display = "none";
+    const body = canvas.closest(".gov-chart-body");
+    if (!body) return;
+    let ph = body.querySelector(".gov-chart-empty");
+    if (!ph) {
+      ph = document.createElement("div");
+      ph.className = "gov-chart-empty";
+      body.appendChild(ph);
+    }
+    ph.textContent = msg;
+  }
+
   function _buildQueueChart(series) {
     const canvas = el("gov-queue-canvas");
     if (!canvas || !window.Chart) return;
     if (_queueChart) { _queueChart.destroy(); _queueChart = null; }
-    if (!series.length) return;
+    if (!series.length) {
+      _chartEmpty("gov-queue-canvas", "No queue data for this period — widen the date range to see historical data.");
+      return;
+    }
+    // Restore canvas in case it was hidden by a previous empty state
+    canvas.style.display = "";
+    canvas.closest(".gov-chart-body")?.querySelector(".gov-chart-empty")?.remove();
     const labels = series.map(r => new Date(r.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }));
     const data   = series.map(r => r.depth || 0);
     const ctx    = canvas.getContext("2d");
@@ -2414,7 +2436,12 @@ function _connectUserWs(session) {
     if (!canvas || !window.Chart) return;
     if (_speedChart) { _speedChart.destroy(); _speedChart = null; }
     const sp = data.speed;
-    if (!sp || !sp.samples) return;
+    if (!sp || !sp.samples) {
+      _chartEmpty("gov-speed-canvas", "Speed data unavailable — requires optical flow detection.");
+      return;
+    }
+    canvas.style.display = "";
+    canvas.closest(".gov-chart-body")?.querySelector(".gov-chart-empty")?.remove();
     _speedChart = new window.Chart(canvas, {
       type: "bar",
       data: {

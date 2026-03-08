@@ -361,13 +361,20 @@ async function _handleDataTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
       delete m._dwell_sum;
     }
 
-    let qUrl = `${SUPABASE_URL}/rest/v1/traffic_snapshots`
-      + `?select=captured_at,queue_depth,total_visible`
-      + `&captured_at=gte.${encodeURIComponent(fromISO)}`
-      + `&captured_at=lte.${encodeURIComponent(toISO)}&order=captured_at.asc&limit=2000`;
-    if (camera_id) qUrl += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
-
-    const qRows      = await fetch(qUrl, { headers: h }).then(r => r.ok ? r.json() : []);
+    const _qFetch = (from, to) => {
+      let u = `${SUPABASE_URL}/rest/v1/traffic_snapshots`
+        + `?select=captured_at,queue_depth,total_visible`
+        + `&captured_at=gte.${encodeURIComponent(from)}`
+        + `&captured_at=lte.${encodeURIComponent(to)}&order=captured_at.asc&limit=2000`;
+      if (camera_id) u += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
+      return fetch(u, { headers: h }).then(r => r.ok ? r.json() : []);
+    };
+    let qRows = await _qFetch(fromISO, toISO);
+    // If primary window returns nothing, fall back to last 7 days so the chart is never empty
+    if (!qRows.length) {
+      const fallbackFrom = new Date(toDate - 7 * 24 * 3600 * 1000).toISOString();
+      qRows = await _qFetch(fallbackFrom, toISO);
+    }
     const queueSeries = qRows.map(r => ({ ts: r.captured_at, depth: r.queue_depth || 0, visible: r.total_visible || 0 }));
     const depths      = queueSeries.map(r => r.depth);
     const queueSummary = depths.length > 0

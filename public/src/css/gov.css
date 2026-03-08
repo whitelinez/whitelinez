@@ -3418,6 +3418,14 @@
   vertical-align: middle;
 }
 
+/* Empty state placeholder shown when a chart has no data */
+.gov-chart-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; padding: 12px;
+  font-size: 0.72rem; color: var(--muted); text-align: center;
+  font-style: italic; line-height: 1.5;
+}
+
 /* Turnings skeleton rows */
 .gov-turnings-skel { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
 .gov-tur-skel-row  { display: flex; align-items: center; gap: 10px; }

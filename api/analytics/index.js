@@ -195,7 +195,53 @@ async function _hourlyData(SUPABASE_URL, headers, camera_id, fromISO, toISO) {
         return { ...r, period: r.hour, out: outMap[key] ?? 0 };
       });
   }
+  // RPC only covers live vehicle_crossings (24h retention).
+  // Try unpacking hour_buckets from traffic_daily for historical requests.
+  const hist = await _hourlyFromDailyBuckets(SUPABASE_URL, headers, camera_id, fromISO, toISO);
+  if (hist.length > 0) return hist;
   return _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO, "hour", outMap);
+}
+
+/**
+ * Build hourly rows from traffic_daily.hour_buckets for date ranges beyond live retention.
+ * Each bucket key is a string hour "0"-"23"; we reconstruct full ISO timestamps per date.
+ */
+async function _hourlyFromDailyBuckets(SUPABASE_URL, headers, camera_id, fromISO, toISO) {
+  try {
+    const fromDate = fromISO.slice(0, 10);
+    const toDate   = toISO.slice(0, 10);
+    let url = `${SUPABASE_URL}/rest/v1/traffic_daily`
+      + `?select=date,hour_buckets`
+      + `&date=gte.${fromDate}&date=lte.${toDate}`
+      + `&hour_buckets=not.is.null`
+      + `&order=date.asc`;
+    if (camera_id) url += `&camera_id=eq.${encodeURIComponent(camera_id)}`;
+    const r = await fetch(url, { headers });
+    if (!r.ok) return [];
+    const dailyRows = await r.json();
+    if (!dailyRows || dailyRows.length === 0) return [];
+
+    const result = [];
+    for (const d of dailyRows) {
+      if (!d.hour_buckets || typeof d.hour_buckets !== "object") continue;
+      for (const [hStr, hv] of Object.entries(d.hour_buckets)) {
+        const h = parseInt(hStr, 10);
+        if (isNaN(h) || h < 0 || h > 23) continue;
+        const period = `${d.date}T${String(h).padStart(2, "0")}:00:00Z`;
+        result.push({
+          period,
+          total:      hv.total      || 0,
+          in:         hv.in         || 0,
+          out:        hv.out        || 0,
+          car:        hv.car        || 0,
+          truck:      hv.truck      || 0,
+          bus:        hv.bus        || 0,
+          motorcycle: hv.motorcycle || 0,
+        });
+      }
+    }
+    return result.sort((a, b) => a.period.localeCompare(b.period));
+  } catch { return []; }
 }
 
 async function _hourlyFallback(SUPABASE_URL, headers, camera_id, fromISO, toISO, targetGranularity, outMap) {

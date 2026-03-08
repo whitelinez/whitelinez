@@ -2340,7 +2340,7 @@
   font-family: "Inter", sans-serif; font-size: 10px; color: var(--muted);
   text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px;
 }
-.gov-modal-chart-wrap { position: relative; height: 200px; margin-bottom: 16px; }
+.gov-modal-chart-wrap { position: relative; height: 200px; margin-bottom: 16px; overflow: hidden; }
 .gov-modal-chart-wrap canvas { width: 100%; height: 100%; }
 .gov-modal-section { margin-bottom: 18px; }
 .gov-modal-section-head {
@@ -3673,7 +3673,10 @@
   /* ── Modal ───────────────────────────────────────── */
   .gov-modal-box { width: 96%; max-height: 88vh; border-radius: 10px; }
   .gov-modal-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .gov-modal-body { padding: 14px; }
+  .gov-modal-body { padding: 10px; }
+  .gov-modal-chart-wrap { height: 150px; }
+  .gov-modal-kpi-val { font-size: 18px; }
+  .gov-modal-kpi { padding: 8px; }
 
   /* ── Tooltip — disable on touch (no hover) ──────── */
   .gov-overlay [data-tip]::after { display: none; }

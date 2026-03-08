@@ -552,11 +552,14 @@
 .tab-content.active { display: flex; flex-direction: column; }
 
 
-/* ── Vision HUD mobile — prevent right-edge overflow ──────────────────────── */
+/* ── Vision HUD — prevent right-edge overflow at all sizes ─────────────────── */
+.ml-hud {
+  max-width: min(194px, calc(100% - 24px));
+}
 @media (max-width: 480px) {
   .ml-hud {
     right: 6px;
-    max-width: min(170px, calc(100vw - 90px));
+    max-width: min(160px, calc(100vw - 80px));
   }
 }
 

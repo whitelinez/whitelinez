@@ -318,10 +318,13 @@ export const LiveBet = (() => {
       const diff      = Math.abs(+actual - +exact);
       const tolerance = Math.max(1, Math.round(+exact * 0.40));
       tolRow.style.display = "";
-      tolLbl.textContent   = "Off by";
-      tolVal.textContent   = diff === 0
+      const unit = diff === 1 ? "car" : "cars";
+      tolLbl.textContent = "Off by";
+      tolVal.textContent = diff === 0
         ? "0 — perfect!"
-        : `${diff} (need ≤${tolerance} for CLOSE)`;
+        : diff <= tolerance
+          ? `${diff} ${unit} — close enough!`
+          : `${diff} ${unit}`;
       tolVal.style.color = diff === 0 ? "#4ade80" : diff <= tolerance ? "var(--accent)" : "#f87171";
     }
 

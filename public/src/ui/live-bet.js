@@ -16,6 +16,8 @@ export const LiveBet = (() => {
   let _lastKnownTotal = null; // latest global count — updated on every count:update
   let _windowHistory = [];    // [{t, v}] — delta samples recorded during window for replay chart
   let _replayChart = null;
+  let _betActive = false;    // true while countdown is running
+  let _resultPending = false; // true while result card is visible
 
   // Track latest global total so we can use it as baseline if API doesn't send one
   window.addEventListener("count:update", (e) => {
@@ -46,6 +48,12 @@ export const LiveBet = (() => {
   // ── Open / close panel ────────────────────────────────────────────
 
   function open(round) {
+    // If a bet is in flight or result is showing, just re-show — don't reset
+    if (_betActive || _resultPending) {
+      _ensurePanelVisible();
+      return;
+    }
+
     _round = round;
 
     const panel = document.getElementById("bet-panel");
@@ -61,6 +69,20 @@ export const LiveBet = (() => {
     _setPill("bp-vehicle-pills", "");
     _setPill("bp-window-pills", "60");
 
+    panel.classList.remove("hidden");
+    requestAnimationFrame(() => panel.classList.add("visible"));
+  }
+
+  // Re-show panel without resetting any state (used when returning to PLAY tab)
+  function restore() {
+    if (_betActive || _resultPending) {
+      _ensurePanelVisible();
+    }
+  }
+
+  function _ensurePanelVisible() {
+    const panel = document.getElementById("bet-panel");
+    if (!panel) return;
     panel.classList.remove("hidden");
     requestAnimationFrame(() => panel.classList.add("visible"));
   }
@@ -183,6 +205,7 @@ export const LiveBet = (() => {
     if (!activeEl || !cdEl) return;
 
     // Store for progress tracking
+    _betActive     = true;
     _guessCount    = Number(guessCount) || 0;
     // Use API baseline if provided; fall back to latest known total from count:update
     _baselineCount = (baseline != null) ? Number(baseline) : _lastKnownTotal;
@@ -256,6 +279,7 @@ export const LiveBet = (() => {
   }
 
   function _hideBpActiveBet(showSubmit = true) {
+    _betActive = false;
     clearInterval(_countdownTimer);
     window.removeEventListener("count:update", _onBpCountUpdate);
     document.getElementById("bp-active-bet")?.classList.add("hidden");
@@ -273,6 +297,12 @@ export const LiveBet = (() => {
 
   function onBetResolved(data) {
     _hideBpActiveBet(false); // don't show submit — result panel takes over
+
+    // Ensure user is on the PLAY tab and panel is visible before showing result
+    const playTab = document.querySelector('.tab-btn[data-tab="markets"]');
+    if (playTab && !playTab.classList.contains("active")) playTab.click();
+    _ensurePanelVisible();
+
     _showBpResult(data);
   }
 
@@ -341,6 +371,7 @@ export const LiveBet = (() => {
       tolVal.style.color = diff === 0 ? "#4ade80" : diff <= tolerance ? "var(--accent)" : "#f87171";
     }
 
+    _resultPending = true;
     document.getElementById("bp-submit")?.classList.add("hidden");
     resultEl.classList.remove("hidden");
 
@@ -408,6 +439,7 @@ export const LiveBet = (() => {
   }
 
   function _hideBpResult() {
+    _resultPending = false;
     document.getElementById("bp-result")?.classList.add("hidden");
     document.getElementById("bp-submit")?.classList.remove("hidden");
     document.getElementById("bpr-replay")?.classList.add("hidden");
@@ -467,12 +499,11 @@ export const LiveBet = (() => {
     });
 
     document.getElementById("bpr-leaderboard-btn")?.addEventListener("click", () => {
-      close();
-      // Activate the leaderboard sidebar tab
+      // Switch to leaderboard tab — keep bet panel state intact so user can return
       const lbTab = document.querySelector('.tab-btn[data-tab="leaderboard"]');
       if (lbTab) lbTab.click();
     });
   }
 
-  return { init, open, close, onBetResolved, setRound: (r) => { _round = r; } };
+  return { init, open, close, restore, onBetResolved, setRound: (r) => { _round = r; } };
 })();

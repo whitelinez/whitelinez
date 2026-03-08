@@ -532,6 +532,11 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
   document.querySelector('.tab-btn[data-tab="leaderboard"]')?.addEventListener("click", () => {
     Activity.loadLeaderboard(_lbWindow);
   });
+
+  // When user returns to PLAY tab, restore bet panel if a bet/result is in progress
+  document.querySelector('.tab-btn[data-tab="markets"]')?.addEventListener("click", () => {
+    window.LiveBet?.restore();
+  });
   el("lb-refresh")?.addEventListener("click", () => {
     // Manual refresh — bypass cache so user always gets fresh data
     window.AppCache?.invalidate("lb:");

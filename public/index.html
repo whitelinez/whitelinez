@@ -904,12 +904,12 @@
         </div>
         <div class="gov-kpi-card" data-modal="flow" data-tip="Vehicles travelling into the intersection today">
           <div class="gov-kpi-val" id="gov-kpi-in">—</div>
-          <div class="gov-kpi-lbl">Inbound</div>
+          <div class="gov-kpi-lbl">Entering</div>
           <div class="gov-kpi-hint">tap for flow detail</div>
         </div>
         <div class="gov-kpi-card" data-modal="flow" data-tip="Vehicles that have exited through a named zone today — from the Traffic Intelligence system">
           <div class="gov-kpi-val gov-kpi-out" id="gov-kpi-out">—</div>
-          <div class="gov-kpi-lbl">Outbound</div>
+          <div class="gov-kpi-lbl">Exiting</div>
           <div class="gov-kpi-hint">tap for flow detail</div>
         </div>
       </div>
@@ -1043,8 +1043,8 @@
         </div>
         <div class="gov-period-pills">
           <span class="gov-pill active" data-preset="1d">Today</span>
-          <span class="gov-pill" data-preset="7d">7D</span>
-          <span class="gov-pill" data-preset="30d">30D</span>
+          <span class="gov-pill" data-preset="7d">Last 7 Days</span>
+          <span class="gov-pill" data-preset="30d">Last 30 Days</span>
           <span class="gov-pill" data-preset="all">All Time</span>
         </div>
         <div class="gov-gran-pills">
@@ -1062,19 +1062,19 @@
       <div class="gov-an-sumbar">
         <div class="gov-an-sumcard">
           <div class="gov-an-sumcard-val" id="gov-sum-total">—</div>
-          <div class="gov-an-sumcard-lbl">Period Total</div>
+          <div class="gov-an-sumcard-lbl">Vehicles Counted</div>
         </div>
         <div class="gov-an-sumcard">
           <div class="gov-an-sumcard-val" id="gov-sum-peak">—</div>
-          <div class="gov-an-sumcard-lbl">Peak Hour</div>
+          <div class="gov-an-sumcard-lbl">Busiest Hour</div>
         </div>
         <div class="gov-an-sumcard">
           <div class="gov-an-sumcard-val" id="gov-sum-heavy">—</div>
-          <div class="gov-an-sumcard-lbl">Heavy Traffic</div>
+          <div class="gov-an-sumcard-lbl">Trucks &amp; Buses</div>
         </div>
         <div class="gov-an-sumcard" id="gov-sum-queue-card" style="display:none">
           <div class="gov-an-sumcard-val" id="gov-sum-queue">—</div>
-          <div class="gov-an-sumcard-lbl">Avg Queue</div>
+          <div class="gov-an-sumcard-lbl">Avg Wait Line</div>
         </div>
         <div class="gov-an-sumcard" id="gov-sum-speed-card" style="display:none">
           <div class="gov-an-sumcard-val" id="gov-sum-speed">—</div>
@@ -1092,10 +1092,10 @@
       <!-- Live feed strip with AI overlays -->
       <div class="gov-an-feedstrip">
         <div class="gov-an-feedstrip-hdr">
-          <span>LIVE AI VISION</span>
+          <span>LIVE CAMERA FEED</span>
           <span class="gov-an-feedstrip-tags">
-            <span class="gov-an-ftag gov-an-ftag--detect">● YOLO DETECTION</span>
-            <span class="gov-an-ftag gov-an-ftag--zone">● ZONE OVERLAYS</span>
+            <span class="gov-an-ftag gov-an-ftag--detect">● AI DETECTION ON</span>
+            <span class="gov-an-ftag gov-an-ftag--zone">● ZONES ACTIVE</span>
           </span>
         </div>
         <div id="gov-an-video-slot" class="gov-an-video-slot">
@@ -1105,7 +1105,7 @@
 
       <!-- Active zones status bar -->
       <div class="gov-zones-bar" id="gov-zones-bar">
-        <span class="gov-zones-label">ACTIVE ZONES</span>
+        <span class="gov-zones-label">DETECTION ZONES</span>
         <div class="gov-zones-chips" id="gov-zones-chips">
           <span class="gov-zone-chip gov-zone-chip-loading">Loading…</span>
         </div>
@@ -1115,7 +1115,7 @@
         <!-- Trend: full width, tall filled area wave -->
         <div class="gov-chart-card gov-chart-full gov-chart-tall">
           <div class="gov-chart-head">
-            <span class="gov-chart-title">TRAFFIC TREND</span>
+            <span class="gov-chart-title">VEHICLE FLOW</span>
             <span class="gov-head-muted" id="gov-trend-label">— loading…</span>
           </div>
           <div class="gov-chart-body"><canvas id="gov-trend-canvas"></canvas></div>
@@ -1123,33 +1123,33 @@
 
         <!-- Class distribution: 1 col, horizontal bars -->
         <div class="gov-chart-card">
-          <div class="gov-chart-head"><span class="gov-chart-title">VEHICLE CLASS</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">VEHICLE TYPES</span></div>
           <div class="gov-chart-body"><canvas id="gov-cls-canvas"></canvas></div>
         </div>
 
         <!-- Peak period: 2 cols -->
         <div class="gov-chart-card gov-chart-span2">
-          <div class="gov-chart-head"><span class="gov-chart-title">PEAK ACTIVITY</span><span class="gov-head-muted">— highest volume periods</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">BUSIEST PERIODS</span><span class="gov-head-muted">— hours with the most traffic</span></div>
           <div class="gov-chart-body"><canvas id="gov-peak-canvas"></canvas></div>
         </div>
 
         <!-- Queue depth: 2 cols, filled area -->
         <div class="gov-chart-card gov-chart-span2">
-          <div class="gov-chart-head"><span class="gov-chart-title">QUEUE DEPTH</span><span class="gov-head-muted">— vehicles at stop line</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">WAIT LINE</span><span class="gov-head-muted">— vehicles waiting at the stop line</span></div>
           <div class="gov-chart-body"><canvas id="gov-queue-canvas"></canvas></div>
         </div>
 
         <!-- Speed: 1 col, horizontal bars — hidden until data available -->
         <div class="gov-chart-card" id="gov-speed-card" style="display:none">
-          <div class="gov-chart-head"><span class="gov-chart-title">SPEED</span><span class="gov-head-muted">km/h</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">VEHICLE SPEED</span><span class="gov-head-muted">— measured in km/h</span></div>
           <div class="gov-chart-body"><canvas id="gov-speed-canvas"></canvas></div>
         </div>
 
         <!-- Per-zone entry breakdown: full width -->
         <div class="gov-chart-card gov-chart-full" id="gov-zones-breakdown-card">
           <div class="gov-chart-head">
-            <span class="gov-chart-title">ENTRY ZONE BREAKDOWN</span>
-            <span class="gov-head-muted">— vehicles entering by approach direction</span>
+            <span class="gov-chart-title">WHERE VEHICLES ENTER</span>
+            <span class="gov-head-muted">— how many came from each direction</span>
           </div>
           <div id="gov-zones-breakdown-body" class="gov-zones-breakdown-body">
             <p class="gov-turnings-empty">Loading zone data…</p>
@@ -1158,7 +1158,7 @@
 
         <!-- Turning movements: full width -->
         <div class="gov-chart-card gov-chart-full" id="gov-turnings-card">
-          <div class="gov-chart-head"><span class="gov-chart-title">TURNING MOVEMENTS</span><span class="gov-head-muted">— entry → exit flows</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">TRAFFIC ROUTES</span><span class="gov-head-muted">— which way vehicles go through the intersection</span></div>
           <div id="gov-turnings-body" class="gov-turnings-body">
             <p class="gov-turnings-empty">No turning movement zones defined yet. Use Admin → Analytics Zones to draw entry/exit zones.</p>
           </div>
@@ -1166,10 +1166,10 @@
 
         <!-- Crossings table: full width -->
         <div class="gov-chart-card gov-chart-full">
-          <div class="gov-chart-head"><span class="gov-chart-title">RECENT CROSSINGS</span> <span class="gov-head-muted">— refreshes every 10s · click row for detail</span></div>
+          <div class="gov-chart-head"><span class="gov-chart-title">RECENT DETECTIONS</span> <span class="gov-head-muted">— updates every 10s · click a row for detail</span></div>
           <div class="gov-crossings-wrap">
             <table class="gov-crossings-table">
-              <thead><tr><th>Time</th><th>Class</th><th>Dir</th><th>Conf</th><th>Scene</th><th>Dwell</th></tr></thead>
+              <thead><tr><th>Time</th><th>Type</th><th>Direction</th><th>Confidence</th><th>Scene</th><th>Dwell Time</th></tr></thead>
               <tbody id="gov-crossings-body"></tbody>
             </table>
           </div>

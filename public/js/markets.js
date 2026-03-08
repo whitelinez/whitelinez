@@ -28,7 +28,7 @@ const Markets = (() => {
   const DISMISSED_RESOLVED_STORAGE_KEY = "wlz_round_result_dismissed_v1";
   const ROUND_GUIDE_COLLAPSE_KEY = "wlz_round_guide_collapsed_v1";
 
-  const USER_BET_POLL_MS = 5000;
+  const USER_BET_POLL_MS = 15_000;
 
   function initTabs() {
     // Cache node lists once; reuse on every click (avoids 3× querySelectorAll per click)
@@ -537,11 +537,15 @@ const Markets = (() => {
 
       // 1) Try backend health first, but do not fail hard if unavailable.
       try {
-        const h = await fetch("/api/health");
-        if (h.ok) {
-          const health = await h.json();
-          nextRoundAtIso = health?.next_round_at || null;
+        let health = window.AppCache?.get("health:latest");
+        if (!health) {
+          const h = await fetch("/api/health");
+          if (h.ok) {
+            health = await h.json();
+            window.AppCache?.set("health:latest", health, 60_000);
+          }
         }
+        if (health) nextRoundAtIso = health?.next_round_at || null;
       } catch {}
 
       // 2) Fallback to active session scheduler timestamp.

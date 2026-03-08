@@ -102,6 +102,8 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
    * @returns {Promise<object|null>} camera row or null if none active
    */
   async function resolveActiveCamera() {
+    const _cached = window.AppCache?.get("camera:active");
+    if (_cached !== null && _cached !== undefined) return _cached;
     const { data, error } = await window.sb
       .from("cameras")
       .select("id, name, ipcam_alias, created_at, feed_appearance")
@@ -126,7 +128,9 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
       if (at !== bt) return bt - at;
       return String(b?.id || "").localeCompare(String(a?.id || ""));
     });
-    return cams[0] || null;
+    const result = cams[0] || null;
+    window.AppCache?.set("camera:active", result, 5 * 60_000);
+    return result;
   }
 
   function isNightWindowNow() {
@@ -637,9 +641,15 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 
   // ── Health fetch — watching count ─────────────────────────────────────────
   try {
-    const hRes = await fetch("/api/health");
-    if (hRes.ok) {
-      const hData = await hRes.json();
+    let hData = window.AppCache?.get("health:latest");
+    if (!hData) {
+      const hRes = await fetch("/api/health");
+      if (hRes.ok) {
+        hData = await hRes.json();
+        window.AppCache?.set("health:latest", hData, 60_000);
+      }
+    }
+    if (hData) {
       const watchers = Number(hData.total_ws_connections || 0);
       const watchEl = el("header-watching");
       const watchValEl = el("header-watching-val");
@@ -1548,10 +1558,15 @@ function _connectUserWs(session) {
     } else {
       url = `/api/analytics/traffic?hours=${_govHours}&granularity=${_govGranularity}${_camId ? `&camera_id=${_camId}` : ""}`;
     }
+    const _ac = window.AppCache?.get("analytics:" + url);
+    if (_ac) { _analyticsData = _ac; return; }
     try {
       const res  = await fetch(url);
       const json = res.ok ? await res.json() : null;
-      if (json) _analyticsData = json;
+      if (json) {
+        _analyticsData = json;
+        window.AppCache?.set("analytics:" + url, json, 2 * 60_000);
+      }
     } catch {}
   }
 
@@ -1947,8 +1962,12 @@ function _connectUserWs(session) {
       url = `/api/analytics/traffic?hours=${hours || _govHours}&granularity=${_govGranularity}${_camId?`&camera_id=${_camId}`:""}`;
     }
     try {
-      const res  = await fetch(url);
-      const json = res.ok ? await res.json() : null;
+      let json = window.AppCache?.get("analytics:" + url);
+      if (!json) {
+        const res = await fetch(url);
+        json = res.ok ? await res.json() : null;
+        if (json) window.AppCache?.set("analytics:" + url, json, 2 * 60_000);
+      }
       if (!json) { _setAnalyticsLoading(false); _setProgress(100); return; }
       _analyticsData = json;
       const rows    = json.rows || [];
@@ -2567,8 +2586,38 @@ function _connectUserWs(session) {
       txt("gov-last", _aiTelemetryCache.last);
   }
 
+  function _renderCrossingsRows(data) {
+    const tbody = el("gov-crossings-body");
+    if (!tbody) return;
+    if (!data?.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No crossings recorded yet</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.map(r => {
+      const cls  = String(r.vehicle_class || "car").toLowerCase();
+      const css  = CLS_CSS[cls]  || "gov-td-car";
+      const icon = CLS_SVG[cls] || CLS_SVG.car;
+      const dirCss = r.direction === "in" ? "gov-td-in" : "gov-td-out";
+      const conf = r.confidence != null ? `${(Number(r.confidence)*100).toFixed(0)}%` : "—";
+      const scene = [r.scene_lighting, r.scene_weather].filter(Boolean).join(" / ") || "—";
+      const time  = r.captured_at ? new Date(r.captured_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "—";
+      const dwell = r.dwell_frames != null ? `${r.dwell_frames}f` : "—";
+      return `<tr data-crossing='${JSON.stringify({time,cls,dir:r.direction,conf,scene,dwell}).replace(/'/g,"&apos;")}'>
+        <td>${time}</td>
+        <td class="${css}">${icon} ${cls.toUpperCase()}</td>
+        <td class="${dirCss}">${r.direction || "—"}</td>
+        <td>${conf}</td>
+        <td style="color:var(--muted);font-size:10px">${scene}</td>
+        <td style="color:var(--dim);font-size:10px">${dwell}</td>
+      </tr>`;
+    }).join("");
+  }
+
   async function _loadGovCrossings() {
     if (!window.sb) return;
+    const cacheKey = "crossings:" + (_camId || "all");
+    const cached = window.AppCache?.get(cacheKey);
+    if (cached) { _renderCrossingsRows(cached); return; }
     const tbody = el("gov-crossings-body");
     if (tbody) tbody.innerHTML = _crossingsSkeleton(6);
     try {
@@ -2577,28 +2626,8 @@ function _connectUserWs(session) {
         .order("captured_at", { ascending: false }).limit(20);
       if (_camId) q = q.eq("camera_id", _camId);
       const { data } = await q;
-      if (!tbody || !data?.length) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No crossings recorded yet</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = data.map(r => {
-        const cls  = String(r.vehicle_class || "car").toLowerCase();
-        const css  = CLS_CSS[cls]  || "gov-td-car";
-        const icon = CLS_SVG[cls] || CLS_SVG.car;
-        const dirCss = r.direction === "in" ? "gov-td-in" : "gov-td-out";
-        const conf = r.confidence != null ? `${(Number(r.confidence)*100).toFixed(0)}%` : "—";
-        const scene = [r.scene_lighting, r.scene_weather].filter(Boolean).join(" / ") || "—";
-        const time  = r.captured_at ? new Date(r.captured_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "—";
-        const dwell = r.dwell_frames != null ? `${r.dwell_frames}f` : "—";
-        return `<tr data-crossing='${JSON.stringify({time,cls,dir:r.direction,conf,scene,dwell}).replace(/'/g,"&apos;")}'>
-          <td>${time}</td>
-          <td class="${css}">${icon} ${cls.toUpperCase()}</td>
-          <td class="${dirCss}">${r.direction || "—"}</td>
-          <td>${conf}</td>
-          <td style="color:var(--muted);font-size:10px">${scene}</td>
-          <td style="color:var(--dim);font-size:10px">${dwell}</td>
-        </tr>`;
-      }).join("");
+      window.AppCache?.set(cacheKey, data || [], 10_000);
+      _renderCrossingsRows(data);
     } catch (err) {
       console.warn("[GovAnalytics] Crossings failed:", err);
     }
@@ -2746,6 +2775,8 @@ function _connectUserWs(session) {
   function _setCalDate(field, ds) {
     if (field === "from") _govFrom = ds;
     else _govTo = ds + "T23:59:59Z";
+    window.AppCache?.invalidate("analytics:");
+    _analyticsData = null;
     _updateCalBtns();
   }
 
@@ -2761,6 +2792,8 @@ function _connectUserWs(session) {
   }
 
   function _setPreset(preset) {
+    window.AppCache?.invalidate("analytics:");
+    _analyticsData = null;
     const today    = new Date();
     const todayStr = today.toISOString().slice(0, 10);
     _govTo = null;

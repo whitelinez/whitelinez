@@ -14,6 +14,10 @@
  *   "ws:token"         — /api/token response (4 min TTL); shared by counter.js + stream.js
  *   "round:preferred"  — _fetchPreferredRound() result (30 s TTL, invalidated by heartbeat)
  *   "lb:<windowSec>"   — leaderboard HTML per window duration (30 s TTL)
+ *   "health:latest"    — /api/health JSON (60 s TTL); shared by counter.js, markets.js, index-init.js
+ *   "camera:active"    — resolveActiveCamera() result (5 min TTL); index-init.js
+ *   "analytics:<url>"  — /api/analytics/traffic response (2 min TTL); invalidated on date range change
+ *   "crossings:<id>"   — vehicle_crossings last 20 rows (10 s TTL); gov overlay table
  *
  * Design notes:
  *   - Pure in-memory Map; no sessionStorage (avoids stale data across page reloads).

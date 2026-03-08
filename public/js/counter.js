@@ -74,9 +74,13 @@ const Counter = (() => {
 
   async function bootstrapFromHealth() {
     try {
-      const res = await fetch("/api/health");
-      if (!res.ok) return;
-      const health = await res.json();
+      let health = window.AppCache?.get("health:latest");
+      if (!health) {
+        const res = await fetch("/api/health");
+        if (!res.ok) return;
+        health = await res.json();
+        window.AppCache?.set("health:latest", health, 60_000);
+      }
       const snap = health?.latest_snapshot;
       if (!snap || typeof snap !== "object") return;
       const payload = {

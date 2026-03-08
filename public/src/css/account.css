@@ -784,7 +784,7 @@
   .nav-link { padding: 4px 6px; font-size: 0.82rem; }
   .nav-icon-btn { width: 30px; height: 30px; border-radius: 7px; }
   .nav-balance { height: 30px; padding: 0 9px; font-size: 0.76rem; }
-  .nav-login-btn { height: 30px; padding: 0 10px; font-size: 10.5px; border-radius: 7px; }
+  .nav-login-btn { min-height: 44px; height: auto; padding: 0 10px; font-size: 10.5px; border-radius: 7px; }
 
   .empty-state { padding: 24px 16px; }
 

@@ -2211,10 +2211,23 @@
   width: 100%; padding: 14px 20px; margin-top: 20px; border-radius: 8px;
   background: #0f172a; border: none; color: #fff;
   font-family: "Inter", sans-serif; font-size: 14px; font-weight: 700;
-  letter-spacing: 0.3px; cursor: pointer; transition: background 0.15s;
+  letter-spacing: 0.3px; cursor: pointer; transition: background 0.2s, opacity 0.2s;
 }
-.gov-modal-dl-btn:hover { background: #1e293b; }
-.gov-modal-dl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.gov-modal-dl-btn:hover:not(:disabled) { background: #1e293b; }
+.gov-modal-dl-btn:disabled             { cursor: not-allowed; }
+.gov-modal-dl-btn--loading             { background: #334155; opacity: 0.85; }
+.gov-modal-dl-btn--success             { background: #16a34a; }
+.gov-modal-dl-btn--success:hover:not(:disabled) { background: #15803d; }
+.gov-modal-dl-btn--error               { background: #dc2626; }
+.gov-modal-dl-btn--error:hover:not(:disabled)   { background: #b91c1c; }
+/* Spinner inside download button */
+.gov-dl-spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #ffffff;
+  animation: gov-spin 0.7s linear infinite; flex-shrink: 0;
+}
+@keyframes gov-spin { to { transform: rotate(360deg); } }
 .gov-modal-login-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 14px 20px; margin-top: 20px; border-radius: 8px;
@@ -2228,11 +2241,11 @@
   margin-top: 10px; line-height: 1.6; text-align: center;
 }
 .gov-modal-dl-success {
-  display: none; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px; margin-top: 12px; border-radius: 8px;
+  display: none; align-items: flex-start; gap: 10px;
+  padding: 14px 16px; margin-top: 12px; border-radius: 8px;
   background: #f0fdf4; border: 1px solid #bbf7d0;
-  font-family: "Inter", sans-serif; font-size: 11px; color: #15803d;
-  letter-spacing: 0.06em;
+  font-family: "Inter", sans-serif; font-size: 12px; color: #15803d;
+  line-height: 1.5;
 }
 .gov-modal-dl-success.visible { display: flex; }
 

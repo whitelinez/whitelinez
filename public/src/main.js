@@ -3369,58 +3369,88 @@ function _connectUserWs(session) {
   }
 
   async function _downloadAgencyPackage(agency, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = "Checking auth…"; }
+    const _setBtnState = (state, text) => {
+      if (!btn) return;
+      btn.disabled   = state !== "idle";
+      btn.className  = `gov-modal-dl-btn gov-modal-dl-btn--${state}`;
+      btn.innerHTML  = text;
+    };
+
+    const _showError = (msg) => {
+      _setBtnState("error", `✕ ${msg}`);
+      setTimeout(() => _setBtnState("idle", "↓ Download CSV Data Package"), 4000);
+    };
+
+    _setBtnState("loading", '<span class="gov-dl-spinner"></span> Verifying account…');
+
     try {
       const { data: { session } } = await sb.auth.getSession();
+
       if (!session) {
-        // Not logged in — show login prompt
-        if (agContent) {
-          const loginDiv = document.createElement("div");
-          loginDiv.className = "gov-agency-login-prompt";
-          loginDiv.innerHTML = `
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:12px">
-              Sign in to download this data package.
-            </div>
-            <button class="gov-modal-login-btn" onclick="Auth?.openLoginModal?.();el('gov-agency-modal-backdrop').classList.add('hidden')">
-              Login to Download →
-            </button>`;
-          if (btn) btn.replaceWith(loginDiv);
-        }
+        // Replace button area with a visible login prompt (white modal safe colors)
+        const loginDiv = document.createElement("div");
+        loginDiv.className = "gov-agency-login-prompt";
+        loginDiv.innerHTML = `
+          <div style="font-family:'Inter',sans-serif;font-size:12px;color:#64748b;margin-bottom:12px;text-align:center">
+            You need to be signed in to download this data package.
+          </div>
+          <button class="gov-modal-login-btn" onclick="Auth?.openLoginModal?.();document.getElementById('gov-agency-modal-backdrop')?.classList.add('hidden')">
+            Sign in to Download →
+          </button>`;
+        if (btn) btn.replaceWith(loginDiv);
         return;
       }
 
-      // Log the download to Supabase
-      sb.from("agency_downloads").insert({
-        user_id:      session.user.id,
-        user_email:   session.user.email,
-        agency,
-      }).then(() => {});
-
-      // Trigger CSV download via fetch + blob — honour current date range selection
-      const today     = new Date().toISOString().split("T")[0];
-      const fromDate  = _govFrom
+      // ── Build download URL ────────────────────────────────────────────────
+      const today    = new Date().toISOString().split("T")[0];
+      const fromDate = _govFrom
         ? _govFrom.slice(0, 10)
         : (_analyticsData?.summary?.first_date || "2026-01-01");
-      const toDate    = _govTo ? _govTo.slice(0, 10) : today;
-      const url   = `/api/analytics/export?camera_id=${_camId || ""}&from=${fromDate}&to=${toDate}`;
-      const resp  = await fetch(url, { headers: { Authorization: `Bearer ${session.access_token}` } });
-      if (!resp.ok) throw new Error(`Export API returned ${resp.status}`);
+      const toDate   = _govTo ? _govTo.slice(0, 10) : today;
+      const filename = `whitelinez-${agency}-${fromDate}_${toDate}.csv`;
+      const url      = `/api/analytics/export?camera_id=${_camId || ""}&from=${fromDate}&to=${toDate}`;
 
+      _setBtnState("loading", '<span class="gov-dl-spinner"></span> Preparing data…');
+
+      const resp = await fetch(url, { headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => resp.status);
+        console.error("[agency-dl] export API error:", errText);
+        return _showError(`Server error (${resp.status}) — try again`);
+      }
+
+      // ── Trigger browser download ──────────────────────────────────────────
       const blob = await resp.blob();
-      const a    = document.createElement("a");
-      a.href     = URL.createObjectURL(blob);
-      a.download = `whitelinez-traffic-${agency}-${today}.csv`;
+      if (blob.size === 0) return _showError("No data in selected range");
+
+      const a  = document.createElement("a");
+      a.href   = URL.createObjectURL(blob);
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(a.href);
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 
-      const s = el("ag-dl-success");
-      if (s) s.classList.add("visible");
-      if (btn) { btn.textContent = "↓ Downloaded"; btn.disabled = false; }
+      // ── Success state ─────────────────────────────────────────────────────
+      _setBtnState("success", "✓ Download complete");
+
+      const successEl = el("ag-dl-success");
+      if (successEl) {
+        successEl.innerHTML = `
+          ✓ <strong>${filename}</strong> downloaded
+          <span style="color:#86efac;margin-left:4px">(${(blob.size / 1024).toFixed(0)} KB)</span>`;
+        successEl.classList.add("visible");
+      }
+
+      // ── Audit log (fire-and-forget, failure is silent) ────────────────────
+      sb.from("agency_downloads").insert({
+        user_id: session.user.id, user_email: session.user.email,
+        agency, from_date: fromDate, to_date: toDate, file_size_bytes: blob.size,
+      }).then(() => {}).catch(() => {});
+
     } catch (err) {
       console.error("[agency-dl]", err);
-      if (btn) { btn.textContent = "↓ Download CSV Data Package"; btn.disabled = false; }
+      _showError("Download failed — check connection");
     }
   }
 

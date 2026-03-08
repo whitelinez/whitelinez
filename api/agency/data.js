@@ -62,24 +62,15 @@ export default async function handler(req, res) {
   const keyRow = keys[0];
   const today  = new Date().toISOString().slice(0, 10);
 
-  // ── Rate limit: read current usage then upsert incremented value ────────────
+  // ── Rate limit: atomic increment via RPC ────────────────────────────────────
   let currentHits = 1;
   try {
-    // Step 1: fetch today's existing hit count (if any).
-    const getRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/agency_api_usage?key_id=eq.${encodeURIComponent(keyRow.id)}&date=eq.${today}&select=hits`,
-      { headers: sbH }
-    );
-    const getRows = getRes.ok ? await getRes.json() : [];
-    const prevHits = getRows[0]?.hits ?? 0;
-    currentHits = prevHits + 1;
-
-    // Step 2: upsert with the correctly incremented value.
-    await fetch(`${SUPABASE_URL}/rest/v1/agency_api_usage`, {
+    const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_agency_usage`, {
       method: "POST",
-      headers: { ...sbH, Prefer: "resolution=merge-duplicates" },
-      body: JSON.stringify({ key_id: keyRow.id, agency: keyRow.agency, date: today, hits: currentHits }),
+      headers: sbH,
+      body: JSON.stringify({ p_key_id: keyRow.id, p_agency: keyRow.agency, p_date: today }),
     });
+    if (rpcRes.ok) currentHits = (await rpcRes.json()) ?? 1;
   } catch {
     // Non-fatal — continue without rate limit enforcement on error.
   }

@@ -2284,9 +2284,13 @@ function _connectUserWs(session) {
       // Those KPIs stay sourced from vehicle_crossings via _initAllCharts().
       const tm = data;
 
-      // Queue depth
-      if (tm.queue_summary?.avg != null) {
+      // Queue depth — only show when queue actually formed (active_samples > 0)
+      const queueCard = el("gov-sum-queue-card");
+      if (tm.queue_summary?.active_samples > 0) {
         txt("gov-sum-queue", Number(tm.queue_summary.avg).toFixed(1));
+        if (queueCard) queueCard.style.display = "";
+      } else {
+        if (queueCard) queueCard.style.display = "none";
       }
 
       // Speed — only show summary card when speed data is available

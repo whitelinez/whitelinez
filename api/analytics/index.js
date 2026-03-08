@@ -375,10 +375,13 @@ async function _handleDataTurnings(req, res, SUPABASE_URL, SERVICE_KEY) {
       const fallbackFrom = new Date(toDate - 7 * 24 * 3600 * 1000).toISOString();
       qRows = await _qFetch(fallbackFrom, toISO);
     }
-    const queueSeries = qRows.map(r => ({ ts: r.captured_at, depth: r.queue_depth || 0, visible: r.total_visible || 0 }));
-    const depths      = queueSeries.map(r => r.depth);
+    const queueSeries  = qRows.map(r => ({ ts: r.captured_at, depth: r.queue_depth || 0, visible: r.total_visible || 0 }));
+    const depths       = queueSeries.map(r => r.depth);
+    // Average only periods where a queue actually formed (depth > 0); zeros mean backend idle / no queue
+    const activeDepths = depths.filter(d => d > 0);
     const queueSummary = depths.length > 0
-      ? { avg: +(depths.reduce((a, b) => a + b, 0) / depths.length).toFixed(2), peak: Math.max(...depths), samples: depths.length }
+      ? { avg: activeDepths.length > 0 ? +(activeDepths.reduce((a, b) => a + b, 0) / activeDepths.length).toFixed(2) : 0,
+          peak: Math.max(...depths), samples: depths.length, active_samples: activeDepths.length }
       : { avg: 0, peak: 0, samples: 0 };
 
     let speedUrl = `${SUPABASE_URL}/rest/v1/vehicle_crossings`

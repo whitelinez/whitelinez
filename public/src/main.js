@@ -3143,34 +3143,202 @@ function _connectUserWs(session) {
     const d = AGENCY_DATA[agency];
     if (!d || !agBackdrop || !agContent) return;
 
+    // ── Derive metrics from analytics data ─────────────────────────────────
+    const summary    = _analyticsData?.summary || {};
+    const rows       = _analyticsData?.rows    || [];
+    const ct         = summary.class_totals || {};
+    const cp         = summary.class_pct    || {};
+    const total      = summary.period_total || 0;
+    const truckCount = ct.truck || 0;
+    const busCount   = ct.bus   || 0;
+    const carCount   = ct.car   || 0;
+    const heavy      = truckCount + busCount;
+    const heavyPct   = total > 0 ? Math.round((heavy / total) * 100) : 0;
+    const carPct     = Math.round(cp.car   || 0);
+    const busPct     = Math.round(cp.bus   || 0);
+    const truckPct   = Math.round(cp.truck || 0);
+    const commPct    = total > 0 ? Math.round(((truckCount + busCount) / total) * 100) : 0;
+
+    // Days of data & daily averages
+    const dayCount   = rows.length > 0 ? Math.max(1, Math.round(rows.length / 24)) : 1;
+    const dailyAvg   = dayCount > 0 ? Math.round(total / dayCount) : 0;
+    const avgBusPerHour = rows.length > 0
+      ? (busCount / rows.length).toFixed(1)
+      : "—";
+    const dailyCommercial = Math.round((truckCount + busCount) / dayCount);
+
+    // Top 3 peak hours
+    const sortedRows = [...rows].sort((a, b) => (b.total || 0) - (a.total || 0));
+    const top3       = sortedRows.slice(0, 3);
+    const peakVal    = summary.peak_value || top3[0]?.total || 0;
+    const peakHour   = (() => {
+      if (summary.peak_period) {
+        const t = summary.peak_period;
+        const m = t.match(/T(\d{2}:\d{2})/);
+        return m ? m[1] : t.slice(0, 5);
+      }
+      const p = top3[0]?.period || top3[0]?.hour || "";
+      const m = p.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : (p || "—");
+    })();
+
+    // Risk score for FSC (0–10 based on vehicle class mix)
+    const riskScore  = Math.min(10, ((heavyPct * 0.12) + (truckPct * 0.08) + 1)).toFixed(1);
+
+    // ── Per-agency KPI + insight config ────────────────────────────────────
+    const agCfg = {
+      nwa: {
+        kpis: [
+          { label: "Total Crossings",  val: total.toLocaleString(),  note: "All vehicle classes" },
+          { label: "Heavy Vehicles",   val: heavy.toLocaleString(),  note: `${heavyPct}% of all traffic` },
+          { label: "Peak Hour",        val: peakHour,                note: `${peakVal.toLocaleString()} vehicles` },
+        ],
+        insights: [
+          `${heavyPct}% of all crossings are trucks or buses — direct input for pavement stress models.`,
+          `${truckCount.toLocaleString()} truck crossings detected — cross-reference with road maintenance schedules.`,
+          `Peak load at ${peakHour} with ${peakVal.toLocaleString()} vehicles — highest wear window for infrastructure planning.`,
+        ],
+      },
+      taj: {
+        kpis: [
+          { label: "Trucks Detected",   val: truckCount.toLocaleString(), note: `${truckPct}% of traffic` },
+          { label: "Commercial Ratio",  val: `${commPct}%`,               note: "Trucks + Buses / Total" },
+          { label: "Daily Commercial",  val: dailyCommercial.toLocaleString(), note: `Avg per day over ${dayCount}d` },
+        ],
+        insights: [
+          `${commPct}% commercial traffic rate — cross-reference against cargo declaration records.`,
+          `${truckCount.toLocaleString()} trucks logged over ${dayCount} day${dayCount !== 1 ? "s" : ""} — ~${Math.round(truckCount / dayCount)} per day.`,
+          `Buses: ${busCount.toLocaleString()} (${busPct}%) — included for freight route displacement analysis.`,
+        ],
+      },
+      jutc: {
+        kpis: [
+          { label: "Buses Detected",  val: busCount.toLocaleString(), note: `${busPct}% of traffic` },
+          { label: "Avg Buses / Hr",  val: avgBusPerHour,             note: `Over ${rows.length} hour buckets` },
+          { label: "Daily Bus Count", val: Math.round(busCount / dayCount).toLocaleString(), note: `Avg per day` },
+        ],
+        insights: [
+          `${busCount.toLocaleString()} bus detections over ${dayCount} day${dayCount !== 1 ? "s" : ""} — avg ${Math.round(busCount / dayCount)} per day.`,
+          `Average of ${avgBusPerHour} buses per hour at this junction — compare against scheduled headways.`,
+          `${busPct}% bus share of total traffic — use for demand-supply gap analysis.`,
+        ],
+      },
+      tourism: {
+        kpis: [
+          { label: "Total Volume",    val: total.toLocaleString(),     note: "All vehicle classes" },
+          { label: "Passenger Cars",  val: carCount.toLocaleString(),  note: `${carPct}% of traffic` },
+          { label: "Daily Average",   val: dailyAvg.toLocaleString(),  note: `Over ${dayCount} days` },
+        ],
+        insights: [
+          `Peak congestion at ${peakHour} — ${peakVal.toLocaleString()} vehicles in a single hour.`,
+          `${carPct}% passenger car ratio — primary indicator of corridor demand from private travellers.`,
+          `Daily volume: ${dailyAvg.toLocaleString()} vehicles avg — use for corridor capacity and tour planning.`,
+        ],
+      },
+      insurance: {
+        kpis: [
+          { label: "Heavy Vehicle %", val: `${heavyPct}%`,         note: "Trucks + Buses" },
+          { label: "Risk Score",      val: `${riskScore} / 10`,    note: "Vehicle mix & density" },
+          { label: "Peak Exposure",   val: peakHour,               note: `${peakVal.toLocaleString()} vehicles` },
+        ],
+        insights: [
+          `${heavyPct}% heavy vehicle proportion — elevated corridor risk profile for actuarial modelling.`,
+          `${truckCount.toLocaleString()} truck crossings recorded — key exposure factor for cargo and freight policies.`,
+          `Risk score ${riskScore}/10 derived from class density and peak load — exportable for model input.`,
+        ],
+      },
+      ooh: {
+        kpis: [
+          { label: "Total Impressions", val: total.toLocaleString(),    note: "AI-verified crossings" },
+          { label: "Daily Average",     val: dailyAvg.toLocaleString(), note: `Over ${dayCount} days` },
+          { label: "Peak Hour",         val: peakHour,                  note: `${peakVal.toLocaleString()} vehicles` },
+        ],
+        insights: [
+          `${total.toLocaleString()} AI-verified vehicle crossings — your auditable billboard impression count.`,
+          `${dailyAvg.toLocaleString()} average daily impressions — higher than self-reported estimates by definition.`,
+          `Best advertising window: ${peakHour} with ${peakVal.toLocaleString()} vehicles passing per hour.`,
+        ],
+      },
+    };
+
+    const cfg      = agCfg[agency] || agCfg.ooh;
     const isLive   = d.avail === "Available Now";
     const badgeCls = isLive ? "gov-modal-badge--live" : "gov-modal-badge--dev";
     const badgeTxt = isLive ? "◈ Available Now" : "⊙ In Development";
-    const fields   = d.fields.map(f => `<span class="gov-modal-field">${f}</span>`).join("");
+
+    // KPI boxes HTML
+    const kpiHtml = cfg.kpis.map(k => `
+      <div class="gov-ag-kpi">
+        <div class="gov-ag-kpi-val" style="color:${d.color}">${k.val}</div>
+        <div class="gov-ag-kpi-label">${k.label}</div>
+        <div class="gov-ag-kpi-note">${k.note}</div>
+      </div>`).join("");
+
+    // Insight bullets HTML
+    const insightHtml = cfg.insights.map(i => `
+      <div class="gov-ag-insight">
+        <span class="gov-ag-insight-dot" style="background:${d.color}"></span>
+        <span>${i}</span>
+      </div>`).join("");
+
+    // Top 3 peak hours mini-table
+    const top3Html = top3.length > 0 ? `
+      <div class="gov-modal-section-head">TOP TRAFFIC HOURS</div>
+      <div class="gov-ag-hours">
+        ${top3.map((r, i) => {
+          const raw  = r.period || r.hour || "";
+          const m    = raw.match(/T(\d{2}:\d{2})/);
+          const hr   = m ? m[1] : (raw || "—");
+          const pct  = peakVal > 0 ? Math.round(((r.total || 0) / peakVal) * 100) : 0;
+          return `<div class="gov-ag-hour-row">
+            <span class="gov-ag-hour-rank">#${i + 1}</span>
+            <span class="gov-ag-hour-time">${hr}</span>
+            <span class="gov-ag-hour-bar-wrap"><span class="gov-ag-hour-bar" style="width:${pct}%;background:${d.color}"></span></span>
+            <span class="gov-ag-hour-val">${(r.total || 0).toLocaleString()}</span>
+          </div>`;
+        }).join("")}
+      </div>` : "";
+
+    // Logo (no dark-theme inversion — white bg)
     const logoHtml = d.logo
-      ? `<img src="${d.logo}" alt="${d.abbr}" style="height:28px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.7;margin-bottom:4px">`
-      : "";
+      ? `<img src="${d.logo}" alt="${d.abbr}" style="height:28px;object-fit:contain;opacity:0.85;margin-bottom:4px">`
+      : `<div style="font-family:'Rajdhani','Archivo',sans-serif;font-size:26px;font-weight:900;color:${d.color};letter-spacing:-1px;line-height:1">${d.abbr}</div>`;
 
+    const fields = d.fields.map(f => `<span class="gov-modal-field">${f}</span>`).join("");
+
+    // ── Render ──────────────────────────────────────────────────────────────
     agContent.innerHTML = `
-      <div class="gov-modal-badge ${badgeCls}">${badgeTxt}</div>
-      ${logoHtml}
-      <div class="gov-modal-title">${d.abbr} — Data Package</div>
-      <div class="gov-modal-sub" style="font-style:italic;color:${d.color}">"${d.problem}"</div>
+      <div class="gov-ag-header" style="border-top:3px solid ${d.color}; border-radius: 12px 12px 0 0">
+        <div>${logoHtml}</div>
+        <div class="gov-ag-header-meta">
+          <div class="gov-modal-badge ${badgeCls}">${badgeTxt}</div>
+          <div class="gov-modal-title">${d.abbr} — Data Package</div>
+          <div class="gov-modal-sub" style="font-style:italic">"${d.problem}"</div>
+        </div>
+      </div>
+      <div class="gov-ag-body">
+        <div class="gov-modal-section-head">LIVE METRICS — ${d.name.toUpperCase()}</div>
+        <div class="gov-ag-kpi-row">${kpiHtml}</div>
 
-      <div class="gov-modal-section-head">WHAT THIS DATA CONTAINS</div>
-      <div class="gov-modal-desc">${d.desc}</div>
+        <div class="gov-modal-section-head">KEY INSIGHTS</div>
+        <div class="gov-ag-insights">${insightHtml}</div>
 
-      <div class="gov-modal-section-head">DATA FIELDS</div>
-      <div class="gov-modal-fields">${fields}</div>
-      <div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--dim);margin-top:6px">Formats: ${d.formats}</div>
+        ${top3Html}
 
-      <button class="gov-modal-dl-btn" id="ag-dl-btn" data-agency="${agency}">↓ Download CSV Data Package</button>
-      <div class="gov-modal-dl-success" id="ag-dl-success">✓ Download started — logged to your account</div>
-      <div class="gov-modal-note">Account required. Download is logged for audit. Data covers all available historical records.</div>
+        <div class="gov-modal-section-head">WHAT THIS DATA CONTAINS</div>
+        <div class="gov-modal-desc">${d.desc}</div>
+
+        <div class="gov-modal-section-head">DATA FIELDS</div>
+        <div class="gov-modal-fields">${fields}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:10px;color:#9ca3af;margin-top:6px">Formats: ${d.formats}</div>
+
+        <button class="gov-modal-dl-btn" id="ag-dl-btn" data-agency="${agency}">↓ Download CSV Data Package</button>
+        <div class="gov-modal-dl-success" id="ag-dl-success">✓ Download started — logged to your account</div>
+        <div class="gov-modal-note">Account required. Download is logged for audit. Data covers all available historical records.</div>
+      </div>
     `;
     agBackdrop.classList.remove("hidden");
 
-    // Wire download button
     const dlBtn = el("ag-dl-btn");
     if (dlBtn) dlBtn.addEventListener("click", () => _downloadAgencyPackage(agency, dlBtn));
   }

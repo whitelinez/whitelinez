@@ -2105,7 +2105,7 @@
 .gov-agency-btn--accent { background: #0f1c2e; color: #ffffff; border-color: transparent; }
 .gov-agency-btn--accent:hover { background: #1a2f4a; }
 
-/* ── AGENCY DATA-PACKAGE MODAL ───────────────────── */
+/* ── AGENCY DATA-PACKAGE MODAL (white theme) ─────────────────────────── */
 .gov-agency-modal-backdrop {
   position: absolute; inset: 0; z-index: 200;
   background: rgba(4,9,18,0.88); backdrop-filter: blur(4px);
@@ -2113,72 +2113,112 @@
 }
 .gov-agency-modal-backdrop.hidden { display: none; }
 .gov-agency-modal {
-  background: var(--bg2); border: 1px solid rgba(34,197,94,0.22);
-  border-top: 2px solid var(--ag); border-radius: 10px;
-  width: 100%; max-width: 520px;
-  max-height: 82vh; overflow-y: auto; position: relative; padding: 28px;
+  background: #ffffff; border: 1px solid #e2e8f0;
+  border-radius: 12px; width: 100%; max-width: 560px;
+  max-height: 86vh; overflow-y: auto; position: relative;
+  color: #111827; box-shadow: 0 20px 60px rgba(0,0,0,0.22);
 }
 .gov-agency-modal-close {
-  position: absolute; top: 14px; right: 14px;
-  background: var(--bg3); border: 1px solid var(--border);
+  position: absolute; top: 14px; right: 14px; z-index: 10;
+  background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
   border-radius: 6px; width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--muted); transition: color 0.15s;
+  cursor: pointer; color: #64748b; transition: color 0.15s;
 }
-.gov-agency-modal-close:hover { color: var(--text); }
+.gov-agency-modal-close:hover { color: #111827; }
+
+/* Agency modal header */
+.gov-ag-header {
+  padding: 24px 28px 18px; display: flex; align-items: flex-start; gap: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.gov-ag-header-meta { flex: 1; min-width: 0; }
+/* Agency modal body */
+.gov-ag-body { padding: 20px 28px 28px; }
+
 .gov-modal-badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 10px; border-radius: 100px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 12px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 10px;
 }
-.gov-modal-badge--live { background: rgba(34,197,94,0.12); color: var(--ag); border: 1px solid rgba(34,197,94,0.3); }
-.gov-modal-badge--dev  { background: rgba(255,152,0,0.12); color: #FF9800; border: 1px solid rgba(255,152,0,0.3); }
-.gov-modal-title { font-family: "Inter", sans-serif; font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; letter-spacing: -0.3px; }
-.gov-modal-sub   { font-family: "Inter", sans-serif; font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+.gov-modal-badge--live { background: rgba(34,197,94,0.1); color: #16a34a; border: 1px solid rgba(34,197,94,0.25); }
+.gov-modal-badge--dev  { background: rgba(249,115,22,0.1); color: #d97706; border: 1px solid rgba(249,115,22,0.3); }
+.gov-modal-title { font-family: "Inter", sans-serif; font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
+.gov-modal-sub   { font-family: "Inter", sans-serif; font-size: 13px; color: #475569; margin-bottom: 0; line-height: 1.6; }
 .gov-modal-section-head {
   font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700;
-  color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
-  margin-bottom: 8px; margin-top: 18px;
+  color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 10px; margin-top: 20px;
 }
+
+/* KPI metric boxes */
+.gov-ag-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 4px; }
+.gov-ag-kpi {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 12px 10px; text-align: center;
+}
+.gov-ag-kpi-val   { font-family: "Rajdhani","Archivo",sans-serif; font-size: 22px; font-weight: 800; line-height: 1.1; margin-bottom: 4px; }
+.gov-ag-kpi-label { font-family: "JetBrains Mono",monospace; font-size: 8px; font-weight: 700; letter-spacing: 0.08em; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
+.gov-ag-kpi-note  { font-family: "Inter",sans-serif; font-size: 10px; color: #94a3b8; line-height: 1.4; }
+
+/* Insight bullets */
+.gov-ag-insights { display: flex; flex-direction: column; gap: 7px; }
+.gov-ag-insight {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-family: "Inter", sans-serif; font-size: 12px; color: #374151;
+  background: #f8fafc; border: 1px solid #f1f5f9;
+  border-radius: 7px; padding: 9px 12px; line-height: 1.55;
+}
+.gov-ag-insight-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+
+/* Top peak hours */
+.gov-ag-hours { display: flex; flex-direction: column; gap: 7px; }
+.gov-ag-hour-row { display: flex; align-items: center; gap: 10px; }
+.gov-ag-hour-rank { color: #94a3b8; font-family:"JetBrains Mono",monospace; font-size: 9px; width: 18px; flex-shrink: 0; }
+.gov-ag-hour-time { color: #374151; font-family:"JetBrains Mono",monospace; font-size: 11px; font-weight: 700; width: 40px; flex-shrink: 0; }
+.gov-ag-hour-bar-wrap { flex: 1; height: 6px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+.gov-ag-hour-bar { height: 100%; border-radius: 4px; min-width: 4px; }
+.gov-ag-hour-val { color: #64748b; font-family:"JetBrains Mono",monospace; font-size: 10px; width: 54px; text-align: right; }
+
+/* Data description + fields */
 .gov-modal-desc {
-  font-family: "Inter", sans-serif; font-size: 13px; color: var(--text);
-  line-height: 1.7; background: rgba(34,197,94,0.04);
-  border-left: 3px solid rgba(34,197,94,0.35); padding: 12px 16px;
-  border-radius: 0 6px 6px 0;
+  font-family: "Inter", sans-serif; font-size: 13px; color: #374151;
+  line-height: 1.7; background: #f0fdf4;
+  border-left: 3px solid #86efac; padding: 12px 16px; border-radius: 0 6px 6px 0;
 }
 .gov-modal-fields { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
 .gov-modal-field {
-  background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.18);
+  background: #f0fdf4; border: 1px solid #bbf7d0;
   border-radius: 100px; padding: 4px 10px;
-  font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--ag);
+  font-family: "JetBrains Mono", monospace; font-size: 9px; color: #15803d;
 }
 .gov-modal-dl-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 14px 20px; margin-top: 20px; border-radius: 8px;
-  background: #0f1c2e; border: none; color: #fff;
+  background: #0f172a; border: none; color: #fff;
   font-family: "Inter", sans-serif; font-size: 14px; font-weight: 700;
   letter-spacing: 0.3px; cursor: pointer; transition: background 0.15s;
 }
-.gov-modal-dl-btn:hover { background: #1e3a5f; }
+.gov-modal-dl-btn:hover { background: #1e293b; }
 .gov-modal-dl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .gov-modal-login-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 14px 20px; margin-top: 20px; border-radius: 8px;
-  background: transparent; border: 1px solid rgba(34,197,94,0.4); color: var(--ag);
+  background: transparent; border: 1px solid #16a34a; color: #16a34a;
   font-family: "Inter", sans-serif; font-size: 13px; font-weight: 700;
   letter-spacing: 0.2px; cursor: pointer; transition: all 0.15s;
 }
-.gov-modal-login-btn:hover { background: rgba(34,197,94,0.08); border-color: var(--ag); }
+.gov-modal-login-btn:hover { background: rgba(34,197,94,0.08); }
 .gov-modal-note {
-  font-family: "Inter", sans-serif; font-size: 11px; color: var(--dim);
+  font-family: "Inter", sans-serif; font-size: 11px; color: #9ca3af;
   margin-top: 10px; line-height: 1.6; text-align: center;
 }
 .gov-modal-dl-success {
   display: none; align-items: center; justify-content: center; gap: 8px;
   padding: 12px; margin-top: 12px; border-radius: 8px;
-  background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);
-  font-family: "Inter", sans-serif; font-size: 11px; color: var(--ag);
+  background: #f0fdf4; border: 1px solid #bbf7d0;
+  font-family: "Inter", sans-serif; font-size: 11px; color: #15803d;
   letter-spacing: 0.06em;
 }
 .gov-modal-dl-success.visible { display: flex; }

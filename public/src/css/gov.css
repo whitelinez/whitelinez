@@ -3198,6 +3198,17 @@
     padding-right: max(12px, env(safe-area-inset-right));
   }
 
+  /* ── Chat tab: pin input at bottom regardless of scroll ──────── */
+  /* Override .tab-content.active { overflow-y: auto } for chat only.
+     .chat-messages already has flex:1 + overflow-y:auto so it scrolls
+     internally; the input row (flex-shrink:0) stays anchored at bottom. */
+  #tab-chat.active {
+    overflow: hidden;
+  }
+  #tab-chat .chat-messages {
+    min-height: 0;
+  }
+
 } /* end @media (max-width: 767px) */
 
 

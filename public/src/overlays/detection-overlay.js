@@ -16,7 +16,7 @@ import { contentToPixel, getContentBounds } from '../utils/coord-utils.js'; // e
   const QUEUE_MAX_AGE_MS  = 15_000;  // drop entries older than 15s
   const QUEUE_MATCH_TOL_MS = 800;    // ±800ms — tighter now that lag is stable at ~4s
   const QUEUE_POLL_MS = 200;         // continuous poll interval (ms) independent of WS
-  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v6";
+  const SETTINGS_KEY = "whitelinez.detection.overlay_settings.v7";
   let pixiApp = null;
   let pixiEnabled = false;
   let isMobileClient = false;
@@ -48,10 +48,10 @@ import { contentToPixel, getContentBounds } from '../utils/coord-utils.js'; // e
     fill_alpha: 0.0,
     max_boxes: 20,
     show_labels: true,
-    detect_zone_only: true,
+    detect_zone_only: false,
     outside_scan_enabled: true,
-    outside_scan_min_conf: 0.50,
-    outside_scan_max_boxes: 8,
+    outside_scan_min_conf: 0.22,
+    outside_scan_max_boxes: 20,
     outside_scan_hold_ms: 220,
     outside_scan_show_labels: false,
     ground_overlay_enabled: true,

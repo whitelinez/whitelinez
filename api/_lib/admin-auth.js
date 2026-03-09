@@ -29,7 +29,7 @@ export async function verifyAdminJwt(authHeader) {
     const role = user?.app_metadata?.role;
     console.error("[admin-auth] uid:", user?.id?.slice(0,8), "role:", role, "email:", user?.email);
     if (role !== "admin")
-      return { ok: false, status: 403, error: "Admin role required" };
+      return { ok: false, status: 403, error: `Admin role required (got role="${role}", email="${user?.email}", uid="${user?.id?.slice(0,8)}")` };
     return { ok: true };
   } catch (e) {
     console.error("[admin-auth] exception:", e?.message);

@@ -2706,6 +2706,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   })();
 
+  // Wire Force Detection Reset button
+  {
+    const btn = document.getElementById("btn-force-scene-reset");
+    const msg = document.getElementById("force-scene-reset-msg");
+    btn?.addEventListener("click", async () => {
+      if (!btn) return;
+      btn.disabled = true;
+      if (msg) { msg.textContent = "Resetting…"; msg.className = "line-status"; }
+      try {
+        const token = await Auth.getJwt();
+        const r = await fetch("/api/admin/force-scene-reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        });
+        const d = await r.json();
+        if (r.ok) {
+          if (msg) { msg.textContent = d.message || "Done."; msg.className = "line-status success"; }
+        } else {
+          if (msg) { msg.textContent = d.error || `Error ${r.status}`; msg.className = "line-status error"; }
+        }
+      } catch {
+        if (msg) { msg.textContent = "Request failed."; msg.className = "line-status error"; }
+      }
+      btn.disabled = false;
+    });
+  }
+
   // Wire mapping panel action buttons
   document.getElementById("mapping-save-btn")?.addEventListener("click", () => {
     AdminMapping?.saveMap();

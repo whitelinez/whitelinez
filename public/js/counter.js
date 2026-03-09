@@ -149,6 +149,10 @@ const Counter = (() => {
           }
         } else if (data.type === "round") {
           emitRoundIfChanged(data.round);
+        } else if (data.type === "scene:reset") {
+          window.DetectionOverlay?.clearDetections?.();
+          window.FpsOverlay?.reset?.();
+          window.MlOverlay?.resetForNewScene?.();
         }
       } catch {}
     };

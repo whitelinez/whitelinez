@@ -326,10 +326,11 @@ export const CameraSwitcher = (() => {
     });
 
     if (isAI) {
-      window.dispatchEvent(new CustomEvent('stream:switching', { detail: { alias: cam.ipcam_alias || '' } }));
-      // For YouTube AI cam: alias is '' → Stream fetches /api/stream with no alias,
-      // backend serves the yt-dlp HLS URL.
-      Stream?.setAlias(cam.ipcam_alias || '');
+      // YouTube AI cam: no ipcam alias — backend serves yt-dlp stream with no alias param.
+      // ipcam AI cam: use ipcam_alias so backend resolves correct HLS feed.
+      const streamAlias = (isYT || !cam.ipcam_alias) ? '' : cam.ipcam_alias;
+      window.dispatchEvent(new CustomEvent('stream:switching', { detail: { alias: streamAlias } }));
+      Stream?.setAlias(streamAlias);
     } else if (isYT) {
       // Non-AI YouTube camera: play via HLS.js.
       // Pass yt:<camera_id> so backend can look up the pre-fetched YouTube HLS URL.

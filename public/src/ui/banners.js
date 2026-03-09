@@ -243,8 +243,7 @@ export const Banners = (() => {
         </div>
         <div class="bnr-default-status-bar">
           <span class="bnr-ai-dot bnr-ai-dot-cyan"></span>
-          <span class="bnr-ai-label" style="color:#00d4ff;">MULTI-CAM</span>
-          <span class="bnr-standby-label" style="color:#00d4ff;">VIEW ALL</span>
+          <span class="bnr-ai-label" style="color:rgba(255,255,255,0.55);font-size:0.58rem;letter-spacing:0.04em;">MULTI-CAM · VIEW ALL</span>
         </div>
       </div>`;
   }

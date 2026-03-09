@@ -552,15 +552,10 @@
 .tab-content.active { display: flex; flex-direction: column; }
 
 
-/* ── Vision HUD — prevent right-edge overflow at all sizes ─────────────────── */
-.ml-hud {
-  max-width: min(194px, calc(100% - 24px));
-}
+/* ── Vision HUD — overflow guard (real fix is in _applyLayout clamping) ─────── */
+.ml-hud { overflow: hidden; }
 @media (max-width: 480px) {
-  .ml-hud {
-    right: 6px;
-    max-width: min(160px, calc(100vw - 80px));
-  }
+  .ml-hud { right: 6px; }
 }
 
 /* ── Count widget mobile — prevent number cut-off ─────────────────────────── */

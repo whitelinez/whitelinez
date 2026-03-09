@@ -309,8 +309,13 @@ export const WidgetLayout = (() => {
       Object.entries(layout).forEach(([id, pos]) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.style.top    = ((pos.topPct  / 100) * cr.height) + 'px';
-        el.style.left   = ((pos.leftPct / 100) * cr.width)  + 'px';
+        const elW = el.offsetWidth  || 180;
+        const elH = el.offsetHeight || 80;
+        const rawLeft = (pos.leftPct / 100) * cr.width;
+        const rawTop  = (pos.topPct  / 100) * cr.height;
+        // Clamp so widget never overflows the container edge
+        el.style.left   = Math.max(0, Math.min(rawLeft, cr.width  - elW - 4)) + 'px';
+        el.style.top    = Math.max(0, Math.min(rawTop,  cr.height - elH - 4)) + 'px';
         el.style.bottom = 'auto';
         el.style.right  = 'auto';
       });

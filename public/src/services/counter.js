@@ -104,6 +104,9 @@ async function connect() {
       } else if (data.type === 'round') {
         emitRoundIfChanged(data.round);
       } else if (data.type === 'scene:reset') {
+        // Reset timestamp filter so next count messages aren't silently dropped
+        lastCountTsMs = 0;
+        lastKnownTotal = 0;
         window.dispatchEvent(new CustomEvent('scene:reset'));
       }
     } catch {}

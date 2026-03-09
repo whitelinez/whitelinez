@@ -310,7 +310,8 @@ export const CameraSwitcher = (() => {
 
   // ── Switch main stream ────────────────────────────────────────
   function _switchTo(camId) {
-    if (camId === _activeId) return;
+    // Don't guard against same-camera re-selection: if the stream failed (e.g.
+    // yt-dlp timeout) the user must be able to retry by clicking the same card.
     _activeId = camId;
     const cam = _cameras.find(c => c.id === camId);
     if (!cam) return;

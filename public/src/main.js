@@ -437,11 +437,18 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
 
   window.addEventListener("stream:switching", () => { _showSwitchOverlay(); });
 
+  // Backend broadcast (admin force-scene-reset) — clear stale boxes on all viewers
+  window.addEventListener("scene:reset", () => {
+    DetectionOverlay.clearDetections?.();
+    FpsOverlay.reset();
+    MlOverlay.resetForNewScene();
+  });
+
   window.addEventListener("camera:switched", (e) => {
     const { isAI, alias } = e.detail || {};
-    if (!isAI) { _hideSwitchOverlay(); return; }
-    // Clear stale detection boxes immediately
+    // Always clear stale detection boxes on any camera switch
     DetectionOverlay.clearDetections?.();
+    if (!isAI) { _hideSwitchOverlay(); return; }
     // Reset FPS samples so we get clean readings for the new stream
     FpsOverlay.reset();
     // Reset Vision HUD counters + re-seed from new camera's telemetry
@@ -471,8 +478,15 @@ const GUEST_TS_KEY = "wlz.guest.session_ts";
     if (e.detail?.status === "down") {
       overlay?.classList.remove("hidden");
 
-      // Try next camera if multiple are configured
-      if (!_failoverPending && _streamCameras.length > 1) {
+      // Never failover when a YouTube camera is selected — yt: streams have their
+      // own HLS.js retry loop and a separate alias; switching to an ipcam would
+      // permanently override the user's camera choice.
+      const _isYtStream = String(e.detail?.alias || '').startsWith('yt:');
+      if (_isYtStream) {
+        // YouTube stream unavailable (yt-dlp failure or first-load delay)
+        if (infoEl) infoEl.textContent = "YouTube stream loading…";
+      } else if (!_failoverPending && _streamCameras.length > 1) {
+        // ipcam failover — try next camera if multiple are configured
         _failoverPending = true;
         _streamCamIdx = (_streamCamIdx + 1) % _streamCameras.length;
         const next = _streamCameras[_streamCamIdx];

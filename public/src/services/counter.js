@@ -103,6 +103,8 @@ async function connect() {
         if ('round' in data) emitRoundIfChanged(data.round);
       } else if (data.type === 'round') {
         emitRoundIfChanged(data.round);
+      } else if (data.type === 'scene:reset') {
+        window.dispatchEvent(new CustomEvent('scene:reset'));
       }
     } catch {}
   };

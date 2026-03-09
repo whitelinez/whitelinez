@@ -47,7 +47,7 @@ export const AdminStreams = (() => {
 
     const { data, error } = await sb
       .from("cameras")
-      .select("id, ipcam_alias, created_at, is_active, feed_appearance, player_host, area, quality_snapshot")
+      .select("id, ipcam_alias, youtube_url, name, created_at, is_active, feed_appearance, player_host, area, quality_snapshot")
       .order("created_at", { ascending: false });
 
     if (error) { _msg("Load failed: " + error.message, true); return; }
@@ -144,10 +144,11 @@ export const AdminStreams = (() => {
     }
 
     el.innerHTML = _cameras.map(cam => {
-      const label     = cam?.feed_appearance?.label || "";
+      const label     = cam?.feed_appearance?.label || cam?.name || "";
       const alias     = cam.ipcam_alias || "";
-      const isIpcam   = !_isUrl(alias);
-      const typeTag   = isIpcam ? "ipcamlive" : "Direct URL";
+      const isYT      = !!cam.youtube_url;
+      const isIpcam   = !isYT && !_isUrl(alias);
+      const typeTag   = isYT ? "YouTube" : isIpcam ? "ipcamlive" : "Direct URL";
       const host      = cam.player_host || "g3";
       const area      = cam.area ? `<span class="stream-area-tag">${esc(cam.area)}</span>` : "";
       const fpsVal      = _fpsMap[cam.id];
@@ -165,40 +166,57 @@ export const AdminStreams = (() => {
       const aiIcon  = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
       const offIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
 
-      // ipcam: inline iframe preview (auto-loaded staggered after render)
-      // direct URL: click-to-play HLS video
-      const previewBlock = isIpcam
-        ? `<div class="stream-row-iframe-wrap" id="sprv-${cam.id}">
+      // YouTube: thumbnail preview; ipcam: inline iframe; direct URL: click-to-play HLS
+      let previewBlock;
+      if (isYT) {
+        try {
+          const vid = new URL(cam.youtube_url).searchParams.get("v");
+          const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : "";
+          previewBlock = `<div class="stream-row-yt-thumb" id="sprv-${cam.id}">
+            ${thumb ? `<img src="${thumb}" alt="${esc(label)}" loading="lazy">` : ""}
+            <span class="stream-yt-label">▶ YouTube</span>
+          </div>`;
+        } catch {
+          previewBlock = `<div class="stream-row-yt-thumb" id="sprv-${cam.id}"><span class="stream-yt-label">▶ YouTube</span></div>`;
+        }
+      } else if (isIpcam) {
+        previewBlock = `<div class="stream-row-iframe-wrap" id="sprv-${cam.id}">
              <div class="stream-row-iframe-loader"><span class="sprv-spinner"></span></div>
              <iframe class="stream-row-iframe" id="sprv-iframe-${cam.id}"
                data-alias="${esc(alias)}" data-host="${esc(host)}"
                allowfullscreen allow="autoplay" frameborder="0"></iframe>
-           </div>`
-        : `<div class="stream-row-preview-wrap hidden" id="sprv-${cam.id}">
+           </div>`;
+      } else {
+        previewBlock = `<div class="stream-row-preview-wrap hidden" id="sprv-${cam.id}">
              <video class="stream-row-video" data-cam-id="${cam.id}" muted playsinline></video>
              <button class="stream-prv-close" data-id="${cam.id}">&#x2715;</button>
            </div>`;
+      }
 
-      const previewBtn = isIpcam ? "" : `
+      const previewBtn = (!isIpcam && !isYT) ? `
             <button class="btn-sm stream-btn-preview" data-action="preview" data-id="${cam.id}" data-alias="${esc(alias)}">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="14" height="10" rx="1.5"/><path d="M16 10l5-3v10l-5-3"/></svg>
               Preview
-            </button>`;
+            </button>` : "";
 
       const hasZones = !!(cam.count_line || cam.detect_zone);
       const zonesIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="3 11 3 20 21 20 21 11 12 3 3 11"/><line x1="3" y1="20" x2="21" y2="20"/></svg>';
+
+      const displayAlias = isYT
+        ? (cam.youtube_url ? `<a class="stream-yt-link" href="${esc(cam.youtube_url)}" target="_blank" rel="noopener">${esc(cam.youtube_url.slice(0, 50))}</a>` : "")
+        : `<span class="stream-row-alias">${esc(alias)}</span>`;
 
       return `
         <div class="stream-row ${isDefault ? "stream-row-live" : ""}" data-id="${cam.id}">
           <div class="stream-row-info">
             ${label ? `<span class="stream-row-label">${esc(label)}</span>` : ""}
-            <span class="stream-row-alias">${esc(alias)}</span>
+            ${displayAlias}
             ${liveBadge}
             ${area}
             ${fpsBadge}
             ${qualBadge}
             <span class="stream-badge ${activeCls}">${activeText}</span>
-            <span class="stream-type-tag">${typeTag}</span>
+            <span class="stream-type-tag${isYT ? " stream-type-tag-yt" : ""}">${typeTag}</span>
             ${hasZones ? '<span class="stream-zones-badge">zones set</span>' : ""}
           </div>
           ${previewBlock}
@@ -208,9 +226,9 @@ export const AdminStreams = (() => {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit
             </button>
-            <button class="btn-sm stream-btn-zones ${hasZones ? "stream-btn-zones-set" : ""}" data-action="zones" data-id="${cam.id}" data-alias="${esc(alias)}">
+            ${!isYT ? `<button class="btn-sm stream-btn-zones ${hasZones ? "stream-btn-zones-set" : ""}" data-action="zones" data-id="${cam.id}" data-alias="${esc(alias)}">
               ${zonesIcon} Zones
-            </button>
+            </button>` : ""}
             ${cam.is_active
               ? `<button class="btn-sm stream-btn-deactivate" data-action="deactivate-ai" data-id="${cam.id}">${offIcon} Remove AI</button>`
               : `<button class="btn-sm stream-btn-set-ai" data-action="set-ai" data-id="${cam.id}">${aiIcon} Set as AI Cam</button>`
@@ -374,13 +392,13 @@ export const AdminStreams = (() => {
     if (btn) { btn.disabled = true; btn.textContent = "Switching…"; }
 
     try {
-      const session = await Auth?.getSession?.();
-      const jwt = session?.access_token || null;
+      const jwt = await Auth.getJwt();
+      if (!jwt) { _msg("Session expired — please log in again.", true); return; }
 
       const res = await fetch("/api/admin/camera-switch", {
         method: "POST",
         headers: {
-          "Authorization": jwt ? `Bearer ${jwt}` : "",
+          "Authorization": `Bearer ${jwt}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ camera_id: id }),
@@ -397,11 +415,17 @@ export const AdminStreams = (() => {
       // Clear stale detection boxes from previous camera immediately
       DetectionOverlay?.clearDetections?.();
 
-      // If zone editor is open, reload zones for new camera
+      // Reload zones + stream for new camera
       const cam = _cameras.find(c => String(c.id) === String(id));
       if (cam) {
-        ZoneOverlay?.reloadZones?.(cam.ipcam_alias);
-        Stream?.setAlias?.(cam.ipcam_alias);
+        const isYT = !!cam.youtube_url;
+        if (!isYT && cam.ipcam_alias) {
+          ZoneOverlay?.reloadZones?.(cam.ipcam_alias);
+          Stream?.setAlias?.(cam.ipcam_alias);
+        } else {
+          // YouTube AI cam: backend fetches HLS via yt-dlp; stream with empty alias
+          Stream?.setAlias?.("");
+        }
       }
 
       await _load();

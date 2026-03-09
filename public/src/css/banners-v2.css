@@ -697,6 +697,51 @@
   padding: 1px 5px;
 }
 
+/* YouTube thumbnail row in admin streams */
+.stream-row-yt-thumb {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0f0f0f;
+  aspect-ratio: 16/9;
+  max-width: 240px;
+  margin: 4px 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stream-row-yt-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.stream-yt-label {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255,0,0,0.85);
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.stream-type-tag-yt {
+  color: rgba(255,80,80,0.8);
+  background: rgba(255,40,40,0.1);
+}
+.stream-yt-link {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  color: rgba(255,80,80,0.7);
+  text-decoration: none;
+  word-break: break-all;
+}
+.stream-yt-link:hover { color: rgba(255,80,80,1); text-decoration: underline; }
+
 .stream-row-preview-wrap {
   position: relative;
   border-radius: 6px;

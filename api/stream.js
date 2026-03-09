@@ -47,7 +47,7 @@ export default async function handler(req) {
 
   // ── Segment proxy mode ──────────────────────────────────────────────────
   if (p) {
-    if (p.length > 512) return new Response("", { status: 400 });
+    if (p.length > 4096) return new Response("", { status: 400 });
     try {
       const upstream = await fetch(
         `${backendBase}/stream/ts?p=${encodeURIComponent(p)}`,

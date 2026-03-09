@@ -1,18 +1,19 @@
 /**
- * GET /api/stream           — HLS manifest proxy
- * GET /api/stream?p=<enc>   — HLS segment proxy (keeps CDN URL hidden from browser)
+ * GET /api/stream  — returns a 302 redirect to the Railway HLS manifest.
+ * HLS.js follows the redirect and fetches manifest + segments directly from
+ * Railway, so no video bytes pass through Vercel (eliminates Fast Origin
+ * Transfer costs).
  *
- * Edge Function: runs at Vercel's global edge nodes for lower latency.
- * Dual-mode keeps us within Vercel Hobby's 12-function limit.
+ * Edge Function: minimal — just mints an HMAC token and redirects.
  */
 export const config = { runtime: "edge" };
 
 async function generateHmacToken(secret) {
-  const ts          = Math.floor(Date.now() / 1000).toString();
-  const nonceBytes  = new Uint8Array(8);
+  const ts         = Math.floor(Date.now() / 1000).toString();
+  const nonceBytes = new Uint8Array(8);
   crypto.getRandomValues(nonceBytes);
-  const nonce       = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, "0")).join("");
-  const payload     = `${ts}.${nonce}.`;
+  const nonce   = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  const payload = `${ts}.${nonce}.`;
 
   const encoder = new TextEncoder();
   const key     = await crypto.subtle.importKey(
@@ -34,7 +35,8 @@ export default async function handler(req) {
   }
 
   const railwayUrl = process.env.RAILWAY_BACKEND_URL;
-  if (!railwayUrl) {
+  const secret     = process.env.WS_AUTH_SECRET;
+  if (!railwayUrl || !secret) {
     return new Response(JSON.stringify({ error: "Stream not configured" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -43,77 +45,14 @@ export default async function handler(req) {
 
   const backendBase = railwayUrl.replace(/\/+$/, "");
   const url         = new URL(req.url);
-  const p           = url.searchParams.get("p");
+  const aliasRaw    = (url.searchParams.get("alias") || "").trim();
+  const alias       = /^[A-Za-z0-9_-]+$/.test(aliasRaw) ? aliasRaw : "";
 
-  // ── Segment proxy mode ──────────────────────────────────────────────────
-  if (p) {
-    if (p.length > 512) return new Response("", { status: 400 });
-    try {
-      const upstream = await fetch(
-        `${backendBase}/stream/ts?p=${encodeURIComponent(p)}`,
-        { headers: { "User-Agent": "Vercel-SegmentProxy/1.0" } }
-      );
-      if (!upstream.ok) return new Response("", { status: 502 });
-      const contentType = upstream.headers.get("content-type") || "video/MP2T";
-      const buffer      = await upstream.arrayBuffer();
-      return new Response(buffer, {
-        status: 200,
-        headers: {
-          "Content-Type":  contentType,
-          "Cache-Control": "public, max-age=10",
-        },
-      });
-    } catch {
-      return new Response("", { status: 502 });
-    }
-  }
-
-  // ── Manifest proxy mode ─────────────────────────────────────────────────
-  const secret = process.env.WS_AUTH_SECRET;
-  if (!secret) {
-    return new Response(JSON.stringify({ error: "Stream not configured" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const token    = await generateHmacToken(secret);
-  const aliasRaw = (url.searchParams.get("alias") || "").trim();
-  const alias    = /^[A-Za-z0-9_-]+$/.test(aliasRaw) ? aliasRaw : "";
-  const manifestUrl =
-    `${backendBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`
+  const token       = await generateHmacToken(secret);
+  const manifestUrl = `${backendBase}/stream/live.m3u8?token=${encodeURIComponent(token)}`
     + (alias ? `&alias=${encodeURIComponent(alias)}` : "");
 
-  try {
-    const upstream = await fetch(manifestUrl);
-    if (!upstream.ok) {
-      const body = await upstream.text().catch(() => "");
-      console.error("[/api/stream] backend status:", upstream.status, body.slice(0, 200));
-      return new Response(
-        JSON.stringify({ error: "Stream unavailable", upstream_status: upstream.status }),
-        { status: 502, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Rewrite absolute segment URLs to relative paths so HLS.js resolves them
-    // against the current origin. Works in both production and local dev:
-    //   production: https://aitrafficja.com/api/stream?p=... → /api/stream?p=...
-    //   local dev:  localhost:3000/api/stream?p=... → Vite proxy → aitrafficja.com
-    let text = (await upstream.text())
-      .replace(/https?:\/\/[^/\s"']+\/api\/stream\?p=/g, '/api/stream?p=');
-
-    return new Response(text, {
-      status: 200,
-      headers: {
-        "Content-Type":  "application/vnd.apple.mpegurl",
-        "Cache-Control": "no-cache, no-store",
-      },
-    });
-  } catch (err) {
-    console.error("[/api/stream] manifest fetch error:", err);
-    return new Response(JSON.stringify({ error: "Stream unavailable" }), {
-      status: 502,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // Redirect — HLS.js follows this and fetches stream + segments directly
+  // from Railway. Zero video bytes pass through Vercel.
+  return Response.redirect(manifestUrl, 302);
 }

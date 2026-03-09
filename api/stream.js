@@ -95,15 +95,21 @@ export default async function handler(req) {
       );
     }
 
-    // Rewrite segment URLs to hit Cloudflare (backend.aitrafficja.com) directly,
-    // bypassing Vercel to avoid bandwidth charges. CF Worker proxies to Railway.
-    // Local dev falls back to relative /api/stream?p= via Vite proxy.
-    const isCfAvailable = !req.url.includes("localhost") && !req.url.includes("127.0.0.1");
-    const segmentBase = isCfAvailable
-      ? "https://backend.aitrafficja.com/stream/ts?p="
-      : "/api/stream?p=";
-    let text = (await upstream.text())
-      .replace(/https?:\/\/[^/\s"']+\/(?:api\/stream|stream\/ts)\?p=/g, segmentBase);
+    // Decode base64 p= params and replace proxy URLs with direct CDN URLs.
+    // Segments go Browser → ipcamlive CDN directly — zero proxy hops, lowest latency.
+    // Local dev falls back to /api/stream?p= via Vite proxy (no base64 decode needed there).
+    const isLocal = req.url.includes("localhost") || req.url.includes("127.0.0.1");
+    let text = await upstream.text();
+    if (!isLocal) {
+      text = text.replace(
+        /https?:\/\/[^/\s"']+\/stream\/ts\?p=([A-Za-z0-9+/=_-]+)/g,
+        (_, p) => {
+          try { return atob(p.replace(/-/g, "+").replace(/_/g, "/")); } catch { return _; }
+        }
+      );
+    } else {
+      text = text.replace(/https?:\/\/[^/\s"']+\/(?:api\/stream|stream\/ts)\?p=/g, "/api/stream?p=");
+    }
 
     return new Response(text, {
       status: 200,

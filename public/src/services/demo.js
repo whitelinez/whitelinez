@@ -15,6 +15,7 @@
 import { getContentBounds, contentToPixel } from '../utils/coord-utils.js';
 import { Stream } from './stream.js';
 import { Counter } from './counter.js';
+import { DetectionOverlay } from '../overlays/detection-overlay.js';
 
 let _active      = false;
 let _events      = [];      // sorted [{t, ...count:update payload}]
@@ -165,8 +166,9 @@ export async function activate() {
     if (noContent) noContent.classList.remove('hidden');
   }
 
-  // Pause live AI stream — demo replays its own pre-recorded events
+  // Pause live AI stream — flush stale detection queue, demo owns the canvas now
   Counter.pause();
+  DetectionOverlay.clearDetections();
 
   overlay.classList.remove('hidden');
   _dpl.hide();
@@ -247,7 +249,9 @@ function _replayTick() {
   let dispatched = 0;
   while (_eventIdx < _events.length && _events[_eventIdx].t <= vt) {
     const ev = _events[_eventIdx];
-    window.dispatchEvent(new CustomEvent('count:update', { detail: ev }));
+    // Use demo:count — NOT count:update — so DetectionOverlay/ZoneOverlay
+    // on the live canvas never receive demo events and don't render stale boxes.
+    window.dispatchEvent(new CustomEvent('demo:count', { detail: ev }));
     // Keep latest detections for canvas drawing
     if (ev.detections) _latestDets = ev.detections;
     // Update count HUD
@@ -404,9 +408,9 @@ function _initSidebar() {
   // Try Again
   document.getElementById('demo-guess-again')?.addEventListener('click', _resetGuess);
 
-  // Track cumulative count across loops
-  window.addEventListener('count:update', _onGuessCountUpdate);
-  window.addEventListener('scene:reset',  _onGuessSceneReset);
+  // Track cumulative count across loops — use demo:count, not count:update
+  window.addEventListener('demo:count', _onGuessCountUpdate);
+  window.addEventListener('scene:reset', _onGuessSceneReset);
 }
 
 function _onGuessCountUpdate(e) {
@@ -533,8 +537,8 @@ function _teardownGuess() {
   _guessState.latestCount  = 0;
   _guessState.countAtReset = 0;
   _guessState.startCount   = 0;
-  window.removeEventListener('count:update', _onGuessCountUpdate);
-  window.removeEventListener('scene:reset',  _onGuessSceneReset);
+  window.removeEventListener('demo:count', _onGuessCountUpdate);
+  window.removeEventListener('scene:reset', _onGuessSceneReset);
   _resetGuess();
 }
 

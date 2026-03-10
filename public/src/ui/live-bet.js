@@ -510,6 +510,187 @@ export const LiveBet = (() => {
       const lbTab = document.querySelector('.tab-btn[data-tab="leaderboard"]');
       if (lbTab) lbTab.click();
     });
+
+    document.getElementById("bpr-share-btn")?.addEventListener("click", _shareResult);
+  }
+
+  // ── Share result ──────────────────────────────────────────────────────────
+
+  async function _shareResult() {
+    const badge   = document.getElementById("bpr-badge")?.textContent?.trim()  || "—";
+    const pts     = document.getElementById("bpr-pts")?.textContent?.trim()     || "—";
+    const guess   = document.getElementById("bpr-guess")?.textContent?.trim()   || "—";
+    const actual  = document.getElementById("bpr-actual")?.textContent?.trim()  || "—";
+    const tolVal  = document.getElementById("bpr-tolerance-val")?.textContent?.trim() || null;
+    const tolRow  = document.getElementById("bpr-tolerance-row");
+    const showTol = tolRow && tolRow.style.display !== "none" && tolVal;
+
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const W = 460, H = showTol ? 320 : 296;
+    const canvas = document.createElement("canvas");
+    canvas.width  = W * DPR;
+    canvas.height = H * DPR;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(DPR, DPR);
+
+    // ── Background ────────────────────────────────────────────────────────
+    ctx.fillStyle = "#0a1628";
+    _roundRect(ctx, 0, 0, W, H, 14);
+    ctx.fill();
+
+    // Subtle grid lines
+    ctx.strokeStyle = "rgba(0,212,255,0.06)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 24) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // Top cyan accent bar
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, "#00d4ff");
+    grad.addColorStop(1, "rgba(0,212,255,0)");
+    ctx.fillStyle = grad;
+    _roundRect(ctx, 0, 0, W, 3, { tl: 14, tr: 14, bl: 0, br: 0 });
+    ctx.fill();
+
+    // ── Logo / brand ──────────────────────────────────────────────────────
+    ctx.font = "700 11px 'Arial', sans-serif";
+    ctx.letterSpacing = "0.12em";
+    ctx.fillStyle = "#00d4ff";
+    ctx.fillText("⚡ WHITELINEZ", 24, 30);
+    ctx.font = "400 10px 'Arial', sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.38)";
+    ctx.letterSpacing = "0.04em";
+    ctx.fillText("AI TRAFFIC PREDICTION · KINGSTON, JA", 24, 44);
+
+    // ── Divider ───────────────────────────────────────────────────────────
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(24, 56); ctx.lineTo(W - 24, 56); ctx.stroke();
+
+    // ── Badge ─────────────────────────────────────────────────────────────
+    const badgeColors = { EXACT: "#4ade80", CLOSE: "#f59e0b", MISS: "#ef4444" };
+    const badgeColor  = badgeColors[badge] || "#94a3b8";
+    const badgeW = 80, badgeH = 28;
+    const badgeX = 24, badgeY = 70;
+    ctx.fillStyle = badgeColor + "22";
+    _roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 5);
+    ctx.fill();
+    ctx.strokeStyle = badgeColor + "88";
+    ctx.lineWidth = 1;
+    _roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 5);
+    ctx.stroke();
+    ctx.font = "700 13px 'Arial', sans-serif";
+    ctx.letterSpacing = "0.14em";
+    ctx.fillStyle = badgeColor;
+    ctx.fillText(badge, badgeX + 14, badgeY + 19);
+
+    // ── Points ────────────────────────────────────────────────────────────
+    ctx.font = "700 36px 'Arial', sans-serif";
+    ctx.letterSpacing = "0";
+    ctx.fillStyle = badge === "MISS" ? "#ef4444" : "#ffffff";
+    ctx.fillText(pts, 24, 136);
+
+    // ── Divider ───────────────────────────────────────────────────────────
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(24, 152); ctx.lineTo(W - 24, 152); ctx.stroke();
+
+    // ── Receipt rows ──────────────────────────────────────────────────────
+    const rows = [
+      ["GUESSED",  guess],
+      ["ACTUAL",   actual],
+    ];
+    if (showTol) rows.push(["OFF BY", tolVal]);
+
+    let ry = 172;
+    for (const [label, value] of rows) {
+      ctx.font = "400 10px 'Arial', sans-serif";
+      ctx.letterSpacing = "0.1em";
+      ctx.fillStyle = "rgba(255,255,255,0.42)";
+      ctx.fillText(label, 24, ry);
+
+      ctx.font = "700 14px 'Arial', sans-serif";
+      ctx.letterSpacing = "0";
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "right";
+      ctx.fillText(value, W - 24, ry);
+      ctx.textAlign = "left";
+      ry += 32;
+    }
+
+    // ── Divider ───────────────────────────────────────────────────────────
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(24, H - 40); ctx.lineTo(W - 24, H - 40); ctx.stroke();
+
+    // ── URL footer ────────────────────────────────────────────────────────
+    ctx.font = "400 10px 'Arial', sans-serif";
+    ctx.letterSpacing = "0.05em";
+    ctx.fillStyle = "rgba(255,255,255,0.28)";
+    ctx.fillText("aitrafficja.com", 24, H - 18);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(0,212,255,0.55)";
+    ctx.fillText("Play now →", W - 24, H - 18);
+    ctx.textAlign = "left";
+
+    // ── Share ─────────────────────────────────────────────────────────────
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+    const file = new File([blob], "whitelinez-result.png", { type: "image/png" });
+
+    // 1. Web Share API (mobile / modern)
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `WHITELINEZ — ${badge}`,
+          text: `${badge}! ${pts} · Guessed ${guess}, actual was ${actual} · aitrafficja.com`,
+        });
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return; // user cancelled — don't fall through
+      }
+    }
+
+    // 2. Clipboard (desktop Chrome/Edge)
+    if (navigator.clipboard?.write) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        _showShareFeedback("Copied to clipboard!");
+        return;
+      } catch {}
+    }
+
+    // 3. Download fallback
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "whitelinez-result.png";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    _showShareFeedback("Image downloaded!");
+  }
+
+  function _roundRect(ctx, x, y, w, h, r) {
+    if (typeof r === "number") r = { tl: r, tr: r, bl: r, br: r };
+    ctx.beginPath();
+    ctx.moveTo(x + r.tl, y);
+    ctx.lineTo(x + w - r.tr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    ctx.lineTo(x + w, y + h - r.br);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    ctx.lineTo(x + r.bl, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    ctx.lineTo(x, y + r.tl);
+    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+    ctx.closePath();
+  }
+
+  function _showShareFeedback(msg) {
+    const btn = document.getElementById("bpr-share-btn");
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+    btn.disabled = true;
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2200);
   }
 
   return { init, open, close, restore, onBetResolved, setRound: (r) => { _round = r; } };

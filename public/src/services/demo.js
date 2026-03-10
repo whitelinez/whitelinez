@@ -1,15 +1,15 @@
 /**
- * demo.js — Demo mode overlay: plays a pre-recorded video with frame-synced
- * YOLO detection replay drawn directly on a canvas overlay.
+ * demo.js — Demo mode overlay: plays a pre-recorded video with LIVE YOLO
+ * detection drawn on the canvas.  When activated, the backend pauses its live
+ * AI loop and runs the same YOLO pipeline on the recorded video instead —
+ * detections arrive via the normal WebSocket as count:update events.
  *
  * Flow:
- *   1. activate()  → fetch /api/demo manifest → load events JSON
- *                  → open #demo-overlay → set <video> src → start RAF loop
- *   2. RAF loop    → on each video.currentTime advance, dispatch count:update
- *                    events matching timestamps AND draw detection boxes
- *   3. deactivate() → hide overlay → cancel RAF → reset state
- *
- * The #demo-overlay is fully self-contained — the live stream is untouched.
+ *   1. activate()  → fetch /api/demo manifest → open overlay → play video
+ *                  → POST /api/demo?action=start-detect (backend starts YOLO)
+ *                  → RAF draw loop renders detections from count:update events
+ *   2. count:update events → update _latestDets → drawn each RAF frame
+ *   3. deactivate() → POST /api/demo?action=stop-detect → hide overlay → live AI resumes
  */
 
 import { getContentBoundsContain, contentToPixel } from '../utils/coord-utils.js';
@@ -18,15 +18,12 @@ import { Counter } from './counter.js';
 import { DetectionOverlay } from '../overlays/detection-overlay.js';
 
 let _active      = false;
-let _events      = [];      // sorted [{t, ...count:update payload}]
-let _eventIdx    = 0;       // next event index to dispatch
-let _lastVidTime = -1;      // previous video.currentTime, for loop detection
 let _rafId       = null;
 let _videoEl     = null;
 let _canvasEl    = null;
 let _ctx         = null;
 let _manifest    = null;
-let _latestDets  = [];      // detections from current event frame
+let _latestDets  = [];      // detections from latest count:update frame
 
 // Tripwire state
 let _tripLine    = null;    // {x1,y1,x2,y2} normalised content coords, or null
@@ -34,7 +31,7 @@ let _drawMode    = false;
 let _drawStart   = null;    // {x,y} normalised, while dragging
 let _tripFlash   = false;
 let _tripFlashTimer = null;
-let _prevTotal   = 0;       // for detecting new crossings
+let _prevTotal   = 0;       // for detecting new crossings (tripwire flash)
 
 const DEMO_BTN_ID   = 'header-demo-btn';
 const DEMO_BADGE_ID = 'stream-demo-badge';
@@ -78,12 +75,11 @@ export const Demo = { activate, deactivate, isActive: () => _active, getManifest
 export async function activate() {
   if (_active) return;
 
-  // Show preloader immediately so user sees feedback right away
   _dpl.show();
   _dpl.set(0, 'Initialising…');
   await _wait(250);
 
-  // 1. Fetch manifest
+  // 1. Fetch manifest (video URL only — no events JSON needed)
   _dpl.set(20, 'Checking demo archive…');
   await _wait(300);
   let manifest = null;
@@ -94,47 +90,24 @@ export async function activate() {
     console.warn('[Demo] Failed to fetch manifest:', e);
   }
 
-  _dpl.set(45, 'Loading recording manifest…');
-  await _wait(350);
+  const hasRecording = Boolean(manifest?.available && manifest?.video_url);
 
-  const hasRecording = Boolean(manifest?.available);
+  _dpl.set(55, 'Starting YOLO inference…');
+  await _wait(200);
 
-  // 2. Load events JSON (only if recording available)
-  if (hasRecording) {
-    try {
-      _dpl.set(60, 'Fetching detection events…');
-      await _wait(250);
-      const res = await fetch(manifest.events_url);
-      if (!res.ok) throw new Error(`events ${res.status}`);
-      _events = await res.json();
-      _manifest = manifest;
-    } catch (e) {
-      console.warn('[Demo] Failed to load events:', e);
-      // treat as no recording
-      _events = [];
-      _manifest = null;
-    }
-  }
-
-  _dpl.set(85, 'Preparing replay…');
-  await _wait(400);
-  _dpl.set(100, 'Opening demo…');
-  await _wait(320);
-
-  // 3. Open overlay
+  // 2. Open overlay
   const overlay = document.getElementById('demo-overlay');
   if (!overlay) { _dpl.hide(); return; }
 
   _active = true;
+  _manifest = manifest;
 
-  if (hasRecording && _events.length > 0) {
-    // Show video area, hide no-content
+  if (hasRecording) {
     const videoArea = document.getElementById('demo-video-area');
     const noContent = document.getElementById('demo-no-content');
     if (videoArea) videoArea.classList.remove('hidden');
     if (noContent) noContent.classList.add('hidden');
 
-    // Set up video
     _videoEl  = document.getElementById('demo-video');
     _canvasEl = document.getElementById('demo-canvas');
     if (_videoEl && _canvasEl) {
@@ -151,26 +124,29 @@ export async function activate() {
       if (window.ResizeObserver) new ResizeObserver(_syncCanvasSize).observe(_videoEl);
       _videoEl.addEventListener('loadedmetadata', _syncCanvasSize);
     }
-
-    // Reset replay state
-    _eventIdx    = 0;
-    _lastVidTime = -1;
-    _latestDets  = [];
-
-    _rafId = requestAnimationFrame(_replayTick);
   } else {
-    // No recording — show no-content state
     const videoArea = document.getElementById('demo-video-area');
     const noContent = document.getElementById('demo-no-content');
     if (videoArea) videoArea.classList.add('hidden');
     if (noContent) noContent.classList.remove('hidden');
   }
 
-  // Pause live AI stream — flush stale detection queue, demo owns the canvas now
-  Counter.pause();
+  // 3. Clear stale live detections from the DetectionOverlay queue
   DetectionOverlay.clearDetections();
 
+  // 4. Tell backend to start YOLO inference on the demo video
+  //    (backend also pauses the live AI loop so WS events come from demo only)
+  _startDemoDetect();
+
+  // 5. Listen to count:update — backend broadcasts demo detections via normal WS
+  window.addEventListener('count:update', _onCountUpdate);
+
+  // 6. Start draw loop (detection boxes + tripwire rendered every RAF frame)
+  _startDrawLoop();
+
   overlay.classList.remove('hidden');
+  _dpl.set(100, 'Opening demo…');
+  await _wait(200);
   _dpl.hide();
   _updateUI(true);
   _initSidebar();
@@ -183,7 +159,6 @@ export function deactivate() {
 
   if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
 
-  // Hide overlay and reset content areas
   const overlay = document.getElementById('demo-overlay');
   if (overlay) overlay.classList.add('hidden');
   document.getElementById('demo-video-area')?.classList.add('hidden');
@@ -196,29 +171,26 @@ export function deactivate() {
     _videoEl = null;
   }
 
-  // Clear canvas
-  if (_ctx && _canvasEl) {
-    _ctx.clearRect(0, 0, _canvasEl.width, _canvasEl.height);
-  }
+  if (_ctx && _canvasEl) _ctx.clearRect(0, 0, _canvasEl.width, _canvasEl.height);
   _ctx = null;
   _canvasEl = null;
 
   window.removeEventListener('resize', _syncCanvasSize);
+  window.removeEventListener('count:update', _onCountUpdate);
 
-  _events     = [];
-  _eventIdx   = 0;
   _latestDets = [];
   _manifest   = null;
+  _prevTotal  = 0;
   _teardownGuess();
   _teardownTripwire();
 
-  // Reset count HUD
   const val = document.getElementById('demo-count-val');
   if (val) val.textContent = '—';
 
-  // Restore live stream + AI — HLS may have dropped while demo was open.
-  // Stream.init() destroys any stale instance and reconnects immediately.
-  // Counter.resume() reconnects the WebSocket so live count:update events flow again.
+  // Tell backend to stop demo YOLO and restart live AI
+  _stopDemoDetect();
+
+  // Reconnect live stream + WS (may have drifted while demo was running)
   const liveVideo = document.getElementById('live-video');
   if (liveVideo) Stream.init(liveVideo).catch(() => {});
   Counter.resume();
@@ -226,48 +198,45 @@ export function deactivate() {
   _updateUI(false);
 }
 
-// ── Replay tick ───────────────────────────────────────────────────────────────
+// ── Backend control ───────────────────────────────────────────────────────────
 
-function _replayTick() {
+function _startDemoDetect() {
+  fetch('/api/demo?action=start-detect', { method: 'POST' })
+    .catch(e => console.warn('[Demo] start-detect failed:', e));
+}
+
+function _stopDemoDetect() {
+  fetch('/api/demo?action=stop-detect', { method: 'POST' })
+    .catch(e => console.warn('[Demo] stop-detect failed:', e));
+}
+
+// ── Live detection draw loop ──────────────────────────────────────────────────
+
+function _onCountUpdate(e) {
   if (!_active) return;
-  _rafId = requestAnimationFrame(_replayTick);
+  const dets  = e.detail?.detections;
+  const total = Number(e.detail?.total ?? e.detail?.count_in ?? 0);
 
-  if (!_videoEl || _videoEl.paused || _videoEl.readyState < 2) return;
+  if (dets) _latestDets = dets;
 
-  const vt = _videoEl.currentTime;
+  // Update count HUD
+  const valEl = document.getElementById('demo-count-val');
+  if (valEl) valEl.textContent = total.toLocaleString();
 
-  // Detect video loop (time jumped backward significantly)
-  if (_lastVidTime > 0 && vt < _lastVidTime - 1.0) {
-    _eventIdx   = 0;
-    _latestDets = [];
-    _prevTotal  = 0;
-    window.dispatchEvent(new CustomEvent('scene:reset'));
-  }
-  _lastVidTime = vt;
+  // Flash tripwire on new crossings
+  if (_tripLine && total > _prevTotal) _tripFlashOn();
+  _prevTotal = Math.max(_prevTotal, total);
+}
 
-  // Dispatch all events whose timestamp ≤ current video time
-  let dispatched = 0;
-  while (_eventIdx < _events.length && _events[_eventIdx].t <= vt) {
-    const ev = _events[_eventIdx];
-    // Use demo:count — NOT count:update — so DetectionOverlay/ZoneOverlay
-    // on the live canvas never receive demo events and don't render stale boxes.
-    window.dispatchEvent(new CustomEvent('demo:count', { detail: ev }));
-    // Keep latest detections for canvas drawing
-    if (ev.detections) _latestDets = ev.detections;
-    // Update count HUD
-    const total = Number(ev.total ?? ev.count_in ?? 0);
-    const valEl = document.getElementById('demo-count-val');
-    if (valEl) valEl.textContent = total.toLocaleString();
-    // Flash tripwire when count increases (new vehicle crossing)
-    if (_tripLine && total > _prevTotal) _tripFlashOn();
-    _prevTotal = Math.max(_prevTotal, total);
-    _eventIdx++;
-    dispatched++;
-  }
-
-  // Redraw detection boxes + tripwire on every frame
-  _drawDetections(_latestDets);
-  _drawTripwire();
+function _startDrawLoop() {
+  if (_rafId) return;
+  const tick = () => {
+    if (!_active) { _rafId = null; return; }
+    _drawDetections(_latestDets);
+    _drawTripwire();
+    _rafId = requestAnimationFrame(tick);
+  };
+  _rafId = requestAnimationFrame(tick);
 }
 
 // ── Detection canvas drawing ──────────────────────────────────────────────────
@@ -337,32 +306,26 @@ function _drawLabel(x, y, det, color) {
   const tw  = _ctx.measureText(lbl).width;
   const px  = 4, py = 2;
   const tx  = x, ty = (y - (fs + py * 2)) >= 0 ? y - (fs + py * 2) : y;
-  _hexFill(color, 0.88);
+  _ctx.save();
+  _ctx.fillStyle = color;
   _ctx.fillRect(tx, ty, tw + px * 2, fs + py * 2);
-  _ctx.fillStyle    = '#000';
-  _ctx.textAlign    = 'left';
+  _ctx.fillStyle = '#000';
+  _ctx.textAlign = 'left';
   _ctx.textBaseline = 'top';
   _ctx.fillText(lbl, tx + px, ty + py);
+  _ctx.restore();
 }
 
-function _hexFill(hex, alpha) {
-  const raw  = String(hex).replace('#', '').padEnd(6, '0').slice(0, 6);
-  const n    = parseInt(raw, 16);
-  const r    = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  _ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-}
+// ── Sidebar (guess panel) ─────────────────────────────────────────────────────
 
-// ── Demo sidebar guess logic ──────────────────────────────────────────────────
-
-let _guessState = {
+const _guessState = {
   selectedSecs:  60,
   selectedLabel: '1 MIN',
   guessVal:       5,
   active:         false,
-  startCount:     0,   // cumulative total at guess submission
-  latestCount:    0,   // tracks latest count:update total
-  countAtReset:   0,   // cumulative offset across video loops
-  loopTotal:      0,   // total from last complete loop (for wrap-around)
+  startCount:     0,
+  latestCount:    0,
+  countAtReset:   0,
   timerId:        null,
   secsLeft:       0,
 };
@@ -371,7 +334,6 @@ function _initSidebar() {
   const pills = document.getElementById('demo-window-pills');
   if (!pills) return;
 
-  // Pill selection
   pills.addEventListener('click', e => {
     const pill = e.target.closest('.pill');
     if (!pill || _guessState.active) return;
@@ -381,7 +343,6 @@ function _initSidebar() {
     _guessState.selectedLabel = pill.textContent.trim();
   });
 
-  // Count −/+
   document.getElementById('demo-count-minus')?.addEventListener('click', () => {
     if (_guessState.active) return;
     const inp = document.getElementById('demo-guess-input');
@@ -402,20 +363,17 @@ function _initSidebar() {
     _guessState.guessVal = Math.max(0, parseInt(e.target.value, 10) || 0);
   });
 
-  // Submit
   document.getElementById('demo-guess-submit')?.addEventListener('click', _submitGuess);
-
-  // Try Again
   document.getElementById('demo-guess-again')?.addEventListener('click', _resetGuess);
 
-  // Track cumulative count across loops — use demo:count, not count:update
-  window.addEventListener('demo:count', _onGuessCountUpdate);
-  window.addEventListener('scene:reset', _onGuessSceneReset);
+  // count:update events from live backend YOLO feed the sidebar count tracker
+  window.addEventListener('count:update', _onGuessCountUpdate);
 }
 
 function _onGuessCountUpdate(e) {
-  const total = e.detail?.total ?? e.detail?.count_in ?? 0;
-  _guessState.latestCount = _guessState.countAtReset + Number(total);
+  if (!_active) return;
+  const total = Number(e.detail?.total ?? e.detail?.count_in ?? 0);
+  _guessState.latestCount = _guessState.countAtReset + total;
 
   if (_guessState.active) {
     const elapsed = _guessState.latestCount - _guessState.startCount;
@@ -432,23 +390,15 @@ function _onGuessCountUpdate(e) {
   }
 }
 
-function _onGuessSceneReset() {
-  // Video looped — add the last known "raw" total before reset to our cumulative offset
-  // _latestDets-based total before reset is stored in loopTotal via last count:update
-  // We approximate: countAtReset = latestCount (already cumulative)
-  _guessState.countAtReset = _guessState.latestCount;
-}
-
 function _submitGuess() {
   const secs  = _guessState.selectedSecs;
   const label = _guessState.selectedLabel;
   const guess = Math.max(0, parseInt(document.getElementById('demo-guess-input')?.value, 10) || 0);
-  _guessState.guessVal    = guess;
-  _guessState.startCount  = _guessState.latestCount;
-  _guessState.active      = true;
-  _guessState.secsLeft    = secs;
+  _guessState.guessVal   = guess;
+  _guessState.startCount = _guessState.latestCount;
+  _guessState.active     = true;
+  _guessState.secsLeft   = secs;
 
-  // Show active state + count HUD
   document.getElementById('demo-count-hud')?.classList.add('visible');
   document.getElementById('demo-guess-form')?.classList.add('hidden');
   const activeEl = document.getElementById('demo-active');
@@ -463,7 +413,6 @@ function _submitGuess() {
   const fill = document.getElementById('demo-prog-fill');
   if (fill) { fill.style.width = '0%'; fill.style.background = 'var(--accent)'; }
 
-  // Countdown
   _updateCountdownEl(secs);
   _guessState.timerId = setInterval(() => {
     _guessState.secsLeft--;
@@ -537,8 +486,7 @@ function _teardownGuess() {
   _guessState.latestCount  = 0;
   _guessState.countAtReset = 0;
   _guessState.startCount   = 0;
-  window.removeEventListener('demo:count', _onGuessCountUpdate);
-  window.removeEventListener('scene:reset', _onGuessSceneReset);
+  window.removeEventListener('count:update', _onGuessCountUpdate);
   _resetGuess();
 }
 
@@ -547,7 +495,7 @@ function _teardownGuess() {
 function _initTripwire() {
   const btn  = document.getElementById('demo-draw-btn');
   const wrap = document.getElementById('demo-video-area');
-  if (!btn || !wrap) return;
+  if (!btn || !wrap || !_videoEl) return;
 
   btn.addEventListener('click', () => {
     _drawMode = !_drawMode;
@@ -556,7 +504,6 @@ function _initTripwire() {
     if (!_drawMode) _drawStart = null;
   });
 
-  // Use video element for pointer events (canvas is pointer-events:none)
   _videoEl.addEventListener('mousedown',  _onTripDown);
   _videoEl.addEventListener('mousemove',  _onTripMove);
   _videoEl.addEventListener('mouseup',    _onTripUp);
@@ -569,7 +516,6 @@ function _videoCoords(e) {
   const bounds = getContentBoundsContain(_videoEl);
   const cssX   = (e.clientX ?? e.touches?.[0]?.clientX ?? 0) - rect.left;
   const cssY   = (e.clientY ?? e.touches?.[0]?.clientY ?? 0) - rect.top;
-  // Normalise to content (0-1) coords
   const nx = (cssX - bounds.x) / bounds.w;
   const ny = (cssY - bounds.y) / bounds.h;
   return { x: Math.max(0, Math.min(1, nx)), y: Math.max(0, Math.min(1, ny)) };
@@ -578,7 +524,6 @@ function _videoCoords(e) {
 function _onTripDown(e)  { if (!_drawMode) return; e.preventDefault(); _drawStart = _videoCoords(e); }
 function _onTripMove(e)  {
   if (!_drawMode || !_drawStart) return;
-  // Live preview — store tentative end, redraw happens in RAF
   _tripLine = { x1: _drawStart.x, y1: _drawStart.y, ..._videoCoords(e) };
 }
 function _onTripUp(e) {
@@ -612,28 +557,24 @@ function _drawTripwire() {
   const fl  = _tripFlash;
   const col = fl ? '#00FF88' : '#FFD600';
 
-  // Wide soft glow halo
   _ctx.save();
   _ctx.beginPath(); _ctx.moveTo(p1.x, p1.y); _ctx.lineTo(p2.x, p2.y);
   _ctx.strokeStyle = col; _ctx.lineWidth = fl ? 14 : 10;
   _ctx.globalAlpha = 0.12; _ctx.shadowColor = col; _ctx.shadowBlur = fl ? 28 : 18;
   _ctx.lineCap = 'round'; _ctx.stroke(); _ctx.restore();
 
-  // Tight glow
   _ctx.save();
   _ctx.beginPath(); _ctx.moveTo(p1.x, p1.y); _ctx.lineTo(p2.x, p2.y);
   _ctx.strokeStyle = col; _ctx.lineWidth = fl ? 6 : 4;
   _ctx.globalAlpha = 0.22; _ctx.shadowColor = col; _ctx.shadowBlur = fl ? 16 : 10;
   _ctx.lineCap = 'round'; _ctx.stroke(); _ctx.restore();
 
-  // Main line
   _ctx.save();
   _ctx.beginPath(); _ctx.moveTo(p1.x, p1.y); _ctx.lineTo(p2.x, p2.y);
   _ctx.strokeStyle = col; _ctx.lineWidth = fl ? 2.5 : 1.5;
   _ctx.globalAlpha = 1; _ctx.shadowColor = col; _ctx.shadowBlur = fl ? 10 : 5;
   _ctx.lineCap = 'round'; _ctx.stroke(); _ctx.restore();
 
-  // Tick marks
   const tickSpacing = 24, tickLen = fl ? 7 : 5;
   const nTicks = Math.floor(len / tickSpacing);
   _ctx.save(); _ctx.strokeStyle = col; _ctx.lineWidth = 1;
@@ -648,7 +589,6 @@ function _drawTripwire() {
   }
   _ctx.restore();
 
-  // Scan particle
   if (!fl) {
     const period = 2400;
     const tRaw   = (Date.now() % (period * 2)) / period;
@@ -659,7 +599,6 @@ function _drawTripwire() {
     _ctx.globalAlpha = 0.85; _ctx.fill(); _ctx.restore();
   }
 
-  // End caps
   [p1, p2].forEach(p => {
     _ctx.save();
     _ctx.beginPath(); _ctx.arc(p.x, p.y, fl ? 5 : 4, 0, Math.PI * 2);
@@ -679,7 +618,7 @@ function _teardownTripwire() {
   _videoEl.removeEventListener('touchstart', _onTripTouchStart);
   _videoEl.removeEventListener('touchend',   _onTripTouchEnd);
   clearTimeout(_tripFlashTimer);
-  _tripLine = null; _drawMode = false; _drawStart = null; _tripFlash = false; _prevTotal = 0;
+  _tripLine = null; _drawMode = false; _drawStart = null; _tripFlash = false;
   document.getElementById('demo-draw-btn')?.classList.remove('active');
   document.getElementById('demo-video-area')?.classList.remove('draw-mode');
 }
@@ -694,12 +633,4 @@ function _updateUI(on) {
   }
   const badge = document.getElementById(DEMO_BADGE_ID);
   if (badge) badge.classList.toggle('hidden', !on);
-}
-
-function _showToast(msg) {
-  const el = document.createElement('div');
-  el.className = 'toast toast-info';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
 }

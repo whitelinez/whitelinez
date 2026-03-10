@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build && node scripts/postbuild.js",
     "preview": "vite preview",
-    "lint": "echo 'No linter configured'"
+    "lint": "echo 'No linter configured'",
+    "purge": "node scripts/purge-cf.js"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",

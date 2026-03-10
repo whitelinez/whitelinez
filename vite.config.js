@@ -55,6 +55,12 @@ export default defineConfig({
         // Shared chunks: keep content hashes under assets/ for immutable CDN caching.
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
+        // Split large vendor libs into their own chunks so each is smaller.
+        // Smaller chunks = faster Cloudflare edge cache warm-up on new deploys.
+        manualChunks(id) {
+          if (id.includes('node_modules/hls.js'))   return 'vendor-hls';
+          if (id.includes('node_modules/pixi.js'))  return 'vendor-pixi';
+        },
       },
     },
     assetsInlineLimit: 4096,

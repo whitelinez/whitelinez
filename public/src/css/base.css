@@ -509,7 +509,9 @@ a:hover { text-decoration: underline; }
   pointer-events: none;
 }
 
-/* Count HUD over video */
+/* Count HUD over video — hidden until a guess is active */
+.demo-count-hud { display: none; }
+.demo-count-hud.visible { display: flex; }
 .demo-count-hud {
   position: absolute; top: 12px; left: 14px;
   display: flex; flex-direction: column; gap: 1px;

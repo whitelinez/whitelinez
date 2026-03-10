@@ -429,7 +429,8 @@ function _submitGuess() {
   _guessState.active      = true;
   _guessState.secsLeft    = secs;
 
-  // Show active state
+  // Show active state + count HUD
+  document.getElementById('demo-count-hud')?.classList.add('visible');
   document.getElementById('demo-guess-form')?.classList.add('hidden');
   const activeEl = document.getElementById('demo-active');
   if (activeEl) activeEl.classList.remove('hidden');
@@ -481,6 +482,7 @@ function _evaluateGuess() {
     badge = 'MISS'; pts = 0; badgeClass = 'bpr-badge-miss';
   }
 
+  document.getElementById('demo-count-hud')?.classList.remove('visible');
   document.getElementById('demo-active')?.classList.add('hidden');
   const resultEl = document.getElementById('demo-result');
   if (resultEl) resultEl.classList.remove('hidden');
@@ -501,6 +503,7 @@ function _resetGuess() {
   if (_guessState.timerId) { clearInterval(_guessState.timerId); _guessState.timerId = null; }
   _guessState.active = false;
 
+  document.getElementById('demo-count-hud')?.classList.remove('visible');
   document.getElementById('demo-result')?.classList.add('hidden');
   document.getElementById('demo-active')?.classList.add('hidden');
   document.getElementById('demo-guess-form')?.classList.remove('hidden');

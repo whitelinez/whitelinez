@@ -3038,8 +3038,10 @@ function _connectUserWs(session) {
     if (modalTitle) modalTitle.innerHTML = title;
     if (modalBody)  modalBody.innerHTML = bodyHtml;
     modal.classList.remove("hidden");
-    // Render chart if canvas#gov-modal-chart exists in bodyHtml
-    requestAnimationFrame(() => {
+    // Render chart if canvas#gov-modal-chart exists in bodyHtml.
+    // setTimeout 50ms ensures the modal layout fully reflows before Chart.js
+    // reads the container dimensions — rAF fires too early on mobile.
+    setTimeout(() => {
       const c = el("gov-modal-chart");
       if (c && c.dataset.chartConfig && window.Chart) {
         try {
@@ -3047,7 +3049,7 @@ function _connectUserWs(session) {
           _modalChart = new window.Chart(c, JSON.parse(c.dataset.chartConfig));
         } catch {}
       }
-    });
+    }, 50);
   }
 
   function _closeModal() {

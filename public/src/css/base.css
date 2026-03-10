@@ -401,7 +401,7 @@ a:hover { text-decoration: underline; }
 .demo-pl-aiframe {
   position: absolute; inset: 0; z-index: 5;
   width: 100%; height: 100%; object-fit: contain;
-  filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.1)
+  filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.1)
           drop-shadow(0 0 14px rgba(239,68,68,0.7));
   transform-origin: center;
 }
@@ -409,13 +409,13 @@ a:hover { text-decoration: underline; }
 /* Aiframe in demo overlay header — solid red, always on */
 .demo-overlay .gov-hdr-aiframe {
   opacity: 1;
-  filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.1)
+  filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.1)
           drop-shadow(0 0 8px rgba(239,68,68,0.55));
   animation: none !important;
   transition: none;
 }
 .demo-overlay .gov-hdr-logo-wrap:hover .gov-hdr-aiframe {
-  filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.2)
+  filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.3)
           drop-shadow(0 0 16px rgba(239,68,68,0.9));
   transform: scale(1.1);
 }
@@ -586,15 +586,15 @@ a:hover { text-decoration: underline; }
 .logo-icon     { z-index: 2; opacity: 1; }
 .logo-ai-frame {
   z-index: 1; opacity: 1;
-  filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.1);
+  filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.1);
   transition: transform 0.22s ease, filter 0.2s ease;
 }
 
 @keyframes logo-ai-burst {
-  0%   { transform: scale(1);    filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.1) drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
-  20%  { transform: scale(1.22); filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.4) drop-shadow(0 0 18px rgba(239,68,68,1)); }
-  55%  { transform: scale(1.12); filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.3) drop-shadow(0 0 12px rgba(239,68,68,0.85)); }
-  100% { transform: scale(1);    filter: brightness(0) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.1) drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
+  0%   { transform: scale(1);    filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.1) drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
+  20%  { transform: scale(1.22); filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.5) drop-shadow(0 0 18px rgba(239,68,68,1)); }
+  55%  { transform: scale(1.12); filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.35) drop-shadow(0 0 12px rgba(239,68,68,0.85)); }
+  100% { transform: scale(1);    filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(1.1) drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
 }
 .logo-ai-frame.logo-ai-pulsing {
   animation: logo-ai-burst 0.8s ease-out forwards;

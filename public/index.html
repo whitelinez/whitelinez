@@ -123,6 +123,7 @@
 
     <!-- Right: Actions + auth -->
     <nav class="header-nav">
+      <button id="header-demo-btn" class="header-play-btn header-demo-btn">DEMO</button>
       <button id="header-analytics-cta" class="header-play-btn">ANALYTICS</button>
 
       <!-- Logged out -->
@@ -189,6 +190,12 @@
         <canvas id="detection-canvas" class="detection-overlay"></canvas>
         <canvas id="zone-canvas" class="zone-overlay"></canvas>
         <div id="fps-overlay" class="fps-overlay" aria-live="polite">FPS --.-</div>
+
+        <!-- Demo mode badge — shown when demo video is playing -->
+        <div id="stream-demo-badge" class="stream-demo-badge hidden">
+          <span class="demo-badge-dot"></span>
+          DEMO MODE — Pre-recorded footage
+        </div>
 
         <div id="play-overlay" class="play-overlay hidden">
           <button id="btn-play">

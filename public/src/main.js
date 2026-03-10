@@ -17,6 +17,7 @@ import { Banners } from './ui/banners.js';
 import { CameraSwitcher } from './ui/camera-switcher.js';
 import { LiveBet } from './ui/live-bet.js';
 import { getContentBounds, contentToPixel } from './utils/coord-utils.js';
+import { Demo } from './services/demo.js';
 
 // Expose to window for chart.js lazy imports (gov overlay uses window.Chart)
 import './utils/site-views.js';
@@ -1686,6 +1687,12 @@ function _connectUserWs(session) {
   openBtn?.addEventListener("click", openGovAnalytics);
   el("header-analytics-cta")?.addEventListener("click", openGovAnalytics);
   closeBtn?.addEventListener("click", closeGov);
+
+  // ── Demo mode toggle ──────────────────────────────────────────────────────
+  el("header-demo-btn")?.addEventListener("click", () => {
+    if (Demo.isActive()) Demo.deactivate();
+    else Demo.activate();
+  });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && _open) closeGov(); });
 
   // ── Reset analytics camera when user switches cameras ─────────────────────

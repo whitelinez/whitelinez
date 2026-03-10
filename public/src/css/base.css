@@ -184,12 +184,59 @@ a:hover { text-decoration: underline; }
 .header-play-btn.round-open { background: var(--accent); animation: amber-pulse 2s ease-in-out infinite; }
 
 /* Analytics CTA — compact, matches avatar button height */
-#header-analytics-cta {
+#header-analytics-cta,
+#header-demo-btn {
   min-height: unset;
   height: 32px;
   padding: 0 12px;
   font-size: 11px;
   border-radius: 5px;
+}
+
+/* DEMO button — amber tint, active state pulses */
+#header-demo-btn {
+  background: rgba(245,158,11,0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245,158,11,0.35);
+}
+#header-demo-btn:hover { background: rgba(245,158,11,0.22); color: #fbbf24; }
+#header-demo-btn.demo-btn--active {
+  background: #f59e0b;
+  color: #000;
+  border-color: #f59e0b;
+  animation: demo-pulse 2s ease-in-out infinite;
+}
+@keyframes demo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0.25); }
+}
+
+/* Demo badge overlay on stream */
+.stream-demo-badge {
+  position: absolute;
+  top: 10px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.72);
+  border: 1px solid rgba(245,158,11,0.6);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; color: #f59e0b;
+  z-index: 40; pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+.demo-badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  animation: demo-dot-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes demo-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
 }
 @keyframes amber-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255,184,0,0); }

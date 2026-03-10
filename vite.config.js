@@ -48,6 +48,14 @@ export default defineConfig({
         admin:   path.resolve(root, 'admin.html'),
         account: path.resolve(root, 'account.html'),
       },
+      output: {
+        // Entry files: fixed names at dist root (no hash, no assets/ prefix).
+        // Cached index.html references /main.js which always exists → no stale 404s.
+        entryFileNames: '[name].js',
+        // Shared chunks: keep content hashes under assets/ for immutable CDN caching.
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
     },
     assetsInlineLimit: 4096,
     chunkSizeWarningLimit: 2000,

@@ -63,7 +63,7 @@ function formatCountdown(endMs: number): string {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function LiveBetPanel({ round, onBetPlaced }: Props) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
 
   const [panelState, setPanelState]   = useState<PanelState>("idle");
   const [windowSec, setWindowSec]     = useState<WindowSec>(60);
@@ -141,7 +141,7 @@ export default function LiveBetPanel({ round, onBetPlaced }: Props) {
     setPanelState("submitting");
 
     try {
-      const jwt = user ? (await (user as { getIdToken?: () => Promise<string> }).getIdToken?.()) ?? "" : "";
+      const jwt = (session as { access_token?: string } | null)?.access_token ?? "";
 
       const res = await fetch("/api/bets/place?live=1", {
         method: "POST",

@@ -35,7 +35,7 @@ export async function GET(): Promise<Response> {
   const secret = process.env.WS_AUTH_SECRET;
   // WS_BACKEND_URL points directly to Railway — CF Worker can't proxy WebSockets
   // in service-worker format. Falls back to RAILWAY_BACKEND_URL if not set.
-  const wsBase = process.env.WS_BACKEND_URL || process.env.RAILWAY_BACKEND_URL;
+  const wsBase = process.env.WS_BACKEND_URL || process.env.NEXT_PUBLIC_WS_BACKEND_URL || process.env.RAILWAY_BACKEND_URL;
 
   if (!secret || !wsBase) {
     return new Response(JSON.stringify({ error: "Server misconfiguration" }), {

@@ -2,13 +2,14 @@
 
 /**
  * app/page.tsx — Main dashboard.
- * Wires: SiteHeader + OnboardingOverlay + StreamPanel + Sidebar + GovOverlay.
+ * Wires: SiteHeader + OnboardingOverlay + StreamPanel + Sidebar + GovOverlay + MobileNav.
  * Auth via useAuth() context. WS via useWebSocketLive().
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { SiteHeader }         from "@/components/layout/SiteHeader";
 import { OnboardingOverlay }  from "@/components/layout/OnboardingOverlay";
+import MobileNav              from "@/components/layout/MobileNav";
 import { StreamPanel, type StreamPanelProps } from "@/components/stream/StreamPanel";
 import Sidebar                from "@/components/sidebar/Sidebar";
 import { GovOverlay }         from "@/components/analytics/GovOverlay";
@@ -17,26 +18,23 @@ import { useAuth }            from "@/contexts/AuthContext";
 import { sb }                 from "@/lib/supabase-client";
 
 // ── Camera type matches actual Supabase schema ────────────────────────────────
-// Verified against camera-switcher.js: id, name, area, ipcam_alias,
-// player_host, is_active, quality_snapshot, category, youtube_url
 
 interface Camera {
   id:           string;
   name:         string;
-  ipcam_alias?: string;   // alias used for WS + stream
-  player_host?: string;   // ipcamlive embed host
-  is_active:    boolean;  // true = AI camera currently running
+  ipcam_alias?: string;
+  player_host?: string;
+  is_active:    boolean;
   area?:        string;
   category?:    string;
 }
 
-// ── Stream URL builder ────────────────────────────────────────────────────────
-
-const BACKEND_URL = "https://whitelinez-backend-production.up.railway.app";
+// ── Stream URL — routed through Vercel /api/stream proxy ──────────────────────
 
 function buildStreamUrl(alias?: string) {
-  const base = BACKEND_URL.replace(/\/$/, "");
-  return alias ? `${base}/stream?alias=${encodeURIComponent(alias)}` : `${base}/stream`;
+  return alias
+    ? `/api/stream?alias=${encodeURIComponent(alias)}`
+    : `/api/stream`;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -44,13 +42,13 @@ function buildStreamUrl(alias?: string) {
 export default function Home() {
   const { isAdmin } = useAuth();
 
-  const [cameras,      setCameras]    = useState<Camera[]>([]);
-  const [activeCam,    setActiveCam]  = useState<Camera | null>(null);
-  const [govOpen,      setGovOpen]    = useState(false);
-  const [loginOpen,    setLoginOpen]  = useState(false);
-  const [demoActive,   setDemoActive] = useState(false);
+  const [cameras,    setCameras]   = useState<Camera[]>([]);
+  const [activeCam,  setActiveCam] = useState<Camera | null>(null);
+  const [govOpen,    setGovOpen]   = useState(false);
+  const [loginOpen,  setLoginOpen] = useState(false);
+  const [demoActive, setDemoActive] = useState(false);
 
-  // ── Fetch cameras (actual schema) ─────────────────────────────────────────
+  // ── Fetch cameras ─────────────────────────────────────────────────────────
   useEffect(() => {
     sb.from("cameras")
       .select("id, name, ipcam_alias, player_host, is_active, area, category")
@@ -61,12 +59,11 @@ export default function Home() {
         if (!data?.length) return;
         const cams = data as Camera[];
         setCameras(cams);
-        // prefer is_active (AI) camera as default
         setActiveCam(cams.find((c) => c.is_active) ?? cams[0]);
       });
   }, []);
 
-  // ── WS — only connect once we have an alias/id ───────────────────────────
+  // ── WS ────────────────────────────────────────────────────────────────────
   const wsAlias = activeCam?.ipcam_alias ?? activeCam?.id;
   const { count, detections, roundInfo, wsStatus } = useWebSocketLive(wsAlias);
 
@@ -82,9 +79,15 @@ export default function Home() {
     setDemoActive((v) => !v);
   }, []);
 
+  // ── auth:open event (dispatched by LiveBetPanel when not logged in) ───────
+  useEffect(() => {
+    function onAuthOpen() { setLoginOpen(true); }
+    window.addEventListener("auth:open", onAuthOpen);
+    return () => window.removeEventListener("auth:open", onAuthOpen);
+  }, []);
+
   const streamUrl = buildStreamUrl(activeCam?.ipcam_alias);
 
-  // Adapt cameras to StreamPanel's Camera type (add has_ai from is_active)
   const streamCameras = cameras.map((c) => ({
     id:        c.id,
     name:      c.name,
@@ -105,9 +108,10 @@ export default function Home() {
         onDemoClick={handleDemo}
       />
 
+      {/* Main layout — stream + desktop sidebar */}
       <main className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-        {/* Stream panel */}
-        <div className="relative flex-1 min-w-0">
+        {/* Stream panel — full width on mobile (with bottom nav padding), flex-1 on desktop */}
+        <div className="relative flex-1 min-w-0 pb-14 lg:pb-0">
           {activeCam ? (
             <StreamPanel
               cameras={streamCameras}
@@ -132,7 +136,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sidebar — desktop only */}
+        {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden lg:flex flex-col w-[380px] shrink-0 border-l border-border bg-surface overflow-hidden">
           <Sidebar
             cameras={streamCameras}
@@ -147,6 +151,9 @@ export default function Home() {
           />
         </div>
       </main>
+
+      {/* Mobile bottom nav + slide-up sheet (hidden lg+) */}
+      <MobileNav wsStatus={wsStatus} />
 
       {/* Gov Analytics Overlay */}
       {activeCam && (
@@ -195,9 +202,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* Demo active indicator */}
+      {/* Demo indicator */}
       {demoActive && (
-        <div className="fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs text-destructive font-mono">
+        <div className="fixed bottom-18 left-4 z-40 lg:bottom-4 flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs text-destructive font-mono">
           <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse-dot" />
           DEMO ACTIVE
         </div>

@@ -2,26 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --radius: 8px;
+    /* shadcn/ui CSS var aliases — components reference these */
+    --background:   8 12% 7%;        /* #080C14 in HSL approx */
+    --foreground:   210 60% 96%;     /* #E8F4FF */
+    --card:         214 45% 11%;     /* #111D2B */
+    --card-foreground: 210 60% 96%;
+    --popover:      213 50% 9%;      /* #0D1520 */
+    --popover-foreground: 210 60% 96%;
+    --primary:      191 100% 50%;    /* #00D4FF */
+    --primary-foreground: 8 12% 7%;
+    --secondary:    214 45% 11%;
+    --secondary-foreground: 210 30% 58%;
+    --muted:        213 50% 9%;
+    --muted-foreground: 210 30% 58%; /* #7A9BB5 */
+    --accent:       42 100% 50%;     /* #FFB800 */
+    --accent-foreground: 8 12% 7%;
+    --destructive:  345 100% 61%;    /* #FF3D6B */
+    --destructive-foreground: 210 60% 96%;
+    --border:       213 43% 18%;     /* #1A2D42 */
+    --input:        213 43% 18%;
+    --ring:         191 100% 50%;    /* #00D4FF */
+  }
+
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 212, 255, 0.2) #09090f;
+  }
+
+  *::-webkit-scrollbar       { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: #09090f; }
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(0,212,255,0.3), rgba(0,212,255,0.1));
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(0,212,255,0.5), rgba(0,212,255,0.22));
+  }
+
+  html { color-scheme: dark; }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", "Manrope", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  a {
+    @apply text-accent no-underline hover:underline;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  /* Screen-reader only — replaces .sr-only from old CSS */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Cyan glow border utility */
+  .border-cyan-glow {
+    border-color: rgba(0, 212, 255, 0.18);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.08);
+  }
+
+  /* Green live glow */
+  .text-green-live   { color: #00FF88; }
+  .text-green-active { color: #22C55E; }
+
+  /* Vehicle class colors */
+  .text-cls-car   { color: #29B6F6; }
+  .text-cls-truck { color: #FF7043; }
+  .text-cls-bus   { color: #AB47BC; }
+  .text-cls-moto  { color: #FFD600; }
+
+  /* Mono font utility */
+  .font-mono-data {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  /* Glass card surface */
+  .glass {
+    background: rgba(13, 21, 32, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0, 212, 255, 0.14);
   }
 }

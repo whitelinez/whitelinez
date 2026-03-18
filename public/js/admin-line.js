@@ -51,9 +51,6 @@ const AdminLine = (() => {
   let detectPoints = [];  // [{rx, ry}]
   let countPoints  = [];  // [{rx, ry}]
   let groundPoints = [];  // [{rx, ry}]
-  // Explicit removal flags — set when user clears a zone; enables saving null to DB
-  let countCleared  = false;
-  let detectCleared = false;
   let showGuides = true;
   let snapToGuides = true;
   let autoGroundFromZones = true;
@@ -258,8 +255,6 @@ const AdminLine = (() => {
         groundPoints = readGroundQuadFromControls();
       }
 
-      countCleared = false;
-      detectCleared = false;
       redraw();
       updateZoneValidityStatus("Zones loaded — click to redraw active zone");
     } catch (e) {
@@ -634,30 +629,28 @@ const AdminLine = (() => {
   }
 
   function clearActive() {
-    if (activeMode === "detect") { detectPoints = []; detectCleared = true; }
+    if (activeMode === "detect") detectPoints = [];
     else if (activeMode === "ground") {
       groundPoints = [];
       applyGroundQuadToControls(groundPoints);
     }
-    else { countPoints = []; countCleared = true; }
+    else countPoints = [];
     redraw();
     updateZoneValidityStatus("Zone cleared — click Save Zones to persist removal");
   }
 
   function removeCountBand() {
     countPoints = [];
-    countCleared = true;
     setMode("count");
     redraw();
-    updateZoneValidityStatus("Count band removed — click Save Zones to persist");
+    updateZoneValidityStatus("Count band cleared — click Save to persist");
   }
 
   function removeDetectZone() {
     detectPoints = [];
-    detectCleared = true;
     setMode("detect");
     redraw();
-    updateZoneValidityStatus("Detect zone removed — click Save Zones to persist");
+    updateZoneValidityStatus("Detect zone cleared — click Save to persist");
   }
 
   async function saveZones() {
@@ -692,8 +685,8 @@ const AdminLine = (() => {
       updateData.count_line = toRel4(countPoints);
     } else if (countPoints.length >= COUNT_MIN_POINTS) {
       updateData.count_line = toRel2(countPoints);
-    } else if (countCleared) {
-      updateData.count_line = null; // explicit removal
+    } else {
+      updateData.count_line = null; // no points — clear in DB
     }
     if (detectPoints.length >= 3) {
       updateData.detect_zone = {
@@ -744,8 +737,6 @@ const AdminLine = (() => {
 
       if (err) throw err;
       feedAppearanceCache = updateData.feed_appearance;
-      countCleared = false;
-      detectCleared = false;
       updateStatus("Count + Detect + 3D mask saved ✓ — AI picks up within 30s");
     } catch (e) {
       console.error("[AdminLine] Save failed:", e);
@@ -924,12 +915,7 @@ const AdminLine = (() => {
   function updateZoneValidityStatus(prefixMsg = "") {
     const validity = getZoneValidity();
     const saveBtn = document.getElementById("btn-save-line");
-    const canSave = validity.ok && (
-      countPoints.length >= COUNT_MIN_POINTS ||
-      detectPoints.length >= 3 ||
-      countCleared ||
-      detectCleared
-    );
+    const canSave = !!cameraId && validity.ok;
     if (saveBtn) {
       if (canSave) saveBtn.removeAttribute("disabled");
       else saveBtn.setAttribute("disabled", "disabled");

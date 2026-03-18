@@ -51,6 +51,9 @@ const AdminLine = (() => {
   let detectPoints = [];  // [{rx, ry}]
   let countPoints  = [];  // [{rx, ry}]
   let groundPoints = [];  // [{rx, ry}]
+  // Explicit removal flags — set when user clears a zone; enables saving null to DB
+  let countCleared  = false;
+  let detectCleared = false;
   let showGuides = true;
   let snapToGuides = true;
   let autoGroundFromZones = true;
@@ -87,6 +90,8 @@ const AdminLine = (() => {
       canvas.addEventListener("click", handleClick);
       document.getElementById("btn-clear-line")?.addEventListener("click", clearActive);
       document.getElementById("btn-save-line")?.addEventListener("click", saveZones);
+      document.getElementById("btn-remove-count-band")?.addEventListener("click", removeCountBand);
+      document.getElementById("btn-remove-detect-zone")?.addEventListener("click", removeDetectZone);
       document.getElementById("btn-save-count-settings")?.addEventListener("click", saveCountSettingsOnly);
       document.getElementById("btn-count-preset-balanced")?.addEventListener("click", () => {
         applyCountSettingsToForm(DEFAULT_COUNT_SETTINGS);
@@ -253,6 +258,8 @@ const AdminLine = (() => {
         groundPoints = readGroundQuadFromControls();
       }
 
+      countCleared = false;
+      detectCleared = false;
       redraw();
       updateZoneValidityStatus("Zones loaded — click to redraw active zone");
     } catch (e) {
@@ -627,14 +634,30 @@ const AdminLine = (() => {
   }
 
   function clearActive() {
-    if (activeMode === "detect") detectPoints = [];
+    if (activeMode === "detect") { detectPoints = []; detectCleared = true; }
     else if (activeMode === "ground") {
       groundPoints = [];
       applyGroundQuadToControls(groundPoints);
     }
-    else countPoints = [];
+    else { countPoints = []; countCleared = true; }
     redraw();
-    updateZoneValidityStatus("Zone cleared");
+    updateZoneValidityStatus("Zone cleared — click Save Zones to persist removal");
+  }
+
+  function removeCountBand() {
+    countPoints = [];
+    countCleared = true;
+    setMode("count");
+    redraw();
+    updateZoneValidityStatus("Count band removed — click Save Zones to persist");
+  }
+
+  function removeDetectZone() {
+    detectPoints = [];
+    detectCleared = true;
+    setMode("detect");
+    redraw();
+    updateZoneValidityStatus("Detect zone removed — click Save Zones to persist");
   }
 
   async function saveZones() {
@@ -669,13 +692,15 @@ const AdminLine = (() => {
       updateData.count_line = toRel4(countPoints);
     } else if (countPoints.length >= COUNT_MIN_POINTS) {
       updateData.count_line = toRel2(countPoints);
+    } else if (countCleared) {
+      updateData.count_line = null; // explicit removal
     }
     if (detectPoints.length >= 3) {
       updateData.detect_zone = {
         points: detectPoints.map((p) => ({ x: p.rx, y: p.ry })),
       };
     } else if (detectPoints.length === 0) {
-      updateData.detect_zone = null; // clear if empty
+      updateData.detect_zone = null; // clear if empty or explicitly removed
     }
     updateData.count_settings = readCountSettingsFromForm();
     const groundFromControls = readGroundQuadFromControls();
@@ -719,6 +744,8 @@ const AdminLine = (() => {
 
       if (err) throw err;
       feedAppearanceCache = updateData.feed_appearance;
+      countCleared = false;
+      detectCleared = false;
       updateStatus("Count + Detect + 3D mask saved ✓ — AI picks up within 30s");
     } catch (e) {
       console.error("[AdminLine] Save failed:", e);
@@ -897,7 +924,12 @@ const AdminLine = (() => {
   function updateZoneValidityStatus(prefixMsg = "") {
     const validity = getZoneValidity();
     const saveBtn = document.getElementById("btn-save-line");
-    const canSave = validity.ok && (countPoints.length >= COUNT_MIN_POINTS || detectPoints.length >= 3);
+    const canSave = validity.ok && (
+      countPoints.length >= COUNT_MIN_POINTS ||
+      detectPoints.length >= 3 ||
+      countCleared ||
+      detectCleared
+    );
     if (saveBtn) {
       if (canSave) saveBtn.removeAttribute("disabled");
       else saveBtn.setAttribute("disabled", "disabled");
@@ -998,7 +1030,7 @@ const AdminLine = (() => {
     } catch {}
   }
 
-  return { init, clearActive, saveZones, refresh, saveCountSettingsOnly, loadZones: loadExistingZones };
+  return { init, clearActive, saveZones, refresh, saveCountSettingsOnly, loadZones: loadExistingZones, removeCountBand, removeDetectZone };
 })();
 
 window.AdminLine = AdminLine;

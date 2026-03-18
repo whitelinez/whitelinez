@@ -282,12 +282,13 @@
           <p>Draw a count band over the road. The midline of the band is the vehicle crossing trigger.</p>
         </div>
 
+        <div class="zone-cam-switcher">
+          <label for="zone-cam-select" class="zone-cam-label">Camera</label>
+          <select id="zone-cam-select"><option value="">Loading…</option></select>
+        </div>
+
         <div class="zone-editor-workflow">
           <!-- Live preview -->
-          <div class="zone-cam-switcher">
-            <label for="zone-cam-select" class="zone-cam-label">Camera</label>
-            <select id="zone-cam-select"><option value="">Loading…</option></select>
-          </div>
           <div class="stream-canvas-wrapper ae-preview">
             <video id="admin-video" muted playsinline autoplay></video>
             <canvas id="line-canvas"></canvas>

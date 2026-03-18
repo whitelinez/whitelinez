@@ -915,9 +915,8 @@ const AdminLine = (() => {
   function updateZoneValidityStatus(prefixMsg = "") {
     const validity = getZoneValidity();
     const saveBtn = document.getElementById("btn-save-line");
-    const canSave = !!cameraId && validity.ok;
     if (saveBtn) {
-      if (canSave) saveBtn.removeAttribute("disabled");
+      if (validity.ok) saveBtn.removeAttribute("disabled");
       else saveBtn.setAttribute("disabled", "disabled");
     }
     if (prefixMsg) {
